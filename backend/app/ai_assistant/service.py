@@ -207,6 +207,14 @@ FAST_PATH_INTENTS = {
     "current_date_query",
 }
 
+DIRECT_DATA_INTENTS = {
+    "weather_data_latest_time",
+    "price_data_latest_time",
+    "load_data_latest_time",
+    "database_table_freshness",
+    "data_sql_query",
+}
+
 BRIEF_ANSWER_MARKERS = [
     "一句话回答",
     "一句话说说",
@@ -449,7 +457,7 @@ def _rag_trigger_decision(intent: str, task_type: str, question: str) -> tuple[b
     if not rag_enabled():
         info["reason"] = "rag_disabled"
         return False, info
-    if intent in FAST_PATH_INTENTS:
+    if intent in FAST_PATH_INTENTS or intent in DIRECT_DATA_INTENTS:
         info["reason"] = "daily_or_deterministic_skipped"
         return False, info
 
@@ -484,7 +492,7 @@ def _should_use_rag(intent: str, task_type: str, question: str = "") -> bool:
 
 
 def _should_use_llm(intent: str) -> bool:
-    return intent not in FAST_PATH_INTENTS
+    return intent not in FAST_PATH_INTENTS and intent not in DIRECT_DATA_INTENTS
 
 
 def _timing_ms(started: float) -> float:

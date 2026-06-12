@@ -69,11 +69,11 @@ def route_intent(question: str) -> IntentDecision:
     if table_names:
         freshness_terms = ["新鲜度", "更新", "截止", "到哪天", "最新时间", "数据范围", "freshness", "latest time"]
         query_terms = ["查数", "查询", "查一下", "看一下", "最新几条", "最新", "多少条", "记录数", "sql", "select", "table", "database"]
+        limit = _extract_limit(normalized)
         if any(term in q or term in latin_q for term in freshness_terms) or ("最新" in q and any(term in q for term in ["几号", "哪天", "时间", "截止", "范围"])):
             return IntentDecision("database_table_freshness", 0.96, {"tables": table_names}, normalized)
-        if any(term in q or term in latin_q for term in query_terms):
+        if limit or any(term in q or term in latin_q for term in query_terms) or any(term in q for term in ["没有数据", "没数据", "查不到", "为空", "为什么"]):
             query_entities: dict[str, object] = {"tables": table_names}
-            limit = _extract_limit(normalized)
             if limit:
                 query_entities["limit"] = limit
             return IntentDecision("data_sql_query", 0.94, query_entities, normalized)
@@ -140,6 +140,13 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("thanks", 0.96, {}, normalized)
     if daily_flags["brief"]:
         return IntentDecision("brief_answer_request", 0.9, {}, normalized)
+
+    if any(k in q for k in ["核心业务表", "有哪些表", "数据目录", "当前数据库有哪些", "数据库有哪些"]):
+        return IntentDecision("data_sql_query", 0.93, {}, normalized)
+    if any(k in q for k in ["哪些表为空", "哪些表当前为空", "空表", "没有数据的表"]):
+        return IntentDecision("data_sql_query", 0.93, {}, normalized)
+    if "数据" in q and "支撑预测" in q:
+        return IntentDecision("data_sql_query", 0.92, {}, normalized)
 
     if "天气" in q and any(k in q for k in ["没更新", "未更新", "没有更新", "过期", "更新时间", "新鲜度"]):
         return IntentDecision("weather_data_latest_time", 0.98, {"domain": "weather"}, normalized)

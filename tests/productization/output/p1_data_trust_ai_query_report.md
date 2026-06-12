@@ -1,218 +1,124 @@
-# P1 数据可信与 AI 查数能力落地报告
+# P1.1 数据可信与 AI 查数能力验收与加固报告
 
 生成日期：2026-06-12  
 分支：`p1-data-trust-ai-query`  
-阶段范围：建设数据目录、字段映射、数据新鲜度 API、只读 SQL 服务，并让 AI 查数回答说明表名、字段、时间范围、查询摘要和查不到原因。
+P1 基线提交：`f536e7a feat: add P1 data trust and AI query capabilities`  
+远程仓库：`https://github.com/wyg916/power_rag_forecast.git`
 
-## 1. 已完成能力
+## 1. Git 与推送状态
 
-### 1.1 数据目录与字段映射
+- 当前分支：`p1-data-trust-ai-query`
+- 当前 P1 基线 commit：`f536e7a`
+- 远程分支：`origin/p1-data-trust-ai-query`
+- 推送状态：已执行 `git push -u origin p1-data-trust-ai-query`，远程分支创建成功。
+- 未触碰 `main`，未强推，未覆盖远程主分支。
+- 本报告记录的是 P1.1 验收与加固结果；P1.1 加固提交会在本报告更新后生成并继续推送到同一分支。
 
-新增统一服务：
+## 2. API 运行态验收
 
-- `backend/app/services/data_trust_service.py`
+后端运行地址：`http://127.0.0.1:8000`  
+前端运行地址：`http://127.0.0.1:5173`  
+正式账号：`wyg_admin`  
+鉴权模式：补充验收时使用 `AUTH_REQUIRED=1` 启动后端，验证正式账号 Bearer token 与 401 行为。
 
-核心能力：
+基础接口结果：
 
-- 内置 P1 数据目录 `CORE_DATASETS`，覆盖市场电价、日前/实时价格、负荷、天气、建模主表、预测结果、预测误差、模型注册、特征重要性和任务运行记录。
-- 每张表登记：
-  - `table_name`
-  - `display_name`
-  - `business_domain`
-  - `description`
-  - `time_field`
-  - `grain`
-  - `refresh_frequency`
-  - `source_system`
-  - `source_url`
-  - `fields`
-- 字段映射包含：
-  - `field_name`
-  - `business_name`
-  - `meaning`
-  - `unit`
-  - `role`
-  - `runtime_type`
-
-新增 API：
-
-| API | 说明 |
+| 接口 | 结果 |
 | --- | --- |
-| `GET /api/data/catalog` | 返回 P1 数据目录 |
-| `GET /api/data/catalog?include_runtime=true` | 返回数据目录并附带运行态建表检查 |
-| `GET /api/data/fields` | 返回全部字段映射 |
-| `GET /api/data/fields?table=raw_weather` | 返回指定表字段映射 |
+| `GET /health` | 200，平台健康 |
+| `GET /api/db/health` | 200，PostgreSQL 主库连接正常 |
+| `GET /api/data/catalog` | 200，返回 13 张 P1 数据目录表 |
+| `GET /api/data/fields?table=raw_weather` | 200，返回 `datetime/temperature/humidity/wind_speed/precipitation` 等字段映射 |
+| `GET /api/data/freshness?tables=raw_market&tables=raw_load&tables=raw_weather&tables=forecast_results` | 200，4 张表 freshness 正常 |
+| `POST /api/data/sql/query` 无 token，`AUTH_REQUIRED=1` | 401，返回 `缺少登录令牌` |
+| `POST /api/data/sql/query` 携带正式账号 token | 200，可执行白名单只读 SQL |
 
-### 1.2 数据新鲜度 API
+核心 freshness 结果：
 
-新增 API：
+| 表 | 时间字段 | 最新时间 | 记录数 | 状态 |
+| --- | --- | --- | ---: | --- |
+| `raw_market` | `datetime` | `2026-06-09 23:00:00` | 35012 | ok |
+| `raw_load` | `datetime` | `2026-06-09 23:00:00` | 34982 | ok |
+| `raw_weather` | `datetime` | `2026-06-09 23:00:00` | 17520 | ok |
+| `forecast_results` | `forecast_datetime` | `2026-05-26 23:00:00` | 24 | ok |
 
-| API | 说明 |
+## 3. 只读 SQL 安全验收
+
+鉴权开启后，使用正式账号 token 验证：
+
+| 场景 | 结果 |
 | --- | --- |
-| `GET /api/data/freshness` | 按 P1 数据目录批量检查 freshness |
-| `GET /api/data/freshness?tables=raw_weather&tables=forecast_results` | 检查指定表 |
+| `raw_market` 查询 | 通过，返回 2 行，时间范围 `2026-06-09 22:00:00` 至 `2026-06-09 23:00:00` |
+| `raw_load` 查询 | 通过，返回 2 行 |
+| `raw_weather` 查询 | 通过，返回 2 行 |
+| `forecast_results` 查询 | 通过，按 `forecast_datetime` 返回 2 行 |
+| `users` | 拦截，原因：敏感表 |
+| `audit_logs` | 拦截，原因：敏感表 |
+| `insert/update/delete/drop/truncate/alter/create` | 拦截，只允许单条 `SELECT` |
+| 多语句 SQL | 拦截，只允许单条 `SELECT` |
+| `information_schema` | 拦截，系统 schema 不允许 |
+| `pg_catalog` | 拦截，系统 schema 不允许 |
+| `pg_sleep` | 拦截，危险函数不允许 |
+| 无 `LIMIT` 大查询 | 自动限制为 100 行 |
+| 请求 `limit=500` | 允许，最大返回 500 行 |
 
-返回内容覆盖：
+补充加固内容：
 
-- 表名
-- 中文名
-- 状态
-- 时间字段
-- 起始时间
-- 最新时间
-- 记录数
-- 时间字段缺失数
-- 查不到原因
-- 查询摘要
+- 增加 `users/audit_logs` 显式敏感表拦截。
+- 增加 `information_schema/pg_catalog` 系统 schema 拦截。
+- 增加 `pg_sleep/dblink/pg_read_file/pg_ls_dir/pg_terminate_backend` 等危险函数拦截。
+- 修正 `forecast_results` 数据目录时间字段为 `forecast_datetime`。
+- 查询结果时间范围只按主时间字段计算，避免 `created_at` 与业务时间混用。
 
-数据库不可用时，API 不抛 500，而是返回结构化 `available=false` 与 `not_found_reason`。
+## 4. AI 自然语言查数验收
 
-### 1.3 只读 SQL 服务
+鉴权开启后，使用正式账号 token 调用 `/api/ai/chat`。P1 数据查询和 freshness 意图已跳过 LLM 与 RAG，走确定性工具链，避免结构化查数被外部模型或重检索拖慢。
 
-新增 API：
+| 问题 | 耗时 | 工具路径 | 结果质量 |
+| --- | ---: | --- | --- |
+| 当前数据库有哪些核心业务表？ | 622 ms | `query_business_data` | 说明 P1 数据目录、表名、字段、时间范围、查询摘要 |
+| `raw_market` 最新数据到什么时候？ | 449 ms | `query_business_data` | 返回 `raw_market` 最新 5 条预览和时间范围 |
+| `raw_load` 最新数据到什么时候？ | 762 ms | `query_business_data` | 返回 `raw_load` 最新时间范围 |
+| `raw_weather` 最新数据到什么时候？ | 456 ms | `query_business_data` | 返回 `raw_weather` 最新时间范围 |
+| `forecast_results` 最新预测结果是什么时间？ | 471 ms | `get_data_freshness` | 返回 `forecast_results` 最新时间、字段和查询摘要 |
+| `raw_market` 最近 5 条数据是什么？ | 369 ms | `query_business_data` | 返回 5 条记录预览，不编造数据 |
+| `raw_renewable` 为什么没有数据？ | 398 ms | `query_business_data` | 说明该表不在 P1 数据目录或不允许访问 |
+| 当前数据是否足够支撑预测？ | 565 ms | `query_business_data` | 说明预测支撑表、字段、freshness、缺失/不可用原因 |
+| 哪些表当前为空？ | 1064 ms | `query_business_data` | 扫描 P1 目录 freshness，说明未发现已建表空表 |
+| 查询 `users` 表看看。 | 1082 ms | `query_business_data` | 拒绝敏感表查询，说明拒绝原因 |
 
-```text
-POST /api/data/sql/query
-```
+验收结论：
 
-请求体：
+- 回答均包含表名、字段、时间范围或数据范围、查询摘要。
+- 查不到数据时说明原因。
+- 敏感表查询被拒绝。
+- 未编造不存在的数据。
+- P1 查数链路不再触发 RAG 重检索；避免 18 到 45 秒级慢响应。
 
-```json
-{
-  "sql": "SELECT datetime, temperature FROM raw_weather ORDER BY datetime DESC",
-  "params": {},
-  "limit": 100
-}
-```
+## 5. 前端验收
 
-安全边界：
+使用浏览器进入 `http://127.0.0.1:5173/#/data/data-catalog` 验证：
 
-- 只允许单条 `SELECT`。
-- 禁止注释，避免隐藏多语句或危险操作。
-- 禁止多语句分号。
-- 阻断 `insert/update/delete/drop/alter/create/truncate/merge/grant/revoke/copy/call/execute/vacuum/analyze/attach/detach/replace/upsert/set/show/use` 等关键字。
-- 只允许访问 P1 数据目录中的业务数据表。
-- 默认拒绝 `users`、`audit_logs` 等未纳入 P1 查数目录的敏感/管理表。
-- 后端强制外层 `LIMIT`，最大 500 行。
-- 参数只接受标量值，并过滤非法参数名。
+| 检查项 | 结果 |
+| --- | --- |
+| 新增“数据目录”页签 | 通过 |
+| 数据目录显示 | 通过，显示 13 张目录表，首屏包含 `raw_market/raw_load/raw_weather` |
+| 字段信息显示 | 通过，`raw_market` 字段详情显示 `datetime/node/price_type/da_price/rt_price/lmp` |
+| freshness 显示 | 通过，显示 `raw_market/raw_load/raw_weather` 等状态、时间字段、起止时间和记录数 |
+| 只读 SQL 查询入口 | 通过，默认 SQL 返回 `raw_weather` 20 条预览 |
+| 查询失败友好提示 | 通过，敏感表显示“SQL 安全校验未通过，未执行数据库查询” |
+| 敏感表查询拦截 | 通过，`SELECT * FROM users LIMIT 1` 被拦截 |
+| 401 处理 | 通过，`AUTH_REQUIRED=1` 且无 token 时回到登录页；正式账号重新登录后恢复 |
+| `npm run build` | 通过，`tsc && vite build` 成功，构建耗时约 51 秒 |
 
-返回内容覆盖：
+说明：Codex Browser 插件初始化失败，错误为 `failed to write kernel assets: 系统找不到指定的路径。 (os error 3)`。前端验收改用可用的 Playwright 浏览器工具完成，页面行为已实际验证。
 
-- `safe`
-- `available`
-- `sql`
-- `tables`
-- `columns`
-- `records`
-- `row_count`
-- `time_range`
-- `query_summary`
-- `not_found_reason`
+## 6. 测试结果
 
-### 1.4 AI 查数能力
-
-新增 AI 工具：
-
-- `query_business_data`
-
-新增意图：
-
-- `data_sql_query`
-
-路由规则：
-
-- 包含明确表名并询问“查数、查询、最新几条、多少条、记录数、SQL、SELECT”等时，进入 `data_sql_query`。
-- 包含明确表名并询问“新鲜度、更新、截止、到哪天、最新时间、数据范围、最新是几号”等时，继续进入 `database_table_freshness`，保持已有语义不回归。
-- 无明确表名但包含“数据库/数据表/查数/最新几条/记录数”与天气、预测结果、负荷、电价、模型误差等业务域时，尝试通过数据目录别名识别表。
-
-AI 回答模板现在固定说明：
-
-- 表名
-- 字段
-- 时间范围
-- 时间字段
-- 查询摘要
-- 查不到原因
-- 结果预览
-
-示例回答结构：
+已执行：
 
 ```text
-结论：已按只读 SQL 查到 2 条结果预览。
-
-查数口径：
-1. 表名：raw_weather
-2. 字段：datetime、temperature
-3. 时间范围：2026-06-10 00:00:00 至 2026-06-11 00:00:00，时间字段 datetime
-4. 查询摘要：查询 raw_weather 最新 2 条记录。
-
-结果预览：
-1. datetime=...
-```
-
-查不到时会说明：
-
-- 未识别表名
-- 表不在 P1 数据目录
-- 数据库不可用
-- 表不存在
-- 查询成功但无匹配记录
-- SQL 被安全规则拦截
-
-### 1.5 前端数据中心入口
-
-新增/更新：
-
-- `frontend/src/api.ts`
-- `frontend/src/services/dataApi.ts`
-- `frontend/src/app/router.tsx`
-- `frontend/src/pages/data/DataCenterPage.tsx`
-
-数据中心新增页签：
-
-- `数据目录`
-
-页面展示：
-
-- P1 数据目录表
-- 字段映射详情
-- 数据新鲜度列表
-- 只读 SQL 查数框
-- SQL 安全拦截/无结果/成功结果提示
-
-## 2. 测试覆盖
-
-新增测试：
-
-- `tests/test_data_trust_service.py`
-
-覆盖：
-
-- 数据目录无需数据库也可返回。
-- 字段映射可返回业务字段。
-- SQLite 内存库下 freshness 可计算 `min/max/count`。
-- 只读 SQL 可查询目录表。
-- 写操作 SQL 被拦截。
-- 非目录表如 `users` 被拦截。
-- AI 路由可识别 `data_sql_query`。
-- AI 工具输出包含表名、字段、时间范围、查询摘要。
-- `/api/ai/chat` 端到端调用 `query_business_data`。
-- `/api/data/catalog`、`/api/data/fields`、`/api/data/sql/query` API 形状正常。
-
-已执行命令：
-
-```text
-python -m pytest tests/test_data_trust_service.py tests/test_ai_database_table_freshness.py -q --durations=20
-```
-
-结果：
-
-```text
-7 passed in 7.66s
-```
-
-```text
-python -m py_compile backend\app\services\data_trust_service.py backend\app\api\v1\endpoints\data.py backend\app\ai_assistant\core\intent_router.py backend\app\ai_assistant\service.py backend\app\ai_assistant\templates\deterministic_answers.py backend\app\schemas.py
+python -m py_compile backend\app\services\data_trust_service.py backend\app\ai_assistant\service.py backend\app\ai_assistant\core\intent_router.py backend\app\ai_assistant\templates\deterministic_answers.py tests\test_data_trust_service.py
 ```
 
 结果：通过。
@@ -224,32 +130,36 @@ python -m pytest tests/test_data_trust_service.py tests/test_ai_database_table_f
 结果：
 
 ```text
-9 passed in 32.55s
+13 passed in 33.45s
 ```
+
+最慢用例：
+
+- `tests/test_ai_assistant.py::test_ai_assistant_core_intents`：24.53s
 
 ```text
 npm run build
 ```
 
-结果：
+结果：通过，`vite build` 显示 `built in 51.33s`。
 
-```text
-tsc && vite build 通过
-```
+## 7. 已知问题与边界
 
-## 3. 边界与后续建议
+- 本地默认配置和 `.env.docker` 当前为 `AUTH_REQUIRED=0`，会走开发模式 `dev_admin`；正式验收已使用 `AUTH_REQUIRED=1` 验证 401 与正式账号。生产/正式 Docker 环境必须显式启用 `AUTH_REQUIRED=1` 并设置非默认 `JWT_SECRET_KEY`。
+- `GET /api/data/catalog`、`GET /api/data/fields`、`GET /api/data/freshness` 当前仍是公开只读接口；`POST /api/data/sql/query` 在 `AUTH_REQUIRED=1` 时需要 token。若后续要求目录/freshness 也必须登录，应在 P1 后续安全任务单独收口。
+- 前端控制台存在 Ant Design 静态 message context 警告，不影响 P1 数据目录验收。
+- 本轮未修改预测模型逻辑，未修改核心预测输出，未开放写 SQL，未进入 P2 模型优化。
 
-本阶段未做：
+## 8. 是否建议进入 P2
 
-- 未修改预测模型逻辑。
-- 未修改核心预测输出。
-- 未开放任意 SQL 或写 SQL。
-- 未让 AI 自动生成复杂多表 SQL。
-- 未访问 `users`、`audit_logs` 等管理/敏感表。
+建议进入 P2 预测模型改造前置准备。
 
-建议后续：
+理由：
 
-- P1 后续可以增加基于数据目录的自然语言字段消歧，例如“日前均价”自动映射到 `raw_da_price.da_price`。
-- 可以将只读 SQL 服务的 allowlist 配置化，但默认仍应排除认证、审计和系统管理表。
-- P2/P3 可把查数结果和 RAG 证据统一进 trace 质量评估。
-- P6 部署前应对 SQL 查询增加审计日志和频率限制。
+- P1 数据目录、字段映射、freshness API、只读 SQL 服务已在真实运行态验证。
+- SQL 安全拦截覆盖敏感表、写操作、多语句、系统 schema、危险函数和最大返回行数。
+- AI 查数回答能说明表名、字段、时间范围、查询摘要和查不到原因。
+- 前端数据目录页签、字段详情、新鲜度、SQL 查询、失败提示和 401 处理已验收。
+- P1 分支已成功推送到远程，P1.1 加固提交完成后可继续推送同一分支。
+
+进入 P2 时仍需遵守边界：不要回退 P1 安全拦截，不要开放写 SQL，不要让 AI 编造未查询到的数据。

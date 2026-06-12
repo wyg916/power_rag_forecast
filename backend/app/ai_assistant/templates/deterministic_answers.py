@@ -33,14 +33,17 @@ def answer_data_freshness(result: dict[str, Any], label: str) -> str:
         missing = [item for item in items if not item.get("available")]
         lines = []
         for item in items:
+            fields = item.get("columns") or []
+            field_text = "、".join(str(field) for field in fields[:8]) if fields else "-"
             if item.get("available"):
                 lines.append(
                     f"- {item.get('table')}：最新时间 {item.get('max_datetime') or '-'}；"
                     f"数据范围 {item.get('min_datetime') or '-'} 至 {item.get('max_datetime') or '-'}；"
-                    f"记录数 {item.get('row_count') or 0}；时间字段 {item.get('datetime_field') or '-'}。"
+                    f"记录数 {item.get('row_count') or 0}；时间字段 {item.get('datetime_field') or '-'}；"
+                    f"字段 {field_text}；查询摘要：{item.get('query_summary') or '按时间字段执行新鲜度检查'}。"
                 )
             else:
-                lines.append(f"- {item.get('table')}：未找到或不可查询；原因：{item.get('message') or '未知'}")
+                lines.append(f"- {item.get('table')}：未找到或不可查询；字段 {field_text}；查询摘要：新鲜度检查未能执行；原因：{item.get('message') or '未知'}")
         conclusion = "已查到部分数据库表。" if missing and available else ("已查到这些数据库表的最新数据。" if available else "这些数据库表当前未查到可用数据。")
         return (
             f"结论：{conclusion}\n\n"
@@ -57,7 +60,9 @@ def answer_data_freshness(result: dict[str, Any], label: str) -> str:
         f"2. 时间字段：{result.get('datetime_field')}\n"
         f"3. 数据范围：{result.get('min_datetime')} 至 {result.get('max_datetime')}\n"
         f"4. 记录数：{result.get('row_count')} 条\n"
-        f"5. 缺失计数：{result.get('missing_count')}。"
+        f"5. 字段：{'、'.join(str(field) for field in (result.get('columns') or [])[:8]) or result.get('value_field') or '-'}\n"
+        f"6. 查询摘要：{result.get('query_summary') or '按时间字段执行 min/max/count 新鲜度检查'}\n"
+        f"7. 缺失计数：{result.get('missing_count')}。"
     )
 
 
@@ -70,6 +75,60 @@ def answer_data_sql_query(result: dict[str, Any]) -> str:
     range_end = time_range.get("end") or time_range.get("requested_end") or "-"
     time_field = time_range.get("field") or "-"
     query_summary = result.get("query_summary") or "执行只读查数。"
+    query_type = result.get("query_type") or ""
+    if query_type == "data_catalog_list":
+        records = result.get("records") or []
+        lines = [
+            f"{idx}. {row.get('table_name')}：{row.get('display_name') or '-'}，业务域 {row.get('business_domain') or '-'}，时间字段 {row.get('time_field') or '-'}。"
+            for idx, row in enumerate(records[:10], 1)
+        ]
+        return (
+            f"结论：当前 P1 数据目录登记了 {result.get('row_count') or len(records)} 张核心业务表。\n\n"
+            "查数口径：\n"
+            f"1. 表名：{table}\n"
+            f"2. 字段：{field_text}\n"
+            f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
+            f"4. 查询摘要：{query_summary}\n\n"
+            "核心业务表：\n"
+            + ("\n".join(lines) if lines else "暂无目录记录。")
+        )
+    if query_type == "empty_table_scan":
+        records = result.get("records") or []
+        if records:
+            lines = [f"- {row.get('table_name')}：记录数 {row.get('row_count') or 0}，原因 {row.get('not_found_reason') or '-'}。" for row in records[:10]]
+            conclusion = f"发现 {len(records)} 张已建表但记录数为 0 的空表。"
+        else:
+            lines = [result.get("not_found_reason") or "未发现空表。"]
+            conclusion = "当前未发现已建表且记录数为 0 的空表。"
+        return (
+            f"结论：{conclusion}\n\n"
+            "查数口径：\n"
+            f"1. 表名：{table}\n"
+            f"2. 字段：{field_text}\n"
+            f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
+            f"4. 查询摘要：{query_summary}\n"
+            f"5. 查不到原因：{result.get('not_found_reason') or '无'}。\n\n"
+            "检查结果：\n"
+            + "\n".join(lines)
+        )
+    if query_type == "prediction_readiness":
+        records = result.get("records") or []
+        ready = result.get("readiness_status") == "ready"
+        lines = [
+            f"- {row.get('table_name')}：{row.get('status')}，时间字段 {row.get('datetime_field') or '-'}，范围 {row.get('min_datetime') or '-'} 至 {row.get('max_datetime') or '-'}，记录数 {row.get('row_count') or 0}。"
+            for row in records[:10]
+        ]
+        return (
+            f"结论：{'当前核心数据具备预测支撑基础。' if ready else '当前核心数据只具备部分预测支撑，仍需补齐缺失表或空表。'}\n\n"
+            "查数口径：\n"
+            f"1. 表名：{table}\n"
+            f"2. 字段：{field_text}\n"
+            f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
+            f"4. 查询摘要：{query_summary}\n"
+            f"5. 查不到原因：{result.get('not_found_reason') or '无'}。\n\n"
+            "支撑数据检查：\n"
+            + ("\n".join(lines) if lines else "暂无检查结果。")
+        )
     if not result.get("available"):
         return (
             "结论：本次没有查到可用数据。\n\n"

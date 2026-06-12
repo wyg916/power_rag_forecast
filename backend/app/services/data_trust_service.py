@@ -167,15 +167,15 @@ CORE_DATASETS: dict[str, dict[str, Any]] = {
         "display_name": "预测结果入库表",
         "business_domain": "forecast",
         "description": "未来 24 小时预测价格、风险等级和辅助字段。",
-        "time_field": "datetime",
-        "default_order_field": "datetime",
+        "time_field": "forecast_datetime",
+        "default_order_field": "forecast_datetime",
         "grain": "hourly",
         "refresh_frequency": "per_forecast_run",
         "source_system": "项目预测管道",
         "aliases": ["预测结果", "未来24小时预测", "forecast"],
         "fields": [
             {"field_name": "run_id", "business_name": "运行ID", "meaning": "预测任务运行标识", "role": "dimension"},
-            {"field_name": "datetime", "business_name": "预测小时", "meaning": "预测结果对应小时", "role": "time"},
+            {"field_name": "forecast_datetime", "business_name": "预测小时", "meaning": "预测结果对应小时", "role": "time"},
             {"field_name": "predicted_price", "business_name": "预测电价", "meaning": "模型预测价格", "unit": "USD/MWh", "role": "metric"},
             {"field_name": "corrected_predicted_price", "business_name": "修正预测电价", "meaning": "业务修正后的预测价格", "unit": "USD/MWh", "role": "metric"},
             {"field_name": "risk_level", "business_name": "风险等级", "meaning": "尖峰或交易风险等级", "role": "dimension"},
@@ -272,6 +272,12 @@ TABLE_REF_RE = re.compile(
 )
 FORBIDDEN_SQL_RE = re.compile(
     r"\b(insert|update|delete|drop|alter|create|truncate|merge|grant|revoke|copy|call|execute|vacuum|analyze|attach|detach|replace|upsert|set|show|use)\b",
+    re.IGNORECASE,
+)
+FORBIDDEN_SCHEMA_RE = re.compile(r"\b(information_schema|pg_catalog)\b", re.IGNORECASE)
+FORBIDDEN_TABLE_RE = re.compile(r"\b(users|audit_logs)\b", re.IGNORECASE)
+DANGEROUS_FUNCTION_RE = re.compile(
+    r"\b(pg_sleep|dblink|lo_import|lo_export|pg_read_file|pg_ls_dir|pg_stat_file|pg_terminate_backend|pg_cancel_backend|set_config)\s*\(",
     re.IGNORECASE,
 )
 DATE_RE = re.compile(r"(20\d{2})[-/年](\d{1,2})(?:[-/月](\d{1,2}))?")
@@ -518,6 +524,15 @@ def validate_read_only_sql(sql: str) -> tuple[bool, str, list[str], str]:
     forbidden = FORBIDDEN_SQL_RE.search(normalized)
     if forbidden:
         return False, normalized, [], f"SQL 包含禁止关键字：{forbidden.group(1)}。"
+    forbidden_schema = FORBIDDEN_SCHEMA_RE.search(normalized)
+    if forbidden_schema:
+        return False, normalized, [], f"SQL 访问了不允许的系统 schema：{forbidden_schema.group(1)}。"
+    forbidden_table = FORBIDDEN_TABLE_RE.search(normalized)
+    if forbidden_table:
+        return False, normalized, [], f"SQL 访问了不允许的敏感表：{forbidden_table.group(1)}。"
+    dangerous_function = DANGEROUS_FUNCTION_RE.search(normalized)
+    if dangerous_function:
+        return False, normalized, [], f"SQL 包含不允许的危险函数：{dangerous_function.group(1)}。"
     refs = _extract_table_refs(normalized)
     if " from " in f" {lowered} " and not refs:
         return False, normalized, [], "暂不支持无法识别来源表的复杂 SQL。"
@@ -538,16 +553,31 @@ def _safe_params(params: dict[str, Any] | None) -> dict[str, Any]:
 
 
 def _time_range_from_rows(rows: list[dict[str, Any]], fields: list[str]) -> dict[str, Any]:
-    time_fields = [field for field in fields if field.lower() in {"datetime", "date", "created_at", "updated_at", "started_at", "finished_at", "min_datetime", "max_datetime"}]
+    time_fields = [
+        field
+        for field in fields
+        if field.lower()
+        in {
+            "datetime",
+            "forecast_datetime",
+            "date",
+            "created_at",
+            "updated_at",
+            "started_at",
+            "finished_at",
+            "min_datetime",
+            "max_datetime",
+        }
+    ]
     values: list[str] = []
+    primary_field = time_fields[0] if time_fields else ""
     for row in rows:
-        for field in time_fields:
-            value = row.get(field)
-            if value is not None:
-                values.append(str(value))
+        value = row.get(primary_field) if primary_field else None
+        if value is not None:
+            values.append(str(value))
     if not values:
-        return {"start": None, "end": None, "field": time_fields[0] if time_fields else ""}
-    return {"start": min(values), "end": max(values), "field": time_fields[0] if time_fields else ""}
+        return {"start": None, "end": None, "field": primary_field}
+    return {"start": min(values), "end": max(values), "field": primary_field}
 
 
 def execute_read_only_sql(sql: str, params: dict[str, Any] | None = None, limit: int = 100) -> dict[str, Any]:
@@ -651,6 +681,158 @@ def _extract_tables_from_question(question: str) -> list[str]:
     return [table for _, table in scored[:3]]
 
 
+def _looks_like_catalog_question(question: str) -> bool:
+    compact = re.sub(r"\s+", "", question or "")
+    return any(token in compact for token in ["核心业务表", "有哪些表", "数据目录", "当前数据库有哪些", "数据库有哪些"])
+
+
+def _looks_like_empty_table_question(question: str) -> bool:
+    compact = re.sub(r"\s+", "", question or "")
+    return any(token in compact for token in ["哪些表为空", "哪些表当前为空", "空表", "没有数据的表"])
+
+
+def _looks_like_prediction_readiness_question(question: str) -> bool:
+    compact = re.sub(r"\s+", "", question or "")
+    return "数据" in compact and "支撑预测" in compact
+
+
+def _catalog_query_result() -> dict[str, Any]:
+    datasets = get_data_catalog(include_runtime=False).get("datasets") or []
+    records = [
+        {
+            "table_name": item.get("table_name"),
+            "display_name": item.get("display_name"),
+            "business_domain": item.get("business_domain"),
+            "time_field": item.get("time_field"),
+            "grain": item.get("grain"),
+            "exists": (item.get("runtime") or {}).get("exists"),
+        }
+        for item in datasets
+    ]
+    return jsonable(
+        {
+            "tool": "query_business_data",
+            "available": True,
+            "safe": True,
+            "query_type": "data_catalog_list",
+            "table_name": "p1_data_catalog",
+            "display_name": "P1 数据目录",
+            "fields": ["table_name", "display_name", "business_domain", "time_field", "grain", "exists"],
+            "time_range": {"start": None, "end": None, "field": ""},
+            "query_summary": "读取 P1 数据目录，列出允许 AI 查数的核心业务表及字段口径。",
+            "records": records,
+            "row_count": len(records),
+            "columns": ["table_name", "display_name", "business_domain", "time_field", "grain", "exists"],
+            "not_found_reason": "",
+            "evidence": [
+                {
+                    "source": "p1_data_catalog",
+                    "fields": ["table_name", "display_name", "business_domain", "time_field"],
+                    "time_range": {"start": None, "end": None, "field": ""},
+                    "operation": "catalog_list",
+                    "query_summary": "列出 P1 数据目录核心业务表。",
+                    "available": True,
+                }
+            ],
+        }
+    )
+
+
+def _empty_table_query_result() -> dict[str, Any]:
+    report = get_data_freshness_report()
+    items = report.get("items") or []
+    empty_items = [item for item in items if item.get("available") and int(item.get("row_count") or 0) == 0]
+    records = [
+        {
+            "table_name": item.get("table_name"),
+            "display_name": item.get("display_name"),
+            "status": item.get("status"),
+            "datetime_field": item.get("datetime_field"),
+            "row_count": item.get("row_count"),
+            "not_found_reason": item.get("not_found_reason") or "",
+        }
+        for item in empty_items
+    ]
+    return jsonable(
+        {
+            "tool": "query_business_data",
+            "available": True,
+            "safe": True,
+            "query_type": "empty_table_scan",
+            "table_name": "p1_data_catalog",
+            "display_name": "P1 数据目录",
+            "fields": ["table_name", "display_name", "status", "datetime_field", "row_count", "not_found_reason"],
+            "time_range": {"start": None, "end": None, "field": ""},
+            "query_summary": "扫描 P1 数据目录登记表的新鲜度结果，筛选记录数为 0 的空表。",
+            "records": records,
+            "row_count": len(records),
+            "columns": ["table_name", "display_name", "status", "datetime_field", "row_count", "not_found_reason"],
+            "not_found_reason": "" if records else "未发现已建表且记录数为 0 的空表；未建表或不可用表需查看 freshness 明细。",
+            "freshness_summary": report.get("summary") or {},
+            "evidence": [
+                {
+                    "source": "p1_data_freshness",
+                    "fields": ["table_name", "row_count", "status"],
+                    "time_range": {"start": None, "end": None, "field": ""},
+                    "operation": "empty_table_scan",
+                    "query_summary": "按 row_count=0 判断空表。",
+                    "available": True,
+                }
+            ],
+        }
+    )
+
+
+def _prediction_readiness_result() -> dict[str, Any]:
+    required = ["raw_market", "raw_load", "raw_weather", "model_master_table", "forecast_results"]
+    report = get_data_freshness_report(required)
+    items = report.get("items") or []
+    blocking = [item for item in items if not item.get("available") or int(item.get("row_count") or 0) <= 0]
+    records = [
+        {
+            "table_name": item.get("table_name"),
+            "display_name": item.get("display_name"),
+            "status": item.get("status"),
+            "datetime_field": item.get("datetime_field"),
+            "min_datetime": item.get("min_datetime"),
+            "max_datetime": item.get("max_datetime"),
+            "row_count": item.get("row_count"),
+            "not_found_reason": item.get("not_found_reason") or "",
+        }
+        for item in items
+    ]
+    ready = not blocking
+    return jsonable(
+        {
+            "tool": "query_business_data",
+            "available": True,
+            "safe": True,
+            "query_type": "prediction_readiness",
+            "readiness_status": "ready" if ready else "partial",
+            "table_name": ",".join(required),
+            "display_name": "预测数据支撑检查",
+            "fields": ["table_name", "datetime_field", "min_datetime", "max_datetime", "row_count", "status"],
+            "time_range": {"start": None, "end": None, "field": "per_table_datetime_field"},
+            "query_summary": "检查市场电价、负荷、天气、建模主表和预测结果表的新鲜度与记录数，判断是否具备预测支撑数据。",
+            "records": records,
+            "row_count": len(records),
+            "columns": ["table_name", "display_name", "status", "datetime_field", "min_datetime", "max_datetime", "row_count", "not_found_reason"],
+            "not_found_reason": "" if ready else "部分预测支撑表不可用或记录数为 0，需先完成数据同步/特征工程/预测入库。",
+            "freshness_summary": report.get("summary") or {},
+            "evidence": [
+                {
+                    "source": "p1_prediction_readiness",
+                    "fields": ["table_name", "datetime_field", "min_datetime", "max_datetime", "row_count"],
+                    "time_range": {"start": None, "end": None, "field": "per_table_datetime_field"},
+                    "operation": "prediction_readiness_check",
+                    "query_summary": "检查预测依赖核心表的新鲜度和记录数。",
+                    "available": True,
+                }
+            ],
+        }
+    )
+
+
 def _field_names(table: str) -> list[str]:
     return [str(field.get("field_name")) for field in (CORE_DATASETS.get(table) or {}).get("fields") or [] if field.get("field_name")]
 
@@ -723,6 +905,12 @@ def query_business_data(
     selected_tables = [_clean_identifier(table) for table in (tables or []) if str(table or "").strip()]
     selected_tables = selected_tables or _extract_tables_from_question(question)
     if not selected_tables:
+        if _looks_like_catalog_question(question):
+            return _catalog_query_result()
+        if _looks_like_empty_table_question(question):
+            return _empty_table_query_result()
+        if _looks_like_prediction_readiness_question(question):
+            return _prediction_readiness_result()
         return {
             "tool": "query_business_data",
             "available": False,
@@ -734,6 +922,18 @@ def query_business_data(
             "evidence": [],
         }
     table = selected_tables[0]
+    if table in {"users", "audit_logs"}:
+        return {
+            "tool": "query_business_data",
+            "available": False,
+            "safe": False,
+            "table_name": table,
+            "fields": [],
+            "time_range": {"start": None, "end": None, "field": ""},
+            "query_summary": f"请求查询敏感表 {table}，已在 AI 查数入口拒绝执行。",
+            "not_found_reason": f"{table} 属于敏感/管理表，不允许通过 AI 查数访问。",
+            "evidence": [{"source": table, "available": False, "operation": "sensitive_table_block"}],
+        }
     if table not in CORE_DATASETS:
         return {
             "tool": "query_business_data",

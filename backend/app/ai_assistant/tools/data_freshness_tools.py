@@ -149,6 +149,7 @@ def _database_table_freshness(table: str) -> dict[str, Any]:
         "row_count": int(row.get("row_count") or 0),
         "missing_count": int(row.get("missing_count") or 0),
         "columns": columns[:20],
+        "query_summary": "按时间字段执行 min/max/count 新鲜度检查。",
         "evidence": [{"source": table, "field": dt_col or "", "operation": "min/max/count"}],
     }
 
