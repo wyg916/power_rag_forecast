@@ -3,16 +3,18 @@
 生成日期：2026-06-12  
 分支：`p1-data-trust-ai-query`  
 P1 基线提交：`f536e7a feat: add P1 data trust and AI query capabilities`  
+P1.1 加固提交：`65c34bb test: validate and harden P1 data query runtime`  
 远程仓库：`https://github.com/wyg916/power_rag_forecast.git`
 
 ## 1. Git 与推送状态
 
 - 当前分支：`p1-data-trust-ai-query`
 - 当前 P1 基线 commit：`f536e7a`
+- P1.1 加固 commit：`65c34bb`
 - 远程分支：`origin/p1-data-trust-ai-query`
-- 推送状态：已执行 `git push -u origin p1-data-trust-ai-query`，远程分支创建成功。
+- 推送状态：已执行 `git push -u origin p1-data-trust-ai-query` 创建远程分支，并已执行 `git push` 将 `65c34bb` 推送到 `origin/p1-data-trust-ai-query`。
 - 未触碰 `main`，未强推，未覆盖远程主分支。
-- 本报告记录的是 P1.1 验收与加固结果；P1.1 加固提交会在本报告更新后生成并继续推送到同一分支。
+- 本报告记录的是 P1.1 验收与加固结果；报告元数据补充提交会继续推送到同一分支。
 
 ## 2. API 运行态验收
 
@@ -160,6 +162,6 @@ npm run build
 - SQL 安全拦截覆盖敏感表、写操作、多语句、系统 schema、危险函数和最大返回行数。
 - AI 查数回答能说明表名、字段、时间范围、查询摘要和查不到原因。
 - 前端数据目录页签、字段详情、新鲜度、SQL 查询、失败提示和 401 处理已验收。
-- P1 分支已成功推送到远程，P1.1 加固提交完成后可继续推送同一分支。
+- P1 分支已成功推送到远程，P1.1 加固提交 `65c34bb` 已推送到同一分支。
 
 进入 P2 时仍需遵守边界：不要回退 P1 安全拦截，不要开放写 SQL，不要让 AI 编造未查询到的数据。
