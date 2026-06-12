@@ -1,0 +1,1335 @@
+{
+  "generated_at": "2026-06-09 12:07:01",
+  "status": "pass",
+  "compose_config_ok": true,
+  "container_status_text": "NAME                               IMAGE                            COMMAND                  SERVICE         CREATED        STATUS                   PORTS\npower-trading-ai-backend-1         power-trading-ai-backend         \"/app/docker/backend…\"   backend         11 hours ago   Up 8 minutes (healthy)   0.0.0.0:8000->8000/tcp\npower-trading-ai-celery_worker-1   power-trading-ai-celery_worker   \"/app/docker/backend…\"   celery_worker   11 hours ago   Up 8 minutes             8000/tcp\npower-trading-ai-frontend-1        power-trading-ai-frontend        \"docker-entrypoint.s…\"   frontend        11 hours ago   Up 8 minutes (healthy)   0.0.0.0:8080->80/tcp\npower-trading-ai-postgres-1        postgres:16-alpine               \"docker-entrypoint.s…\"   postgres        13 hours ago   Up 8 minutes (healthy)   0.0.0.0:5433->5432/tcp\npower-trading-ai-redis-1           redis:7-alpine                   \"docker-entrypoint.s…\"   redis           13 hours ago   Up 8 minutes (healthy)   0.0.0.0:6380->6379/tcp\n",
+  "health_checks": {
+    "backend_health": {
+      "ok": true,
+      "status_code": 200,
+      "body": {
+        "ok": true,
+        "platform": "售电交易 AI 辅助决策平台",
+        "version": "v2.11.2"
+      }
+    },
+    "db_health": {
+      "ok": true,
+      "status_code": 200,
+      "body": {
+        "ok": true,
+        "active": "postgresql",
+        "message": "PostgreSQL 主库连接正常。"
+      }
+    },
+    "tasks_health": {
+      "ok": true,
+      "status_code": 200,
+      "body": {
+        "ok": true,
+        "execution_mode": "celery",
+        "celery_available": true,
+        "message": "ok"
+      }
+    },
+    "frontend_health": {
+      "ok": true,
+      "status_code": 200,
+      "body": "ok\n"
+    },
+    "frontend_proxy_tasks_health": {
+      "ok": true,
+      "status_code": 200,
+      "body": {
+        "ok": true,
+        "execution_mode": "celery",
+        "celery_available": true,
+        "message": "ok"
+      }
+    },
+    "frontend_root": {
+      "ok": true,
+      "status_code": 200,
+      "body": "<!doctype html>\n<html lang=\"zh-CN\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" />\n    <title>售电交易 AI 辅助决策平台</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-BE11Bxwh.js\"></script>\n    <link rel=\"modulepreload\" crossorigin href=\"/assets/vendor-antd-D3RKmqKf.js\">\n    <link rel=\"stylesheet\" crossorigin href=\"/assets/index-FsapERbo.css\">\n  </head>\n  <b"
+    },
+    "tasks_list": {
+      "ok": true,
+      "status_code": 200,
+      "body": {
+        "tasks": [
+          {
+            "task_id": "runtime_cancel_running_3557137b84",
+            "run_id": "20260609_120658",
+            "kind": "runtime_check",
+            "status": "cancel_requested",
+            "started_at": "2026-06-09 12:06:58",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 10.0,
+            "message": "cancel request recorded",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:06:58.401969",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_cancel_pending_123dd1e176",
+            "run_id": "20260609_120658",
+            "kind": "runtime_check",
+            "status": "cancelled",
+            "started_at": "2026-06-09 12:06:58",
+            "ended_at": "2026-06-09 12:06:58",
+            "finished_at": "2026-06-09 12:06:58",
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "cancelled before start",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:06:58.326100",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_retry_5875855a59",
+            "run_id": "20260609_120658",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-09 12:06:58",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "retry source",
+            "progress": 100.0,
+            "message": "retry count incremented",
+            "created_by": "system",
+            "retry_count": 1,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:06:58.213529",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_failed_19c80b98db",
+            "run_id": "20260609_120658",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-09 12:06:58",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "runtime check failure",
+            "progress": 100.0,
+            "message": "failed",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:06:58.152747",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_success_85f595bf72",
+            "run_id": "20260609_120658",
+            "kind": "runtime_check",
+            "status": "success",
+            "started_at": "2026-06-09 12:06:58",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "runtime_check",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:06:58.099168",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_pending_17c8b18ca4",
+            "run_id": "20260609_120657",
+            "kind": "runtime_check",
+            "status": "pending",
+            "started_at": "2026-06-09 12:06:57",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "pending",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:06:58.035454",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_cancel_running_46268b72fb",
+            "run_id": "20260609_120511",
+            "kind": "runtime_check",
+            "status": "cancel_requested",
+            "started_at": "2026-06-09 12:05:11",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 10.0,
+            "message": "cancel request recorded",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:05:11.152098",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_cancel_pending_8504e220cd",
+            "run_id": "20260609_120511",
+            "kind": "runtime_check",
+            "status": "cancelled",
+            "started_at": "2026-06-09 12:05:11",
+            "ended_at": "2026-06-09 12:05:11",
+            "finished_at": "2026-06-09 12:05:11",
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "cancelled before start",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:05:11.091916",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_success_6b7ed530b7",
+            "run_id": "20260609_120510",
+            "kind": "runtime_check",
+            "status": "success",
+            "started_at": "2026-06-09 12:05:10",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "runtime_check",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:05:10.919757",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_retry_bb352bdf71",
+            "run_id": "20260609_120510",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-09 12:05:10",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "retry source",
+            "progress": 100.0,
+            "message": "retry count incremented",
+            "created_by": "system",
+            "retry_count": 1,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:05:11.032823",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_failed_37bde5a125",
+            "run_id": "20260609_120510",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-09 12:05:10",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "runtime check failure",
+            "progress": 100.0,
+            "message": "failed",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:05:10.974451",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_pending_f1c25dbd49",
+            "run_id": "20260609_120510",
+            "kind": "runtime_check",
+            "status": "pending",
+            "started_at": "2026-06-09 12:05:10",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "pending",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:05:10.862813",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_success_9583c5f8b4",
+            "run_id": "20260609_120107",
+            "kind": "runtime_check",
+            "status": "success",
+            "started_at": "2026-06-09 12:01:07",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "runtime_check",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:01:07.460369",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_failed_0f6cc922c5",
+            "run_id": "20260609_120107",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-09 12:01:07",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "runtime check failure",
+            "progress": 100.0,
+            "message": "failed",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:01:07.511208",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_retry_3ce3993e9b",
+            "run_id": "20260609_120107",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-09 12:01:07",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "retry source",
+            "progress": 100.0,
+            "message": "retry count incremented",
+            "created_by": "system",
+            "retry_count": 1,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:01:07.571523",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_cancel_pending_2fe633e809",
+            "run_id": "20260609_120107",
+            "kind": "runtime_check",
+            "status": "cancelled",
+            "started_at": "2026-06-09 12:01:07",
+            "ended_at": "2026-06-09 12:01:07",
+            "finished_at": "2026-06-09 12:01:07",
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "cancelled before start",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:01:07.626774",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_cancel_running_5976e9c3cf",
+            "run_id": "20260609_120107",
+            "kind": "runtime_check",
+            "status": "cancel_requested",
+            "started_at": "2026-06-09 12:01:07",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 10.0,
+            "message": "cancel request recorded",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:01:07.693473",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_pending_c107f3ec4d",
+            "run_id": "20260609_120106",
+            "kind": "runtime_check",
+            "status": "pending",
+            "started_at": "2026-06-09 12:01:06",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "pending",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-09 12:01:07.385266",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "task_46da5befe385",
+            "run_id": "20260609_004434",
+            "kind": "report_generate",
+            "status": "success",
+            "started_at": "2026-06-09 00:44:34",
+            "ended_at": "2026-06-09 00:46:51.243097",
+            "finished_at": "2026-06-09 00:46:51.243097",
+            "duration_seconds": 129.464,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "/app/自动化输出/logs/celery_task_report_only_20260609_004434.log",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "7d1e6b1c6ee3",
+            "celery_task_id": "f9f00b5c-f4e2-4f44-bb34-823b7a5e9696",
+            "updated_at": "2026-06-09 00:46:51.871946",
+            "payload": {
+              "run_id": "docker_runtime_smoke_3"
+            },
+            "command": [],
+            "metadata": {},
+            "log_path": ""
+          },
+          {
+            "task_id": "task_0015a1ee40d6",
+            "run_id": "20260609_004434",
+            "kind": "embedding_refresh",
+            "status": "success",
+            "started_at": "2026-06-09 00:44:34",
+            "ended_at": "2026-06-09 00:44:40.868658",
+            "finished_at": "2026-06-09 00:44:40.868658",
+            "duration_seconds": 0.126,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "kb_chunks.embedding_json",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "7d1e6b1c6ee3",
+            "celery_task_id": "5c5237bb-ed03-4179-a10e-118a0864ece8",
+            "updated_at": "2026-06-09 00:44:40.880835",
+            "payload": {},
+            "command": [],
+            "metadata": {
+              "result": {
+                "result_ref": "kb_chunks.embedding_json",
+                "embedding_refresh": {
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "checked": 36,
+                  "updated": 0,
+                  "version": "hash-v1",
+                  "provider": "local_hash",
+                  "available": true
+                },
+                "embedding_backfill": {
+                  "updated": 0,
+                  "available": true
+                }
+              }
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "task_d6969d5a1943",
+            "run_id": "20260609_004431",
+            "kind": "knowledge_import",
+            "status": "success",
+            "started_at": "2026-06-09 00:44:31",
+            "ended_at": "2026-06-09 00:44:40.701583",
+            "finished_at": "2026-06-09 00:44:40.701583",
+            "duration_seconds": 4.881,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "kb_documents/kb_chunks",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "7d1e6b1c6ee3",
+            "celery_task_id": "484f2352-644d-4171-ad00-417a27e47021",
+            "updated_at": "2026-06-09 00:44:40.706003",
+            "payload": {},
+            "command": [],
+            "metadata": {
+              "result": {
+                "stats": {
+                  "chunks": 36,
+                  "available": true,
+                  "documents": 33
+                },
+                "failed": [],
+                "available": true,
+                "result_ref": "kb_documents/kb_chunks",
+                "embedding_refresh": {
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "checked": 36,
+                  "updated": 0,
+                  "version": "hash-v1",
+                  "provider": "local_hash",
+                  "available": true
+                },
+                "indexed_documents": 33,
+                "embedding_backfill": {
+                  "updated": 0,
+                  "available": true
+                }
+              }
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "task_55c22907b227",
+            "run_id": "20260609_003429",
+            "kind": "report_generate",
+            "status": "failed",
+            "started_at": "2026-06-09 00:34:29",
+            "ended_at": "2026-06-09 00:36:00.813888",
+            "finished_at": "2026-06-09 00:36:00.813888",
+            "duration_seconds": 75.244,
+            "error_message": "returncode=1",
+            "progress": 100.0,
+            "message": "failed",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "/app/自动化输出/logs/celery_task_report_only_20260609_003429.log",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "9b56e15b4a0c",
+            "celery_task_id": "bfc196b4-6911-400a-9d12-67d1398a89e5",
+            "updated_at": "2026-06-09 00:36:01.168947",
+            "payload": {
+              "run_id": "docker_runtime_smoke_2"
+            },
+            "command": [],
+            "metadata": {},
+            "log_path": ""
+          },
+          {
+            "task_id": "task_44910e2db4b5",
+            "run_id": "20260609_003429",
+            "kind": "embedding_refresh",
+            "status": "success",
+            "started_at": "2026-06-09 00:34:29",
+            "ended_at": "2026-06-09 00:34:45.514107",
+            "finished_at": "2026-06-09 00:34:45.514107",
+            "duration_seconds": 0.035,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "kb_chunks.embedding_json",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "9b56e15b4a0c",
+            "celery_task_id": "612599ee-0593-49eb-8cd3-3c601e6e156c",
+            "updated_at": "2026-06-09 00:34:45.519125",
+            "payload": {},
+            "command": [],
+            "metadata": {
+              "result": {
+                "result_ref": "kb_chunks.embedding_json",
+                "embedding_refresh": {
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "checked": 36,
+                  "updated": 0,
+                  "version": "hash-v1",
+                  "provider": "local_hash",
+                  "available": true
+                },
+                "embedding_backfill": {
+                  "updated": 0,
+                  "available": true
+                }
+              }
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "task_1c324dd6c767",
+            "run_id": "20260609_003415",
+            "kind": "knowledge_import",
+            "status": "success",
+            "started_at": "2026-06-09 00:34:15",
+            "ended_at": "2026-06-09 00:34:45.425254",
+            "finished_at": "2026-06-09 00:34:45.425254",
+            "duration_seconds": 14.913,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "kb_documents/kb_chunks",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "9b56e15b4a0c",
+            "celery_task_id": "1cabba25-3339-47ec-8cca-58a91b11f26a",
+            "updated_at": "2026-06-09 00:34:45.429882",
+            "payload": {},
+            "command": [],
+            "metadata": {
+              "result": {
+                "stats": {
+                  "chunks": 36,
+                  "available": true,
+                  "documents": 33
+                },
+                "failed": [],
+                "available": true,
+                "result_ref": "kb_documents/kb_chunks",
+                "embedding_refresh": {
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "checked": 36,
+                  "updated": 0,
+                  "version": "hash-v1",
+                  "provider": "local_hash",
+                  "available": true
+                },
+                "indexed_documents": 33,
+                "embedding_backfill": {
+                  "updated": 0,
+                  "available": true
+                }
+              }
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "task_e9fb0e59d639",
+            "run_id": "20260608_235007",
+            "kind": "embedding_refresh",
+            "status": "success",
+            "started_at": "2026-06-08 23:50:07",
+            "ended_at": "2026-06-08 23:50:11.092303",
+            "finished_at": "2026-06-08 23:50:11.092303",
+            "duration_seconds": 0.058,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "kb_chunks.embedding_json",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "5cf584114198",
+            "celery_task_id": "894cbbab-e19d-4b4b-9d93-4bec89b1cb15",
+            "updated_at": "2026-06-08 23:50:11.111528",
+            "payload": {},
+            "command": [],
+            "metadata": {
+              "result": {
+                "result_ref": "kb_chunks.embedding_json",
+                "embedding_refresh": {
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "checked": 36,
+                  "updated": 0,
+                  "version": "hash-v1",
+                  "provider": "local_hash",
+                  "available": true
+                },
+                "embedding_backfill": {
+                  "updated": 0,
+                  "available": true
+                }
+              }
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "task_d130777da715",
+            "run_id": "20260608_235007",
+            "kind": "report_generate",
+            "status": "failed",
+            "started_at": "2026-06-08 23:50:07",
+            "ended_at": "2026-06-08 23:50:18.585735",
+            "finished_at": "2026-06-08 23:50:18.585735",
+            "duration_seconds": 7.349,
+            "error_message": "returncode=1",
+            "progress": 100.0,
+            "message": "failed",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "/app/自动化输出/logs/celery_task_report_only_20260608_235007.log",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "5cf584114198",
+            "celery_task_id": "f8fbeb59-368c-419e-8dc9-bb876340d7dc",
+            "updated_at": "2026-06-08 23:50:18.842168",
+            "payload": {
+              "run_id": "docker_runtime_smoke"
+            },
+            "command": [],
+            "metadata": {},
+            "log_path": ""
+          },
+          {
+            "task_id": "task_500f07f60f35",
+            "run_id": "20260608_235006",
+            "kind": "knowledge_import",
+            "status": "success",
+            "started_at": "2026-06-08 23:50:06",
+            "ended_at": "2026-06-08 23:50:10.974403",
+            "finished_at": "2026-06-08 23:50:10.974403",
+            "duration_seconds": 3.147,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "kb_documents/kb_chunks",
+            "execution_mode": "celery",
+            "cancel_requested": false,
+            "worker_id": "5cf584114198",
+            "celery_task_id": "4723a297-667b-444c-a387-2f1f8a5625c2",
+            "updated_at": "2026-06-08 23:50:10.978572",
+            "payload": {},
+            "command": [],
+            "metadata": {
+              "result": {
+                "stats": {
+                  "chunks": 36,
+                  "available": true,
+                  "documents": 33
+                },
+                "failed": [],
+                "available": true,
+                "result_ref": "kb_documents/kb_chunks",
+                "embedding_refresh": {
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "checked": 36,
+                  "updated": 0,
+                  "version": "hash-v1",
+                  "provider": "local_hash",
+                  "available": true
+                },
+                "indexed_documents": 33,
+                "embedding_backfill": {
+                  "updated": 0,
+                  "available": true
+                }
+              }
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_cancel_pending_e816b4f94b",
+            "run_id": "20260608_234833",
+            "kind": "runtime_check",
+            "status": "cancelled",
+            "started_at": "2026-06-08 23:48:33",
+            "ended_at": "2026-06-08 23:48:33",
+            "finished_at": "2026-06-08 23:48:33",
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "cancelled before start",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-08 23:48:33.068176",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_cancel_running_4cd3f70d64",
+            "run_id": "20260608_234833",
+            "kind": "runtime_check",
+            "status": "cancel_requested",
+            "started_at": "2026-06-08 23:48:33",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 10.0,
+            "message": "cancel request recorded",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": true,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-08 23:48:33.153394",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_success_ce53a5bf75",
+            "run_id": "20260608_234832",
+            "kind": "runtime_check",
+            "status": "success",
+            "started_at": "2026-06-08 23:48:32",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 100.0,
+            "message": "success",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "runtime_check",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-08 23:48:32.828048",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_failed_6c97ae2a0a",
+            "run_id": "20260608_234832",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-08 23:48:32",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "runtime check failure",
+            "progress": 100.0,
+            "message": "failed",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-08 23:48:32.923942",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_retry_fe75cff29f",
+            "run_id": "20260608_234832",
+            "kind": "runtime_check",
+            "status": "failed",
+            "started_at": "2026-06-08 23:48:32",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "retry source",
+            "progress": 100.0,
+            "message": "retry count incremented",
+            "created_by": "system",
+            "retry_count": 1,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-08 23:48:32.998764",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          },
+          {
+            "task_id": "runtime_pending_8f4f4eb1aa",
+            "run_id": "20260608_234831",
+            "kind": "runtime_check",
+            "status": "pending",
+            "started_at": "2026-06-08 23:48:31",
+            "ended_at": null,
+            "finished_at": null,
+            "duration_seconds": null,
+            "error_message": "",
+            "progress": 0.0,
+            "message": "pending",
+            "created_by": "system",
+            "retry_count": 0,
+            "result_ref": "",
+            "execution_mode": "local_thread",
+            "cancel_requested": false,
+            "worker_id": "",
+            "celery_task_id": "",
+            "updated_at": "2026-06-08 23:48:32.649709",
+            "payload": {
+              "source": "check_task_center_runtime"
+            },
+            "command": [],
+            "metadata": {
+              "runtime_check": true
+            },
+            "log_path": ""
+          }
+        ]
+      }
+    },
+    "knowledge_stats": {
+      "ok": true,
+      "status_code": 200,
+      "body": {
+        "available": true,
+        "documents": 33,
+        "chunks": 36
+      }
+    },
+    "reports_latest": {
+      "ok": true,
+      "status_code": 200,
+      "body": {
+        "report_id": "latest",
+        "run_id": "latest",
+        "available": true,
+        "report_path": "/app/自动化输出/current/电价智能分析综合报告.docx",
+        "generated_at": "2026-06-09 00:46:34.556156",
+        "fallback_used": false,
+        "summary": {},
+        "source": "/app/自动化输出/current"
+      }
+    }
+  },
+  "postgres_runtime": {
+    "status": "pass",
+    "runtime_check_available": true
+  },
+  "db_tables": {
+    "alembic_version": [
+      "0005_task_runtime_observability"
+    ],
+    "core_tables": {
+      "task_runs": true,
+      "task_logs": true,
+      "audit_logs": true,
+      "ai_traces": true,
+      "kb_documents": true,
+      "kb_chunks": true,
+      "raw_market": true,
+      "raw_weather": true,
+      "raw_load": true,
+      "raw_renewable": true,
+      "feature_importance": true
+    },
+    "task_runtime_columns": {
+      "execution_mode": true,
+      "cancel_requested": true,
+      "worker_id": true,
+      "celery_task_id": true
+    },
+    "row_counts": {
+      "task_runs": 33,
+      "task_logs": 33,
+      "audit_logs": 9,
+      "ai_traces": 0,
+      "kb_documents": 33,
+      "kb_chunks": 36,
+      "raw_market": 0,
+      "raw_weather": 0,
+      "raw_load": 0,
+      "raw_renewable": 0,
+      "feature_importance": 0
+    }
+  },
+  "redis_check": {
+    "generated_at": "2026-06-09 12:06:48",
+    "redis_url": "redis://redis:6379/0",
+    "status": "pass",
+    "message": "redis ping ok"
+  },
+  "celery_check": {
+    "generated_at": "2026-06-09 12:06:49",
+    "broker_url": "redis://redis:6379/0",
+    "status": "pass",
+    "worker_count": 1,
+    "workers": [
+      {
+        "celery@7d1e6b1c6ee3": {
+          "ok": "pong"
+        }
+      }
+    ],
+    "health_task_status": "pass",
+    "health_task_result": {
+      "status": "ok",
+      "worker_id": "7d1e6b1c6ee3",
+      "checked_at": "2026-06-09 12:06:54"
+    },
+    "message": "celery worker health task completed"
+  },
+  "task_center_runtime": {
+    "generated_at": "2026-06-09 12:06:57",
+    "status": "pass",
+    "task_execution_mode": "celery",
+    "repository_available": true,
+    "celery_available": true,
+    "local_simulation": false,
+    "checks": [
+      {
+        "name": "create_pending_task",
+        "status": "pass",
+        "message": "runtime_pending_17c8b18ca4"
+      },
+      {
+        "name": "pending_running_success_flow",
+        "status": "pass",
+        "message": "runtime_success_85f595bf72"
+      },
+      {
+        "name": "failure_records_error",
+        "status": "pass",
+        "message": "runtime_failed_19c80b98db"
+      },
+      {
+        "name": "retry_count_update",
+        "status": "pass",
+        "message": "runtime_retry_5875855a59"
+      },
+      {
+        "name": "cancel_pending_task",
+        "status": "pass",
+        "message": "runtime_cancel_pending_123dd1e176"
+      },
+      {
+        "name": "cancel_running_task",
+        "status": "pass",
+        "message": "runtime_cancel_running_3557137b84"
+      }
+    ],
+    "warnings": []
+  },
+  "latest_task_outcomes": {
+    "runtime_check": {
+      "task_id": "runtime_cancel_running_3557137b84",
+      "status": "cancel_requested",
+      "execution_mode": "local_thread",
+      "result_ref": "",
+      "error_message": "",
+      "embedding_provider": null,
+      "embedding_model": null
+    },
+    "report_generate": {
+      "task_id": "task_46da5befe385",
+      "status": "success",
+      "execution_mode": "celery",
+      "result_ref": "/app/自动化输出/logs/celery_task_report_only_20260609_004434.log",
+      "error_message": "",
+      "embedding_provider": null,
+      "embedding_model": null
+    },
+    "embedding_refresh": {
+      "task_id": "task_0015a1ee40d6",
+      "status": "success",
+      "execution_mode": "celery",
+      "result_ref": "kb_chunks.embedding_json",
+      "error_message": "",
+      "embedding_provider": "local_hash",
+      "embedding_model": "local-hash-bge-small-zh-v1.5-compatible"
+    },
+    "knowledge_import": {
+      "task_id": "task_d6969d5a1943",
+      "status": "success",
+      "execution_mode": "celery",
+      "result_ref": "kb_documents/kb_chunks",
+      "error_message": "",
+      "embedding_provider": "local_hash",
+      "embedding_model": "local-hash-bge-small-zh-v1.5-compatible"
+    }
+  },
+  "knowledge_task": {
+    "task_id": "task_d6969d5a1943",
+    "status": "success",
+    "execution_mode": "celery",
+    "result_ref": "kb_documents/kb_chunks",
+    "error_message": "",
+    "embedding_provider": "local_hash",
+    "embedding_model": "local-hash-bge-small-zh-v1.5-compatible"
+  },
+  "embedding_refresh_task": {
+    "task_id": "task_0015a1ee40d6",
+    "status": "success",
+    "execution_mode": "celery",
+    "result_ref": "kb_chunks.embedding_json",
+    "error_message": "",
+    "embedding_provider": "local_hash",
+    "embedding_model": "local-hash-bge-small-zh-v1.5-compatible"
+  },
+  "report_generate_task": {
+    "task_id": "task_46da5befe385",
+    "status": "success",
+    "execution_mode": "celery",
+    "result_ref": "/app/自动化输出/logs/celery_task_report_only_20260609_004434.log",
+    "error_message": "",
+    "embedding_provider": null,
+    "embedding_model": null
+  },
+  "frontend_access": {
+    "root_ok": true,
+    "api_proxy_ok": true,
+    "tasks_api_ok": true,
+    "knowledge_api_ok": true,
+    "reports_api_ok": true
+  },
+  "bge_embedding_container_status": {
+    "embedding_refresh_provider": "local_hash",
+    "embedding_refresh_model": "local-hash-bge-small-zh-v1.5-compatible",
+    "note": "Compose smoke test used the default lightweight local/hash embedding path. Real BGE requires mounting the model directory into the container and enabling sentence_transformers runtime/config; no BGE weights were baked into the image."
+  },
+  "known_risks": [
+    "AUTH_REQUIRED was set to 0 only in generated .env.docker for this runtime smoke test because formal JWT/login is a later item.",
+    "Celery worker starts successfully but imports are relatively heavy; health checks should allow enough startup time.",
+    "BGE model directory is not mounted in this smoke deployment, so embedding refresh uses configured fallback rather than real BGE.",
+    "Celery worker currently runs as root inside python:3.11-slim image; production should add a non-root user."
+  ],
+  "secret_scan": {
+    "api_key_prefix": 0,
+    "deepseek_api_key_assignment": 0,
+    "openai_api_key_assignment": 0,
+    "authorization_bearer": 0,
+    "database_url_assignment": 0,
+    "postgres_url_with_password": 0,
+    "postgres_password_assignment": 0
+  },
+  "secret_leak_found": false
+}

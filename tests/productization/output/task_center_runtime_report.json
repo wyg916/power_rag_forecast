@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-06-12 19:54:22",
+  "status": "pass",
+  "task_execution_mode": "auto",
+  "repository_available": true,
+  "celery_available": false,
+  "local_simulation": false,
+  "checks": [
+    {
+      "name": "create_pending_task",
+      "status": "pass",
+      "message": "runtime_pending_05c7158175"
+    },
+    {
+      "name": "pending_running_success_flow",
+      "status": "pass",
+      "message": "runtime_success_a6898f917f"
+    },
+    {
+      "name": "failure_records_error",
+      "status": "pass",
+      "message": "runtime_failed_1e51dc508b"
+    },
+    {
+      "name": "retry_count_update",
+      "status": "pass",
+      "message": "runtime_retry_1631398d5b"
+    },
+    {
+      "name": "cancel_pending_task",
+      "status": "pass",
+      "message": "runtime_cancel_pending_21e8cb74c6"
+    },
+    {
+      "name": "cancel_running_task",
+      "status": "pass",
+      "message": "runtime_cancel_running_c8cb3b3d3c"
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,119 @@
+name: power-trading-ai
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-power_trading}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      TZ: Asia/Shanghai
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-power_trading}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-power_trading}
+      REDIS_URL: redis://redis:6379/0
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-0}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_API_MODE: ${LLM_API_MODE:-native}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen3:4b}
+      LOCAL_LLM_BASE_URL: ${LOCAL_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-qwen3:4b}
+      AI_ASSISTANT_REQUIRE_EVIDENCE: ${AI_ASSISTANT_REQUIRE_EVIDENCE:-1}
+      AI_ASSISTANT_ALLOW_EXTERNAL_FACTS: ${AI_ASSISTANT_ALLOW_EXTERNAL_FACTS:-0}
+      TZ: Asia/Shanghai
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./output:/app/output
+      - ./自动化输出:/app/自动化输出
+      - ./全流程预测结果数据存放:/app/全流程预测结果数据存放
+      - ./electricity_tariff_output:/app/electricity_tariff_output:ro
+      - ./knowledge_base:/app/knowledge_base
+      - ./model_artifacts:/app/model_artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5).read()"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    command: ["celery", "-A", "backend.app.workers.celery_app.celery_app", "worker", "--loglevel=INFO", "--pool=solo"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-power_trading}
+      REDIS_URL: redis://redis:6379/0
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-0}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./output:/app/output
+      - ./自动化输出:/app/自动化输出
+      - ./全流程预测结果数据存放:/app/全流程预测结果数据存放
+      - ./electricity_tariff_output:/app/electricity_tariff_output:ro
+      - ./knowledge_base:/app/knowledge_base
+      - ./model_artifacts:/app/model_artifacts
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8000
+      TZ: Asia/Shanghai
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+
+volumes:
+  postgres_data:
+  redis_data:

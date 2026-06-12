@@ -1,0 +1,70 @@
+{
+  "version": "v2.1-baseline",
+  "description": "AI助手固定评测集中 RAG 命中文档的辅助期望配置。脚本会与问题文件中的 expected_titles_any 合并使用。",
+  "top_k": 5,
+  "category_expected_titles": {
+    "price_forecast": [
+      "price_forecast_logic",
+      "电价预测逻辑",
+      "prediction_interval_explanation",
+      "model_pipeline_explanation",
+      "load_weather_price_relationship"
+    ],
+    "load_weather": [
+      "load_weather_price_relationship",
+      "天气",
+      "负荷",
+      "price_forecast_logic",
+      "model_pipeline_explanation"
+    ],
+    "spike_risk": [
+      "peak_spike_risk_explanation",
+      "尖峰风险",
+      "risk_level_rules",
+      "high_price_risk_strategy",
+      "price_forecast_logic"
+    ],
+    "model_explain": [
+      "forecast_error_explanation",
+      "prediction_interval_explanation",
+      "model_pipeline_explanation",
+      "model_retrain_rules",
+      "risk_level_rules"
+    ],
+    "trading_strategy": [
+      "high_price_risk_strategy",
+      "low_price_opportunity_strategy",
+      "peak_valley_spread_strategy",
+      "abnormal_price_response",
+      "trading_strategy"
+    ],
+    "system_usage": [
+      "system_overview",
+      "data_fields_dictionary",
+      "ai_assistant_answer_rules",
+      "model_pipeline_explanation"
+    ],
+    "daily_chat": []
+  },
+  "question_overrides": {
+    "spike_001": [
+      "peak_spike_risk_explanation",
+      "尖峰概率",
+      "尖峰风险"
+    ],
+    "market_001": [
+      "pjm_day_ahead_market",
+      "day_ahead_vs_real_time",
+      "日前市场"
+    ],
+    "market_002": [
+      "pjm_lmp_price_mechanism",
+      "LMP",
+      "节点电价"
+    ],
+    "system_001": [
+      "system_overview",
+      "系统概览"
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+version: 1
+
+hardware:
+  preferred_text_model: qwen3:4b
+  optional_upgrade_model: qwen3:8b
+  rejected_default_models:
+    - qwen3:14b
+    - qwen3:30b
+  rationale: >
+    当前机器为 GTX 1660 Ti 6GB + 16GB RAM + i7-9750H。
+    默认模型使用 qwen3:4b，优先保证本地常驻可用性、中文报告生成稳定性和较低内存压力。
+    qwen3:8b 仅作为可选升级方案。
+
+llm:
+  provider: ollama
+  api_mode: native
+  base_url: http://localhost:11434
+  api_key: ""
+  model: qwen3:4b
+  temperature: 0.2
+  max_tokens: 2200
+  timeout_seconds: 240
+  auto_pull: true
+  structured_json: true
+
+ai_assistant:
+  phase: stage1_dify_qwen_bridge
+  default_scenario: power_trading
+  default_user_role: trader
+  default_answer_style: analysis
+  require_evidence: true
+  allow_external_facts: false
+
+dify:
+  enabled: false
+  base_url: http://127.0.0.1
+  api_key: ""
+  user: web_user
+  timeout_seconds: 60
+
+local_model_gateway:
+  enabled: true
+  api_base: /api/model-gateway
+  base_url: http://localhost:11434/v1
+  model: qwen3:4b
+  api_key: ""
+  timeout_seconds: 120
+
+database:
+  enabled: true
+  connection_name: test
+  host: localhost
+  port: 3306
+  user: root
+  password: ""
+  database: dianli-yuce
+  charset: utf8mb4
+  connect_timeout: 10
+
+market:
+  pjm_subscription_key: ""
+  pjm_auto_discover_subscription_key: true
+  pjm_settings_url: https://dataminer2.pjm.com/config/settings.json
+  pjm_node_id: 34964545
+  pjm_node_name: DOM
+  pjm_region: DOM
+  weather_lat: 37.5407
+  weather_lon: -77.4360
+  weather_point_name: Richmond, Virginia
+  timezone: America/New_York
+
+model_learning:
+  active_artifact_path: ""
+  bias_correction_enabled: true
+  min_error_memory_samples: 10
+  max_bias_adjustment: 10.0
+
+paths:
+  engine_script: 高峰尖刺增强版_电力市场电价预测与智能分析系统_v4_fix1.py
+  data_dir: output
+  result_dir: 结果-3
+  result_table_dir: 结果-3/结果表
+  automation_dir: 自动化输出
+  current_dir: 自动化输出/current
+  archive_dir: 自动化输出/archive
+  dispatch_dir: 自动化输出/dispatch
+  log_dir: 自动化输出/logs
+  final_output_root_dir: E:/智能运营分析项目/全流程预测结果数据存放
+
+dispatch:
+  enable_local_archive: true
+  enable_wecom_webhook: false
+  enable_dingtalk_webhook: false
+  enable_feishu_webhook: false
+  wecom_webhook_env: WEWORK_WEBHOOK_URL
+  dingtalk_webhook_env: DINGTALK_WEBHOOK_URL
+  feishu_webhook_env: FEISHU_WEBHOOK_URL

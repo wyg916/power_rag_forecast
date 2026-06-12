@@ -1,0 +1,743 @@
+{
+  "report_name": "smoke_bge_reranker_after_reindex",
+  "generated_at": "2026-06-06 12:59:04",
+  "base_url": "http://127.0.0.1:8001",
+  "model_provider": "auto",
+  "answer_style": "professional_brief",
+  "questions_file": "E:\\智能运营分析项目\\tests\\evaluation\\ai_assistant_eval_questions.json",
+  "expected_hits_file": "E:\\智能运营分析项目\\tests\\evaluation\\rag_expected_hits.json",
+  "summary": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "pass_rate": 0.0,
+    "rag_expected_total": 1,
+    "rag_hit_rate_when_expected": 1.0,
+    "top_k_title_hit_rate": 0.0,
+    "default_hidden_rate": 1.0,
+    "answer_point_hit_rate": 1.0,
+    "avg_latency_ms": 17497.5,
+    "category_summary": {
+      "price_forecast": {
+        "total": 1,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "rag_expected": 1,
+        "rag_hit_rate_when_expected": 1.0,
+        "top_k_title_hit_rate": 0.0,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 1.0
+      }
+    }
+  },
+  "failures": [
+    {
+      "id": "price_001",
+      "category": "price_forecast",
+      "question": "明天电价风险大吗？",
+      "should_use_rag": true,
+      "should_use_tools": true,
+      "status": 200,
+      "debug_status": 200,
+      "latency_ms": 17497.5,
+      "debug_latency_ms": 13904.5,
+      "answer": "**结论**：根据当前可用数据（2026-05-26 的预测），无法直接评估明天（2026-05-29）的电价风险，但参考最近一次预测结果，高风险特征非常突出。\n\n**原因**：现有预测显示 16:00-20:00 共 5 小时电价均超 124.94 USD/MWh，最高达 194.06 USD/MWh，远高于 P75 阈值 90.66 USD/MWh，且尖峰概率超过 99%。该时段负荷处于高位（最高 17,506 MW），天气温和（23-28°C），供需压力明显。模型在尖峰时段的 RMSE 为 40.29 USD/MWh，误差较大，增加了不确定性。\n\n**建议**：请重点关注 16-20 时段的敞口和报价复核，储能可参考凌晨低价窗口（02:00-06:00 接近 0 元）充电。上述结论基于历史预测，不等同于交易指令，需结合次日实际负荷和实时市场数据确认。",
+      "rag_hits": 5,
+      "tool_calls": 4,
+      "expected_titles_any": [
+        "price_forecast_logic",
+        "peak_spike_risk_explanation",
+        "高价风险",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords_any": [
+        "电价",
+        "风险",
+        "预测"
+      ],
+      "expected_answer_points": [
+        "结论",
+        "风险",
+        "建议"
+      ],
+      "answer_point_hits": [
+        "结论",
+        "风险",
+        "建议"
+      ],
+      "forbidden_hits": [],
+      "leaked_default_fields": [],
+      "checks": {
+        "default_status_ok": true,
+        "debug_status_ok": true,
+        "answer_non_empty": true,
+        "default_debug_fields_hidden": true,
+        "forbidden_patterns_absent": true,
+        "rag_expectation_ok": true,
+        "tool_expectation_ok": true,
+        "top_k_title_hit": false,
+        "keyword_hit": true,
+        "answer_point_hit": true,
+        "debug_has_rag": true,
+        "debug_has_trace": true
+      },
+      "passed": false,
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_items_preview": [
+        {
+          "rank": 1,
+          "chunk_id": "kb_5870cba30702003f09bc_0001",
+          "doc_id": "kb_5870cba30702003f09bc",
+          "title": "policy_6",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+          "keyword_score": 1.0,
+          "vector_score": 0.0,
+          "rerank_score": 0.890554,
+          "final_score": 0.73636
+        },
+        {
+          "rank": 2,
+          "chunk_id": "kb_278907956a5480885d10_0000",
+          "doc_id": "kb_278907956a5480885d10",
+          "title": "pjm_dom_node_background",
+          "source": "E:\\智能运营分析项目\\knowledge_base\\electricity_market\\pjm_dom_node_background.md",
+          "keyword_score": 0.322581,
+          "vector_score": 0.0,
+          "rerank_score": 1.0,
+          "final_score": 0.700806
+        },
+        {
+          "rank": 3,
+          "chunk_id": "kb_871a279c9a6a2d9ddf74_0000",
+          "doc_id": "kb_871a279c9a6a2d9ddf74",
+          "title": "risk_level_rules",
+          "source": "E:\\智能运营分析项目\\knowledge_base\\project_knowledge\\risk_level_rules.md",
+          "keyword_score": 0.387097,
+          "vector_score": 0.0,
+          "rerank_score": 0.965925,
+          "final_score": 0.688819
+        },
+        {
+          "rank": 4,
+          "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+          "doc_id": "kb_34c2efa6726d7c6076e9",
+          "title": "policy_4",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+          "keyword_score": 1.0,
+          "vector_score": 0.0,
+          "rerank_score": 0.799446,
+          "final_score": 0.67714
+        },
+        {
+          "rank": 5,
+          "chunk_id": "kb_094f69af447ad0c077c4_0000",
+          "doc_id": "kb_094f69af447ad0c077c4",
+          "title": "policy_3",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_3.md",
+          "keyword_score": 0.677419,
+          "vector_score": 0.0,
+          "rerank_score": 0.674836,
+          "final_score": 0.545337
+        }
+      ],
+      "debug_response": {
+        "intent": "trading_risk_summary",
+        "task_type": "complex_analysis",
+        "model_provider_used": "deepseek",
+        "model_fallback": false,
+        "rag": {
+          "available": true,
+          "query": "明天电价风险大吗？",
+          "items": [
+            {
+              "chunk_id": "kb_5870cba30702003f09bc_0001",
+              "doc_id": "kb_5870cba30702003f09bc",
+              "title": "policy_6",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+              "source_type": "local_file",
+              "chunk_index": 1,
+              "content": "**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司： 经国务院批准，根据煤电价格联动机制有关规定，决定下调全国燃煤发电上网电价和一般工商业用电价格。经商国家能源局，现就有关事项通知如下： 一、全国燃煤发电上网电价平均每千瓦时下调约3分钱（含税，下同），同幅度下调一般工商业销售电价，支持燃煤电厂超低排放改造和可再生能源发展，并设立工业企业结构调整专项资金。各省（区、市）燃煤发电上网电价平均调价标准和调整后的燃煤发电标杆上网电价见附件。 二、全国一般工商业销售电价平均每千瓦时下调约3分钱，大工业用电价格不作调整，减轻中小微企业负担。各省（区、市）一般工商业用电平均调价标准见附件。各省（区、市）价格主管部门按照附件规定的平均调价标准，制定和下发本省（区、市）上网电价和销售电价调整具体方案，并报我委备案。 三、推动燃煤电厂超低排放改造，根据《国家发展改革委关于燃煤电厂超低排放电价支持政策有关问题的通知》（发改价格[2015]2835号）规定，对于验收合格并符合超低排放限值要求的燃煤发电机组实行电价支持。 四、将居民生活和农业生产以外其他用电征收的可再生能源电价附加征收标准，提高到每千瓦时1.9分钱。 五、利用燃煤发电上网电价部分降价空间，设立工业企业结构调整专项资金，支持地方在淘汰煤炭、钢铁行业落后产能中安置下岗失业人员等。专项资金管理办法由有关部门另行下发。 六、跨省、跨区域送电价格调整标准，遵循市场定价原则，参考送、受电地区电价调整情况，由供需双方协商确定。“点对网”送电的上网电价调价标准，可参考受电省燃煤发电标杆电价调整标准协商确定。“网对网”送电价格，可参考送",
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.890554,
+              "final_score": 0.73636,
+              "score": 31,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "policy_6.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.45,
+              "rerank_raw_score": -5.845626,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_278907956a5480885d10_0000",
+              "doc_id": "kb_278907956a5480885d10",
+              "title": "pjm_dom_node_background",
+              "source": "E:\\智能运营分析项目\\knowledge_base\\electricity_market\\pjm_dom_node_background.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# PJM DOM 节点背景\nDOM 通常指 PJM 市场中 Dominion 相关区域或节点口径。项目配置中使用 DOM 作为默认分析节点，适合围绕该节点开展负荷、天气、电价预测和交易风险分析。\nDOM 节点电价受区域负荷、系统供需、输电约束、天气变化和 PJM 市场整体波动影响。对售电运营来说，DOM 节点预测结果应与客户负荷结构、合约电量、储能资源和风险偏好一起评估。\n## 适用问题示例\n- DOM 节点是什么？ - 当前项目为什么关注 DOM？ - DOM 节点电价风险怎么看？\n## 回答要点\n- DOM 是项目当前默认节点或区域口径。 - 节点价格需要结合本地负荷和天气解释。 - 如果用户问具体价格，应优先引用项目预测表和风险识别结果。 - 不应把 DOM 节点结论直接推广到所有 PJM 节点。",
+              "keyword_score": 0.322581,
+              "vector_score": 0.0,
+              "rerank_score": 1.0,
+              "final_score": 0.700806,
+              "score": 10,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\knowledge_base",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "pjm_dom_node_background.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.145161,
+              "rerank_raw_score": -5.487681,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_871a279c9a6a2d9ddf74_0000",
+              "doc_id": "kb_871a279c9a6a2d9ddf74",
+              "title": "risk_level_rules",
+              "source": "E:\\智能运营分析项目\\knowledge_base\\project_knowledge\\risk_level_rules.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# 风险等级规则说明\n风险等级用于把预测价格、尖峰概率、负荷压力、峰谷价差和模型不确定性转化为运营可读的预警信息。具体等级阈值应以项目配置或模型输出为准。\n一般来说，高风险表示该时段需要重点复核，并不代表价格一定暴涨；低风险表示当前指标相对平稳，但仍需关注实时市场和数据更新。风险等级应与价格、负荷、天气和误差一起解释。\n## 适用问题示例\n- 高风险等级是什么意思？ - 低风险是不是可以不用管？ - 风险等级和尖峰概率有什么区别？\n## 回答要点\n- 风险等级是运营预警，不是交易指令。 - 高风险需要复核敞口、报价和储能计划。 - 等级阈值必须来自系统配置或输出，不能随意编造。 - 解释风险时要说明不确定性和数据来源。",
+              "keyword_score": 0.387097,
+              "vector_score": 0.0,
+              "rerank_score": 0.965925,
+              "final_score": 0.688819,
+              "score": 12,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\knowledge_base",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "risk_level_rules.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.174194,
+              "rerank_raw_score": -5.599124,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+              "doc_id": "kb_34c2efa6726d7c6076e9",
+              "title": "policy_4",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+              "source_type": "local_file",
+              "chunk_index": 1,
+              "content": "**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司： 经国务院批准，根据电力体制改革的相关精神和煤电价格联动机制有关规定，决定下调燃煤发电上网电价和工商业用电价格。经商国家能源局，现就有关事项通知如下： 一、全国燃煤发电上网电价平均每千瓦时下调约2分钱（含税，下同），各省（区、市）平均调价标准和调整后的燃煤发电标杆上网电价见附件一。 二、下调燃煤发电上网电价形成的降价空间，除适当疏导部分地区天然气发电价格以及脱硝、除尘、超低排放环保电价等突出结构性矛盾，促进节能减排和大气污染防治外，主要用于下调工商业用电价格。 三、全国工商业用电价格平均每千瓦时下调约1.8分钱。各省（区、市）工商业用电价格平均调价标准见附件一。 四、推进销售电价结构调整。全面推进工商业用电同价，江西、贵州和新疆实行商业用电和普通工业用电同价。居民生活和农业生产用电价格原则上保持稳定，适当减少电力用户间的交叉补贴。逐步取消化肥电价优惠，化肥生产用电执行相同用电类别的工商业用电价格；优惠价差较大的地方，分两步到位，2016年4月20日起全部取消电价优惠。 五、跨省、跨区域送电价格调整标准，遵循市场定价原则，参考送、受电地区电价调整情况，由供需双方协商确定。部分跨省、跨区域送电价格具体调整情况见附件二。 六、各省（区、市）价格主管部门按照附件一规定的平均调价标准，制定和下发本省（区、市）上网电价和销售电价调整具体方案，并报我委备案。 七、以上电价调整自2015年4月20日起执行。 八、推进电价市场化，鼓励有条件的电力用户与发电企业直接交易，自愿协商确定电价。 九、电价调整后，各级价格主管部门要继续",
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.799446,
+              "final_score": 0.67714,
+              "score": 31,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "policy_4.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.45,
+              "rerank_raw_score": -6.143596,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_094f69af447ad0c077c4_0000",
+              "doc_id": "kb_094f69af447ad0c077c4",
+              "title": "policy_3",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_3.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# 国家发展改革委关于进一步疏导 环保电价矛盾的通知 (发改价格[2014]1908号)\n**发布日期**: 2014.08.27\n**摘要**: nan\n**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司，国家电网公司、南方电网公司，华能、大唐、华电、国电、中电投集团公司：\n为进一步疏导燃煤发电企业脱硝、除尘等环保电价矛盾，推进部分地区工商业用电同价，决定适当调整相关电价。现就有关事项通知如下： 一、降低有关省（自治区、直辖市）燃煤发电企业脱硫标杆上网电价，具体降价标准见附件1。未执行标杆电价的统调燃煤发电企业上网电价同步下调。 二、适当降低跨省、跨区域电网送电价格标准，具体降价标准见附件2。 三、将上述降价空间主要用于疏导脱硝、除尘环保电价矛盾，对脱硝、除尘排放达标并经环保部门验收合格的燃煤发电企业，电网企业自验收合格之日起分别支付脱硝、除尘电价每千瓦时1分钱和0.2分钱。 四、省级电网企业与可再生能源发电企业结算电价标准，按当地燃煤发电企业含脱硫、脱硝、除尘电价的标杆上网电价执行。 五、广东省实施工商用电同价。江西省分步推进工商业用电同价，商业和非居民照明用电各电压等级电价每千瓦时均降低0.1647元。 六、云南、贵州向广东送电的价格每千瓦时下调0.2分钱，到广东的落地电价执行广东省燃煤发电含脱硫、脱硝、除尘电价的标杆上网电价。自2015年1月1日起，云南、贵州向广东送电价格由供需双方自主协商确定，输电价格按国家规定执行。 七、以上电价调整自2014年9月1日起执行。 八、电价调整后，发电企业、煤炭企业要切实采取有效措施，共同营造煤电行业良好的经营环境，",
+              "keyword_score": 0.677419,
+              "vector_score": 0.0,
+              "rerank_score": 0.674836,
+              "final_score": 0.545337,
+              "score": 21,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "policy_3.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.304839,
+              "rerank_raw_score": -6.551133,
+              "reranker_model": "bge-reranker-v2-m3"
+            }
+          ],
+          "evidence": [
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+              "title": "policy_6",
+              "chunk_id": "kb_5870cba30702003f09bc_0001",
+              "score": 0.73636,
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.890554
+            },
+            {
+              "source": "E:\\智能运营分析项目\\knowledge_base\\electricity_market\\pjm_dom_node_background.md",
+              "title": "pjm_dom_node_background",
+              "chunk_id": "kb_278907956a5480885d10_0000",
+              "score": 0.700806,
+              "keyword_score": 0.322581,
+              "vector_score": 0.0,
+              "rerank_score": 1.0
+            },
+            {
+              "source": "E:\\智能运营分析项目\\knowledge_base\\project_knowledge\\risk_level_rules.md",
+              "title": "risk_level_rules",
+              "chunk_id": "kb_871a279c9a6a2d9ddf74_0000",
+              "score": 0.688819,
+              "keyword_score": 0.387097,
+              "vector_score": 0.0,
+              "rerank_score": 0.965925
+            },
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+              "title": "policy_4",
+              "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+              "score": 0.67714,
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.799446
+            },
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_3.md",
+              "title": "policy_3",
+              "chunk_id": "kb_094f69af447ad0c077c4_0000",
+              "score": 0.545337,
+              "keyword_score": 0.677419,
+              "vector_score": 0.0,
+              "rerank_score": 0.674836
+            }
+          ],
+          "retrieval": {
+            "enabled": true,
+            "mode": "hybrid",
+            "keyword_candidates": 20,
+            "vector_candidates": 0,
+            "merged_candidates": 20,
+            "rerank_candidates": 8,
+            "vector_available": true,
+            "embedding_provider": "sentence_transformers",
+            "embedding_model": "bge-large-zh-v1.5",
+            "embedding_dim": 1024,
+            "embedding_version": "bge-v1",
+            "embedding_fallback": false,
+            "reranker": "bge",
+            "rerank_error": ""
+          },
+          "stats": {
+            "available": true,
+            "documents": 68,
+            "chunks": 71
+          }
+        },
+        "trace_id_present": true
+      },
+      "error_preview": "",
+      "debug_error_preview": ""
+    }
+  ],
+  "results": [
+    {
+      "id": "price_001",
+      "category": "price_forecast",
+      "question": "明天电价风险大吗？",
+      "should_use_rag": true,
+      "should_use_tools": true,
+      "status": 200,
+      "debug_status": 200,
+      "latency_ms": 17497.5,
+      "debug_latency_ms": 13904.5,
+      "answer": "**结论**：根据当前可用数据（2026-05-26 的预测），无法直接评估明天（2026-05-29）的电价风险，但参考最近一次预测结果，高风险特征非常突出。\n\n**原因**：现有预测显示 16:00-20:00 共 5 小时电价均超 124.94 USD/MWh，最高达 194.06 USD/MWh，远高于 P75 阈值 90.66 USD/MWh，且尖峰概率超过 99%。该时段负荷处于高位（最高 17,506 MW），天气温和（23-28°C），供需压力明显。模型在尖峰时段的 RMSE 为 40.29 USD/MWh，误差较大，增加了不确定性。\n\n**建议**：请重点关注 16-20 时段的敞口和报价复核，储能可参考凌晨低价窗口（02:00-06:00 接近 0 元）充电。上述结论基于历史预测，不等同于交易指令，需结合次日实际负荷和实时市场数据确认。",
+      "rag_hits": 5,
+      "tool_calls": 4,
+      "expected_titles_any": [
+        "price_forecast_logic",
+        "peak_spike_risk_explanation",
+        "高价风险",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords_any": [
+        "电价",
+        "风险",
+        "预测"
+      ],
+      "expected_answer_points": [
+        "结论",
+        "风险",
+        "建议"
+      ],
+      "answer_point_hits": [
+        "结论",
+        "风险",
+        "建议"
+      ],
+      "forbidden_hits": [],
+      "leaked_default_fields": [],
+      "checks": {
+        "default_status_ok": true,
+        "debug_status_ok": true,
+        "answer_non_empty": true,
+        "default_debug_fields_hidden": true,
+        "forbidden_patterns_absent": true,
+        "rag_expectation_ok": true,
+        "tool_expectation_ok": true,
+        "top_k_title_hit": false,
+        "keyword_hit": true,
+        "answer_point_hit": true,
+        "debug_has_rag": true,
+        "debug_has_trace": true
+      },
+      "passed": false,
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_items_preview": [
+        {
+          "rank": 1,
+          "chunk_id": "kb_5870cba30702003f09bc_0001",
+          "doc_id": "kb_5870cba30702003f09bc",
+          "title": "policy_6",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+          "keyword_score": 1.0,
+          "vector_score": 0.0,
+          "rerank_score": 0.890554,
+          "final_score": 0.73636
+        },
+        {
+          "rank": 2,
+          "chunk_id": "kb_278907956a5480885d10_0000",
+          "doc_id": "kb_278907956a5480885d10",
+          "title": "pjm_dom_node_background",
+          "source": "E:\\智能运营分析项目\\knowledge_base\\electricity_market\\pjm_dom_node_background.md",
+          "keyword_score": 0.322581,
+          "vector_score": 0.0,
+          "rerank_score": 1.0,
+          "final_score": 0.700806
+        },
+        {
+          "rank": 3,
+          "chunk_id": "kb_871a279c9a6a2d9ddf74_0000",
+          "doc_id": "kb_871a279c9a6a2d9ddf74",
+          "title": "risk_level_rules",
+          "source": "E:\\智能运营分析项目\\knowledge_base\\project_knowledge\\risk_level_rules.md",
+          "keyword_score": 0.387097,
+          "vector_score": 0.0,
+          "rerank_score": 0.965925,
+          "final_score": 0.688819
+        },
+        {
+          "rank": 4,
+          "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+          "doc_id": "kb_34c2efa6726d7c6076e9",
+          "title": "policy_4",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+          "keyword_score": 1.0,
+          "vector_score": 0.0,
+          "rerank_score": 0.799446,
+          "final_score": 0.67714
+        },
+        {
+          "rank": 5,
+          "chunk_id": "kb_094f69af447ad0c077c4_0000",
+          "doc_id": "kb_094f69af447ad0c077c4",
+          "title": "policy_3",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_3.md",
+          "keyword_score": 0.677419,
+          "vector_score": 0.0,
+          "rerank_score": 0.674836,
+          "final_score": 0.545337
+        }
+      ],
+      "debug_response": {
+        "intent": "trading_risk_summary",
+        "task_type": "complex_analysis",
+        "model_provider_used": "deepseek",
+        "model_fallback": false,
+        "rag": {
+          "available": true,
+          "query": "明天电价风险大吗？",
+          "items": [
+            {
+              "chunk_id": "kb_5870cba30702003f09bc_0001",
+              "doc_id": "kb_5870cba30702003f09bc",
+              "title": "policy_6",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+              "source_type": "local_file",
+              "chunk_index": 1,
+              "content": "**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司： 经国务院批准，根据煤电价格联动机制有关规定，决定下调全国燃煤发电上网电价和一般工商业用电价格。经商国家能源局，现就有关事项通知如下： 一、全国燃煤发电上网电价平均每千瓦时下调约3分钱（含税，下同），同幅度下调一般工商业销售电价，支持燃煤电厂超低排放改造和可再生能源发展，并设立工业企业结构调整专项资金。各省（区、市）燃煤发电上网电价平均调价标准和调整后的燃煤发电标杆上网电价见附件。 二、全国一般工商业销售电价平均每千瓦时下调约3分钱，大工业用电价格不作调整，减轻中小微企业负担。各省（区、市）一般工商业用电平均调价标准见附件。各省（区、市）价格主管部门按照附件规定的平均调价标准，制定和下发本省（区、市）上网电价和销售电价调整具体方案，并报我委备案。 三、推动燃煤电厂超低排放改造，根据《国家发展改革委关于燃煤电厂超低排放电价支持政策有关问题的通知》（发改价格[2015]2835号）规定，对于验收合格并符合超低排放限值要求的燃煤发电机组实行电价支持。 四、将居民生活和农业生产以外其他用电征收的可再生能源电价附加征收标准，提高到每千瓦时1.9分钱。 五、利用燃煤发电上网电价部分降价空间，设立工业企业结构调整专项资金，支持地方在淘汰煤炭、钢铁行业落后产能中安置下岗失业人员等。专项资金管理办法由有关部门另行下发。 六、跨省、跨区域送电价格调整标准，遵循市场定价原则，参考送、受电地区电价调整情况，由供需双方协商确定。“点对网”送电的上网电价调价标准，可参考受电省燃煤发电标杆电价调整标准协商确定。“网对网”送电价格，可参考送",
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.890554,
+              "final_score": 0.73636,
+              "score": 31,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "policy_6.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.45,
+              "rerank_raw_score": -5.845626,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_278907956a5480885d10_0000",
+              "doc_id": "kb_278907956a5480885d10",
+              "title": "pjm_dom_node_background",
+              "source": "E:\\智能运营分析项目\\knowledge_base\\electricity_market\\pjm_dom_node_background.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# PJM DOM 节点背景\nDOM 通常指 PJM 市场中 Dominion 相关区域或节点口径。项目配置中使用 DOM 作为默认分析节点，适合围绕该节点开展负荷、天气、电价预测和交易风险分析。\nDOM 节点电价受区域负荷、系统供需、输电约束、天气变化和 PJM 市场整体波动影响。对售电运营来说，DOM 节点预测结果应与客户负荷结构、合约电量、储能资源和风险偏好一起评估。\n## 适用问题示例\n- DOM 节点是什么？ - 当前项目为什么关注 DOM？ - DOM 节点电价风险怎么看？\n## 回答要点\n- DOM 是项目当前默认节点或区域口径。 - 节点价格需要结合本地负荷和天气解释。 - 如果用户问具体价格，应优先引用项目预测表和风险识别结果。 - 不应把 DOM 节点结论直接推广到所有 PJM 节点。",
+              "keyword_score": 0.322581,
+              "vector_score": 0.0,
+              "rerank_score": 1.0,
+              "final_score": 0.700806,
+              "score": 10,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\knowledge_base",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "pjm_dom_node_background.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.145161,
+              "rerank_raw_score": -5.487681,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_871a279c9a6a2d9ddf74_0000",
+              "doc_id": "kb_871a279c9a6a2d9ddf74",
+              "title": "risk_level_rules",
+              "source": "E:\\智能运营分析项目\\knowledge_base\\project_knowledge\\risk_level_rules.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# 风险等级规则说明\n风险等级用于把预测价格、尖峰概率、负荷压力、峰谷价差和模型不确定性转化为运营可读的预警信息。具体等级阈值应以项目配置或模型输出为准。\n一般来说，高风险表示该时段需要重点复核，并不代表价格一定暴涨；低风险表示当前指标相对平稳，但仍需关注实时市场和数据更新。风险等级应与价格、负荷、天气和误差一起解释。\n## 适用问题示例\n- 高风险等级是什么意思？ - 低风险是不是可以不用管？ - 风险等级和尖峰概率有什么区别？\n## 回答要点\n- 风险等级是运营预警，不是交易指令。 - 高风险需要复核敞口、报价和储能计划。 - 等级阈值必须来自系统配置或输出，不能随意编造。 - 解释风险时要说明不确定性和数据来源。",
+              "keyword_score": 0.387097,
+              "vector_score": 0.0,
+              "rerank_score": 0.965925,
+              "final_score": 0.688819,
+              "score": 12,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\knowledge_base",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "risk_level_rules.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.174194,
+              "rerank_raw_score": -5.599124,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+              "doc_id": "kb_34c2efa6726d7c6076e9",
+              "title": "policy_4",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+              "source_type": "local_file",
+              "chunk_index": 1,
+              "content": "**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司： 经国务院批准，根据电力体制改革的相关精神和煤电价格联动机制有关规定，决定下调燃煤发电上网电价和工商业用电价格。经商国家能源局，现就有关事项通知如下： 一、全国燃煤发电上网电价平均每千瓦时下调约2分钱（含税，下同），各省（区、市）平均调价标准和调整后的燃煤发电标杆上网电价见附件一。 二、下调燃煤发电上网电价形成的降价空间，除适当疏导部分地区天然气发电价格以及脱硝、除尘、超低排放环保电价等突出结构性矛盾，促进节能减排和大气污染防治外，主要用于下调工商业用电价格。 三、全国工商业用电价格平均每千瓦时下调约1.8分钱。各省（区、市）工商业用电价格平均调价标准见附件一。 四、推进销售电价结构调整。全面推进工商业用电同价，江西、贵州和新疆实行商业用电和普通工业用电同价。居民生活和农业生产用电价格原则上保持稳定，适当减少电力用户间的交叉补贴。逐步取消化肥电价优惠，化肥生产用电执行相同用电类别的工商业用电价格；优惠价差较大的地方，分两步到位，2016年4月20日起全部取消电价优惠。 五、跨省、跨区域送电价格调整标准，遵循市场定价原则，参考送、受电地区电价调整情况，由供需双方协商确定。部分跨省、跨区域送电价格具体调整情况见附件二。 六、各省（区、市）价格主管部门按照附件一规定的平均调价标准，制定和下发本省（区、市）上网电价和销售电价调整具体方案，并报我委备案。 七、以上电价调整自2015年4月20日起执行。 八、推进电价市场化，鼓励有条件的电力用户与发电企业直接交易，自愿协商确定电价。 九、电价调整后，各级价格主管部门要继续",
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.799446,
+              "final_score": 0.67714,
+              "score": 31,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "policy_4.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.45,
+              "rerank_raw_score": -6.143596,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_094f69af447ad0c077c4_0000",
+              "doc_id": "kb_094f69af447ad0c077c4",
+              "title": "policy_3",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_3.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# 国家发展改革委关于进一步疏导 环保电价矛盾的通知 (发改价格[2014]1908号)\n**发布日期**: 2014.08.27\n**摘要**: nan\n**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司，国家电网公司、南方电网公司，华能、大唐、华电、国电、中电投集团公司：\n为进一步疏导燃煤发电企业脱硝、除尘等环保电价矛盾，推进部分地区工商业用电同价，决定适当调整相关电价。现就有关事项通知如下： 一、降低有关省（自治区、直辖市）燃煤发电企业脱硫标杆上网电价，具体降价标准见附件1。未执行标杆电价的统调燃煤发电企业上网电价同步下调。 二、适当降低跨省、跨区域电网送电价格标准，具体降价标准见附件2。 三、将上述降价空间主要用于疏导脱硝、除尘环保电价矛盾，对脱硝、除尘排放达标并经环保部门验收合格的燃煤发电企业，电网企业自验收合格之日起分别支付脱硝、除尘电价每千瓦时1分钱和0.2分钱。 四、省级电网企业与可再生能源发电企业结算电价标准，按当地燃煤发电企业含脱硫、脱硝、除尘电价的标杆上网电价执行。 五、广东省实施工商用电同价。江西省分步推进工商业用电同价，商业和非居民照明用电各电压等级电价每千瓦时均降低0.1647元。 六、云南、贵州向广东送电的价格每千瓦时下调0.2分钱，到广东的落地电价执行广东省燃煤发电含脱硫、脱硝、除尘电价的标杆上网电价。自2015年1月1日起，云南、贵州向广东送电价格由供需双方自主协商确定，输电价格按国家规定执行。 七、以上电价调整自2014年9月1日起执行。 八、电价调整后，发电企业、煤炭企业要切实采取有效措施，共同营造煤电行业良好的经营环境，",
+              "keyword_score": 0.677419,
+              "vector_score": 0.0,
+              "rerank_score": 0.674836,
+              "final_score": 0.545337,
+              "score": 21,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 256,
+                  "model": "local-hash-bge-small-zh-v1.5-compatible",
+                  "version": "hash-v1",
+                  "fallback": false,
+                  "provider": "local_hash"
+                },
+                "file_name": "policy_3.md"
+              },
+              "retrieval_types": [
+                "keyword"
+              ],
+              "hybrid_score": 0.304839,
+              "rerank_raw_score": -6.551133,
+              "reranker_model": "bge-reranker-v2-m3"
+            }
+          ],
+          "evidence": [
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+              "title": "policy_6",
+              "chunk_id": "kb_5870cba30702003f09bc_0001",
+              "score": 0.73636,
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.890554
+            },
+            {
+              "source": "E:\\智能运营分析项目\\knowledge_base\\electricity_market\\pjm_dom_node_background.md",
+              "title": "pjm_dom_node_background",
+              "chunk_id": "kb_278907956a5480885d10_0000",
+              "score": 0.700806,
+              "keyword_score": 0.322581,
+              "vector_score": 0.0,
+              "rerank_score": 1.0
+            },
+            {
+              "source": "E:\\智能运营分析项目\\knowledge_base\\project_knowledge\\risk_level_rules.md",
+              "title": "risk_level_rules",
+              "chunk_id": "kb_871a279c9a6a2d9ddf74_0000",
+              "score": 0.688819,
+              "keyword_score": 0.387097,
+              "vector_score": 0.0,
+              "rerank_score": 0.965925
+            },
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+              "title": "policy_4",
+              "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+              "score": 0.67714,
+              "keyword_score": 1.0,
+              "vector_score": 0.0,
+              "rerank_score": 0.799446
+            },
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_3.md",
+              "title": "policy_3",
+              "chunk_id": "kb_094f69af447ad0c077c4_0000",
+              "score": 0.545337,
+              "keyword_score": 0.677419,
+              "vector_score": 0.0,
+              "rerank_score": 0.674836
+            }
+          ],
+          "retrieval": {
+            "enabled": true,
+            "mode": "hybrid",
+            "keyword_candidates": 20,
+            "vector_candidates": 0,
+            "merged_candidates": 20,
+            "rerank_candidates": 8,
+            "vector_available": true,
+            "embedding_provider": "sentence_transformers",
+            "embedding_model": "bge-large-zh-v1.5",
+            "embedding_dim": 1024,
+            "embedding_version": "bge-v1",
+            "embedding_fallback": false,
+            "reranker": "bge",
+            "rerank_error": ""
+          },
+          "stats": {
+            "available": true,
+            "documents": 68,
+            "chunks": 71
+          }
+        },
+        "trace_id_present": true
+      },
+      "error_preview": "",
+      "debug_error_preview": ""
+    }
+  ]
+}

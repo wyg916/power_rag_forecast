@@ -1,0 +1,211 @@
+import { CalendarOutlined, CloudDownloadOutlined, LineChartOutlined, ReloadOutlined, RiseOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Button, Col, DatePicker, Row, Select, Space, Table, Tag, message } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { api } from '../../api';
+import { DetailDrawer } from '../../components/actions/DetailDrawer';
+import { SectionCard } from '../../components/cards/SectionCard';
+import { TableCard } from '../../components/cards/TableCard';
+import { AppChart } from '../../components/charts/AppChart';
+import { baseGrid, chartColors } from '../../components/charts/chartTheme';
+import { GaugeChart } from '../../components/charts/GaugeChart';
+import { PriceCurveChart } from '../../components/charts/PriceCurveChart';
+import { PageTabs } from '../../components/common/PageTabs';
+import { DataSourceTag, DataStateBanner, RiskTag } from '../../components/common/States';
+import { MetricGrid } from '../../components/layout/UnifiedPage';
+import { forecastMock } from '../../mock/forecastMock';
+import { getForecastCenterData } from '../../services/forecastApi';
+import type { PageProps } from '../../types/ui';
+
+const icons = [<RiseOutlined />, <CloudDownloadOutlined />, <LineChartOutlined />, <ReloadOutlined />, <SafetyCertificateOutlined />];
+
+const tabs = [
+  { key: 'forecast-24h', label: '24小时预测' },
+  { key: 'forecast-history', label: '历史对比' },
+  { key: 'forecast-detail', label: '预测明细' },
+  { key: 'forecast-peak', label: '峰谷分析' }
+];
+
+export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
+  const [forecastData, setForecastData] = useState<any>(forecastMock);
+  const [loading, setLoading] = useState(true);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      setForecastData(await getForecastCenterData());
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const historyOption = useMemo(() => ({
+    ...baseGrid(),
+    legend: { top: 0, data: ['最新预测', '上一批次', '历史均值'] },
+    xAxis: { ...(baseGrid().xAxis as object), data: forecastData.curve.map((item: any) => item.time) },
+    series: [
+      { name: '最新预测', type: 'line', smooth: true, data: forecastData.curve.map((item: any) => item.value), lineStyle: { color: chartColors.green } },
+      { name: '上一批次', type: 'line', smooth: true, data: forecastData.history, lineStyle: { type: 'dashed', color: chartColors.gray } },
+      { name: '历史均值', type: 'line', smooth: true, data: forecastData.history.map((item: number) => item * 0.95), lineStyle: { color: chartColors.blue } }
+    ]
+  }), [forecastData]);
+
+  async function runForecast() {
+    const result = await api.runForecast();
+    message.success(`预测任务已启动：${result.task_id || result.run_id || 'refresh_fast_forecast'}`);
+  }
+
+  function exportDetails() {
+    const rows = forecastData.detailRows || [];
+    const header = ['时间', '预测电价', '风险等级', '建议动作', '置信度'];
+    const body = rows.map((row: any) => [row.time, row.price, row.risk, row.action, row.confidence]);
+    const csv = [header, ...body].map((line) => line.map((item) => `"${String(item ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `forecast_details_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function openHourDetail(row: any) {
+    setDetailData({
+      time: row.time,
+      predicted_price: row.price,
+      risk_level: row.risk,
+      confidence: row.confidence,
+      action: row.action,
+      data_source: forecastData.dataSource || 'postgresql_or_file',
+      influence_factors: '价格分位、负荷预测、新能源出力、尖峰概率'
+    });
+    setDetailOpen(true);
+  }
+
+  const detailTable = (
+    <Table
+      size="small"
+      pagination={activeSubKey === 'forecast-detail' ? { pageSize: 12 } : false}
+      scroll={{ y: activeSubKey === 'forecast-detail' ? 520 : 360, x: 860 }}
+      dataSource={forecastData.detailRows}
+      columns={[
+        { title: '时间', dataIndex: 'time' },
+        { title: '预测电价（元/kWh）', dataIndex: 'price', align: 'right' },
+        { title: '风险等级', dataIndex: 'risk', render: (text) => <RiskTag value={text} /> },
+        { title: '建议动作', dataIndex: 'action' },
+        { title: '置信度', dataIndex: 'confidence', align: 'right' },
+        { title: '操作', render: (_, record) => <Button type="link" size="small" onClick={() => openHourDetail(record)}>小时解释</Button> }
+      ]}
+    />
+  );
+
+  return (
+    <div className="page-stack">
+      <PageTabs items={tabs} activeKey={activeSubKey} onChange={onSubNavigate} />
+      <div className="filter-bar">
+        <Space size={16} wrap>
+          <span>预测日期</span>
+          <DatePicker suffixIcon={<CalendarOutlined />} />
+          <span>区域</span>
+          <Select value="浙江省" options={[{ value: '浙江省', label: '浙江省' }]} />
+          <span>模型版本</span>
+          <Select value="v3.2.1（最新）" options={[{ value: 'v3.2.1（最新）', label: 'v3.2.1（最新）' }]} />
+          <DataSourceTag source={forecastData.dataSource || 'postgresql_or_file'} />
+        </Space>
+        <Space>
+          <Button onClick={loadData}>刷新</Button>
+          <Button type="primary" loading={loading} onClick={runForecast}>更新预测</Button>
+        </Space>
+      </div>
+      <DataStateBanner
+        scope="预测中心"
+        loading={loading}
+        source={forecastData.dataSource}
+        error={forecastData.error}
+        empty={forecastData.empty}
+        mockFallback={forecastData.mockFallback}
+        fallbackReason={forecastData.fallbackReason}
+        partialErrors={forecastData.partialErrors}
+        onRetry={loadData}
+      />
+
+      <MetricGrid items={forecastData.metrics || []} icons={icons} loading={loading} minColumnWidth={180} />
+
+      {activeSubKey === 'forecast-24h' && (
+        <>
+          <div className="forecast-main-grid">
+            <SectionCard title="24小时电价预测" extra={<span className="card-unit">单位：元/kWh</span>} loading={loading} height={520}>
+              <PriceCurveChart data={forecastData.curve} height={460} showActual={false} />
+            </SectionCard>
+            <SectionCard title="策略洞察" extra={<a className="card-link" onClick={() => { window.location.hash = '/strategy/strategy-high'; }}>更多洞察</a>} loading={loading} height={520} scrollable>
+              <div className="insight-list">
+                {(forecastData.insights || []).map((item: any[], index: number) => (
+                  <div className={`insight-item insight-${index}`} key={item[0]} onClick={() => { setDetailData({ title: item[0], period: item[1], suggestion: item[2] }); setDetailOpen(true); }}>
+                    <strong>{item[0]}</strong>
+                    <span>{item[1]}</span>
+                    <p>{item[2]}</p>
+                    <a>查看依据</a>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          </div>
+          <SectionCard className="forecast-detail-card" title="24小时预测明细" extra={<Button type="link" onClick={exportDetails}>导出</Button>} loading={loading}>
+              {detailTable}
+          </SectionCard>
+        </>
+      )}
+
+      {activeSubKey === 'forecast-history' && (
+        <SectionCard title="历史对比趋势" extra={<Tag>近7天</Tag>} loading={loading}>
+          <AppChart option={historyOption} height={420} />
+        </SectionCard>
+      )}
+
+      {activeSubKey === 'forecast-detail' && (
+        <TableCard title="预测明细表" extra={<Button type="link" onClick={exportDetails}>导出 CSV</Button>} loading={loading} dataSource={forecastData.detailRows} columns={[
+          { title: '时间', dataIndex: 'time' },
+          { title: '预测电价', dataIndex: 'price', align: 'right' },
+          { title: '风险等级', dataIndex: 'risk', render: (text) => <RiskTag value={text} /> },
+          { title: '建议动作', dataIndex: 'action' },
+          { title: '置信度', dataIndex: 'confidence', align: 'right' },
+          { title: '操作', render: (_, record) => <Button type="link" size="small" onClick={() => openHourDetail(record)}>小时解释</Button> }
+        ]} />
+      )}
+
+      {activeSubKey === 'forecast-peak' && (
+        <Row gutter={[16, 16]} className="balanced-row">
+          <Col xs={24} lg={8}>
+            <SectionCard title="峰谷分析" loading={loading}>
+              <div className="peak-card">
+                <GaugeChart value={72} name="价差指数" height={180} />
+                <div className="peak-meta">
+                  <p><span className="dot danger"></span>峰值时段<strong>{forecastData.metrics?.[0]?.note || '--'}</strong></p>
+                  <p><span className="dot success"></span>谷值时段<strong>{forecastData.metrics?.[1]?.note || '--'}</strong></p>
+                  <p><span className="dot info"></span>波动率<strong>48.7%</strong></p>
+                </div>
+              </div>
+            </SectionCard>
+          </Col>
+          <Col xs={24} lg={16}>
+            <SectionCard title="峰谷策略解释" loading={loading}>
+              <div className="advice-panel">
+                <h4>结论</h4>
+                <p>当前预测存在明显峰谷差，低价窗口适合补充采购或储能充电，高价窗口应控制风险敞口并优先人工复核。</p>
+                <h4>数据依据</h4>
+                <p>来自最新预测批次的最高价、最低价、均价和风险等级字段。</p>
+              </div>
+            </SectionCard>
+          </Col>
+        </Row>
+      )}
+
+      <DetailDrawer title="单小时预测解释" open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)} />
+    </div>
+  );
+}

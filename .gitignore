@@ -1,0 +1,54 @@
+.env
+.env.*
+!.env.example
+!.env.docker.example
+*.pyc
+__pycache__/
+.pytest_cache/
+docx_render_check_*/
+.playwright-cli/
+.playwright-mcp/
+~$*.docx
+*.lnk
+
+# Runtime logs and transient process files
+*.log
+*.out.log
+*.err.log
+*.pid
+
+# Python / virtualenv artifacts
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+
+# Frontend dependencies and build output
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Large local model/data artifacts
+*.zip
+cloud_model_data_package_*/
+bge-large-zh-v1.5/
+bge-reranker-v2-m3/
+model_artifacts/
+
+# Local generated runtime outputs
+/output/
+自动化输出/
+全流程预测结果数据存放/
+结果-3/
+结果/
+结果-1/
+electricity_tariff_output/
+
+# Knowledge pipeline generated corpora/artifacts
+knowledge_pipeline/chunks/
+knowledge_pipeline/converted/
+knowledge_pipeline/markdown/
+knowledge_pipeline/raw/
+knowledge_pipeline/output/

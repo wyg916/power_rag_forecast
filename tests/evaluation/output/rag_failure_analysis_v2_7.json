@@ -1,0 +1,4322 @@
+{
+  "report_used": "tests\\evaluation\\output\\after_knowledge_import_restart_report.json",
+  "baseline_before_restart": {
+    "total": 100,
+    "passed": 42,
+    "failed": 58,
+    "pass_rate": 0.42,
+    "rag_expected_total": 90,
+    "rag_hit_rate_when_expected": 0.6889,
+    "top_k_title_hit_rate": 0.54,
+    "default_hidden_rate": 1.0,
+    "answer_point_hit_rate": 0.69,
+    "avg_latency_ms": 27136.7,
+    "category_summary": {
+      "daily_chat": {
+        "total": 10,
+        "passed": 4,
+        "pass_rate": 0.4,
+        "rag_expected": 0,
+        "rag_hit_rate_when_expected": 0.0,
+        "top_k_title_hit_rate": 1.0,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.4
+      },
+      "load_weather": {
+        "total": 15,
+        "passed": 11,
+        "pass_rate": 0.7333,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.9333,
+        "top_k_title_hit_rate": 0.9333,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.8
+      },
+      "model_explain": {
+        "total": 15,
+        "passed": 6,
+        "pass_rate": 0.4,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.6,
+        "top_k_title_hit_rate": 0.4667,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.7333
+      },
+      "price_forecast": {
+        "total": 20,
+        "passed": 4,
+        "pass_rate": 0.2,
+        "rag_expected": 20,
+        "rag_hit_rate_when_expected": 0.65,
+        "top_k_title_hit_rate": 0.2,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.75
+      },
+      "spike_risk": {
+        "total": 15,
+        "passed": 10,
+        "pass_rate": 0.6667,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.8,
+        "top_k_title_hit_rate": 0.8,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.7333
+      },
+      "system_usage": {
+        "total": 10,
+        "passed": 3,
+        "pass_rate": 0.3,
+        "rag_expected": 10,
+        "rag_hit_rate_when_expected": 0.4,
+        "top_k_title_hit_rate": 0.3,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.6
+      },
+      "trading_strategy": {
+        "total": 15,
+        "passed": 4,
+        "pass_rate": 0.2667,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.6667,
+        "top_k_title_hit_rate": 0.2667,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.6667
+      }
+    }
+  },
+  "baseline_after_restart": {
+    "total": 100,
+    "passed": 40,
+    "failed": 60,
+    "pass_rate": 0.4,
+    "rag_expected_total": 90,
+    "rag_hit_rate_when_expected": 0.6889,
+    "top_k_title_hit_rate": 0.54,
+    "default_hidden_rate": 1.0,
+    "answer_point_hit_rate": 0.67,
+    "avg_latency_ms": 30296.7,
+    "category_summary": {
+      "daily_chat": {
+        "total": 10,
+        "passed": 4,
+        "pass_rate": 0.4,
+        "rag_expected": 0,
+        "rag_hit_rate_when_expected": 0.0,
+        "top_k_title_hit_rate": 1.0,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.4
+      },
+      "load_weather": {
+        "total": 15,
+        "passed": 10,
+        "pass_rate": 0.6667,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.9333,
+        "top_k_title_hit_rate": 0.9333,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.7333
+      },
+      "model_explain": {
+        "total": 15,
+        "passed": 6,
+        "pass_rate": 0.4,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.6,
+        "top_k_title_hit_rate": 0.4667,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.7333
+      },
+      "price_forecast": {
+        "total": 20,
+        "passed": 4,
+        "pass_rate": 0.2,
+        "rag_expected": 20,
+        "rag_hit_rate_when_expected": 0.65,
+        "top_k_title_hit_rate": 0.2,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.75
+      },
+      "spike_risk": {
+        "total": 15,
+        "passed": 10,
+        "pass_rate": 0.6667,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.8,
+        "top_k_title_hit_rate": 0.8,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.7333
+      },
+      "system_usage": {
+        "total": 10,
+        "passed": 3,
+        "pass_rate": 0.3,
+        "rag_expected": 10,
+        "rag_hit_rate_when_expected": 0.4,
+        "top_k_title_hit_rate": 0.3,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.6
+      },
+      "trading_strategy": {
+        "total": 15,
+        "passed": 3,
+        "pass_rate": 0.2,
+        "rag_expected": 15,
+        "rag_hit_rate_when_expected": 0.6667,
+        "top_k_title_hit_rate": 0.2667,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 0.6
+      }
+    }
+  },
+  "cache_impact": {
+    "old_pass_rate": 0.42,
+    "restart_pass_rate": 0.4,
+    "old_rag_hit_rate_when_expected": 0.6889,
+    "restart_rag_hit_rate_when_expected": 0.6889,
+    "conclusion": "重启后通过率未恢复，RAG 期望命中率持平，cache 不是主要原因。"
+  },
+  "failure_total": 60,
+  "failure_type_counts": {
+    "RAG 触发但未召回正确文档": 16,
+    "未触发 RAG": 28,
+    "答案关键词不匹配": 21,
+    "工具触发不符合预期": 9,
+    "评测标题别名不匹配": 2,
+    "Top-K 有证据但回答没有覆盖答案要点": 8,
+    "其他": 5
+  },
+  "failure_category_counts": {
+    "price_forecast": 16,
+    "load_weather": 5,
+    "spike_risk": 5,
+    "model_explain": 9,
+    "trading_strategy": 12,
+    "system_usage": 7,
+    "daily_chat": 6
+  },
+  "not_triggered_rag_questions": [
+    {
+      "question_id": "price_002",
+      "category": "price_forecast",
+      "question": "明天哪些小时价格可能偏高？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "高价风险",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "小时",
+        "高价",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "时段",
+        "价格",
+        "复核"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "price_005",
+      "category": "price_forecast",
+      "question": "如果模型预测晚高峰价格高，我应该先看什么指标？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "high_price_risk_strategy",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "晚高峰",
+        "指标",
+        "价格"
+      ],
+      "answer_missing_points": [
+        "尖峰"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "price_006",
+      "category": "price_forecast",
+      "question": "预测区间变宽说明什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "prediction_interval_explanation",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "预测区间",
+        "不确定性"
+      ],
+      "answer_missing_points": [
+        "不确定性",
+        "复核",
+        "谨慎"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "price_007",
+      "category": "price_forecast",
+      "question": "为什么有些小时预测价格接近零？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "低价",
+        "小时",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "低负荷",
+        "供给",
+        "风险"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "price_009",
+      "category": "price_forecast",
+      "question": "明天电价均价高不高？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "预测结果字段说明",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "均价",
+        "电价",
+        "明天"
+      ],
+      "answer_missing_points": [
+        "限制"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "price_016",
+      "category": "price_forecast",
+      "question": "低价窗口是否一定适合采购？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "低价",
+        "采购",
+        "风险"
+      ],
+      "answer_missing_points": [
+        "不一定",
+        "实时",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "price_018",
+      "category": "price_forecast",
+      "question": "如果预测数据不足，AI 助手应该如何说明？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "数据不足",
+        "说明"
+      ],
+      "answer_missing_points": [
+        "限制",
+        "缺少数据",
+        "不能编造"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "weather_011",
+      "category": "load_weather",
+      "question": "温度升高时应该关注哪些预测字段？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "data_fields_dictionary",
+        "load_weather_price_relationship",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "温度",
+        "字段",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "风险"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "spike_003",
+      "category": "spike_risk",
+      "question": "为什么晚高峰容易出现尖峰价格？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "load_weather_price_relationship",
+        "尖峰风险",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "晚高峰",
+        "尖峰",
+        "价格"
+      ],
+      "answer_missing_points": [
+        "供需",
+        "拥塞"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "spike_009",
+      "category": "spike_risk",
+      "question": "尖峰价格预测偏差为什么经常更大？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "peak_spike_risk_explanation",
+        "尖峰风险",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "尖峰",
+        "偏差",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "RMSE",
+        "异常",
+        "波动"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "spike_010",
+      "category": "spike_risk",
+      "question": "如何判断一个高价小时是不是异常价格？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "peak_spike_risk_explanation",
+        "尖峰风险",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "高价",
+        "异常"
+      ],
+      "answer_missing_points": [
+        "数据质量",
+        "相邻小时",
+        "市场"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "model_005",
+      "category": "model_explain",
+      "question": "真实值回填不足时能判断模型好坏吗？",
+      "failed_reason": [
+        "未触发 RAG",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "model_retrain_rules",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "真实值",
+        "回填",
+        "模型"
+      ],
+      "answer_missing_points": [
+        "样本不足",
+        "不能草率",
+        "回填"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "model_006",
+      "category": "model_explain",
+      "question": "模型漂移可能由哪些因素造成？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_retrain_rules",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "模型漂移",
+        "因素"
+      ],
+      "answer_missing_points": [
+        "特征分布",
+        "市场结构"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "model_008",
+      "category": "model_explain",
+      "question": "模型版本变化会影响预测口径吗？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "模型版本",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "版本",
+        "口径",
+        "回测"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "model_009",
+      "category": "model_explain",
+      "question": "数据质量问题会怎样影响模型预测？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "数据质量",
+        "模型"
+      ],
+      "answer_missing_points": [
+        "清洗",
+        "特征"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "model_010",
+      "category": "model_explain",
+      "question": "模型训练流程大概包括哪些步骤？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "训练流程",
+        "模型"
+      ],
+      "answer_missing_points": [
+        "特征",
+        "训练"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "model_015",
+      "category": "model_explain",
+      "question": "为什么模型不应该自动决定生产切换？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_retrain_rules",
+        "ai_assistant_answer_rules",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "模型",
+        "生产切换"
+      ],
+      "answer_missing_points": [
+        "人工复核",
+        "回测",
+        "建议"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "strategy_003",
+      "category": "trading_strategy",
+      "question": "低价窗口应该如何利用？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "低价",
+        "窗口"
+      ],
+      "answer_missing_points": [
+        "充电",
+        "采购",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "strategy_005",
+      "category": "trading_strategy",
+      "question": "异常价格出现时应该先做什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "异常价格",
+        "先"
+      ],
+      "answer_missing_points": [
+        "确认数据",
+        "模型版本",
+        "相邻小时"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "strategy_009",
+      "category": "trading_strategy",
+      "question": "负价是不是一定可以买入？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "low_price_opportunity_strategy",
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "负价",
+        "买入"
+      ],
+      "answer_missing_points": [
+        "不一定",
+        "约束",
+        "实时"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "strategy_010",
+      "category": "trading_strategy",
+      "question": "高价预测和储能套利之间有什么关系？",
+      "failed_reason": [
+        "未触发 RAG",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "高价",
+        "储能",
+        "套利"
+      ],
+      "answer_missing_points": [
+        "低充高放",
+        "价差",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "strategy_013",
+      "category": "trading_strategy",
+      "question": "如果连续低价时段出现，采购策略要注意什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "连续低价",
+        "采购"
+      ],
+      "answer_missing_points": [
+        "窗口",
+        "反弹",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "system_003",
+      "category": "system_usage",
+      "question": "AI 助手能帮我分析什么？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "system_overview",
+        "ai_assistant_answer_rules",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "AI助手",
+        "分析"
+      ],
+      "answer_missing_points": [
+        "预测结果",
+        "风险",
+        "知识库"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "system_004",
+      "category": "system_usage",
+      "question": "开发者模式能看到什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "开发者模式",
+        "Trace"
+      ],
+      "answer_missing_points": [
+        "工具",
+        "RAG",
+        "Trace"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_005",
+      "category": "system_usage",
+      "question": "为什么普通模式不显示工具调用？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "普通模式",
+        "工具调用"
+      ],
+      "answer_missing_points": [
+        "默认隐藏",
+        "自然回答",
+        "debug"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_006",
+      "category": "system_usage",
+      "question": "预测中心和策略中心分别看什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "system_overview",
+        "data_fields_dictionary",
+        "ai_assistant_answer_rules",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "预测中心",
+        "策略中心"
+      ],
+      "answer_missing_points": [
+        "预测",
+        "运营"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_008",
+      "category": "system_usage",
+      "question": "如果没有预测数据，系统应该怎么提示？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "没有预测数据",
+        "提示"
+      ],
+      "answer_missing_points": [
+        "数据不足",
+        "限制",
+        "刷新"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_009",
+      "category": "system_usage",
+      "question": "模型运维页面主要关注什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "model_retrain_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "ai_assistant_answer_rules"
+      ],
+      "expected_keywords": [
+        "模型运维",
+        "关注"
+      ],
+      "answer_missing_points": [
+        "模型版本",
+        "重训"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    }
+  ],
+  "rag_triggered_but_title_miss_questions": [
+    {
+      "question_id": "price_001",
+      "category": "price_forecast",
+      "question": "明天电价风险大吗？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (11)",
+        "AI-项目进展与分析",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知",
+        "AI-项目进展与分析 (4)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "peak_spike_risk_explanation",
+        "高价风险",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "电价",
+        "风险",
+        "预测"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_003",
+      "category": "price_forecast",
+      "question": "日前电价预测值能不能直接作为交易价格？",
+      "failed_reason": [
+        "评测标题别名不匹配"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (9)",
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "pjm_day_ahead_market",
+        "day_ahead_vs_real_time",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "日前",
+        "预测",
+        "交易"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 title alias 映射，把长标题、类别名和评测短标题打通。"
+    },
+    {
+      "question_id": "price_004",
+      "category": "price_forecast",
+      "question": "预测电价和真实结算电价为什么会有差异？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析 (10)",
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析 (6)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "day_ahead_vs_real_time",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "预测",
+        "真实",
+        "差异"
+      ],
+      "answer_missing_points": [
+        "实时市场",
+        "不确定性"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_008",
+      "category": "price_forecast",
+      "question": "电价预测主要依赖哪些数据？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析 (10)",
+        "AI-项目进展与分析 (9)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "data_fields_dictionary",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "数据",
+        "特征",
+        "预测"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_010",
+      "category": "price_forecast",
+      "question": "最高价和平均价哪个更适合判断风险？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "high_price_risk_strategy",
+        "河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf",
+        "河北南部电网电力市场信息披露实施细则.pdf-W020260122360751964570.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "市发展改革委市工业和信息化局关于印发《天津市深化新能源上网电价市场化改革实施方案》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "risk_level_rules",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "最高价",
+        "平均价",
+        "风险"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_012",
+      "category": "price_forecast",
+      "question": "实时市场变化会怎样影响日前预测判断？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (9)",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "day_ahead_vs_real_time",
+        "pjm_day_ahead_market",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "实时",
+        "日前",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "偏差",
+        "复核"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_015",
+      "category": "price_forecast",
+      "question": "电价突然跳高时先判断模型问题还是市场问题？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (5)",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知",
+        "policy_3",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "异常",
+        "模型",
+        "市场"
+      ],
+      "answer_missing_points": [
+        "数据质量"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_017",
+      "category": "price_forecast",
+      "question": "电价预测结果里的风险等级应该怎么用？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析 (9)",
+        "AI-项目进展与分析 (10)",
+        "AI-项目进展与分析 (5)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "risk_level_rules",
+        "风险等级定义",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "风险等级",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "预警",
+        "不是指令"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_019",
+      "category": "price_forecast",
+      "question": "价格预测可信度要结合哪些因素判断？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析 (9)",
+        "河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf",
+        "河北南部电网电力零售市场实施细则.pdf-W020260122360751883376.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "可信度",
+        "预测",
+        "因素"
+      ],
+      "answer_missing_points": [
+        "数据",
+        "特征"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "model_004",
+      "category": "model_explain",
+      "question": "MAE 和 RMSE 在电价预测里怎么理解？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "国家发展改革委关于降低燃煤发电上网电价",
+        "国家发展改革委关于降低燃煤发电上网电价和一般工商业用电价格的通知 (发改价格〔2015〕3105号)",
+        "电价预测逻辑说明",
+        "国家发展改革委关于进一步疏导",
+        "智能运营分析项目系统概览"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "MAE",
+        "RMSE"
+      ],
+      "answer_missing_points": [
+        "平均误差",
+        "大偏差"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "model_013",
+      "category": "model_explain",
+      "question": "特征工程变化会导致预测结果变化吗？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "特征工程",
+        "预测"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_006",
+      "category": "trading_strategy",
+      "question": "储能放电策略要结合哪些限制？",
+      "failed_reason": [
+        "评测标题别名不匹配"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "省发展改革委 省工业和信息化厅联合印发《关于支持新型储能健康发展的通知》",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "省发展改革委 省工业和信息化厅联合印发《关于支持新型储能健康发展的通知》",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "储能",
+        "放电",
+        "限制"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 title alias 映射，把长标题、类别名和评测短标题打通。"
+    },
+    {
+      "question_id": "strategy_007",
+      "category": "trading_strategy",
+      "question": "售电公司做日前报价前应该复核哪些内容？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "河北南部电网电力市场信息披露实施细则.pdf-W020260122360751964570.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北南部电网电力零售市场实施细则.pdf-W020260122360751883376.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "pjm_day_ahead_market",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "售电公司",
+        "日前报价"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_008",
+      "category": "trading_strategy",
+      "question": "价格风险高时应该如何处理客户合约敞口？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (4)",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "价格风险",
+        "敞口"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_011",
+      "category": "trading_strategy",
+      "question": "交易建议为什么不能等同于交易指令？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "交易建议",
+        "交易指令"
+      ],
+      "answer_missing_points": [
+        "人工复核"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_012",
+      "category": "trading_strategy",
+      "question": "实时市场偏差会影响储能策略吗？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (9)",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "day_ahead_vs_real_time",
+        "peak_valley_spread_strategy",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "实时市场",
+        "储能"
+      ],
+      "answer_missing_points": [
+        "复核"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_015",
+      "category": "trading_strategy",
+      "question": "异常价格可能是数据问题还是交易机会？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "河北南部电网电力零售市场实施细则.pdf-W020260122360751883376.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "异常价格",
+        "交易机会"
+      ],
+      "answer_missing_points": [
+        "两者可能",
+        "先确认"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "system_001",
+      "category": "system_usage",
+      "question": "这个系统是做什么的？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "中国绿色电力证书发展报告（2025）",
+        "山东省虚拟电厂建设运行管理办法（征求意见稿）-downfile.jsp_classid=0&filename=28397e5c97a548b4ade4ac81e7ec6ec1.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "system_overview",
+        "data_fields_dictionary",
+        "ai_assistant_answer_rules",
+        "model_pipeline_explanation",
+        "系统概览"
+      ],
+      "expected_keywords": [
+        "系统",
+        "电价预测"
+      ],
+      "answer_missing_points": [
+        "智能分析"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    }
+  ],
+  "top_k_evidence_but_answer_point_miss_questions": [
+    {
+      "question_id": "weather_005",
+      "category": "load_weather",
+      "question": "负荷和电价之间是线性关系吗？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (6)",
+        "关于印发《山东省促进虚拟电厂高质量发展方案》的通知",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "load_weather_price_relationship",
+        "负荷与电价关系",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "负荷",
+        "电价",
+        "线性"
+      ],
+      "answer_missing_points": [
+        "不是简单线性",
+        "供给",
+        "约束"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "weather_007",
+      "category": "load_weather",
+      "question": "天气预报误差会不会放大电价预测误差？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "天气与电价关系",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "AI-项目进展与分析 (5)",
+        "load_weather_price_relationship"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "load_weather_price_relationship",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "天气",
+        "误差",
+        "电价"
+      ],
+      "answer_missing_points": [
+        "会影响",
+        "负荷偏差",
+        "模型误差"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "weather_012",
+      "category": "load_weather",
+      "question": "天气数据不新鲜会影响 AI 助手判断吗？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "负荷、天气与电价关系",
+        "模型流程说明",
+        "模型重训判断规则",
+        "智能运营分析项目系统概览",
+        "异常价格响应"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "load_weather_price_relationship",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "天气数据",
+        "新鲜"
+      ],
+      "answer_missing_points": [
+        "会影响",
+        "数据时间",
+        "限制"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "weather_013",
+      "category": "load_weather",
+      "question": "负荷高但电价没涨可能是什么原因？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析 (6)",
+        "AI-项目进展与分析",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知",
+        "关于印发《山东省促进虚拟电厂高质量发展方案》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "load_weather_price_relationship",
+        "pjm_lmp_price_mechanism",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "负荷",
+        "电价",
+        "原因"
+      ],
+      "answer_missing_points": [
+        "供给充裕",
+        "拥塞",
+        "报价"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "spike_001",
+      "category": "spike_risk",
+      "question": "尖峰概率高是不是一定代表价格会暴涨？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "peak_spike_risk_explanation",
+        "AI-项目进展与分析 (1)",
+        "risk_level_rules",
+        "AI-项目进展与分析 (4)",
+        "AI-项目进展与分析 (11)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "尖峰风险",
+        "尖峰概率",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "尖峰",
+        "概率",
+        "风险",
+        "暴涨"
+      ],
+      "answer_missing_points": [
+        "不是必然",
+        "风险概率",
+        "结合负荷"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "spike_013",
+      "category": "spike_risk",
+      "question": "如果明天连续多个小时尖峰风险高，应该怎么处理？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (11)",
+        "peak_valley_spread_strategy",
+        "model_retrain_rules",
+        "AI-项目进展与分析 (1)",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "high_price_risk_strategy",
+        "尖峰风险",
+        "risk_level_rules",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "连续",
+        "尖峰",
+        "风险"
+      ],
+      "answer_missing_points": [
+        "连续窗口",
+        "敞口",
+        "预案"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "model_007",
+      "category": "model_explain",
+      "question": "高价时段误差大该不该马上切换模型？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "high_price_risk_strategy",
+        "forecast_error_explanation",
+        "peak_valley_spread_strategy",
+        "AI-项目进展与分析 (2)",
+        "河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_retrain_rules",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "高价",
+        "误差",
+        "切换"
+      ],
+      "answer_missing_points": [
+        "不应马上",
+        "回测",
+        "复核"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "strategy_004",
+      "category": "trading_strategy",
+      "question": "峰谷价差大是不是一定有套利机会？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "peak_valley_spread_strategy",
+        "prediction_interval_explanation",
+        "AI-项目进展与分析 (6)",
+        "risk_level_rules",
+        "AI-项目进展与分析 (9)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_valley_spread_strategy",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "峰谷价差",
+        "套利"
+      ],
+      "answer_missing_points": [
+        "不一定",
+        "效率",
+        "约束"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    }
+  ],
+  "failures": [
+    {
+      "question_id": "price_001",
+      "category": "price_forecast",
+      "question": "明天电价风险大吗？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (11)",
+        "AI-项目进展与分析",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知",
+        "AI-项目进展与分析 (4)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "peak_spike_risk_explanation",
+        "高价风险",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "电价",
+        "风险",
+        "预测"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_002",
+      "category": "price_forecast",
+      "question": "明天哪些小时价格可能偏高？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "高价风险",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "小时",
+        "高价",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "时段",
+        "价格",
+        "复核"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "price_003",
+      "category": "price_forecast",
+      "question": "日前电价预测值能不能直接作为交易价格？",
+      "failed_reason": [
+        "评测标题别名不匹配"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (9)",
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "pjm_day_ahead_market",
+        "day_ahead_vs_real_time",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "日前",
+        "预测",
+        "交易"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 title alias 映射，把长标题、类别名和评测短标题打通。"
+    },
+    {
+      "question_id": "price_004",
+      "category": "price_forecast",
+      "question": "预测电价和真实结算电价为什么会有差异？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析 (10)",
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析 (6)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "day_ahead_vs_real_time",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "预测",
+        "真实",
+        "差异"
+      ],
+      "answer_missing_points": [
+        "实时市场",
+        "不确定性"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_005",
+      "category": "price_forecast",
+      "question": "如果模型预测晚高峰价格高，我应该先看什么指标？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "high_price_risk_strategy",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "晚高峰",
+        "指标",
+        "价格"
+      ],
+      "answer_missing_points": [
+        "尖峰"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "price_006",
+      "category": "price_forecast",
+      "question": "预测区间变宽说明什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "prediction_interval_explanation",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "预测区间",
+        "不确定性"
+      ],
+      "answer_missing_points": [
+        "不确定性",
+        "复核",
+        "谨慎"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "price_007",
+      "category": "price_forecast",
+      "question": "为什么有些小时预测价格接近零？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "低价",
+        "小时",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "低负荷",
+        "供给",
+        "风险"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "price_008",
+      "category": "price_forecast",
+      "question": "电价预测主要依赖哪些数据？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析 (10)",
+        "AI-项目进展与分析 (9)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "data_fields_dictionary",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "数据",
+        "特征",
+        "预测"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_009",
+      "category": "price_forecast",
+      "question": "明天电价均价高不高？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "price_forecast_logic",
+        "预测结果字段说明",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "均价",
+        "电价",
+        "明天"
+      ],
+      "answer_missing_points": [
+        "限制"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "price_010",
+      "category": "price_forecast",
+      "question": "最高价和平均价哪个更适合判断风险？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "high_price_risk_strategy",
+        "河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf",
+        "河北南部电网电力市场信息披露实施细则.pdf-W020260122360751964570.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "市发展改革委市工业和信息化局关于印发《天津市深化新能源上网电价市场化改革实施方案》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "risk_level_rules",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "最高价",
+        "平均价",
+        "风险"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_012",
+      "category": "price_forecast",
+      "question": "实时市场变化会怎样影响日前预测判断？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (9)",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "day_ahead_vs_real_time",
+        "pjm_day_ahead_market",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "实时",
+        "日前",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "偏差",
+        "复核"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_015",
+      "category": "price_forecast",
+      "question": "电价突然跳高时先判断模型问题还是市场问题？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (5)",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知",
+        "policy_3",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "异常",
+        "模型",
+        "市场"
+      ],
+      "answer_missing_points": [
+        "数据质量"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_016",
+      "category": "price_forecast",
+      "question": "低价窗口是否一定适合采购？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "低价",
+        "采购",
+        "风险"
+      ],
+      "answer_missing_points": [
+        "不一定",
+        "实时",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "price_017",
+      "category": "price_forecast",
+      "question": "电价预测结果里的风险等级应该怎么用？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析 (9)",
+        "AI-项目进展与分析 (10)",
+        "AI-项目进展与分析 (5)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "risk_level_rules",
+        "风险等级定义",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "风险等级",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "预警",
+        "不是指令"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "price_018",
+      "category": "price_forecast",
+      "question": "如果预测数据不足，AI 助手应该如何说明？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "数据不足",
+        "说明"
+      ],
+      "answer_missing_points": [
+        "限制",
+        "缺少数据",
+        "不能编造"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "price_019",
+      "category": "price_forecast",
+      "question": "价格预测可信度要结合哪些因素判断？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (1)",
+        "AI-项目进展与分析 (9)",
+        "河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf",
+        "河北南部电网电力零售市场实施细则.pdf-W020260122360751883376.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords": [
+        "可信度",
+        "预测",
+        "因素"
+      ],
+      "answer_missing_points": [
+        "数据",
+        "特征"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "weather_005",
+      "category": "load_weather",
+      "question": "负荷和电价之间是线性关系吗？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析",
+        "AI-项目进展与分析 (6)",
+        "关于印发《山东省促进虚拟电厂高质量发展方案》的通知",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "load_weather_price_relationship",
+        "负荷与电价关系",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "负荷",
+        "电价",
+        "线性"
+      ],
+      "answer_missing_points": [
+        "不是简单线性",
+        "供给",
+        "约束"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "weather_007",
+      "category": "load_weather",
+      "question": "天气预报误差会不会放大电价预测误差？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "天气与电价关系",
+        "forecast_error_explanation",
+        "price_forecast_logic",
+        "AI-项目进展与分析 (5)",
+        "load_weather_price_relationship"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "load_weather_price_relationship",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "天气",
+        "误差",
+        "电价"
+      ],
+      "answer_missing_points": [
+        "会影响",
+        "负荷偏差",
+        "模型误差"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "weather_011",
+      "category": "load_weather",
+      "question": "温度升高时应该关注哪些预测字段？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "data_fields_dictionary",
+        "load_weather_price_relationship",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "温度",
+        "字段",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "风险"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "weather_012",
+      "category": "load_weather",
+      "question": "天气数据不新鲜会影响 AI 助手判断吗？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "负荷、天气与电价关系",
+        "模型流程说明",
+        "模型重训判断规则",
+        "智能运营分析项目系统概览",
+        "异常价格响应"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "load_weather_price_relationship",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "天气数据",
+        "新鲜"
+      ],
+      "answer_missing_points": [
+        "会影响",
+        "数据时间",
+        "限制"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "weather_013",
+      "category": "load_weather",
+      "question": "负荷高但电价没涨可能是什么原因？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (5)",
+        "AI-项目进展与分析 (6)",
+        "AI-项目进展与分析",
+        "河北省发展和改革委员会关于优化调整河北南网工商业及其他用户分时电价政策的通知",
+        "关于印发《山东省促进虚拟电厂高质量发展方案》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "load_weather_price_relationship",
+        "pjm_lmp_price_mechanism",
+        "天气",
+        "负荷",
+        "price_forecast_logic",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "负荷",
+        "电价",
+        "原因"
+      ],
+      "answer_missing_points": [
+        "供给充裕",
+        "拥塞",
+        "报价"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "spike_001",
+      "category": "spike_risk",
+      "question": "尖峰概率高是不是一定代表价格会暴涨？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "peak_spike_risk_explanation",
+        "AI-项目进展与分析 (1)",
+        "risk_level_rules",
+        "AI-项目进展与分析 (4)",
+        "AI-项目进展与分析 (11)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "尖峰风险",
+        "尖峰概率",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "尖峰",
+        "概率",
+        "风险",
+        "暴涨"
+      ],
+      "answer_missing_points": [
+        "不是必然",
+        "风险概率",
+        "结合负荷"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "spike_003",
+      "category": "spike_risk",
+      "question": "为什么晚高峰容易出现尖峰价格？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "load_weather_price_relationship",
+        "尖峰风险",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "晚高峰",
+        "尖峰",
+        "价格"
+      ],
+      "answer_missing_points": [
+        "供需",
+        "拥塞"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "spike_009",
+      "category": "spike_risk",
+      "question": "尖峰价格预测偏差为什么经常更大？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "peak_spike_risk_explanation",
+        "尖峰风险",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "尖峰",
+        "偏差",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "RMSE",
+        "异常",
+        "波动"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "spike_010",
+      "category": "spike_risk",
+      "question": "如何判断一个高价小时是不是异常价格？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "peak_spike_risk_explanation",
+        "尖峰风险",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "高价",
+        "异常"
+      ],
+      "answer_missing_points": [
+        "数据质量",
+        "相邻小时",
+        "市场"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "spike_013",
+      "category": "spike_risk",
+      "question": "如果明天连续多个小时尖峰风险高，应该怎么处理？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (11)",
+        "peak_valley_spread_strategy",
+        "model_retrain_rules",
+        "AI-项目进展与分析 (1)",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_spike_risk_explanation",
+        "high_price_risk_strategy",
+        "尖峰风险",
+        "risk_level_rules",
+        "price_forecast_logic"
+      ],
+      "expected_keywords": [
+        "连续",
+        "尖峰",
+        "风险"
+      ],
+      "answer_missing_points": [
+        "连续窗口",
+        "敞口",
+        "预案"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "model_004",
+      "category": "model_explain",
+      "question": "MAE 和 RMSE 在电价预测里怎么理解？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "国家发展改革委关于降低燃煤发电上网电价",
+        "国家发展改革委关于降低燃煤发电上网电价和一般工商业用电价格的通知 (发改价格〔2015〕3105号)",
+        "电价预测逻辑说明",
+        "国家发展改革委关于进一步疏导",
+        "智能运营分析项目系统概览"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "MAE",
+        "RMSE"
+      ],
+      "answer_missing_points": [
+        "平均误差",
+        "大偏差"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "model_005",
+      "category": "model_explain",
+      "question": "真实值回填不足时能判断模型好坏吗？",
+      "failed_reason": [
+        "未触发 RAG",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "forecast_error_explanation",
+        "model_retrain_rules",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "真实值",
+        "回填",
+        "模型"
+      ],
+      "answer_missing_points": [
+        "样本不足",
+        "不能草率",
+        "回填"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "model_006",
+      "category": "model_explain",
+      "question": "模型漂移可能由哪些因素造成？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_retrain_rules",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "模型漂移",
+        "因素"
+      ],
+      "answer_missing_points": [
+        "特征分布",
+        "市场结构"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "model_007",
+      "category": "model_explain",
+      "question": "高价时段误差大该不该马上切换模型？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "high_price_risk_strategy",
+        "forecast_error_explanation",
+        "peak_valley_spread_strategy",
+        "AI-项目进展与分析 (2)",
+        "河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_retrain_rules",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "高价",
+        "误差",
+        "切换"
+      ],
+      "answer_missing_points": [
+        "不应马上",
+        "回测",
+        "复核"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "model_008",
+      "category": "model_explain",
+      "question": "模型版本变化会影响预测口径吗？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "模型版本",
+        "预测"
+      ],
+      "answer_missing_points": [
+        "版本",
+        "口径",
+        "回测"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "model_009",
+      "category": "model_explain",
+      "question": "数据质量问题会怎样影响模型预测？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "数据质量",
+        "模型"
+      ],
+      "answer_missing_points": [
+        "清洗",
+        "特征"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "model_010",
+      "category": "model_explain",
+      "question": "模型训练流程大概包括哪些步骤？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "训练流程",
+        "模型"
+      ],
+      "answer_missing_points": [
+        "特征",
+        "训练"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "model_013",
+      "category": "model_explain",
+      "question": "特征工程变化会导致预测结果变化吗？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_retrain_rules",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "特征工程",
+        "预测"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "model_015",
+      "category": "model_explain",
+      "question": "为什么模型不应该自动决定生产切换？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_retrain_rules",
+        "ai_assistant_answer_rules",
+        "forecast_error_explanation",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "risk_level_rules"
+      ],
+      "expected_keywords": [
+        "模型",
+        "生产切换"
+      ],
+      "answer_missing_points": [
+        "人工复核",
+        "回测",
+        "建议"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "strategy_003",
+      "category": "trading_strategy",
+      "question": "低价窗口应该如何利用？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "低价",
+        "窗口"
+      ],
+      "answer_missing_points": [
+        "充电",
+        "采购",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "strategy_004",
+      "category": "trading_strategy",
+      "question": "峰谷价差大是不是一定有套利机会？",
+      "failed_reason": [
+        "Top-K 有证据但回答没有覆盖答案要点"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "peak_valley_spread_strategy",
+        "prediction_interval_explanation",
+        "AI-项目进展与分析 (6)",
+        "risk_level_rules",
+        "AI-项目进展与分析 (9)"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "peak_valley_spread_strategy",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "峰谷价差",
+        "套利"
+      ],
+      "answer_missing_points": [
+        "不一定",
+        "效率",
+        "约束"
+      ],
+      "suggested_fix": "增强 Prompt 对 evidence 的使用约束，要求覆盖结论、依据、建议和评测要点。"
+    },
+    {
+      "question_id": "strategy_005",
+      "category": "trading_strategy",
+      "question": "异常价格出现时应该先做什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "异常价格",
+        "先"
+      ],
+      "answer_missing_points": [
+        "确认数据",
+        "模型版本",
+        "相邻小时"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "strategy_006",
+      "category": "trading_strategy",
+      "question": "储能放电策略要结合哪些限制？",
+      "failed_reason": [
+        "评测标题别名不匹配"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "省发展改革委 省工业和信息化厅联合印发《关于支持新型储能健康发展的通知》",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "省发展改革委 省工业和信息化厅联合印发《关于支持新型储能健康发展的通知》",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "储能",
+        "放电",
+        "限制"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 title alias 映射，把长标题、类别名和评测短标题打通。"
+    },
+    {
+      "question_id": "strategy_007",
+      "category": "trading_strategy",
+      "question": "售电公司做日前报价前应该复核哪些内容？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "河北南部电网电力市场信息披露实施细则.pdf-W020260122360751964570.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北南部电网电力零售市场实施细则.pdf-W020260122360751883376.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "pjm_day_ahead_market",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "售电公司",
+        "日前报价"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_008",
+      "category": "trading_strategy",
+      "question": "价格风险高时应该如何处理客户合约敞口？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (4)",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "价格风险",
+        "敞口"
+      ],
+      "answer_missing_points": [],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_009",
+      "category": "trading_strategy",
+      "question": "负价是不是一定可以买入？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "low_price_opportunity_strategy",
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "负价",
+        "买入"
+      ],
+      "answer_missing_points": [
+        "不一定",
+        "约束",
+        "实时"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "strategy_010",
+      "category": "trading_strategy",
+      "question": "高价预测和储能套利之间有什么关系？",
+      "failed_reason": [
+        "未触发 RAG",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "高价",
+        "储能",
+        "套利"
+      ],
+      "answer_missing_points": [
+        "低充高放",
+        "价差",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "strategy_011",
+      "category": "trading_strategy",
+      "question": "交易建议为什么不能等同于交易指令？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "risk_level_rules",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "交易建议",
+        "交易指令"
+      ],
+      "answer_missing_points": [
+        "人工复核"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_012",
+      "category": "trading_strategy",
+      "question": "实时市场偏差会影响储能策略吗？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "AI-项目进展与分析 (9)",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "day_ahead_vs_real_time",
+        "peak_valley_spread_strategy",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "实时市场",
+        "储能"
+      ],
+      "answer_missing_points": [
+        "复核"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "strategy_013",
+      "category": "trading_strategy",
+      "question": "如果连续低价时段出现，采购策略要注意什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配",
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "tool_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "low_price_opportunity_strategy",
+        "high_price_risk_strategy",
+        "peak_valley_spread_strategy",
+        "abnormal_price_response",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "连续低价",
+        "采购"
+      ],
+      "answer_missing_points": [
+        "窗口",
+        "反弹",
+        "约束"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。 检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "strategy_015",
+      "category": "trading_strategy",
+      "question": "异常价格可能是数据问题还是交易机会？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "华中区域（东四省）电力互济交易实施细则.pdf-华中区域（东四省）电力互济交易实施细则.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf",
+        "河北南部电网电力零售市场实施细则.pdf-W020260122360751883376.pdf",
+        "河北南部电网电力中长期市场实施细则.pdf-W020260122360751859476.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "abnormal_price_response",
+        "high_price_risk_strategy",
+        "low_price_opportunity_strategy",
+        "peak_valley_spread_strategy",
+        "trading_strategy"
+      ],
+      "expected_keywords": [
+        "异常价格",
+        "交易机会"
+      ],
+      "answer_missing_points": [
+        "两者可能",
+        "先确认"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "system_001",
+      "category": "system_usage",
+      "question": "这个系统是做什么的？",
+      "failed_reason": [
+        "RAG 触发但未召回正确文档"
+      ],
+      "failed_checks": [
+        "top_k_title_hit"
+      ],
+      "rag_triggered": true,
+      "rag_hits": 5,
+      "top_k_titles": [
+        "河北省发展和改革委员会国家能源局华北监管局关于印发《河北南部电网电力市场运行规则》及配套实施细则的通知",
+        "中国绿色电力证书发展报告（2025）",
+        "山东省虚拟电厂建设运行管理办法（征求意见稿）-downfile.jsp_classid=0&filename=28397e5c97a548b4ade4ac81e7ec6ec1.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf",
+        "新型储能电站建设工程质量监督大纲-9296ad160ac140888b20dbc4d54ae917.pdf"
+      ],
+      "top_k_categories": [],
+      "expected_titles": [
+        "system_overview",
+        "data_fields_dictionary",
+        "ai_assistant_answer_rules",
+        "model_pipeline_explanation",
+        "系统概览"
+      ],
+      "expected_keywords": [
+        "系统",
+        "电价预测"
+      ],
+      "answer_missing_points": [
+        "智能分析"
+      ],
+      "suggested_fix": "增加 query rewrite、领域同义词和 category boost，提高期望文档召回率。"
+    },
+    {
+      "question_id": "system_003",
+      "category": "system_usage",
+      "question": "AI 助手能帮我分析什么？",
+      "failed_reason": [
+        "未触发 RAG"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "system_overview",
+        "ai_assistant_answer_rules",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "AI助手",
+        "分析"
+      ],
+      "answer_missing_points": [
+        "预测结果",
+        "风险",
+        "知识库"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。"
+    },
+    {
+      "question_id": "system_004",
+      "category": "system_usage",
+      "question": "开发者模式能看到什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "开发者模式",
+        "Trace"
+      ],
+      "answer_missing_points": [
+        "工具",
+        "RAG",
+        "Trace"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_005",
+      "category": "system_usage",
+      "question": "为什么普通模式不显示工具调用？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "普通模式",
+        "工具调用"
+      ],
+      "answer_missing_points": [
+        "默认隐藏",
+        "自然回答",
+        "debug"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_006",
+      "category": "system_usage",
+      "question": "预测中心和策略中心分别看什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "system_overview",
+        "data_fields_dictionary",
+        "ai_assistant_answer_rules",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "预测中心",
+        "策略中心"
+      ],
+      "answer_missing_points": [
+        "预测",
+        "运营"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_008",
+      "category": "system_usage",
+      "question": "如果没有预测数据，系统应该怎么提示？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "ai_assistant_answer_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "model_pipeline_explanation"
+      ],
+      "expected_keywords": [
+        "没有预测数据",
+        "提示"
+      ],
+      "answer_missing_points": [
+        "数据不足",
+        "限制",
+        "刷新"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "system_009",
+      "category": "system_usage",
+      "question": "模型运维页面主要关注什么？",
+      "failed_reason": [
+        "未触发 RAG",
+        "答案关键词不匹配"
+      ],
+      "failed_checks": [
+        "rag_expectation_ok",
+        "top_k_title_hit",
+        "keyword_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [
+        "model_pipeline_explanation",
+        "model_retrain_rules",
+        "system_overview",
+        "data_fields_dictionary",
+        "ai_assistant_answer_rules"
+      ],
+      "expected_keywords": [
+        "模型运维",
+        "关注"
+      ],
+      "answer_missing_points": [
+        "模型版本",
+        "重训"
+      ],
+      "suggested_fix": "增强专业领域词 RAG 触发规则，避免专业问题被跳过。 在 prompt 或 guard 中保留关键业务词，同时复核评测关键词是否过窄。"
+    },
+    {
+      "question_id": "daily_002",
+      "category": "daily_chat",
+      "question": "你是谁？",
+      "failed_reason": [
+        "其他"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [],
+      "expected_keywords": [
+        "助手"
+      ],
+      "answer_missing_points": [
+        "助手"
+      ],
+      "suggested_fix": "人工复核该失败样例。"
+    },
+    {
+      "question_id": "daily_003",
+      "category": "daily_chat",
+      "question": "你好",
+      "failed_reason": [
+        "其他"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [],
+      "expected_keywords": [
+        "你好"
+      ],
+      "answer_missing_points": [
+        "帮助"
+      ],
+      "suggested_fix": "人工复核该失败样例。"
+    },
+    {
+      "question_id": "daily_004",
+      "category": "daily_chat",
+      "question": "谢谢你",
+      "failed_reason": [
+        "其他"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [],
+      "expected_keywords": [
+        "不客气"
+      ],
+      "answer_missing_points": [
+        "不客气"
+      ],
+      "suggested_fix": "人工复核该失败样例。"
+    },
+    {
+      "question_id": "daily_006",
+      "category": "daily_chat",
+      "question": "早上好",
+      "failed_reason": [
+        "其他"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [],
+      "expected_keywords": [
+        "早上好"
+      ],
+      "answer_missing_points": [
+        "帮助"
+      ],
+      "suggested_fix": "人工复核该失败样例。"
+    },
+    {
+      "question_id": "daily_007",
+      "category": "daily_chat",
+      "question": "现在几点？",
+      "failed_reason": [
+        "工具触发不符合预期"
+      ],
+      "failed_checks": [
+        "tool_expectation_ok",
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [],
+      "expected_keywords": [
+        "时间"
+      ],
+      "answer_missing_points": [
+        "时间"
+      ],
+      "suggested_fix": "检查 intent_router 和 tools_for_intent 的工具映射。"
+    },
+    {
+      "question_id": "daily_009",
+      "category": "daily_chat",
+      "question": "请用一句话回答",
+      "failed_reason": [
+        "其他"
+      ],
+      "failed_checks": [
+        "answer_point_hit"
+      ],
+      "rag_triggered": false,
+      "rag_hits": 0,
+      "top_k_titles": [],
+      "top_k_categories": [],
+      "expected_titles": [],
+      "expected_keywords": [
+        "可以"
+      ],
+      "answer_missing_points": [
+        "简短"
+      ],
+      "suggested_fix": "人工复核该失败样例。"
+    }
+  ]
+}

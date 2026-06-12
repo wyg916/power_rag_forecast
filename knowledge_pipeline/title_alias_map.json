@@ -1,0 +1,325 @@
+{
+  "price_forecast_logic": [
+    "电价预测逻辑",
+    "电价预测",
+    "价格预测",
+    "日前预测",
+    "预测电价",
+    "风险等级",
+    "可信度",
+    "预测值"
+  ],
+  "prediction_interval_explanation": [
+    "预测区间",
+    "置信区间",
+    "区间变宽",
+    "不确定性"
+  ],
+  "load_weather_price_relationship": [
+    "负荷天气关系",
+    "负荷",
+    "天气",
+    "温度",
+    "降雨",
+    "用电需求",
+    "电力需求"
+  ],
+  "peak_spike_risk_explanation": [
+    "尖峰风险",
+    "尖峰概率",
+    "晚高峰",
+    "高价风险",
+    "价格冲高",
+    "暴涨"
+  ],
+  "forecast_error_explanation": [
+    "模型误差解释",
+    "预测误差",
+    "MAE",
+    "RMSE",
+    "误差变大",
+    "预测偏差"
+  ],
+  "model_pipeline_explanation": [
+    "模型流程",
+    "模型训练",
+    "特征工程",
+    "预测流程",
+    "模型版本",
+    "生产切换"
+  ],
+  "model_retrain_rules": [
+    "模型重训",
+    "重训",
+    "模型退化",
+    "模型漂移",
+    "切换模型"
+  ],
+  "risk_level_rules": [
+    "风险等级",
+    "风险概率",
+    "风险规则",
+    "高风险",
+    "低风险"
+  ],
+  "high_price_risk_strategy": [
+    "高价风险策略",
+    "高价风险",
+    "高价预测",
+    "客户合约敞口",
+    "日前报价",
+    "储能放电"
+  ],
+  "low_price_opportunity_strategy": [
+    "低价机会策略",
+    "低价窗口",
+    "低价机会",
+    "负价",
+    "采购策略"
+  ],
+  "peak_valley_spread_strategy": [
+    "峰谷价差策略",
+    "峰谷价差",
+    "套利",
+    "储能套利"
+  ],
+  "abnormal_price_response": [
+    "异常价格响应",
+    "异常价格",
+    "异常电价",
+    "数据问题",
+    "交易机会"
+  ],
+  "trading_strategy": [
+    "交易策略",
+    "售电策略",
+    "报价复核",
+    "辅助决策"
+  ],
+  "system_overview": [
+    "系统概览",
+    "这个系统",
+    "系统是做什么",
+    "项目是做什么",
+    "Web工作台"
+  ],
+  "data_fields_dictionary": [
+    "字段字典",
+    "预测字段",
+    "数据字段",
+    "指标说明"
+  ],
+  "ai_assistant_answer_rules": [
+    "AI助手回答规则",
+    "AI助手",
+    "开发者模式",
+    "普通模式",
+    "工具调用"
+  ],
+  "电网代理购电": [
+    "代理购电",
+    "电网企业代理购电",
+    "电网代理购电工作实施细则"
+  ],
+  "绿证交易": [
+    "绿证",
+    "绿色电力证书",
+    "可再生能源绿色电力证书",
+    "GEC"
+  ],
+  "电力现货交易": [
+    "现货交易",
+    "日前市场",
+    "实时市场",
+    "市场出清",
+    "出清"
+  ],
+  "pjm_lmp_price_mechanism": [
+    "PJM",
+    "DOM",
+    "Dominion",
+    "LMP",
+    "节点电价",
+    "节点价格",
+    "边际价格",
+    "拥塞",
+    "损耗"
+  ],
+  "PJM/DOM/LMP机制": [
+    "PJM",
+    "DOM",
+    "Dominion",
+    "LMP",
+    "节点电价",
+    "节点价格",
+    "边际价格"
+  ],
+  "电价政策": [
+    "分时电价",
+    "峰谷电价",
+    "输配电价",
+    "代理购电价格"
+  ],
+  "新能源政策": [
+    "新能源",
+    "光伏",
+    "风电",
+    "储能",
+    "可再生能源"
+  ],
+  "模型与预测方法": [
+    "预测",
+    "模型",
+    "误差",
+    "RMSE",
+    "MAE",
+    "负荷",
+    "天气"
+  ],
+  "data_insufficient_explanation": [
+    "????",
+    "?????"
+  ],
+  "missing_data_response_policy": [
+    "????",
+    "??????",
+    "?????"
+  ],
+  "forecast_data_availability_boundary": [
+    "??????",
+    "????",
+    "???????"
+  ],
+  "weather_data_freshness_policy": [
+    "?????",
+    "??????",
+    "????",
+    "forecast_window",
+    "last_update"
+  ],
+  "weather_load_price_driver_explanation": [
+    "????",
+    "??????"
+  ],
+  "weather_forecast_update_window": [
+    "??????",
+    "????"
+  ],
+  "peak_spike_probability_explanation": [
+    "????",
+    "?????",
+    "spike",
+    "peak spike",
+    "peak hour"
+  ],
+  "peak_hour_detection_logic": [
+    "???",
+    "??",
+    "????",
+    "17:00-21:00"
+  ],
+  "peak_valley_spread_risk_explanation": [
+    "????",
+    "??"
+  ],
+  "storage_strategy_constraints": [
+    "??",
+    "SOC",
+    "????"
+  ],
+  "storage_charge_discharge_boundary": [
+    "??",
+    "?????",
+    "????",
+    "??????"
+  ],
+  "storage_arbitrage_risk_explanation": [
+    "????",
+    "??????"
+  ],
+  "storage_operation_decision_policy": [
+    "????"
+  ],
+  "llm_router_fallback_policy": [
+    "????",
+    "DeepSeek",
+    "Ollama",
+    "auto",
+    "fallback",
+    "?????"
+  ],
+  "model_provider_selection_explanation": [
+    "????",
+    "model_provider",
+    "auto??"
+  ],
+  "deepseek_ollama_fallback_explanation": [
+    "DeepSeek???",
+    "Ollama??",
+    "???????",
+    "??????"
+  ],
+  "ai_assistant_model_boundary": [
+    "????",
+    "???????",
+    "API Key"
+  ],
+  "market_terms_explanation": [
+    "????",
+    "LMP",
+    "PJM",
+    "??",
+    "RMSE",
+    "MAE",
+    "MAPE"
+  ],
+  "day_ahead_market_price_explanation": [
+    "????",
+    "day-ahead",
+    "DA"
+  ],
+  "real_time_market_price_explanation": [
+    "????",
+    "real-time",
+    "RT"
+  ],
+  "green_certificate_explanation": [
+    "??",
+    "????",
+    "GEC",
+    "???????"
+  ],
+  "agency_power_purchase_explanation": [
+    "????",
+    "???",
+    "?????",
+    "????????"
+  ],
+  "peak_valley_price_spread_explanation": [
+    "????",
+    "??"
+  ],
+  "model_error_metric_explanation": [
+    "RMSE",
+    "MAE",
+    "MAPE",
+    "????",
+    "??"
+  ],
+  "strategy_advice_response_policy": [
+    "????"
+  ],
+  "evidence_based_answer_policy": [
+    "????",
+    "???",
+    "?????"
+  ],
+  "trading_decision_boundary": [
+    "????"
+  ],
+  "business_advice_tone_guide": [
+    "????",
+    "???",
+    "??????"
+  ]
+}

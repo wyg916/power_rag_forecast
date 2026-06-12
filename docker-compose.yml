@@ -1,0 +1,180 @@
+name: power-trading-ai
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-power_trading}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      TZ: Asia/Shanghai
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-power_trading}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-1}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change_me}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      DATABASE_PRIMARY: postgresql
+      DATABASE_ALLOW_LEGACY_FALLBACK: ${DATABASE_ALLOW_LEGACY_FALLBACK:-0}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_me}@postgres:5432/${POSTGRES_DB:-power_trading}
+      REDIS_URL: redis://redis:6379/0
+      TASK_EXECUTION_MODE: ${TASK_EXECUTION_MODE:-celery}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-1}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:${FRONTEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8080}}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-ollama}
+      LLM_ROUTER_MODE: ${LLM_ROUTER_MODE:-auto}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen3:4b}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      LOCAL_LLM_BASE_URL: ${LOCAL_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-qwen3:4b}
+      AI_ASSISTANT_REQUIRE_EVIDENCE: ${AI_ASSISTANT_REQUIRE_EVIDENCE:-1}
+      AI_ASSISTANT_ALLOW_EXTERNAL_FACTS: ${AI_ASSISTANT_ALLOW_EXTERNAL_FACTS:-0}
+      RAG_ENABLED: ${RAG_ENABLED:-1}
+      RAG_PROFILE: ${RAG_PROFILE:-balanced}
+      RAG_EMBEDDING_PROVIDER: ${RAG_EMBEDDING_PROVIDER:-local}
+      RAG_EMBEDDING_MODEL: ${RAG_EMBEDDING_MODEL:-local-hash-bge-small-zh-v1.5-compatible}
+      RAG_EMBEDDING_MODEL_PATH: ${RAG_EMBEDDING_MODEL_PATH:-}
+      RAG_EMBEDDING_MODEL_NAME: ${RAG_EMBEDDING_MODEL_NAME:-}
+      RAG_EMBEDDING_DEVICE: ${RAG_EMBEDDING_DEVICE:-cpu}
+      RAG_EMBEDDING_BATCH_SIZE: ${RAG_EMBEDDING_BATCH_SIZE:-16}
+      RAG_EMBEDDING_FALLBACK_PROVIDER: ${RAG_EMBEDDING_FALLBACK_PROVIDER:-hash}
+      TZ: Asia/Shanghai
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./output:/app/output
+      - app_model_artifacts:/app/model_artifacts
+      - ./自动化输出:/app/自动化输出
+      - ./结果-3:/app/结果-3:ro
+      - ./knowledge_base:/app/knowledge_base:ro
+      - ./knowledge_pipeline/output:/app/knowledge_pipeline/output
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    command: ["celery", "-A", "backend.app.workers.celery_app:celery_app", "worker", "--loglevel=INFO", "--pool=solo"]
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-1}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change_me}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      DATABASE_PRIMARY: postgresql
+      DATABASE_ALLOW_LEGACY_FALLBACK: ${DATABASE_ALLOW_LEGACY_FALLBACK:-0}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_me}@postgres:5432/${POSTGRES_DB:-power_trading}
+      REDIS_URL: redis://redis:6379/0
+      TASK_EXECUTION_MODE: ${TASK_EXECUTION_MODE:-celery}
+      AUTO_MIGRATE: ${WORKER_AUTO_MIGRATE:-0}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-ollama}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen3:4b}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      RAG_ENABLED: ${RAG_ENABLED:-1}
+      RAG_PROFILE: ${RAG_PROFILE:-balanced}
+      RAG_EMBEDDING_PROVIDER: ${RAG_EMBEDDING_PROVIDER:-local}
+      RAG_EMBEDDING_MODEL: ${RAG_EMBEDDING_MODEL:-local-hash-bge-small-zh-v1.5-compatible}
+      RAG_EMBEDDING_MODEL_PATH: ${RAG_EMBEDDING_MODEL_PATH:-}
+      RAG_EMBEDDING_MODEL_NAME: ${RAG_EMBEDDING_MODEL_NAME:-}
+      RAG_EMBEDDING_DEVICE: ${RAG_EMBEDDING_DEVICE:-cpu}
+      RAG_EMBEDDING_BATCH_SIZE: ${RAG_EMBEDDING_BATCH_SIZE:-16}
+      RAG_EMBEDDING_FALLBACK_PROVIDER: ${RAG_EMBEDDING_FALLBACK_PROVIDER:-hash}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./output:/app/output
+      - app_model_artifacts:/app/model_artifacts
+      - ./自动化输出:/app/自动化输出
+      - ./结果-3:/app/结果-3:ro
+      - ./knowledge_base:/app/knowledge_base:ro
+      - ./knowledge_pipeline/output:/app/knowledge_pipeline/output
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        VITE_AUTH_REQUIRED: ${VITE_AUTH_REQUIRED:-1}
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://backend:8000
+      TZ: Asia/Shanghai
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  postgres_data:
+  redis_data:
+  app_output:
+  app_model_artifacts:
+  ollama_data:

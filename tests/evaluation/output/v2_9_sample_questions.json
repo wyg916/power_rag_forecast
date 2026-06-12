@@ -1,0 +1,1019 @@
+[
+  {
+    "id": "price_001",
+    "category": "price_forecast",
+    "question": "明天电价风险大吗？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "price_forecast_logic",
+      "peak_spike_risk_explanation",
+      "高价风险"
+    ],
+    "expected_keywords_any": [
+      "电价",
+      "风险",
+      "预测"
+    ],
+    "expected_answer_points": [
+      "结论",
+      "风险",
+      "建议"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls",
+      "我无法回答该问题"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "price_002",
+    "category": "price_forecast",
+    "question": "明天哪些小时价格可能偏高？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "price_forecast_logic",
+      "高价风险"
+    ],
+    "expected_keywords_any": [
+      "小时",
+      "高价",
+      "预测"
+    ],
+    "expected_answer_points": [
+      "时段",
+      "价格",
+      "复核"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "price_003",
+    "category": "price_forecast",
+    "question": "日前电价预测值能不能直接作为交易价格？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "price_forecast_logic",
+      "pjm_day_ahead_market",
+      "day_ahead_vs_real_time"
+    ],
+    "expected_keywords_any": [
+      "日前",
+      "预测",
+      "交易"
+    ],
+    "expected_answer_points": [
+      "不能直接",
+      "辅助决策",
+      "实时"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "price_004",
+    "category": "price_forecast",
+    "question": "预测电价和真实结算电价为什么会有差异？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "day_ahead_vs_real_time",
+      "forecast_error_explanation"
+    ],
+    "expected_keywords_any": [
+      "预测",
+      "真实",
+      "差异"
+    ],
+    "expected_answer_points": [
+      "实时市场",
+      "误差",
+      "不确定性"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "price_005",
+    "category": "price_forecast",
+    "question": "如果模型预测晚高峰价格高，我应该先看什么指标？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "peak_spike_risk_explanation",
+      "high_price_risk_strategy"
+    ],
+    "expected_keywords_any": [
+      "晚高峰",
+      "指标",
+      "价格"
+    ],
+    "expected_answer_points": [
+      "负荷",
+      "天气",
+      "尖峰"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "weather_001",
+    "category": "load_weather",
+    "question": "负荷预测偏高会怎么影响日前电价？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "load_weather_price_relationship",
+      "负荷与电价关系"
+    ],
+    "expected_keywords_any": [
+      "负荷",
+      "日前电价"
+    ],
+    "expected_answer_points": [
+      "边际",
+      "压力",
+      "不一定"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "weather_002",
+    "category": "load_weather",
+    "question": "天气变化为什么会影响电价预测？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "load_weather_price_relationship",
+      "天气与电价关系"
+    ],
+    "expected_keywords_any": [
+      "天气",
+      "电价",
+      "预测"
+    ],
+    "expected_answer_points": [
+      "负荷",
+      "出力",
+      "约束"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "weather_003",
+    "category": "load_weather",
+    "question": "高温天气一定会导致电价上涨吗？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "load_weather_price_relationship",
+      "天气与电价关系"
+    ],
+    "expected_keywords_any": [
+      "高温",
+      "电价"
+    ],
+    "expected_answer_points": [
+      "不一定",
+      "负荷",
+      "供需"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "weather_004",
+    "category": "load_weather",
+    "question": "降水对电价预测可能有什么影响？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "load_weather_price_relationship"
+    ],
+    "expected_keywords_any": [
+      "降水",
+      "天气",
+      "电价"
+    ],
+    "expected_answer_points": [
+      "需求",
+      "出力",
+      "不确定"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "weather_005",
+    "category": "load_weather",
+    "question": "负荷和电价之间是线性关系吗？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "load_weather_price_relationship",
+      "负荷与电价关系"
+    ],
+    "expected_keywords_any": [
+      "负荷",
+      "电价",
+      "线性"
+    ],
+    "expected_answer_points": [
+      "不是简单线性",
+      "供给",
+      "约束"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "spike_001",
+    "category": "spike_risk",
+    "question": "尖峰概率高是不是一定代表价格会暴涨？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "peak_spike_risk_explanation",
+      "尖峰风险",
+      "尖峰概率"
+    ],
+    "expected_keywords_any": [
+      "尖峰",
+      "概率",
+      "风险",
+      "暴涨"
+    ],
+    "expected_answer_points": [
+      "不是必然",
+      "风险概率",
+      "结合负荷"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls",
+      "我无法回答该问题"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "spike_002",
+    "category": "spike_risk",
+    "question": "尖峰风险高时应该采取什么运营动作？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "peak_spike_risk_explanation",
+      "high_price_risk_strategy"
+    ],
+    "expected_keywords_any": [
+      "尖峰",
+      "运营",
+      "动作"
+    ],
+    "expected_answer_points": [
+      "敞口",
+      "储能",
+      "复核"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "spike_003",
+    "category": "spike_risk",
+    "question": "为什么晚高峰容易出现尖峰价格？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "peak_spike_risk_explanation",
+      "load_weather_price_relationship"
+    ],
+    "expected_keywords_any": [
+      "晚高峰",
+      "尖峰",
+      "价格"
+    ],
+    "expected_answer_points": [
+      "负荷",
+      "供需",
+      "拥塞"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "spike_004",
+    "category": "spike_risk",
+    "question": "尖峰概率和风险等级有什么区别？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "risk_level_rules",
+      "peak_spike_risk_explanation"
+    ],
+    "expected_keywords_any": [
+      "尖峰概率",
+      "风险等级"
+    ],
+    "expected_answer_points": [
+      "概率",
+      "等级",
+      "预警"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "spike_005",
+    "category": "spike_risk",
+    "question": "高风险小时一定要执行交易吗？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "risk_level_rules",
+      "ai_assistant_answer_rules"
+    ],
+    "expected_keywords_any": [
+      "高风险",
+      "交易"
+    ],
+    "expected_answer_points": [
+      "不是指令",
+      "复核",
+      "辅助决策"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "model_001",
+    "category": "model_explain",
+    "question": "模型最近误差变大，可能是什么原因？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "forecast_error_explanation",
+      "model_retrain_rules"
+    ],
+    "expected_keywords_any": [
+      "模型",
+      "误差",
+      "原因"
+    ],
+    "expected_answer_points": [
+      "数据",
+      "天气",
+      "漂移"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "model_002",
+    "category": "model_explain",
+    "question": "RMSE 变高说明模型一定变差了吗？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "forecast_error_explanation"
+    ],
+    "expected_keywords_any": [
+      "RMSE",
+      "模型"
+    ],
+    "expected_answer_points": [
+      "不一定",
+      "大偏差",
+      "样本"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "model_003",
+    "category": "model_explain",
+    "question": "模型要不要重训应该看哪些条件？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "model_retrain_rules"
+    ],
+    "expected_keywords_any": [
+      "重训",
+      "条件"
+    ],
+    "expected_answer_points": [
+      "连续误差",
+      "样本数",
+      "漂移"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "model_004",
+    "category": "model_explain",
+    "question": "MAE 和 RMSE 在电价预测里怎么理解？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "forecast_error_explanation"
+    ],
+    "expected_keywords_any": [
+      "MAE",
+      "RMSE"
+    ],
+    "expected_answer_points": [
+      "平均误差",
+      "大偏差",
+      "尖峰"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "model_005",
+    "category": "model_explain",
+    "question": "真实值回填不足时能判断模型好坏吗？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "forecast_error_explanation",
+      "model_retrain_rules"
+    ],
+    "expected_keywords_any": [
+      "真实值",
+      "回填",
+      "模型"
+    ],
+    "expected_answer_points": [
+      "样本不足",
+      "不能草率",
+      "回填"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "strategy_001",
+    "category": "trading_strategy",
+    "question": "如果明天峰谷价差变大，售电公司应该重点关注什么？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "peak_valley_spread_strategy"
+    ],
+    "expected_keywords_any": [
+      "峰谷价差",
+      "售电公司"
+    ],
+    "expected_answer_points": [
+      "机会和风险",
+      "窗口",
+      "储能"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "strategy_002",
+    "category": "trading_strategy",
+    "question": "高价时段应该怎么做风险应对？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "high_price_risk_strategy"
+    ],
+    "expected_keywords_any": [
+      "高价",
+      "风险"
+    ],
+    "expected_answer_points": [
+      "敞口",
+      "合同",
+      "实时"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "strategy_003",
+    "category": "trading_strategy",
+    "question": "低价窗口应该如何利用？",
+    "should_use_rag": true,
+    "should_use_tools": true,
+    "expected_titles_any": [
+      "low_price_opportunity_strategy"
+    ],
+    "expected_keywords_any": [
+      "低价",
+      "窗口"
+    ],
+    "expected_answer_points": [
+      "充电",
+      "采购",
+      "约束"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "strategy_004",
+    "category": "trading_strategy",
+    "question": "峰谷价差大是不是一定有套利机会？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "peak_valley_spread_strategy"
+    ],
+    "expected_keywords_any": [
+      "峰谷价差",
+      "套利"
+    ],
+    "expected_answer_points": [
+      "不一定",
+      "效率",
+      "约束"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "strategy_005",
+    "category": "trading_strategy",
+    "question": "异常价格出现时应该先做什么？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "abnormal_price_response"
+    ],
+    "expected_keywords_any": [
+      "异常价格",
+      "先"
+    ],
+    "expected_answer_points": [
+      "确认数据",
+      "模型版本",
+      "相邻小时"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "system_001",
+    "category": "system_usage",
+    "question": "这个系统是做什么的？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "system_overview"
+    ],
+    "expected_keywords_any": [
+      "系统",
+      "电价预测"
+    ],
+    "expected_answer_points": [
+      "电价预测",
+      "智能分析",
+      "运营"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "system_002",
+    "category": "system_usage",
+    "question": "我应该先看哪个页面？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "system_overview"
+    ],
+    "expected_keywords_any": [
+      "页面",
+      "仪表盘"
+    ],
+    "expected_answer_points": [
+      "仪表盘",
+      "预测中心",
+      "AI助手"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "system_003",
+    "category": "system_usage",
+    "question": "AI 助手能帮我分析什么？",
+    "should_use_rag": true,
+    "should_use_tools": false,
+    "expected_titles_any": [
+      "system_overview",
+      "ai_assistant_answer_rules"
+    ],
+    "expected_keywords_any": [
+      "AI助手",
+      "分析"
+    ],
+    "expected_answer_points": [
+      "预测结果",
+      "风险",
+      "知识库"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "daily_001",
+    "category": "daily_chat",
+    "question": "今天星期几？",
+    "should_use_rag": false,
+    "should_use_tools": true,
+    "expected_titles_any": [],
+    "expected_keywords_any": [
+      "星期"
+    ],
+    "expected_answer_points": [
+      "星期"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls",
+      "我无法回答该问题"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  },
+  {
+    "id": "daily_002",
+    "category": "daily_chat",
+    "question": "你是谁？",
+    "should_use_rag": false,
+    "should_use_tools": false,
+    "expected_titles_any": [],
+    "expected_keywords_any": [
+      "助手"
+    ],
+    "expected_answer_points": [
+      "助手"
+    ],
+    "forbidden_patterns": [
+      "AI意图",
+      "Trace",
+      "tool_calls"
+    ],
+    "default_should_hide": [
+      "trace",
+      "tools",
+      "tool_calls",
+      "workflow",
+      "agent_trace",
+      "trace_id",
+      "rag"
+    ]
+  }
+]

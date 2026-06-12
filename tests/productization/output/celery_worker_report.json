@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-06-08 18:14:30",
+  "broker_url": "redis://localhost:6379/0",
+  "status": "fail",
+  "worker_count": 0,
+  "workers": [],
+  "health_task_status": "not_run",
+  "health_task_result": null,
+  "message": "OperationalError: Error 10061 connecting to localhost:6379. 由于目标计算机积极拒绝，无法连接。."
+}

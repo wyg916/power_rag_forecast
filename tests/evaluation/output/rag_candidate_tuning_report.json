@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-06-07 21:17:25",
+  "scope": "quick tuning on first 20 fixed eval questions",
+  "entries": [
+    {
+      "candidate_limit": 8,
+      "report_name": "rag_candidate_limit_8_quick20",
+      "sample": "first_20_price_forecast_questions",
+      "total": 20,
+      "passed": 16,
+      "pass_rate": 0.8,
+      "rag_expected_hit_rate": 1.0,
+      "top_k_title_hit_rate": 0.9,
+      "not_triggered_rag": 0,
+      "avg_latency_ms": 31377.8,
+      "p50_latency_ms": 31632.5,
+      "p90_latency_ms": 37114.2,
+      "p95_latency_ms": 37404.8,
+      "failed_ids": [
+        "price_001",
+        "price_002",
+        "price_012",
+        "price_018"
+      ]
+    },
+    {
+      "candidate_limit": 12,
+      "report_name": "rag_candidate_limit_12_quick20",
+      "sample": "first_20_price_forecast_questions",
+      "total": 20,
+      "passed": 18,
+      "pass_rate": 0.9,
+      "rag_expected_hit_rate": 1.0,
+      "top_k_title_hit_rate": 0.95,
+      "not_triggered_rag": 0,
+      "avg_latency_ms": 36811.6,
+      "p50_latency_ms": 35771.2,
+      "p90_latency_ms": 41401.2,
+      "p95_latency_ms": 42027.8,
+      "failed_ids": [
+        "price_001",
+        "price_002"
+      ]
+    },
+    {
+      "candidate_limit": 20,
+      "report_name": "rag_tuned_quick20_candidate20_v3",
+      "sample": "first_20_price_forecast_questions",
+      "total": 20,
+      "passed": 20,
+      "pass_rate": 1.0,
+      "rag_expected_hit_rate": 1.0,
+      "top_k_title_hit_rate": 1.0,
+      "not_triggered_rag": 0,
+      "avg_latency_ms": 51324.8,
+      "p50_latency_ms": 48707.8,
+      "p90_latency_ms": 59891.7,
+      "p95_latency_ms": 66031.1,
+      "failed_ids": []
+    }
+  ],
+  "recommended_default": 20,
+  "latency_fallback": 12,
+  "recommendation": "20 gives the best retrieval/evaluation quality on the first-20 price forecast sample; 12 is the safer CPU-latency fallback."
+}

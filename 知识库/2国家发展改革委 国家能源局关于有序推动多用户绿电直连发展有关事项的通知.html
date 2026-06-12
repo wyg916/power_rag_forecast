@@ -1,0 +1,139 @@
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head><meta name="source" content="新华网"> <meta name="publishdate" content="2026-05-20"> <meta name="contentid" content="2026052099326d59f0404dc49577f0bfc7f3d930"> <meta name="subject" content=""> <meta name="catalogs" content="01009005000"> <meta name="author" content="9802"> <meta name="publishedtype" content="1"> <meta name="filetype" content="0"> <meta name="pagetype" content="1"> <meta name="templateId" content="b5427b58c834414690d6e6f7dca0826e"> <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> <meta name="SiteName" content="国家能源局"> <meta name="SiteDomain" content="www.nea.gov.cn"> <meta name="SiteIDCode" content="bm62000002号"> <div data="datasource:2026052099326d59f0404dc49577f0bfc7f3d930" datatype="content"><meta name="ArticleTitle" content="国家能源局有关负责同志就《关于有序推动多用户绿电直连发展有关事项的通知》答记者问"></div> <div data="datasource:2026052099326d59f0404dc49577f0bfc7f3d930" datatype="content"><meta name="PubDate" content="2026-05-20 14:19:15"></div> <div data="datasource:2026052099326d59f0404dc49577f0bfc7f3d930" datatype="content"><meta name="ContentSource" content="国家能源局"></div> <meta name="description" content="国家能源网"> <meta name="keywords" content="国家能源网"> <title data="datasource:2026052099326d59f0404dc49577f0bfc7f3d930" datatype="content">
+            国家能源局有关负责同志就《关于有序推动多用户绿电直连发展有关事项的通知》答记者问---国家能源局
+        </title> <link href="http://www.nea.gov.cn/static/default/css/public/master_nyj_v1.0.css" rel="stylesheet" type="text/css"> <link href="http://www.nea.gov.cn/static/default/css/article.css" rel="stylesheet" type="text/css"> <link href="http://www.nea.gov.cn/2015nyj/xinban/topbase.css" rel="stylesheet"> <link href="http://www.nea.gov.cn/detail/css/cb_videoPlayer.css" rel="stylesheet"> <script src="http://www.nea.gov.cn/static/default/js/public/jquery-1.9.1.min.js" type="text/javascript"></script> <script language="javascript">
+        $(document).ready(function () {
+
+            var lefttmp = new Image();
+            lefttmp.src = "http://www.xinhuanet.com/photo/static/arr_left.cur";
+            var righttmp = new Image();
+            righttmp.src = "http://www.xinhuanet.com/photo/static/arr_right.cur";
+            leng = $("a", $("#div_currpage")).length;
+
+            if (leng != 0)
+            //curr里有a标签==稿件不止一页
+            {
+
+                //看一共有多少个a标签
+                leng = leng - 1;
+                var nextLin = $("a", $("#div_currpage"))[leng].href; //对于多页的情况，取得下一页的地址
+                var oneword = location.href + "#";
+                if (nextLin == oneword) {
+                    leng = leng - 1;
+                    nextLin = $("a", $("#div_currpage"))[leng].href;
+                }
+                var currurl = location
+                    .href; //当前页链接地址<meta http-equiv="expires" content="Sunday 26 October 2011 01:00 GMT" /> 
+
+                var underpd = currurl.substring(currurl.indexOf("c_") + 2, currurl.indexOf(".htm"));
+                if (underpd.indexOf("_") == -1) {
+
+                    prevLink = location.href; //如果是文章首页，则左键仍是替换到本页面
+                    nextLink = $("a", $("#div_currpage"))[0].href; //下一页的赋值
+                    setTimeout("window.opener=null;window.location.href='" + nextLink + "'", 60000); //30秒跳转到下一页
+                } else
+                //是末页，http://news.xinhuanet.com/photo/2011-08/06/c_121822530.htm
+                {
+                    //当前页分页号判断
+                    var currnum = currurl.indexOf(".htm"); //链接中第一次出现.htm的位置
+                    var underlineindex = currurl.lastIndexOf("_") + 1; //下划线甄别标识，第一页则不是下划线
+                    //下一页的分页号
+                    var nextnum = nextLin.indexOf(".htm"); //链接中第一次出现.htm的位置
+                    var underlinenext = nextLin.lastIndexOf("_") + 1; //下划线甄别标识，第一页则不是下划线
+                    var undernum = nextLin.substr(nextLin.indexOf("c_")).split("_").length - 1;
+
+                    var temp = currurl.substring(underlineindex, currnum); //当前页的分页号
+                    var nexttemp = nextLin.substring(underlinenext, nextnum); //最后a标签的分页号
+                    var boolx = parseInt(temp, 10) > parseInt(nexttemp, 10);
+
+                    if ((boolx) || (undernum == 1)) //末页
+
+                    {
+
+                        if ($("img", $("a", $("#content"))).length == 0) //没有带链接的图片
+
+                        {
+                            prevLink = nextLin;
+                            if (undernum == 1) {
+                                nextLink = nextLin;
+                            } else {
+                                nextLink = prevLink.substr(0, (prevLink.lastIndexOf("_"))) + ".htm";
+                            }
+                            setTimeout("window.opener=null;window.location.href='" + nextLink + "'",
+                                60000); //30秒跳转到下一页
+                        } else //末页正文图片有链接
+                        {
+                            prevLink = nextLin;
+                            nextLink = $("a", $("#content"))[0].href; //把正文第一个带链接的链接地址赋给下一页
+                        }
+
+                    } else //不是末页
+                    {
+
+                        prevLink = $("a", $("#div_currpage"))[0].href; //把正文第一个带链接的链接地址赋给下一页
+                        nextLink = nextLin; //把正文最后一个带链接的链接地址赋给下一页
+                    }
+
+                }
+            } else
+            //只有一页
+            {
+                prevLink = location.href;
+                nextLink = location.href;
+            }
+
+            document.onkeydown = pageEvent;
+
+            function pageEvent(evt) {
+                evt = evt || window.event;
+                var key = evt.which || evt.keyCode;
+                if (key == 37) location = prevLink;
+                if (key == 39) location = nextLink;
+            };
+
+            var lefturl = prevLink;
+            var righturl = nextLink;
+            var imgurl = righturl;
+
+            $("#content img").each(function () {
+                var width = $(this).width();
+                var thisImage = $(this);
+                //alert("01");
+                $(thisImage)[0].onmousemove = function () {
+
+                    if (event.offsetX < width / 2) {
+
+                        this.style.cursor = 'url(' + lefttmp.src + '),auto';
+                        imgurl = lefturl;
+                    } else {
+
+                        this.style.cursor = 'url(' + righttmp.src + '),auto';
+                        imgurl = righturl;
+                    }
+
+                }
+
+                $(thisImage)[0].onmouseup = function () {
+                    top.location = imgurl;
+
+                }
+            });
+
+        });
+    </script></head> <body><script src="http://www.nea.gov.cn/2015nyj/xinban/topnav.js" type="text/javascript"></script> <div class="main-colum"><div class="now-site">您当前位置：<a href="http://www.nea.gov.cn/" target="_blank">首页</a> &gt; 正文</div> <div class="channel-page"><div class="article-title" data="datasource:2026052099326d59f0404dc49577f0bfc7f3d930" datatype="content"><div class="hr_10"></div> <div class="titles">
+                        国家能源局有关负责同志就《关于有序推动多用户绿电直连发展有关事项的通知》答记者问
+                    </div> <div class="hr_10"></div> <span class="times">
+                        发布时间：2026-05-20
+                    </span> <span class="author">
+                        来源：国家能源局
+                    </span> <span class="switchsize"><b class="bigger">大</b><b class="medium">中</b><b class="smaller">小</b></span> <div class="arrow"></div></div> <div class="article-box"><div class="hr_10"></div> <div class="hr_10"></div> <div class="hr_10"></div> <div id="detail" data="datasource:2026052099326d59f0404dc49577f0bfc7f3d930" datatype="content"><div class="article-content"><span id="detailContent"><p>&emsp;&emsp;国家发展改革委、国家能源局近期发布<span style="color: #000080;"><strong><a style="color: #000080;" href="http://www.nea.gov.cn/20260520/9e1c4277ce324c8ab82a84da98da7980/c.html">《关于有序推动多用户绿电直连发展有关事项的通知》（以下简称《通知》</a></strong></span>），国家能源局有关负责同志接受采访，回答记者提问。</p><p>&emsp;<strong>&emsp;一、为什么要出台多用户绿电直连政策？</strong></p><p>&emsp;&emsp;答：新能源就地平衡、就近利用是破解高比例消纳难题的重要举措。去年出台的《关于有序推动绿电直连发展有关事项的通知》（发改能源〔2025〕650号）（以下简称单用户绿电直连），开创了新能源就近消纳利用新模式，半年来各地在推动政策落地中反映单用户绿电直连仅允许新能源向单个用户直接供应绿电，无法满足多个用户的绿电直连需求。为贯彻落实党的二十大和二十届历次全会精神，推动能源消费模式变革，满足工业园区、零碳园区等用能清洁替代需求，我们在梳理总结各地相关实践基础上，制定了多用户绿电直连文件，从负荷范围、适用场景、规划建设、运行管理、市场交易和价格结算机制以及绿电溯源等方面进行了相关规范与引导，推动消费侧新模式新业态新场景创新发展的同时，实现更高水平、更大范围的新能源就近消纳利用。</p><p><strong>&emsp;&emsp;二、《通知》的主要内容是什么？</strong></p><p>&emsp;&emsp;《通知》共分为五部分。一是给出多用户绿电直连模式的定义和形态，在单用户绿电直连基础上拓展适用范围和应用场景，推动实现工业园区、零碳园区等用能清洁替代。二是明确投资与建设要求，按照“以荷定源”原则确定项目新能源规模及投产时序，要求项目通过灵活的投资模式建立主责单位，负责项目内部电力设施的建设和公平运营。三是细化运行管理要求，明确项目及内部主体、公共电网间的安全责任界面，强调项目内部自平衡管理模式，提升项目安全保障和应急管理能力，促进新能源就近消纳。四是交易与价格机制，明确项目作为整体参与电力市场，允许内部协调优化运行方式、灵活调整发用电曲线，明确计量结算要求并按就近消纳价格机制缴纳相关费用；同时，探索基于分时计量的绿电溯源机制，与绿证、碳核算等做好衔接。五是做好组织保障，明确地方能源主管部门、国家能源局派出机构、电网企业和电力市场运营机构等的工作要求。</p><p>&emsp;&emsp;<strong>三、多用户绿电直连模式的适用范围是什么？</strong></p><p>&emsp;&emsp;答：当前，工业园区占我国总能耗的66%以上，未来碳排放双控政策将逐步覆盖更多高载能行业，推动重点行业企业、工业园区、零碳园区等开展多用户绿电直连，有利于拓展新能源开发利用空间，推动我国双碳目标实现。为此，《通知》明确多用户绿电直连的适用范围包括：新建负荷可开展多用户绿电直连。存量负荷中，单用户绿电直连项目可拓展为多用户绿电直连项目；有绿色电力消费需求的用户（包括有绿色电力消费比例要求的企业、重点用能和碳排放企业、有降碳需求的出口外向型企业及其上下游企业等）可开展多用户绿电直连；工业园区、零碳园区、增量配电网等的全部或部分负荷可开展多用户绿电直连。</p><p>&emsp;<strong>&emsp;四、与单用户绿电直连相比，多用户绿电直连的投资和运营管理模式有什么不同？</strong></p><p>&emsp;&emsp;答：多用户绿电直连项目涉及电源、负荷、线路、储能等多个主体，既要厘清项目整体与大电网的安全和经济关系，又要做好内部各主体的统筹协调。为此，《通知》要求项目应明确独立的主责单位，负责连接线路、变电设施、储能及运营平台的投资建设，以及项目运营管理、市场交易、电费结算等各方面工作。鼓励项目主责单位由用户、新能源企业或政府合资成立，或由第三方平台公司投资，也可以由具备能力的电源或负荷企业单独投资。</p><p>&emsp;&emsp;项目对外作为整体，按照《关于完善价格机制 促进新能源发电就近消纳的通知》（发改价格〔2025〕1192号）要求，公平承担项目输配电费、系统运行费、政策性交叉补贴等费用。项目主责单位应按照《通知》要求对内承担相应的责任和义务，应与项目内部主体按照权责对等、公平分摊的原则签订协议，明确产权划分、运行维护、平衡责任、违约责任等事项，合理确定结算方式与费用标准，在外部市场价格、负荷实际用电情况等发生较大变化时，项目主责单位与内部主体间应通过公平协商方式对费用标准进行合理调整，促进价格信号有效激励和公平传导。</p><p>&emsp;&emsp;<strong>五、哪些企业适合开展多用户绿电直连？</strong></p><p>&emsp;&emsp;答：能够响应电价信号、灵活调整用电负荷的工商业企业适合开展多用户绿电直连。这些企业用电灵活性高，能够通过优化用电时间和用电量，更好地适应新能源的波动性，提升项目的源荷匹配程度，减少项目对大电网的依赖；允许项目更加合理选择接入公共电网容量，提升受电变压器负荷率，降低输配电成本；还可通过“高峰少用电、低谷多用电”和提高自发自用电量比例节约电能量费用支出，从而提升项目整体的经济性。</p><p>&emsp;&emsp;多用户绿电直连支持企业通过生产流程改造升级或再造，提升负荷灵活性和项目经济性，促进更多新能源就近消纳，减轻大电网调节压力。</p><p>&emsp;<strong>&emsp;六、与单用户绿电直连相比，多用户绿电直连政策创新点有哪些？</strong></p><p>&emsp;&emsp;答：多用户绿电直连坚持绿色导向，在单用户绿电直连的基础上进一步加大政策供给，实现更高水平新能源就近消纳。主要体现在四个方面。一是扩大了适用范围和应用场景。在负荷类型方面，支持有绿电消费比例要求、重点用能和碳排放单位等企业开展直连；在应用场景方面，允许零碳园区、工业园区、增量配电网等发展直连项目，推动高耗能企业和工业园区等实现用能清洁替代。二是建立调节能力激励机制，鼓励多用户协同优化用电行为，通过聚合柔性负荷、提升集控管理能力、合理配置储能等方式，提升项目整体调节能力，从而提升项目经济性，鼓励项目内部主体之间探索灵活的协作方式，可以基于主体间不同的调节能力约定调节责任和相应经济补偿标准。三是支持电网末端更多发展自平衡的产消融合模式。《通知》清晰界定项目和大电网的责任边界。一方面，强调项目内部自平衡、自调节特性，减轻电力系统平衡压力；另一方面，引导项目合理申报接入容量，减少对公共电网的容量占用，提升项目自身经济性的同时，一定程度提高公共电网资产投资效率。四是建立适应多用户的绿电溯源机制，基于项目各主体的分时表计结果建立了小时级绿电溯源机制，可对各用户的自发自用绿电进行精准计量，与绿证核发、碳排放因子计算和国际绿电溯源等要求做好衔接。</p><p>&emsp;<strong>&emsp;七、下一步如何推动《通知》实施？</strong></p><p>&emsp;&emsp;答：国家发展改革委、国家能源局将会同有关部门做好《通知》的组织实施工作。一是指导地方结合实际尽快细化文件要求，优化项目管理机制，做好与规划、市场、绿证等的衔接协同，有序推动项目建设。二是做好宣传解读，组织有关部门和相关专家广泛深入开展政策解读和专题培训，促进社会有关各方及时了解政策内涵。三是做好跟踪监测，持续跟踪各地政策落实情况，分析项目建设面临的问题困难，推动协调解决。</p><p>&nbsp;</p><p>&emsp;&emsp;<span style="color: #000080;"><strong>相关政策与解读</strong></span></p><p>&emsp;&emsp;<a href="http://www.nea.gov.cn/20260520/9e1c4277ce324c8ab82a84da98da7980/c.html">关于有序推动多用户绿电直连发展有关事项的通知(发改能源〔2026〕688号)</a></p></span></div></div> <div class="back-top"></div> <div class="hr_10"></div> <div class="hr_10"></div> <div class="hr_10"></div></div> <div class="article-other"><div class="hr_10"></div> <div class="hr_10"></div> <div class="clear"></div></div> <div class="hr_10"></div> <div class="hr_10"></div> <div class="hr_10"></div></div></div> <script src="http://www.nea.gov.cn/2015nyj/xinban/bottom.js" type="text/javascript"></script> <script src="http://www.nea.gov.cn/static/default/js/public/article-font.js" type="text/javascript"></script> <script src="http://www.nea.gov.cn/detail/js/pager.js"></script> <script src="http://www.nea.gov.cn/detail/js/cb-video.js"></script> <script>
+        $(function () {
+            /* 分页调用 */
+            parsePagingFun({
+                // preText: 'prev',//上一页
+                // nextText: 'next',//下一页
+                id: 'detailContent', //正文分页id
+                num: 8 //显示页码数个数
+            })
+
+        })
+    </script><script src="//imgs.news.cn/webdig/xinhua_webdig.js" language="javascript" type="text/javascript" async></script></body></html>

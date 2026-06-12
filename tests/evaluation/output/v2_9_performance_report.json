@@ -1,0 +1,67 @@
+{
+  "baseline_v2_8_avg_latency_ms": 38370.3,
+  "summary": {
+    "quality": {
+      "report": "tests/evaluation/output/v2_9_quality_sample_report.json",
+      "total": 30,
+      "passed": 29,
+      "pass_rate": 0.9667,
+      "rag_hit_rate_when_expected": 1.0,
+      "top_k_title_hit_rate": 1.0,
+      "answer_point_hit_rate": 0.9667,
+      "default_hidden_rate": 1.0,
+      "avg_latency_ms": 44043.4,
+      "p50_latency_ms": 41288.6,
+      "p90_latency_ms": 54159.5,
+      "daily_avg_latency_ms": 477.1,
+      "failures": [
+        "spike_001"
+      ],
+      "vs_v2_8_avg_latency_delta_pct": 0.1479
+    },
+    "balanced": {
+      "report": "tests/evaluation/output/v2_9_balanced_sample_report.json",
+      "total": 30,
+      "passed": 28,
+      "pass_rate": 0.9333,
+      "rag_hit_rate_when_expected": 1.0,
+      "top_k_title_hit_rate": 0.9333,
+      "answer_point_hit_rate": 1.0,
+      "default_hidden_rate": 1.0,
+      "avg_latency_ms": 30044.1,
+      "p50_latency_ms": 28002.1,
+      "p90_latency_ms": 35934.9,
+      "daily_avg_latency_ms": 488.0,
+      "failures": [
+        "price_001",
+        "price_002"
+      ],
+      "vs_v2_8_avg_latency_delta_pct": -0.217
+    },
+    "fast": {
+      "report": "tests/evaluation/output/v2_9_fast_sample_report.json",
+      "total": 30,
+      "passed": 28,
+      "pass_rate": 0.9333,
+      "rag_hit_rate_when_expected": 1.0,
+      "top_k_title_hit_rate": 0.9333,
+      "answer_point_hit_rate": 0.9667,
+      "default_hidden_rate": 1.0,
+      "avg_latency_ms": 27985.6,
+      "p50_latency_ms": 23280.9,
+      "p90_latency_ms": 33021.6,
+      "daily_avg_latency_ms": 377.1,
+      "failures": [
+        "price_002",
+        "system_002"
+      ],
+      "vs_v2_8_avg_latency_delta_pct": -0.2706
+    }
+  },
+  "recommendation": "balanced",
+  "notes": [
+    "balanced keeps RAG expected hit rate at 100% in the 30-question sample while reducing average latency versus v2.8 baseline.",
+    "daily_chat fast path avoids LLM for common greetings/date-like simple prompts and stays under 1 second in the sample.",
+    "quality remains best for final demos/evaluations; fast is for low-resource local testing."
+  ]
+}

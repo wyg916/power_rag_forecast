@@ -1,0 +1,391 @@
+{
+  "report_name": "smoke_bge_reranker_final",
+  "generated_at": "2026-06-06 13:04:15",
+  "base_url": "http://127.0.0.1:8001",
+  "model_provider": "auto",
+  "answer_style": "professional_brief",
+  "questions_file": "E:\\智能运营分析项目\\tests\\evaluation\\ai_assistant_eval_questions.json",
+  "expected_hits_file": "E:\\智能运营分析项目\\tests\\evaluation\\rag_expected_hits.json",
+  "summary": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "pass_rate": 1.0,
+    "rag_expected_total": 1,
+    "rag_hit_rate_when_expected": 1.0,
+    "top_k_title_hit_rate": 1.0,
+    "default_hidden_rate": 1.0,
+    "answer_point_hit_rate": 1.0,
+    "avg_latency_ms": 29792.9,
+    "category_summary": {
+      "price_forecast": {
+        "total": 1,
+        "passed": 1,
+        "pass_rate": 1.0,
+        "rag_expected": 1,
+        "rag_hit_rate_when_expected": 1.0,
+        "top_k_title_hit_rate": 1.0,
+        "default_hidden_rate": 1.0,
+        "answer_point_hit_rate": 1.0
+      }
+    }
+  },
+  "failures": [],
+  "results": [
+    {
+      "id": "price_001",
+      "category": "price_forecast",
+      "question": "明天电价风险大吗？",
+      "should_use_rag": true,
+      "should_use_tools": true,
+      "status": 200,
+      "debug_status": 200,
+      "latency_ms": 29792.9,
+      "debug_latency_ms": 13382.9,
+      "answer": "明天电价风险较高。预测数据显示，16:00至21:00多个时段电价远超P75阈值（90.66 USD/MWh），最高达194.06 USD/MWh，尖峰风险概率均超过92%，且对应负荷处于较高水平，天气最高温28.2°C也增加了用电压力。建议优先复核晚高峰时段的购售电敞口和储能SOC，考虑在16:00‑20:00高价窗口放电，但模型高峰RMSE约22.13，存在一定误差，最终需结合实时市场和合同约束确认，本建议仅供辅助决策参考。",
+      "rag_hits": 5,
+      "tool_calls": 4,
+      "expected_titles_any": [
+        "price_forecast_logic",
+        "peak_spike_risk_explanation",
+        "高价风险",
+        "电价预测逻辑",
+        "prediction_interval_explanation",
+        "model_pipeline_explanation",
+        "load_weather_price_relationship"
+      ],
+      "expected_keywords_any": [
+        "电价",
+        "风险",
+        "预测"
+      ],
+      "expected_answer_points": [
+        "结论",
+        "风险",
+        "建议"
+      ],
+      "answer_point_hits": [
+        "风险",
+        "建议"
+      ],
+      "forbidden_hits": [],
+      "leaked_default_fields": [],
+      "checks": {
+        "default_status_ok": true,
+        "debug_status_ok": true,
+        "answer_non_empty": true,
+        "default_debug_fields_hidden": true,
+        "forbidden_patterns_absent": true,
+        "rag_expectation_ok": true,
+        "tool_expectation_ok": true,
+        "top_k_title_hit": true,
+        "keyword_hit": true,
+        "answer_point_hit": true,
+        "debug_has_rag": true,
+        "debug_has_trace": true
+      },
+      "passed": true,
+      "failed_checks": [],
+      "rag_items_preview": [
+        {
+          "rank": 1,
+          "chunk_id": "kb_0b69ee1a6e85eb9a7d11_0000",
+          "doc_id": "kb_0b69ee1a6e85eb9a7d11",
+          "title": "high_price_risk_strategy",
+          "source": "E:\\智能运营分析项目\\knowledge_base\\trading_strategy\\high_price_risk_strategy.md",
+          "keyword_score": 0.322581,
+          "vector_score": 0.936136,
+          "rerank_score": 1.0,
+          "final_score": 0.881013
+        },
+        {
+          "rank": 2,
+          "chunk_id": "kb_937f0e4eaa08de2722b0_0000",
+          "doc_id": "kb_937f0e4eaa08de2722b0",
+          "title": "price_forecast_logic",
+          "source": "E:\\智能运营分析项目\\knowledge_base\\price_forecast\\price_forecast_logic.md",
+          "keyword_score": 0.258065,
+          "vector_score": 0.899909,
+          "rerank_score": 0.942234,
+          "final_score": 0.82633
+        },
+        {
+          "rank": 3,
+          "chunk_id": "kb_6b282a14997e910e04d0_0000",
+          "doc_id": "kb_6b282a14997e910e04d0",
+          "title": "load_weather_price_relationship",
+          "source": "E:\\智能运营分析项目\\knowledge_base\\price_forecast\\load_weather_price_relationship.md",
+          "keyword_score": 0.290323,
+          "vector_score": 0.857673,
+          "rerank_score": 0.387753,
+          "final_score": 0.462868
+        },
+        {
+          "rank": 4,
+          "chunk_id": "kb_5870cba30702003f09bc_0001",
+          "doc_id": "kb_5870cba30702003f09bc",
+          "title": "policy_6",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+          "keyword_score": 1.0,
+          "vector_score": 0.855528,
+          "rerank_score": 0.14996,
+          "final_score": 0.419663
+        },
+        {
+          "rank": 5,
+          "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+          "doc_id": "kb_34c2efa6726d7c6076e9",
+          "title": "policy_4",
+          "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+          "keyword_score": 1.0,
+          "vector_score": 0.858867,
+          "rerank_score": 0.120815,
+          "final_score": 0.401362
+        }
+      ],
+      "debug_response": {
+        "intent": "trading_risk_summary",
+        "task_type": "complex_analysis",
+        "model_provider_used": "deepseek",
+        "model_fallback": false,
+        "rag": {
+          "available": true,
+          "query": "明天电价风险大吗？",
+          "items": [
+            {
+              "chunk_id": "kb_0b69ee1a6e85eb9a7d11_0000",
+              "doc_id": "kb_0b69ee1a6e85eb9a7d11",
+              "title": "high_price_risk_strategy",
+              "source": "E:\\智能运营分析项目\\knowledge_base\\trading_strategy\\high_price_risk_strategy.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# 高价风险应对策略\n高价风险时段通常需要售电公司优先复核购售电敞口、客户合约、储能可用容量、报价策略和实时市场跟踪。高价预测可以提示机会，也可能意味着偏差成本上升。\n高价时段不应只看预测价格，还要看尖峰概率、负荷、天气、模型误差和实时市场变化。如果模型误差较大，应降低单一预测值的决策权重。\n## 适用问题示例\n- 明天高价风险大应该怎么办？ - 高价时段适合放电吗？ - 晚高峰价格高要关注什么？\n## 回答要点\n- 优先复核敞口、合同、储能 SOC 和实时价格。 - 高价放电要结合设备约束和交易规则。 - 模型误差大时要采取保守策略。 - 建议只能作为辅助决策参考。",
+              "keyword_score": 0.322581,
+              "vector_score": 0.936136,
+              "rerank_score": 1.0,
+              "final_score": 0.881013,
+              "score": 10,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\knowledge_base",
+                "embedding": {
+                  "dim": 1024,
+                  "model": "bge-large-zh-v1.5",
+                  "version": "bge-v1",
+                  "fallback": false,
+                  "provider": "sentence_transformers"
+                },
+                "file_name": "high_price_risk_strategy.md"
+              },
+              "retrieval_types": [
+                "keyword",
+                "vector"
+              ],
+              "hybrid_score": 0.660036,
+              "rerank_raw_score": 2.845035,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_937f0e4eaa08de2722b0_0000",
+              "doc_id": "kb_937f0e4eaa08de2722b0",
+              "title": "price_forecast_logic",
+              "source": "E:\\智能运营分析项目\\knowledge_base\\price_forecast\\price_forecast_logic.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# 电价预测逻辑说明\n电价预测通常基于历史电价、负荷、天气、日历特征、市场时段、峰谷结构和模型误差回填等信息。项目中的预测结果应理解为基于当前数据窗口和模型版本给出的辅助判断，而不是确定报价或交易指令。\n预测解释应分清三类信息：第一是模型输出的预测价格；第二是支持预测的负荷、天气和时段特征；第三是模型误差、数据新鲜度和异常风险。只有三者结合，才能形成可靠的运营判断。\n## 适用问题示例\n- 电价预测主要看哪些因素？ - 明天价格风险为什么高？ - 模型预测结果能直接交易吗？\n## 回答要点\n- 预测价格需要结合负荷、天气、时段和历史波动解释。 - 高价预测不等于确定涨价，应关注模型误差和实时市场变化。 - 对具体数值必须引用项目工具返回结果，知识库只提供解释逻辑。 - 交易建议必须标注为辅助决策参考。",
+              "keyword_score": 0.258065,
+              "vector_score": 0.899909,
+              "rerank_score": 0.942234,
+              "final_score": 0.82633,
+              "score": 8,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\knowledge_base",
+                "embedding": {
+                  "dim": 1024,
+                  "model": "bge-large-zh-v1.5",
+                  "version": "bge-v1",
+                  "fallback": false,
+                  "provider": "sentence_transformers"
+                },
+                "file_name": "price_forecast_logic.md"
+              },
+              "retrieval_types": [
+                "keyword",
+                "vector"
+              ],
+              "hybrid_score": 0.611079,
+              "rerank_raw_score": 2.254448,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_6b282a14997e910e04d0_0000",
+              "doc_id": "kb_6b282a14997e910e04d0",
+              "title": "load_weather_price_relationship",
+              "source": "E:\\智能运营分析项目\\knowledge_base\\price_forecast\\load_weather_price_relationship.md",
+              "source_type": "local_file",
+              "chunk_index": 0,
+              "content": "# 负荷、天气与电价关系\n负荷和天气是电价预测中的关键外生因素。高温、低温、降水和极端天气可能改变用电需求、可再生出力和系统备用压力，从而影响电价。负荷预测偏高通常意味着系统边际机组更可能被调用，价格上行风险增加；但实际影响还取决于供应裕度、拥塞和市场报价。\n天气影响电价并不是线性关系。温度变化可能通过空调或采暖负荷影响需求；降水、云量和风况可能影响新能源出力；极端天气还可能影响机组可用性和输电安全约束。\n## 适用问题示例\n- 负荷预测偏高会怎么影响日前电价？ - 天气变化为什么会影响电价预测？ - 高温是不是一定导致价格上涨？\n## 回答要点\n- 负荷偏高通常抬高边际供电压力，但不是价格暴涨的充分条件。 - 天气通过需求、出力和系统约束间接影响价格。 - 解释时应结合具体温度、负荷和风险时段数据。 - 缺少实时供需和约束数据时，应说明判断存在不确定性。",
+              "keyword_score": 0.290323,
+              "vector_score": 0.857673,
+              "rerank_score": 0.387753,
+              "final_score": 0.462868,
+              "score": 9,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\knowledge_base",
+                "embedding": {
+                  "dim": 1024,
+                  "model": "bge-large-zh-v1.5",
+                  "version": "bge-v1",
+                  "fallback": false,
+                  "provider": "sentence_transformers"
+                },
+                "file_name": "load_weather_price_relationship.md"
+              },
+              "retrieval_types": [
+                "keyword",
+                "vector"
+              ],
+              "hybrid_score": 0.602366,
+              "rerank_raw_score": -3.414467,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_5870cba30702003f09bc_0001",
+              "doc_id": "kb_5870cba30702003f09bc",
+              "title": "policy_6",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+              "source_type": "local_file",
+              "chunk_index": 1,
+              "content": "**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司： 经国务院批准，根据煤电价格联动机制有关规定，决定下调全国燃煤发电上网电价和一般工商业用电价格。经商国家能源局，现就有关事项通知如下： 一、全国燃煤发电上网电价平均每千瓦时下调约3分钱（含税，下同），同幅度下调一般工商业销售电价，支持燃煤电厂超低排放改造和可再生能源发展，并设立工业企业结构调整专项资金。各省（区、市）燃煤发电上网电价平均调价标准和调整后的燃煤发电标杆上网电价见附件。 二、全国一般工商业销售电价平均每千瓦时下调约3分钱，大工业用电价格不作调整，减轻中小微企业负担。各省（区、市）一般工商业用电平均调价标准见附件。各省（区、市）价格主管部门按照附件规定的平均调价标准，制定和下发本省（区、市）上网电价和销售电价调整具体方案，并报我委备案。 三、推动燃煤电厂超低排放改造，根据《国家发展改革委关于燃煤电厂超低排放电价支持政策有关问题的通知》（发改价格[2015]2835号）规定，对于验收合格并符合超低排放限值要求的燃煤发电机组实行电价支持。 四、将居民生活和农业生产以外其他用电征收的可再生能源电价附加征收标准，提高到每千瓦时1.9分钱。 五、利用燃煤发电上网电价部分降价空间，设立工业企业结构调整专项资金，支持地方在淘汰煤炭、钢铁行业落后产能中安置下岗失业人员等。专项资金管理办法由有关部门另行下发。 六、跨省、跨区域送电价格调整标准，遵循市场定价原则，参考送、受电地区电价调整情况，由供需双方协商确定。“点对网”送电的上网电价调价标准，可参考受电省燃煤发电标杆电价调整标准协商确定。“网对网”送电价格，可参考送",
+              "keyword_score": 1.0,
+              "vector_score": 0.855528,
+              "rerank_score": 0.14996,
+              "final_score": 0.419663,
+              "score": 31,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 1024,
+                  "model": "bge-large-zh-v1.5",
+                  "version": "bge-v1",
+                  "fallback": false,
+                  "provider": "sentence_transformers"
+                },
+                "file_name": "policy_6.md"
+              },
+              "retrieval_types": [
+                "keyword",
+                "vector"
+              ],
+              "hybrid_score": 0.92054,
+              "rerank_raw_score": -5.845626,
+              "reranker_model": "bge-reranker-v2-m3"
+            },
+            {
+              "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+              "doc_id": "kb_34c2efa6726d7c6076e9",
+              "title": "policy_4",
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+              "source_type": "local_file",
+              "chunk_index": 1,
+              "content": "**相关条款**: 各省、自治区、直辖市发展改革委、物价局、电力公司： 经国务院批准，根据电力体制改革的相关精神和煤电价格联动机制有关规定，决定下调燃煤发电上网电价和工商业用电价格。经商国家能源局，现就有关事项通知如下： 一、全国燃煤发电上网电价平均每千瓦时下调约2分钱（含税，下同），各省（区、市）平均调价标准和调整后的燃煤发电标杆上网电价见附件一。 二、下调燃煤发电上网电价形成的降价空间，除适当疏导部分地区天然气发电价格以及脱硝、除尘、超低排放环保电价等突出结构性矛盾，促进节能减排和大气污染防治外，主要用于下调工商业用电价格。 三、全国工商业用电价格平均每千瓦时下调约1.8分钱。各省（区、市）工商业用电价格平均调价标准见附件一。 四、推进销售电价结构调整。全面推进工商业用电同价，江西、贵州和新疆实行商业用电和普通工业用电同价。居民生活和农业生产用电价格原则上保持稳定，适当减少电力用户间的交叉补贴。逐步取消化肥电价优惠，化肥生产用电执行相同用电类别的工商业用电价格；优惠价差较大的地方，分两步到位，2016年4月20日起全部取消电价优惠。 五、跨省、跨区域送电价格调整标准，遵循市场定价原则，参考送、受电地区电价调整情况，由供需双方协商确定。部分跨省、跨区域送电价格具体调整情况见附件二。 六、各省（区、市）价格主管部门按照附件一规定的平均调价标准，制定和下发本省（区、市）上网电价和销售电价调整具体方案，并报我委备案。 七、以上电价调整自2015年4月20日起执行。 八、推进电价市场化，鼓励有条件的电力用户与发电企业直接交易，自愿协商确定电价。 九、电价调整后，各级价格主管部门要继续",
+              "keyword_score": 1.0,
+              "vector_score": 0.858867,
+              "rerank_score": 0.120815,
+              "final_score": 0.401362,
+              "score": 31,
+              "metadata": {
+                "root": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy",
+                "embedding": {
+                  "dim": 1024,
+                  "model": "bge-large-zh-v1.5",
+                  "version": "bge-v1",
+                  "fallback": false,
+                  "provider": "sentence_transformers"
+                },
+                "file_name": "policy_4.md"
+              },
+              "retrieval_types": [
+                "keyword",
+                "vector"
+              ],
+              "hybrid_score": 0.922377,
+              "rerank_raw_score": -6.143596,
+              "reranker_model": "bge-reranker-v2-m3"
+            }
+          ],
+          "evidence": [
+            {
+              "source": "E:\\智能运营分析项目\\knowledge_base\\trading_strategy\\high_price_risk_strategy.md",
+              "title": "high_price_risk_strategy",
+              "chunk_id": "kb_0b69ee1a6e85eb9a7d11_0000",
+              "score": 0.881013,
+              "keyword_score": 0.322581,
+              "vector_score": 0.936136,
+              "rerank_score": 1.0
+            },
+            {
+              "source": "E:\\智能运营分析项目\\knowledge_base\\price_forecast\\price_forecast_logic.md",
+              "title": "price_forecast_logic",
+              "chunk_id": "kb_937f0e4eaa08de2722b0_0000",
+              "score": 0.82633,
+              "keyword_score": 0.258065,
+              "vector_score": 0.899909,
+              "rerank_score": 0.942234
+            },
+            {
+              "source": "E:\\智能运营分析项目\\knowledge_base\\price_forecast\\load_weather_price_relationship.md",
+              "title": "load_weather_price_relationship",
+              "chunk_id": "kb_6b282a14997e910e04d0_0000",
+              "score": 0.462868,
+              "keyword_score": 0.290323,
+              "vector_score": 0.857673,
+              "rerank_score": 0.387753
+            },
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_6.md",
+              "title": "policy_6",
+              "chunk_id": "kb_5870cba30702003f09bc_0001",
+              "score": 0.419663,
+              "keyword_score": 1.0,
+              "vector_score": 0.855528,
+              "rerank_score": 0.14996
+            },
+            {
+              "source": "E:\\智能运营分析项目\\electricity_tariff_output\\04_knowledge_base_tariff_policy\\policy_4.md",
+              "title": "policy_4",
+              "chunk_id": "kb_34c2efa6726d7c6076e9_0001",
+              "score": 0.401362,
+              "keyword_score": 1.0,
+              "vector_score": 0.858867,
+              "rerank_score": 0.120815
+            }
+          ],
+          "retrieval": {
+            "enabled": true,
+            "mode": "hybrid",
+            "keyword_candidates": 20,
+            "vector_candidates": 30,
+            "merged_candidates": 39,
+            "rerank_candidates": 8,
+            "vector_available": true,
+            "embedding_provider": "sentence_transformers",
+            "embedding_model": "bge-large-zh-v1.5",
+            "embedding_dim": 1024,
+            "embedding_version": "bge-v1",
+            "embedding_fallback": false,
+            "reranker": "bge",
+            "rerank_error": ""
+          },
+          "stats": {
+            "available": true,
+            "documents": 68,
+            "chunks": 71
+          }
+        },
+        "trace_id_present": true
+      },
+      "error_preview": "",
+      "debug_error_preview": ""
+    }
+  ]
+}

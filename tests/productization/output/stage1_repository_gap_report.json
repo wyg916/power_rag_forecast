@@ -1,0 +1,146 @@
+{
+  "status": "stage1_gap_known",
+  "domains": {
+    "weather_data": {
+      "status": "postgresql_ready",
+      "repository": "backend.app.repositories.weather_repository",
+      "repository_importable": true,
+      "tables": [
+        {
+          "name": "raw_weather",
+          "declared_in_migration": true,
+          "exists_runtime": true
+        }
+      ],
+      "source_file": "backend/app/stage1_services.py",
+      "source_hits": [
+        "load_weather_forecast_from_postgres",
+        "weather_raw.xlsx"
+      ],
+      "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+    },
+    "load_data": {
+      "status": "postgresql_ready",
+      "repository": "backend.app.repositories.load_repository",
+      "repository_importable": true,
+      "tables": [
+        {
+          "name": "raw_load",
+          "declared_in_migration": true,
+          "exists_runtime": true
+        },
+        {
+          "name": "raw_forecast_load_selected",
+          "declared_in_migration": false,
+          "exists_runtime": true
+        }
+      ],
+      "source_file": "backend/app/stage1_services.py",
+      "source_hits": [
+        "load_forecast_load_from_postgres",
+        "forecast_load_selected.xlsx"
+      ],
+      "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+    },
+    "market_data": {
+      "status": "postgresql_ready",
+      "repository": "backend.app.repositories.market_data_repository",
+      "repository_importable": true,
+      "tables": [
+        {
+          "name": "raw_market",
+          "declared_in_migration": true,
+          "exists_runtime": true
+        },
+        {
+          "name": "raw_da_price",
+          "declared_in_migration": false,
+          "exists_runtime": true
+        }
+      ],
+      "source_file": "backend/app/stage1_services.py",
+      "source_hits": [
+        "load_market_history_from_postgres",
+        "da_price_raw.xlsx"
+      ],
+      "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+    },
+    "renewable_data": {
+      "status": "postgresql_ready",
+      "repository": "backend.app.repositories.renewable_repository",
+      "repository_importable": true,
+      "tables": [
+        {
+          "name": "raw_renewable",
+          "declared_in_migration": true,
+          "exists_runtime": true
+        },
+        {
+          "name": "raw_renewable_forecast",
+          "declared_in_migration": false,
+          "exists_runtime": false
+        },
+        {
+          "name": "raw_solar_forecast",
+          "declared_in_migration": false,
+          "exists_runtime": false
+        },
+        {
+          "name": "raw_wind_forecast",
+          "declared_in_migration": false,
+          "exists_runtime": false
+        }
+      ],
+      "source_file": "backend/app/stage1_services.py",
+      "source_hits": [],
+      "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+    },
+    "feature_importance": {
+      "status": "postgresql_ready",
+      "repository": "backend.app.repositories.feature_repository",
+      "repository_importable": true,
+      "tables": [
+        {
+          "name": "model_feature_importance",
+          "declared_in_migration": false,
+          "exists_runtime": true
+        },
+        {
+          "name": "feature_importance",
+          "declared_in_migration": true,
+          "exists_runtime": true
+        }
+      ],
+      "source_file": "backend/app/stage1_services.py",
+      "source_hits": [
+        "load_feature_importance_from_postgres",
+        "13_"
+      ],
+      "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+    },
+    "report_review": {
+      "status": "postgresql_ready",
+      "repository": "backend.app.repositories.report_repository",
+      "repository_importable": true,
+      "tables": [
+        {
+          "name": "report_reviews",
+          "declared_in_migration": true,
+          "exists_runtime": true
+        }
+      ],
+      "source_file": "backend/app/platform_services.py",
+      "source_hits": [
+        "report_reviews",
+        "web_report_reviews.json"
+      ],
+      "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+    }
+  },
+  "summary": {
+    "postgresql_ready": 6,
+    "postgresql_path_ready_pending_data": 0,
+    "pending_schema_or_data_migration": 0,
+    "fallback_only": 0
+  }
+}

@@ -1,0 +1,2941 @@
+{
+  "project_root": "E:\\智能运营分析项目",
+  "status": "pass_with_warnings",
+  "checks": {
+    "repository_imports_ok": true,
+    "core_usage_static_ok": true,
+    "alembic_static_ok": true,
+    "runtime_old_source_reference_count": 60,
+    "runtime_check_available": true,
+    "runtime_check_status": "pass",
+    "stage1_gap_known": true,
+    "fallback_policy_defined": true
+  },
+  "repositories": {
+    "forecast": {
+      "module": "backend.app.repositories.forecast_repository",
+      "importable": true,
+      "public_functions": [
+        "Any",
+        "jsonable",
+        "load_latest_forecast_from_postgres",
+        "loads_json",
+        "mapping_dict",
+        "mapping_list",
+        "mean",
+        "postgres_engine",
+        "text"
+      ]
+    },
+    "model": {
+      "module": "backend.app.repositories.model_repository",
+      "importable": true,
+      "public_functions": [
+        "Any",
+        "jsonable",
+        "loads_json",
+        "mapping_dict",
+        "mapping_list",
+        "model_errors_from_postgres",
+        "model_status_from_postgres",
+        "postgres_engine",
+        "text"
+      ]
+    },
+    "task": {
+      "module": "backend.app.repositories.task_repository",
+      "importable": true,
+      "public_functions": [
+        "Any",
+        "Path",
+        "dumps_json",
+        "get_task_record",
+        "jsonable",
+        "list_recent_tasks",
+        "loads_json",
+        "log_suppressed_exception",
+        "mapping_dict",
+        "mapping_list",
+        "postgres_engine",
+        "save_task_record",
+        "task_log_text",
+        "text"
+      ]
+    },
+    "report": {
+      "module": "backend.app.repositories.report_repository",
+      "importable": true,
+      "public_functions": [
+        "Any",
+        "Path",
+        "jsonable",
+        "loads_json",
+        "mapping_dict",
+        "postgres_engine",
+        "report_status_from_postgres",
+        "text"
+      ]
+    },
+    "ai_trace": {
+      "module": "backend.app.repositories.ai_trace_repository",
+      "importable": true,
+      "public_functions": [
+        "Any",
+        "dumps_json",
+        "get_ai_trace",
+        "list_ai_traces",
+        "mapping_dict",
+        "mapping_list",
+        "postgres_engine",
+        "save_ai_trace",
+        "text"
+      ]
+    },
+    "audit": {
+      "module": "backend.app.repositories.audit_repository",
+      "importable": true,
+      "public_functions": [
+        "Any",
+        "CurrentUser",
+        "dumps_json",
+        "list_audit_logs",
+        "mapping_list",
+        "postgres_engine",
+        "text",
+        "write_audit_log"
+      ]
+    },
+    "knowledge": {
+      "module": "backend.app.repositories.knowledge_repository",
+      "importable": true,
+      "public_functions": [
+        "Any",
+        "backfill_missing_embeddings",
+        "checksum",
+        "datetime",
+        "document_id",
+        "dumps_json",
+        "embed_batch_with_metadata",
+        "embed_text_with_metadata",
+        "get_embedding_provider",
+        "jsonable",
+        "knowledge_stats",
+        "list_embedded_chunks",
+        "loads_json",
+        "mapping_list",
+        "postgres_engine",
+        "refresh_stale_embeddings",
+        "search_chunks",
+        "search_keyword_chunks",
+        "split_chunks",
+        "text",
+        "tokenize",
+        "upsert_document"
+      ]
+    }
+  },
+  "core_usage": {
+    "forecast": {
+      "expected_tokens": [
+        "forecast_repository",
+        "load_latest_forecast_from_postgres",
+        "load_latest_forecast"
+      ],
+      "files": [
+        {
+          "target": "backend/app/data_access.py",
+          "exists": true,
+          "matched_tokens": [
+            "forecast_repository",
+            "load_latest_forecast",
+            "load_latest_forecast_from_postgres"
+          ]
+        },
+        {
+          "target": "backend/app/api/v1/endpoints/forecast.py",
+          "exists": true,
+          "matched_tokens": [
+            "load_latest_forecast"
+          ]
+        }
+      ],
+      "status": "ok",
+      "matched_tokens": [
+        "forecast_repository",
+        "load_latest_forecast",
+        "load_latest_forecast_from_postgres"
+      ]
+    },
+    "model": {
+      "expected_tokens": [
+        "model_repository",
+        "model_status_from_postgres",
+        "model_errors_from_postgres"
+      ],
+      "files": [
+        {
+          "target": "backend/app/data_access.py",
+          "exists": true,
+          "matched_tokens": [
+            "model_repository",
+            "model_status_from_postgres"
+          ]
+        },
+        {
+          "target": "backend/app/api/v1/endpoints/model.py",
+          "exists": true,
+          "matched_tokens": [
+            "model_errors_from_postgres",
+            "model_repository"
+          ]
+        }
+      ],
+      "status": "ok",
+      "matched_tokens": [
+        "model_errors_from_postgres",
+        "model_repository",
+        "model_status_from_postgres"
+      ]
+    },
+    "task": {
+      "expected_tokens": [
+        "task_repository",
+        "save_task_record",
+        "list_recent_tasks",
+        "task_log_text"
+      ],
+      "files": [
+        {
+          "target": "backend/app/api/v1/endpoints/task.py",
+          "exists": true,
+          "matched_tokens": [
+            "list_recent_tasks",
+            "save_task_record",
+            "task_log_text",
+            "task_repository"
+          ]
+        },
+        {
+          "target": "backend/app/workers/dispatcher.py",
+          "exists": true,
+          "matched_tokens": [
+            "save_task_record",
+            "task_repository"
+          ]
+        },
+        {
+          "target": "backend/app/workers/tasks.py",
+          "exists": true,
+          "matched_tokens": [
+            "save_task_record",
+            "task_repository"
+          ]
+        },
+        {
+          "target": "backend/app/task_manager.py",
+          "exists": true,
+          "matched_tokens": [
+            "save_task_record",
+            "task_repository"
+          ]
+        }
+      ],
+      "status": "ok",
+      "matched_tokens": [
+        "list_recent_tasks",
+        "save_task_record",
+        "task_log_text",
+        "task_repository"
+      ]
+    },
+    "report": {
+      "expected_tokens": [
+        "report_repository",
+        "report_status_from_postgres",
+        "report_runs",
+        "report_reviews"
+      ],
+      "files": [
+        {
+          "target": "backend/app/data_access.py",
+          "exists": true,
+          "matched_tokens": [
+            "report_repository",
+            "report_status_from_postgres"
+          ]
+        },
+        {
+          "target": "backend/app/api/v1/endpoints/report.py",
+          "exists": true,
+          "matched_tokens": [
+            "report_reviews"
+          ]
+        },
+        {
+          "target": "backend/app/platform_services.py",
+          "exists": true,
+          "matched_tokens": [
+            "report_reviews"
+          ]
+        }
+      ],
+      "status": "ok",
+      "matched_tokens": [
+        "report_repository",
+        "report_reviews",
+        "report_status_from_postgres"
+      ]
+    },
+    "ai_trace": {
+      "expected_tokens": [
+        "ai_trace_repository",
+        "save_ai_trace",
+        "list_ai_traces",
+        "get_ai_trace"
+      ],
+      "files": [
+        {
+          "target": "backend/app/api/v1/endpoints/assistant.py",
+          "exists": true,
+          "matched_tokens": [
+            "ai_trace_repository",
+            "get_ai_trace",
+            "list_ai_traces"
+          ]
+        },
+        {
+          "target": "backend/app/ai_assistant/service.py",
+          "exists": true,
+          "matched_tokens": [
+            "save_ai_trace"
+          ]
+        }
+      ],
+      "status": "ok",
+      "matched_tokens": [
+        "ai_trace_repository",
+        "get_ai_trace",
+        "list_ai_traces",
+        "save_ai_trace"
+      ]
+    },
+    "audit": {
+      "expected_tokens": [
+        "audit_repository",
+        "write_audit_log",
+        "audit_logs"
+      ],
+      "files": [
+        {
+          "target": "backend/app/api/v1/endpoints",
+          "exists": true,
+          "matched_tokens": [
+            "audit_logs",
+            "audit_repository",
+            "write_audit_log"
+          ]
+        },
+        {
+          "target": "backend/app/repositories/audit_repository.py",
+          "exists": true,
+          "matched_tokens": [
+            "audit_logs",
+            "write_audit_log"
+          ]
+        }
+      ],
+      "status": "ok",
+      "matched_tokens": [
+        "audit_logs",
+        "audit_repository",
+        "write_audit_log"
+      ]
+    },
+    "knowledge": {
+      "expected_tokens": [
+        "knowledge_repository",
+        "search_keyword_chunks",
+        "list_embedded_chunks",
+        "kb_documents",
+        "kb_chunks"
+      ],
+      "files": [
+        {
+          "target": "backend/app/services/rag_service.py",
+          "exists": true,
+          "matched_tokens": [
+            "knowledge_repository",
+            "list_embedded_chunks",
+            "search_keyword_chunks"
+          ]
+        },
+        {
+          "target": "backend/app/api/v1/endpoints/knowledge.py",
+          "exists": true,
+          "matched_tokens": [
+            "knowledge_repository"
+          ]
+        }
+      ],
+      "status": "ok",
+      "matched_tokens": [
+        "knowledge_repository",
+        "list_embedded_chunks",
+        "search_keyword_chunks"
+      ]
+    }
+  },
+  "old_source_findings_summary": {
+    "total_findings": 164,
+    "by_pattern": {
+      "csv": 31,
+      "excel": 41,
+      "hardcoded_project_path": 7,
+      "local_prediction_file": 48,
+      "mysql": 15,
+      "old_knowledge_direct_read": 21,
+      "sqlite": 1
+    },
+    "by_usage_scene": {
+      "assistant_data_freshness_tool": 10,
+      "assistant_knowledge_tool_source": 4,
+      "assistant_prompt_or_evidence_label": 16,
+      "documentation_or_config_hint": 13,
+      "frontend_export_or_mock": 7,
+      "knowledge_indexing_source": 6,
+      "legacy_ai_knowledge_search": 2,
+      "legacy_ai_tool_registry": 7,
+      "legacy_file_or_import_path": 11,
+      "migration_tool": 9,
+      "platform_service_runtime": 6,
+      "postgres_etl_or_bootstrap": 8,
+      "postgres_first_compatibility_layer": 18,
+      "stage1_compatibility_api": 10,
+      "tariff_tool_csv_fallback": 9,
+      "tariff_tool_runtime": 1,
+      "test_or_evaluation_fixture": 27
+    },
+    "main_or_partial_runtime_findings": [
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 9,
+        "pattern": "excel",
+        "snippet": "from ...data_access import database_engine, jsonable, read_excel_safe, query_dataframe",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 13,
+        "pattern": "excel",
+        "snippet": "\"weather\": (\"raw_weather\", \"datetime\", \"temperature\", \"weather_raw.xlsx\"),",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 14,
+        "pattern": "excel",
+        "snippet": "\"da_price\": (\"raw_da_price\", \"datetime\", \"da_price\", \"da_price_raw.xlsx\"),",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 15,
+        "pattern": "excel",
+        "snippet": "\"rt_price\": (\"raw_rt_price\", \"datetime\", \"rt_price\", \"rt_price_raw.xlsx\"),",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 16,
+        "pattern": "excel",
+        "snippet": "\"load\": (\"raw_actual_load\", \"datetime\", \"actual_load\", \"actual_load_raw.xlsx\"),",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 17,
+        "pattern": "excel",
+        "snippet": "\"forecast_load\": (\"raw_forecast_load_selected\", \"datetime\", \"forecast_load\", \"forecast_load_selected.xlsx\"),",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 18,
+        "pattern": "excel",
+        "snippet": "\"master_table\": (\"model_master_table\", \"datetime\", \"da_price\", \"master_table.xlsx\"),",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 31,
+        "pattern": "mysql",
+        "snippet": "dialect = engine.dialect.name if engine is not None else \"mysql\"",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 33,
+        "pattern": "mysql",
+        "snippet": "dialect = \"mysql\"",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+        "line": 53,
+        "pattern": "excel",
+        "snippet": "df = read_excel_safe(path)",
+        "usage_scene": "assistant_data_freshness_tool",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+        "line": 11,
+        "pattern": "old_knowledge_direct_read",
+        "snippet": "SEARCH_ROOTS = [",
+        "usage_scene": "assistant_knowledge_tool_source",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+        "line": 12,
+        "pattern": "old_knowledge_direct_read",
+        "snippet": "PROJECT_ROOT / \"knowledge_base\",",
+        "usage_scene": "assistant_knowledge_tool_source",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+        "line": 13,
+        "pattern": "old_knowledge_direct_read",
+        "snippet": "PROJECT_ROOT / \"electricity_tariff_output\" / \"04_knowledge_base_tariff_policy\",",
+        "usage_scene": "assistant_knowledge_tool_source",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+        "line": 67,
+        "pattern": "old_knowledge_direct_read",
+        "snippet": "for root in SEARCH_ROOTS:",
+        "usage_scene": "assistant_knowledge_tool_source",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+      },
+      {
+        "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+        "line": 15,
+        "pattern": "old_knowledge_direct_read",
+        "snippet": "POLICY_DIR = PROJECT_ROOT / \"electricity_tariff_output\" / \"04_knowledge_base_tariff_policy\"",
+        "usage_scene": "tariff_tool_runtime",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "应优先读取 PostgreSQL tariff/policy 表。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 30,
+        "pattern": "excel",
+        "snippet": "FORECAST_FILE = \"18_未来24小时预测结果_正式版.xlsx\"",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 30,
+        "pattern": "local_prediction_file",
+        "snippet": "FORECAST_FILE = \"18_未来24小时预测结果_正式版.xlsx\"",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 31,
+        "pattern": "excel",
+        "snippet": "BUSINESS_SUMMARY_FILE = \"19_业务统计摘要.xlsx\"",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 84,
+        "pattern": "excel",
+        "snippet": "def read_excel_safe(path: Path) -> pd.DataFrame:",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 92,
+        "pattern": "excel",
+        "snippet": "return pd.read_excel(path, engine=\"openpyxl\")",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 94,
+        "pattern": "excel",
+        "snippet": "log_suppressed_exception(\"data_access.read_excel_safe\", exc, path=str(path))",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 149,
+        "pattern": "excel",
+        "snippet": "df = read_excel_safe(path)",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 155,
+        "pattern": "local_prediction_file",
+        "snippet": "\"message\": \"未找到可用的未来 24 小时正式预测结果。\",",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 231,
+        "pattern": "excel",
+        "snippet": "return records(read_excel_safe(path))",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 237,
+        "pattern": "excel",
+        "snippet": "(\"日前价格\", paths.data_dir / \"da_price_raw.xlsx\", \"raw_da_price\", \"datetime\", \"da_price\"),",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 238,
+        "pattern": "excel",
+        "snippet": "(\"实时价格\", paths.data_dir / \"rt_price_raw.xlsx\", \"raw_rt_price\", \"datetime\", \"rt_price\"),",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 239,
+        "pattern": "excel",
+        "snippet": "(\"实际负荷\", paths.data_dir / \"actual_load_raw.xlsx\", \"raw_actual_load\", \"datetime\", \"actual_load\"),",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 240,
+        "pattern": "excel",
+        "snippet": "(\"预测负荷\", paths.data_dir / \"forecast_load_selected.xlsx\", \"raw_forecast_load_selected\", \"datetime\", \"forecast_load\"),",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 241,
+        "pattern": "excel",
+        "snippet": "(\"天气数据\", paths.data_dir / \"weather_raw.xlsx\", \"raw_weather\", \"datetime\", \"temperature\"),",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 242,
+        "pattern": "excel",
+        "snippet": "(\"建模主表\", paths.data_dir / \"master_table.xlsx\", \"model_master_table\", \"datetime\", \"da_price\"),",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 437,
+        "pattern": "mysql",
+        "snippet": "def _quote_identifier(name: str, dialect: str = \"mysql\") -> str:",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 651,
+        "pattern": "local_prediction_file",
+        "snippet": "\"forecast_source\": \"正式预测结果（基于 PJM、NOAA 等采集数据清洗生成）\",",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/data_access.py",
+        "line": 663,
+        "pattern": "local_prediction_file",
+        "snippet": "root = PROJECT_ROOT / \"model_artifacts\"",
+        "usage_scene": "postgres_first_compatibility_layer",
+        "is_main_path": "部分",
+        "postgres_replacement": "是",
+        "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+      },
+      {
+        "path": "backend/app/platform_services.py",
+        "line": 54,
+        "pattern": "local_prediction_file",
+        "snippet": "return {\"run_id\": run_id, \"items\": [], \"message\": \"预测结果缺少电价字段。\"}",
+        "usage_scene": "platform_service_runtime",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+      },
+      {
+        "path": "backend/app/platform_services.py",
+        "line": 168,
+        "pattern": "local_prediction_file",
+        "snippet": "return {\"run_id\": run_id, \"items\": [], \"message\": \"预测结果缺少电价字段。\"}",
+        "usage_scene": "platform_service_runtime",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+      },
+      {
+        "path": "backend/app/platform_services.py",
+        "line": 446,
+        "pattern": "local_prediction_file",
+        "snippet": "forecast_text = \"AI 解读：当前缺少正式预测结果，建议先运行快速预测或今日分析后再做交易研判。\"",
+        "usage_scene": "platform_service_runtime",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+      },
+      {
+        "path": "backend/app/platform_services.py",
+        "line": 541,
+        "pattern": "local_prediction_file",
+        "snippet": "local_path = project_paths().current_dir / \"web_report_reviews.json\"",
+        "usage_scene": "platform_service_runtime",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+      },
+      {
+        "path": "backend/app/platform_services.py",
+        "line": 549,
+        "pattern": "local_prediction_file",
+        "snippet": "_write_local_json(\"web_report_reviews.json\", current)",
+        "usage_scene": "platform_service_runtime",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+      },
+      {
+        "path": "backend/app/platform_services.py",
+        "line": 560,
+        "pattern": "local_prediction_file",
+        "snippet": "local = project_paths().current_dir / \"web_report_reviews.json\"",
+        "usage_scene": "platform_service_runtime",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+      },
+      {
+        "path": "backend/app/services/ui_platform_service.py",
+        "line": 102,
+        "pattern": "csv",
+        "snippet": "path = export_dir / f\"{table_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv\"",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 16,
+        "pattern": "excel",
+        "snippet": "read_excel_safe,",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 127,
+        "pattern": "excel",
+        "snippet": "path = project_paths().result_table_dir / \"13_特征重要性.xlsx\"",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 128,
+        "pattern": "excel",
+        "snippet": "df = read_excel_safe(path)",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 185,
+        "pattern": "local_prediction_file",
+        "snippet": "\"message\": market_message or \"当前系统未查询到可用预测结果。\",",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 191,
+        "pattern": "local_prediction_file",
+        "snippet": "return {\"available\": False, \"market\": actual_market, \"message\": \"当前预测结果缺少可识别的电价字段。\"}",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 246,
+        "pattern": "local_prediction_file",
+        "snippet": "\"message\": f\"当前系统未查询到 {requested_date} 的预测结果。\",",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 259,
+        "pattern": "excel",
+        "snippet": "df = read_excel_safe(project_paths().data_dir / \"da_price_raw.xlsx\")",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 297,
+        "pattern": "excel",
+        "snippet": "df = read_excel_safe(paths.data_dir / \"weather_raw.xlsx\")",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 327,
+        "pattern": "excel",
+        "snippet": "df = read_excel_safe(project_paths().data_dir / \"forecast_load_selected.xlsx\")",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "backend/app/stage1_services.py",
+        "line": 380,
+        "pattern": "local_prediction_file",
+        "snippet": "\"message\": \"模型解释基于当前 Active 模型登记信息、预测结果和特征重要性表。\",",
+        "usage_scene": "stage1_compatibility_api",
+        "is_main_path": "部分",
+        "postgres_replacement": "部分",
+        "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+      },
+      {
+        "path": "knowledge_pipeline/import_chunks_to_kb.py",
+        "line": 337,
+        "pattern": "csv",
+        "snippet": "write_failure_csv(output_dir / \"import_failed_chunks.csv\", failures)",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "knowledge_pipeline/knowledge_batch_processor.py",
+        "line": 821,
+        "pattern": "csv",
+        "snippet": "self.failed_csv = self.output_files_dir / \"failed_files.csv\"",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "knowledge_pipeline/knowledge_batch_processor.py",
+        "line": 1190,
+        "pattern": "csv",
+        "snippet": "\"1. 优先人工处理 `failed_files.csv` 中的扫描版 PDF、WPS/ET、异常后缀和图片/OFD 文件。\",",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "scripts/import_stage1_raw_data_to_postgres.py",
+        "line": 31,
+        "pattern": "csv",
+        "snippet": "if path.suffix.lower() in {\".csv\", \".txt\"}:",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "scripts/import_stage1_raw_data_to_postgres.py",
+        "line": 32,
+        "pattern": "csv",
+        "snippet": "df = pd.read_csv(path, encoding=\"utf-8-sig\")",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "scripts/import_stage1_raw_data_to_postgres.py",
+        "line": 34,
+        "pattern": "excel",
+        "snippet": "df = pd.read_excel(path, engine=\"openpyxl\")",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "scripts/import_stage1_raw_data_to_postgres.py",
+        "line": 204,
+        "pattern": "excel",
+        "snippet": "for pattern in [\"*特征*重要*.xlsx\", \"*importance*.xlsx\", \"13_*.xlsx\"]:",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "scripts/import_stage1_raw_data_to_postgres.py",
+        "line": 214,
+        "pattern": "excel",
+        "snippet": "(\"market\", paths.data_dir / \"da_price_raw.xlsx\", import_market),",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "scripts/import_stage1_raw_data_to_postgres.py",
+        "line": 215,
+        "pattern": "excel",
+        "snippet": "(\"weather\", paths.data_dir / \"weather_raw.xlsx\", import_weather),",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      },
+      {
+        "path": "scripts/import_stage1_raw_data_to_postgres.py",
+        "line": 216,
+        "pattern": "excel",
+        "snippet": "(\"load\", paths.data_dir / \"forecast_load_selected.xlsx\", import_load),",
+        "usage_scene": "legacy_file_or_import_path",
+        "is_main_path": "部分",
+        "postgres_replacement": "待确认",
+        "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+      }
+    ],
+    "main_or_partial_runtime_count": 60
+  },
+  "old_source_findings": [
+    {
+      "path": ".env.example",
+      "line": 14,
+      "pattern": "mysql",
+      "snippet": "# Legacy MySQL compatibility / source database for migration scripts",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": ".env.example",
+      "line": 68,
+      "pattern": "local_prediction_file",
+      "snippet": "FINAL_OUTPUT_ROOT=全流程预测结果数据存放",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "backend/README.md",
+      "line": 3,
+      "pattern": "mysql",
+      "snippet": "本目录是“售电交易 AI 辅助决策平台”的本地 Web 后端。后端不重写现有预测模型，而是复用项目根目录的 Python 服务、结果文件、MySQL 表和模型运维能力。",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "backend/README.md",
+      "line": 8,
+      "pattern": "hardcoded_project_path",
+      "snippet": "cd E:\\智能运营分析项目",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "backend/app/ai/answer_guard.py",
+      "line": 24,
+      "pattern": "local_prediction_file",
+      "snippet": "\"建议：先检查数据接入、预测结果或报告生成状态，再重新提问。\"",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai/context_builder.py",
+      "line": 197,
+      "pattern": "local_prediction_file",
+      "snippet": "return _insufficient(overview.get(\"message\") or \"预测结果不可用。\")",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai/context_builder.py",
+      "line": 213,
+      "pattern": "local_prediction_file",
+      "snippet": "f\"结论：当前预测结果的主要影响因素可以归纳为负荷、历史价格惯性、天气口径、尖峰风险和模型关键特征。当前风险等级为 {overview.get('risk_level') or '-'}。\\n\\n\"",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai/context_builder.py",
+      "line": 297,
+      "pattern": "local_prediction_file",
+      "snippet": "\"建议：高价窗口重点复核售电敞口和尖峰风险，低价窗口评估低成本采购或储能充电；风险窗口保留人工判断，避免把预测结果当作确定交易指令。\"",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai/context_builder.py",
+      "line": 316,
+      "pattern": "local_prediction_file",
+      "snippet": "\"建议：如果误差连续多日抬升，且集中在早晚高峰或尖峰时段，再启动重训或候选模型对比；样本不足时不要把单日波动误判为模型退化。预测结果适合做辅助研判，不应作为确定交易指令。\"",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai/context_builder.py",
+      "line": 386,
+      "pattern": "local_prediction_file",
+      "snippet": "\"answer\": f\"结论：当前数据不足，无法判断。\\n\\n依据：{message or '工具没有返回可用数据。'}\\n\\n建议：先检查预测结果、数据接入状态或重新运行今日分析后再提问。\",",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai/knowledge_base.py",
+      "line": 10,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "KNOWLEDGE_ROOT = PROJECT_ROOT / \"knowledge_base\"",
+      "usage_scene": "legacy_ai_knowledge_search",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "旧 AI 工具直读知识库，建议保留兼容但不作为 v2.8 主链路。"
+    },
+    {
+      "path": "backend/app/ai/knowledge_base.py",
+      "line": 79,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "\"source\": f\"knowledge_base/{path.name}\",",
+      "usage_scene": "legacy_ai_knowledge_search",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "旧 AI 工具直读知识库，建议保留兼容但不作为 v2.8 主链路。"
+    },
+    {
+      "path": "backend/app/ai/prompt_templates.py",
+      "line": 2,
+      "pattern": "local_prediction_file",
+      "snippet": "专业问题必须优先基于系统预测结果、历史电价、负荷、天气、模型解释和知识库回答。",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai/tool_registry.py",
+      "line": 18,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "from .knowledge_base import search_knowledge as search_knowledge_docs",
+      "usage_scene": "legacy_ai_tool_registry",
+      "is_main_path": "否",
+      "postgres_replacement": "部分",
+      "recommendation": "旧工具注册表依赖 load_latest_forecast/query_dataframe，保留兼容。"
+    },
+    {
+      "path": "backend/app/ai/tool_registry.py",
+      "line": 84,
+      "pattern": "local_prediction_file",
+      "snippet": "return _empty(\"get_forecast_extremes\", \"当前没有可用预测结果或预测电价字段。\")",
+      "usage_scene": "legacy_ai_tool_registry",
+      "is_main_path": "否",
+      "postgres_replacement": "部分",
+      "recommendation": "旧工具注册表依赖 load_latest_forecast/query_dataframe，保留兼容。"
+    },
+    {
+      "path": "backend/app/ai/tool_registry.py",
+      "line": 87,
+      "pattern": "local_prediction_file",
+      "snippet": "return _empty(\"get_forecast_extremes\", \"预测结果中没有可计算的电价值。\")",
+      "usage_scene": "legacy_ai_tool_registry",
+      "is_main_path": "否",
+      "postgres_replacement": "部分",
+      "recommendation": "旧工具注册表依赖 load_latest_forecast/query_dataframe，保留兼容。"
+    },
+    {
+      "path": "backend/app/ai/tool_registry.py",
+      "line": 104,
+      "pattern": "local_prediction_file",
+      "snippet": "\"source\": \"正式预测结果\",",
+      "usage_scene": "legacy_ai_tool_registry",
+      "is_main_path": "否",
+      "postgres_replacement": "部分",
+      "recommendation": "旧工具注册表依赖 load_latest_forecast/query_dataframe，保留兼容。"
+    },
+    {
+      "path": "backend/app/ai/tool_registry.py",
+      "line": 112,
+      "pattern": "local_prediction_file",
+      "snippet": "return _empty(\"get_high_risk_hours\", \"当前没有可用预测结果或预测电价字段。\")",
+      "usage_scene": "legacy_ai_tool_registry",
+      "is_main_path": "否",
+      "postgres_replacement": "部分",
+      "recommendation": "旧工具注册表依赖 load_latest_forecast/query_dataframe，保留兼容。"
+    },
+    {
+      "path": "backend/app/ai/tool_registry.py",
+      "line": 174,
+      "pattern": "local_prediction_file",
+      "snippet": "return _empty(\"get_hour_detail\", \"当前没有可用预测结果或预测电价字段。\")",
+      "usage_scene": "legacy_ai_tool_registry",
+      "is_main_path": "否",
+      "postgres_replacement": "部分",
+      "recommendation": "旧工具注册表依赖 load_latest_forecast/query_dataframe，保留兼容。"
+    },
+    {
+      "path": "backend/app/ai/tool_registry.py",
+      "line": 241,
+      "pattern": "local_prediction_file",
+      "snippet": "return _empty(\"get_storage_advice\", \"当前没有可用预测结果或预测电价字段。\")",
+      "usage_scene": "legacy_ai_tool_registry",
+      "is_main_path": "否",
+      "postgres_replacement": "部分",
+      "recommendation": "旧工具注册表依赖 load_latest_forecast/query_dataframe，保留兼容。"
+    },
+    {
+      "path": "backend/app/ai_assistant/core/intent_router.py",
+      "line": 127,
+      "pattern": "local_prediction_file",
+      "snippet": "if any(k in q for k in [\"模型误差\", \"误差变大\", \"误差\", \"mae\", \"rmse\", \"模型状态\", \"预测结果可靠\", \"可靠吗\", \"准不准\", \"可信\"]):",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/core/intent_router.py",
+      "line": 131,
+      "pattern": "local_prediction_file",
+      "snippet": "if any(k in q for k in [\"电价\", \"交易\", \"售电\", \"风险\", \"上涨\", \"下跌\", \"原因\", \"因素影响\", \"预测结果\", \"新能源\", \"出力\", \"负荷\"]):",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/service.py",
+      "line": 373,
+      "pattern": "local_prediction_file",
+      "snippet": "evidence.append({\"source\": \"result_forward_24h_formal\", \"fields\": [\"datetime\", \"predicted_price\", \"risk_level\"], \"tool\": result.name})",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/templates/deterministic_answers.py",
+      "line": 61,
+      "pattern": "local_prediction_file",
+      "snippet": "return f\"结论：当前未来24小时预测均价约 {_money(result.get('avg_price'))}。\\n\\n数据依据：result_forward_24h_formal 最新预测结果。\"",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 9,
+      "pattern": "excel",
+      "snippet": "from ...data_access import database_engine, jsonable, read_excel_safe, query_dataframe",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 13,
+      "pattern": "excel",
+      "snippet": "\"weather\": (\"raw_weather\", \"datetime\", \"temperature\", \"weather_raw.xlsx\"),",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 14,
+      "pattern": "excel",
+      "snippet": "\"da_price\": (\"raw_da_price\", \"datetime\", \"da_price\", \"da_price_raw.xlsx\"),",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 15,
+      "pattern": "excel",
+      "snippet": "\"rt_price\": (\"raw_rt_price\", \"datetime\", \"rt_price\", \"rt_price_raw.xlsx\"),",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 16,
+      "pattern": "excel",
+      "snippet": "\"load\": (\"raw_actual_load\", \"datetime\", \"actual_load\", \"actual_load_raw.xlsx\"),",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 17,
+      "pattern": "excel",
+      "snippet": "\"forecast_load\": (\"raw_forecast_load_selected\", \"datetime\", \"forecast_load\", \"forecast_load_selected.xlsx\"),",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 18,
+      "pattern": "excel",
+      "snippet": "\"master_table\": (\"model_master_table\", \"datetime\", \"da_price\", \"master_table.xlsx\"),",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 31,
+      "pattern": "mysql",
+      "snippet": "dialect = engine.dialect.name if engine is not None else \"mysql\"",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 33,
+      "pattern": "mysql",
+      "snippet": "dialect = \"mysql\"",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/data_freshness_tools.py",
+      "line": 53,
+      "pattern": "excel",
+      "snippet": "df = read_excel_safe(path)",
+      "usage_scene": "assistant_data_freshness_tool",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "数据库优先，Excel freshness 作为兼容兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/forecast_tools.py",
+      "line": 68,
+      "pattern": "local_prediction_file",
+      "snippet": "\"evidence\": [{\"source\": \"result_forward_24h_formal\", \"fields\": [\"datetime\", pcol, \"risk_level\"]}],",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/forecast_tools.py",
+      "line": 104,
+      "pattern": "local_prediction_file",
+      "snippet": "\"evidence\": [{\"source\": \"result_forward_24h_formal\", \"time\": _time_text(row.get(\"datetime\"))}],",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/forecast_tools.py",
+      "line": 144,
+      "pattern": "local_prediction_file",
+      "snippet": "\"evidence\": [{\"source\": \"result_forward_24h_formal\", \"time\": _time_text(row.get(\"datetime\"))}],",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+      "line": 11,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "SEARCH_ROOTS = [",
+      "usage_scene": "assistant_knowledge_tool_source",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+      "line": 12,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "PROJECT_ROOT / \"knowledge_base\",",
+      "usage_scene": "assistant_knowledge_tool_source",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+      "line": 13,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "PROJECT_ROOT / \"electricity_tariff_output\" / \"04_knowledge_base_tariff_policy\",",
+      "usage_scene": "assistant_knowledge_tool_source",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/knowledge_tools.py",
+      "line": 67,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "for root in SEARCH_ROOTS:",
+      "usage_scene": "assistant_knowledge_tool_source",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "确认工具优先调用 RAG/repository；本地文件仅作为索引或兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/storage_tools.py",
+      "line": 56,
+      "pattern": "local_prediction_file",
+      "snippet": "\"evidence\": [{\"source\": \"result_forward_24h_formal\", \"fields\": [\"datetime\", pcol, \"risk_level\"]}],",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/storage_tools.py",
+      "line": 82,
+      "pattern": "local_prediction_file",
+      "snippet": "\"evidence\": [{\"source\": \"result_forward_24h_formal\", \"fields\": [\"datetime\", pcol, \"risk_level\"]}],",
+      "usage_scene": "assistant_prompt_or_evidence_label",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "这是回答证据来源标签或提示词内容，不是本地文件读取主路径。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 15,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "POLICY_DIR = PROJECT_ROOT / \"electricity_tariff_output\" / \"04_knowledge_base_tariff_policy\"",
+      "usage_scene": "tariff_tool_runtime",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "应优先读取 PostgreSQL tariff/policy 表。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 31,
+      "pattern": "csv",
+      "snippet": "return pd.read_csv(path, encoding=\"utf-8-sig\"), str(path)",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 93,
+      "pattern": "csv",
+      "snippet": "tariff_df, _ = _read_table(\"pv_tariff_rules\", \"pv_tariff_rules.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 94,
+      "pattern": "csv",
+      "snippet": "station_df, _ = _read_table(\"pv_station_tariff_check\", \"pv_station_tariff_check.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 112,
+      "pattern": "csv",
+      "snippet": "tax_df, _ = _read_table(\"southern_grid_tax_rules\", \"southern_grid_tax_rules.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 123,
+      "pattern": "csv",
+      "snippet": "df, source = _read_table(\"pv_tariff_rules\", \"pv_tariff_rules.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 169,
+      "pattern": "csv",
+      "snippet": "df, source = _read_table(\"pv_station_tariff_check\", \"pv_station_tariff_check.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 203,
+      "pattern": "csv",
+      "snippet": "df, source = _read_table(\"pv_policy_files\", \"pv_policy_files.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 241,
+      "pattern": "csv",
+      "snippet": "df, source = _read_table(\"market_power_price_rules\", \"market_power_price_rules.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/ai_assistant/tools/tariff_tools.py",
+      "line": 274,
+      "pattern": "csv",
+      "snippet": "df, source = _read_table(\"southern_grid_tax_rules\", \"southern_grid_tax_rules.csv\")",
+      "usage_scene": "tariff_tool_csv_fallback",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "PostgreSQL 查询优先，CSV 作为缺库兜底。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 30,
+      "pattern": "excel",
+      "snippet": "FORECAST_FILE = \"18_未来24小时预测结果_正式版.xlsx\"",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 30,
+      "pattern": "local_prediction_file",
+      "snippet": "FORECAST_FILE = \"18_未来24小时预测结果_正式版.xlsx\"",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 31,
+      "pattern": "excel",
+      "snippet": "BUSINESS_SUMMARY_FILE = \"19_业务统计摘要.xlsx\"",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 84,
+      "pattern": "excel",
+      "snippet": "def read_excel_safe(path: Path) -> pd.DataFrame:",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 92,
+      "pattern": "excel",
+      "snippet": "return pd.read_excel(path, engine=\"openpyxl\")",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 94,
+      "pattern": "excel",
+      "snippet": "log_suppressed_exception(\"data_access.read_excel_safe\", exc, path=str(path))",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 149,
+      "pattern": "excel",
+      "snippet": "df = read_excel_safe(path)",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 155,
+      "pattern": "local_prediction_file",
+      "snippet": "\"message\": \"未找到可用的未来 24 小时正式预测结果。\",",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 231,
+      "pattern": "excel",
+      "snippet": "return records(read_excel_safe(path))",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 237,
+      "pattern": "excel",
+      "snippet": "(\"日前价格\", paths.data_dir / \"da_price_raw.xlsx\", \"raw_da_price\", \"datetime\", \"da_price\"),",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 238,
+      "pattern": "excel",
+      "snippet": "(\"实时价格\", paths.data_dir / \"rt_price_raw.xlsx\", \"raw_rt_price\", \"datetime\", \"rt_price\"),",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 239,
+      "pattern": "excel",
+      "snippet": "(\"实际负荷\", paths.data_dir / \"actual_load_raw.xlsx\", \"raw_actual_load\", \"datetime\", \"actual_load\"),",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 240,
+      "pattern": "excel",
+      "snippet": "(\"预测负荷\", paths.data_dir / \"forecast_load_selected.xlsx\", \"raw_forecast_load_selected\", \"datetime\", \"forecast_load\"),",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 241,
+      "pattern": "excel",
+      "snippet": "(\"天气数据\", paths.data_dir / \"weather_raw.xlsx\", \"raw_weather\", \"datetime\", \"temperature\"),",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 242,
+      "pattern": "excel",
+      "snippet": "(\"建模主表\", paths.data_dir / \"master_table.xlsx\", \"model_master_table\", \"datetime\", \"da_price\"),",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 437,
+      "pattern": "mysql",
+      "snippet": "def _quote_identifier(name: str, dialect: str = \"mysql\") -> str:",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 651,
+      "pattern": "local_prediction_file",
+      "snippet": "\"forecast_source\": \"正式预测结果（基于 PJM、NOAA 等采集数据清洗生成）\",",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/data_access.py",
+      "line": 663,
+      "pattern": "local_prediction_file",
+      "snippet": "root = PROJECT_ROOT / \"model_artifacts\"",
+      "usage_scene": "postgres_first_compatibility_layer",
+      "is_main_path": "部分",
+      "postgres_replacement": "是",
+      "recommendation": "保留 PostgreSQL 优先、旧文件兜底；生产默认关闭 legacy fallback。"
+    },
+    {
+      "path": "backend/app/platform_services.py",
+      "line": 54,
+      "pattern": "local_prediction_file",
+      "snippet": "return {\"run_id\": run_id, \"items\": [], \"message\": \"预测结果缺少电价字段。\"}",
+      "usage_scene": "platform_service_runtime",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+    },
+    {
+      "path": "backend/app/platform_services.py",
+      "line": 168,
+      "pattern": "local_prediction_file",
+      "snippet": "return {\"run_id\": run_id, \"items\": [], \"message\": \"预测结果缺少电价字段。\"}",
+      "usage_scene": "platform_service_runtime",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+    },
+    {
+      "path": "backend/app/platform_services.py",
+      "line": 446,
+      "pattern": "local_prediction_file",
+      "snippet": "forecast_text = \"AI 解读：当前缺少正式预测结果，建议先运行快速预测或今日分析后再做交易研判。\"",
+      "usage_scene": "platform_service_runtime",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+    },
+    {
+      "path": "backend/app/platform_services.py",
+      "line": 541,
+      "pattern": "local_prediction_file",
+      "snippet": "local_path = project_paths().current_dir / \"web_report_reviews.json\"",
+      "usage_scene": "platform_service_runtime",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+    },
+    {
+      "path": "backend/app/platform_services.py",
+      "line": 549,
+      "pattern": "local_prediction_file",
+      "snippet": "_write_local_json(\"web_report_reviews.json\", current)",
+      "usage_scene": "platform_service_runtime",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+    },
+    {
+      "path": "backend/app/platform_services.py",
+      "line": 560,
+      "pattern": "local_prediction_file",
+      "snippet": "local = project_paths().current_dir / \"web_report_reviews.json\"",
+      "usage_scene": "platform_service_runtime",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测/报告/聊天会话多为 DB 优先；report review 本地 JSON 是兜底。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 56,
+      "pattern": "csv",
+      "snippet": "def _read_csv(name: str) -> pd.DataFrame:",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 60,
+      "pattern": "csv",
+      "snippet": "return pd.read_csv(path, encoding=\"utf-8-sig\")",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 261,
+      "pattern": "csv",
+      "snippet": "df = _read_csv(\"pv_tariff_rules.csv\")",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 286,
+      "pattern": "csv",
+      "snippet": "df = _read_csv(\"pv_policy_files.csv\")",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 309,
+      "pattern": "csv",
+      "snippet": "df = _read_csv(\"pv_station_tariff_check.csv\")",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 336,
+      "pattern": "csv",
+      "snippet": "df = _read_csv(\"market_power_price_rules.csv\")",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 358,
+      "pattern": "csv",
+      "snippet": "df = _read_csv(\"southern_grid_tax_rules.csv\")",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/core_data_sync.py",
+      "line": 383,
+      "pattern": "csv",
+      "snippet": "df = _read_csv(\"pv_tariff_period_rules.csv\")",
+      "usage_scene": "postgres_etl_or_bootstrap",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留 ETL 输入读取；输出应进入 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/services/rag_service.py",
+      "line": 30,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "SEARCH_ROOTS = [",
+      "usage_scene": "knowledge_indexing_source",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "本地知识文件作为索引源可保留；检索主路径应使用 kb_documents/kb_chunks。"
+    },
+    {
+      "path": "backend/app/services/rag_service.py",
+      "line": 31,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "PROJECT_ROOT / \"knowledge_base\",",
+      "usage_scene": "knowledge_indexing_source",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "本地知识文件作为索引源可保留；检索主路径应使用 kb_documents/kb_chunks。"
+    },
+    {
+      "path": "backend/app/services/rag_service.py",
+      "line": 32,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "PROJECT_ROOT / \"electricity_tariff_output\" / \"04_knowledge_base_tariff_policy\",",
+      "usage_scene": "knowledge_indexing_source",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "本地知识文件作为索引源可保留；检索主路径应使用 kb_documents/kb_chunks。"
+    },
+    {
+      "path": "backend/app/services/rag_service.py",
+      "line": 193,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "for root in SEARCH_ROOTS:",
+      "usage_scene": "knowledge_indexing_source",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "本地知识文件作为索引源可保留；检索主路径应使用 kb_documents/kb_chunks。"
+    },
+    {
+      "path": "backend/app/services/rag_service.py",
+      "line": 402,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "elif \"knowledge_base\" in source_blob and any(_term_hit(item_blob, term) for term in terms):",
+      "usage_scene": "knowledge_indexing_source",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "本地知识文件作为索引源可保留；检索主路径应使用 kb_documents/kb_chunks。"
+    },
+    {
+      "path": "backend/app/services/rag_service.py",
+      "line": 519,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "for root in SEARCH_ROOTS:",
+      "usage_scene": "knowledge_indexing_source",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "本地知识文件作为索引源可保留；检索主路径应使用 kb_documents/kb_chunks。"
+    },
+    {
+      "path": "backend/app/services/ui_platform_service.py",
+      "line": 102,
+      "pattern": "csv",
+      "snippet": "path = export_dir / f\"{table_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv\"",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 16,
+      "pattern": "excel",
+      "snippet": "read_excel_safe,",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 127,
+      "pattern": "excel",
+      "snippet": "path = project_paths().result_table_dir / \"13_特征重要性.xlsx\"",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 128,
+      "pattern": "excel",
+      "snippet": "df = read_excel_safe(path)",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 185,
+      "pattern": "local_prediction_file",
+      "snippet": "\"message\": market_message or \"当前系统未查询到可用预测结果。\",",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 191,
+      "pattern": "local_prediction_file",
+      "snippet": "return {\"available\": False, \"market\": actual_market, \"message\": \"当前预测结果缺少可识别的电价字段。\"}",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 246,
+      "pattern": "local_prediction_file",
+      "snippet": "\"message\": f\"当前系统未查询到 {requested_date} 的预测结果。\",",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 259,
+      "pattern": "excel",
+      "snippet": "df = read_excel_safe(project_paths().data_dir / \"da_price_raw.xlsx\")",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 297,
+      "pattern": "excel",
+      "snippet": "df = read_excel_safe(paths.data_dir / \"weather_raw.xlsx\")",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 327,
+      "pattern": "excel",
+      "snippet": "df = read_excel_safe(project_paths().data_dir / \"forecast_load_selected.xlsx\")",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "backend/app/stage1_services.py",
+      "line": 380,
+      "pattern": "local_prediction_file",
+      "snippet": "\"message\": \"模型解释基于当前 Active 模型登记信息、预测结果和特征重要性表。\",",
+      "usage_scene": "stage1_compatibility_api",
+      "is_main_path": "部分",
+      "postgres_replacement": "部分",
+      "recommendation": "预测走 PostgreSQL 优先；天气/负荷等旧文件路径建议后续补 repository。"
+    },
+    {
+      "path": "frontend/src/mock/dataMock.ts",
+      "line": 32,
+      "pattern": "excel",
+      "snippet": "['导入', '市场规则_20250621.xlsx', '成功', '2,156', '2025-06-21 09:58:21', '00:01:32'],",
+      "usage_scene": "frontend_export_or_mock",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "前端 CSV/XLSX 多为导出或 mock 标识，保留。"
+    },
+    {
+      "path": "frontend/src/mock/dataMock.ts",
+      "line": 33,
+      "pattern": "csv",
+      "snippet": "['导出', '电价数据_日报_20250620.csv', '成功', '12,586,432', '2025-06-21 09:42:10', '00:02:18'],",
+      "usage_scene": "frontend_export_or_mock",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "前端 CSV/XLSX 多为导出或 mock 标识，保留。"
+    },
+    {
+      "path": "frontend/src/mock/dataMock.ts",
+      "line": 36,
+      "pattern": "excel",
+      "snippet": "['导出', '完整率报表_20250620.xlsx', '成功', '18,432', '2025-06-21 09:10:08', '00:00:56']",
+      "usage_scene": "frontend_export_or_mock",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "前端 CSV/XLSX 多为导出或 mock 标识，保留。"
+    },
+    {
+      "path": "frontend/src/mock/knowledgeMock.ts",
+      "line": 21,
+      "pattern": "excel",
+      "snippet": "['浙江省代理购电价格表（2025年6月）.xlsx', '电价政策', '2025-06-18 08:56', '986', '已索引'],",
+      "usage_scene": "frontend_export_or_mock",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "前端 CSV/XLSX 多为导出或 mock 标识，保留。"
+    },
+    {
+      "path": "frontend/src/mock/knowledgeMock.ts",
+      "line": 28,
+      "pattern": "excel",
+      "snippet": "['浙江省代理购电价格表（2025年6月）.xlsx', '85.22%', '表 A-3 工商业及其他用户电价表：尖峰时段 17:00-21:00'],",
+      "usage_scene": "frontend_export_or_mock",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "前端 CSV/XLSX 多为导出或 mock 标识，保留。"
+    },
+    {
+      "path": "frontend/src/pages/forecast/ForecastCenterPage.tsx",
+      "line": 72,
+      "pattern": "csv",
+      "snippet": "a.download = `forecast_details_${Date.now()}.csv`;",
+      "usage_scene": "frontend_export_or_mock",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "前端 CSV/XLSX 多为导出或 mock 标识，保留。"
+    },
+    {
+      "path": "frontend/src/pages/strategy/StrategyCenterPage.tsx",
+      "line": 80,
+      "pattern": "csv",
+      "snippet": "a.download = `strategy_${Date.now()}.csv`;",
+      "usage_scene": "frontend_export_or_mock",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "前端 CSV/XLSX 多为导出或 mock 标识，保留。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 42,
+      "pattern": "hardcoded_project_path",
+      "snippet": "python knowledge_pipeline/knowledge_batch_processor.py --input \"E:\\智能运营分析项目\\知识库\" --output \"E:\\智能运营分析项目\\knowledge_pipeline\" --dry-run",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 48,
+      "pattern": "hardcoded_project_path",
+      "snippet": "python knowledge_pipeline/knowledge_batch_processor.py --input \"E:\\智能运营分析项目\\知识库\" --output \"E:\\智能运营分析项目\\knowledge_pipeline\" --max-files 10 --verbose",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 54,
+      "pattern": "hardcoded_project_path",
+      "snippet": "python knowledge_pipeline/knowledge_batch_processor.py --input \"E:\\智能运营分析项目\\知识库\" --output \"E:\\智能运营分析项目\\knowledge_pipeline\"",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 60,
+      "pattern": "hardcoded_project_path",
+      "snippet": "python knowledge_pipeline/knowledge_batch_processor.py --input \"E:\\智能运营分析项目\\知识库\" --output \"E:\\智能运营分析项目\\knowledge_pipeline\" --resume",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 70,
+      "pattern": "csv",
+      "snippet": "| `output/failed_files.csv` | 失败文件清单和建议动作。 |",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 84,
+      "pattern": "hardcoded_project_path",
+      "snippet": "\"source_path\": \"E:/智能运营分析项目/知识库/原始文件.pdf\",",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 101,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "1. 将 `knowledge_pipeline/markdown/` 加入现有 `rag_service.SEARCH_ROOTS` 或后续索引脚本的扫描目录，然后调用现有知识库索引流程生成 BGE embedding。",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/README.md",
+      "line": 111,
+      "pattern": "csv",
+      "snippet": "- 异常后缀文件如何处理：工具会先识别文件头，无法判断时写入 `failed_files.csv`。",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "knowledge_pipeline/import_chunks_to_kb.py",
+      "line": 337,
+      "pattern": "csv",
+      "snippet": "write_failure_csv(output_dir / \"import_failed_chunks.csv\", failures)",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "knowledge_pipeline/knowledge_batch_processor.py",
+      "line": 821,
+      "pattern": "csv",
+      "snippet": "self.failed_csv = self.output_files_dir / \"failed_files.csv\"",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "knowledge_pipeline/knowledge_batch_processor.py",
+      "line": 1190,
+      "pattern": "csv",
+      "snippet": "\"1. 优先人工处理 `failed_files.csv` 中的扫描版 PDF、WPS/ET、异常后缀和图片/OFD 文件。\",",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "migrations/README.md",
+      "line": 14,
+      "pattern": "local_prediction_file",
+      "snippet": "- `008_create_predictions_normalized.sql`：标准化预测结果与发布记录。",
+      "usage_scene": "documentation_or_config_hint",
+      "is_main_path": "否",
+      "postgres_replacement": "不适用",
+      "recommendation": "保留说明；若为旧 MySQL 文档，后续更新措辞。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 25,
+      "pattern": "csv",
+      "snippet": "DEFAULT_REPORT = ROOT / \"output\" / \"postgres_migration_report.csv\"",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 83,
+      "pattern": "mysql",
+      "snippet": "raise RuntimeError(\"MySQL 源库未启用，请设置 MYSQL_DATABASE_URL 或 DB_* 兼容配置。\")",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 85,
+      "pattern": "mysql",
+      "snippet": "raise RuntimeError(\"MySQL 源库缺少密码，请设置 MYSQL_DATABASE_URL 或 DB_PASSWORD。\")",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 87,
+      "pattern": "mysql",
+      "snippet": "f\"mysql+pymysql://{quote_plus(db.user)}:{quote_plus(db.password)}@\"",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 192,
+      "pattern": "mysql",
+      "snippet": "quote_left, quote_right = (\"`\", \"`\") if dialect == \"mysql\" else ('\"', '\"')",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 235,
+      "pattern": "mysql",
+      "snippet": "row[\"sample_source_hash\"] = sample_hash(source, table_name, \"mysql\")",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 275,
+      "pattern": "mysql",
+      "snippet": "parser = argparse.ArgumentParser(description=\"Migrate selected MySQL tables to PostgreSQL and write a CSV validation report.\")",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 276,
+      "pattern": "mysql",
+      "snippet": "parser.add_argument(\"--mysql-url\", default=\"\", help=\"Source MySQL SQLAlchemy URL. Defaults to MYSQL_DATABASE_URL or legacy DB_* config.\")",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/db_migrate_mysql_to_postgres.py",
+      "line": 279,
+      "pattern": "mysql",
+      "snippet": "parser.add_argument(\"--include-legacy\", action=\"store_true\", help=\"Also inspect legacy MySQL tables that are not part of the current PostgreSQL baseline.\")",
+      "usage_scene": "migration_tool",
+      "is_main_path": "否",
+      "postgres_replacement": "是",
+      "recommendation": "保留迁移工具；不要作为运行时主路径。"
+    },
+    {
+      "path": "scripts/import_stage1_raw_data_to_postgres.py",
+      "line": 31,
+      "pattern": "csv",
+      "snippet": "if path.suffix.lower() in {\".csv\", \".txt\"}:",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "scripts/import_stage1_raw_data_to_postgres.py",
+      "line": 32,
+      "pattern": "csv",
+      "snippet": "df = pd.read_csv(path, encoding=\"utf-8-sig\")",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "scripts/import_stage1_raw_data_to_postgres.py",
+      "line": 34,
+      "pattern": "excel",
+      "snippet": "df = pd.read_excel(path, engine=\"openpyxl\")",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "scripts/import_stage1_raw_data_to_postgres.py",
+      "line": 204,
+      "pattern": "excel",
+      "snippet": "for pattern in [\"*特征*重要*.xlsx\", \"*importance*.xlsx\", \"13_*.xlsx\"]:",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "scripts/import_stage1_raw_data_to_postgres.py",
+      "line": 214,
+      "pattern": "excel",
+      "snippet": "(\"market\", paths.data_dir / \"da_price_raw.xlsx\", import_market),",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "scripts/import_stage1_raw_data_to_postgres.py",
+      "line": 215,
+      "pattern": "excel",
+      "snippet": "(\"weather\", paths.data_dir / \"weather_raw.xlsx\", import_weather),",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "scripts/import_stage1_raw_data_to_postgres.py",
+      "line": 216,
+      "pattern": "excel",
+      "snippet": "(\"load\", paths.data_dir / \"forecast_load_selected.xlsx\", import_load),",
+      "usage_scene": "legacy_file_or_import_path",
+      "is_main_path": "部分",
+      "postgres_replacement": "待确认",
+      "recommendation": "检查是否存在 repository 替代；生产主路径应优先 PostgreSQL。"
+    },
+    {
+      "path": "tests/evaluation/ai_assistant_eval_questions.json",
+      "line": 10,
+      "pattern": "local_prediction_file",
+      "snippet": "{\"id\":\"price_009\",\"category\":\"price_forecast\",\"question\":\"明天电价均价高不高？\",\"should_use_rag\":true,\"should_use_tools\":true,\"expected_titles_any\":[\"price_forecast_logic\",\"预测结果字段说明\"],\"expected_keywords_any\":[\"均价\",\"电价\",\"明天\"],\"expected_answer_points\":",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/evaluation/ai_assistant_eval_questions.json",
+      "line": 18,
+      "pattern": "local_prediction_file",
+      "snippet": "{\"id\":\"price_017\",\"category\":\"price_forecast\",\"question\":\"电价预测结果里的风险等级应该怎么用？\",\"should_use_rag\":true,\"should_use_tools\":false,\"expected_titles_any\":[\"risk_level_rules\",\"风险等级定义\"],\"expected_keywords_any\":[\"风险等级\",\"预测\"],\"expected_answer_points\":",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/evaluation/ai_assistant_eval_questions.json",
+      "line": 67,
+      "pattern": "local_prediction_file",
+      "snippet": "{\"id\":\"model_013\",\"category\":\"model_explain\",\"question\":\"特征工程变化会导致预测结果变化吗？\",\"should_use_rag\":true,\"should_use_tools\":false,\"expected_titles_any\":[\"model_pipeline_explanation\"],\"expected_keywords_any\":[\"特征工程\",\"预测\"],\"expected_answer_points\":[",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/evaluation/ai_assistant_eval_questions.json",
+      "line": 89,
+      "pattern": "local_prediction_file",
+      "snippet": "{\"id\":\"system_003\",\"category\":\"system_usage\",\"question\":\"AI 助手能帮我分析什么？\",\"should_use_rag\":true,\"should_use_tools\":false,\"expected_titles_any\":[\"system_overview\",\"ai_assistant_answer_rules\"],\"expected_keywords_any\":[\"AI助手\",\"分析\"],\"expected_ans",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 120,
+      "pattern": "mysql",
+      "snippet": "\"mysql\": re.compile(r\"\\b(mysql|pymysql|mysql\\+pymysql)\\b\", re.IGNORECASE),",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 121,
+      "pattern": "excel",
+      "snippet": "\"excel\": re.compile(r\"(pandas\\.read_excel|pd\\.read_excel|read_excel_safe|read_excel|\\.xlsx\\b|\\.xls\\b)\", re.IGNORECASE),",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 122,
+      "pattern": "csv",
+      "snippet": "\"csv\": re.compile(r\"(pandas\\.read_csv|pd\\.read_csv|read_csv|\\.csv\\b)\", re.IGNORECASE),",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 124,
+      "pattern": "local_prediction_file",
+      "snippet": "r\"(未来24小时预测|result_forward_24h|预测结果|model_artifacts|report_output|web_report_reviews\\.json)\",",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 127,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "\"old_knowledge_direct_read\": re.compile(r\"(knowledge_base|04_knowledge_base_tariff_policy|SEARCH_ROOTS)\", re.IGNORECASE),",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 128,
+      "pattern": "sqlite",
+      "snippet": "\"sqlite\": re.compile(r\"(\\bsqlite\\b|sqlite://)\", re.IGNORECASE),",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 129,
+      "pattern": "hardcoded_project_path",
+      "snippet": "\"hardcoded_project_path\": re.compile(r\"(E[:：][\\\\/][^\\s\\\"']*智能运营分析项目|E:\\\\智能运营分析项目)\", re.IGNORECASE),",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 275,
+      "pattern": "mysql",
+      "snippet": "return (\"documentation_or_config_hint\", \"否\", \"不适用\", \"保留说明；若为旧 MySQL 文档，后续更新措辞。\")",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 295,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "if \"ai/knowledge_base.py\" in lowered:",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 311,
+      "pattern": "excel",
+      "snippet": "if pattern_name in {\"excel\", \"csv\"} and (\"read_\" in snippet_lower or \".xlsx\" in snippet_lower or \".csv\" in snippet_lower):",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/check_postgres_source_of_truth.py",
+      "line": 311,
+      "pattern": "csv",
+      "snippet": "if pattern_name in {\"excel\", \"csv\"} and (\"read_\" in snippet_lower or \".xlsx\" in snippet_lower or \".csv\" in snippet_lower):",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/stage1_repository_gap.py",
+      "line": 23,
+      "pattern": "excel",
+      "snippet": "\"source_tokens\": [\"load_weather_forecast_from_postgres\", \"weather_raw.xlsx\"],",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/stage1_repository_gap.py",
+      "line": 29,
+      "pattern": "excel",
+      "snippet": "\"source_tokens\": [\"load_forecast_load_from_postgres\", \"forecast_load_selected.xlsx\"],",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/stage1_repository_gap.py",
+      "line": 35,
+      "pattern": "excel",
+      "snippet": "\"source_tokens\": [\"load_market_history_from_postgres\", \"da_price_raw.xlsx\"],",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/productization/stage1_repository_gap.py",
+      "line": 53,
+      "pattern": "local_prediction_file",
+      "snippet": "\"source_tokens\": [\"report_reviews\", \"web_report_reviews.json\"],",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_model_artifacts.py",
+      "line": 11,
+      "pattern": "local_prediction_file",
+      "snippet": "from prediction_engine.model_trainer import load_model_artifacts, save_model_artifacts",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_model_artifacts.py",
+      "line": 20,
+      "pattern": "local_prediction_file",
+      "snippet": "def test_save_and_load_model_artifacts(self):",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_model_artifacts.py",
+      "line": 36,
+      "pattern": "local_prediction_file",
+      "snippet": "artifact_dir = save_model_artifacts(",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_model_artifacts.py",
+      "line": 58,
+      "pattern": "local_prediction_file",
+      "snippet": "loaded = load_model_artifacts(artifact_dir)",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_rag_hybrid.py",
+      "line": 34,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "\"source\": \"knowledge_base/peak.md\",",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_rag_hybrid.py",
+      "line": 54,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "\"source\": \"knowledge_base/load_weather.md\",",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_rag_hybrid.py",
+      "line": 75,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "root = tmp_path / \"knowledge_base\"",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    },
+    {
+      "path": "tests/test_rag_hybrid.py",
+      "line": 86,
+      "pattern": "old_knowledge_direct_read",
+      "snippet": "monkeypatch.setattr(rag_service, \"SEARCH_ROOTS\", [root])",
+      "usage_scene": "test_or_evaluation_fixture",
+      "is_main_path": "否",
+      "postgres_replacement": "视测试目标而定",
+      "recommendation": "保留测试夹具；避免真实环境依赖旧文件。"
+    }
+  ],
+  "alembic": {
+    "alembic_ini_exists": true,
+    "env_py_exists": true,
+    "version_files": [
+      "migrations/versions/0001_initial_postgres_schema.py",
+      "migrations/versions/0002_rag_rbac_audit.py",
+      "migrations/versions/0003_stage1_raw_data.py",
+      "migrations/versions/0004_task_center_enterprise.py"
+    ],
+    "revision_chain": {
+      "0001_initial_postgres_schema.py": {
+        "revision": "0001_initial_postgres_schema",
+        "down_revision": "None"
+      },
+      "0002_rag_rbac_audit.py": {
+        "revision": "0002_rag_rbac_audit",
+        "down_revision": "0001_initial_postgres_schema"
+      },
+      "0003_stage1_raw_data.py": {
+        "revision": "0003_stage1_raw_data",
+        "down_revision": "0002_rag_rbac_audit"
+      },
+      "0004_task_center_enterprise.py": {
+        "revision": "0004_task_center_enterprise",
+        "down_revision": "0003_stage1_raw_data"
+      }
+    },
+    "created_tables": [
+      "ai_traces",
+      "audit_logs",
+      "feature_importance",
+      "forecast_results",
+      "forecast_runs",
+      "kb_chunks",
+      "kb_documents",
+      "market_power_price_rules",
+      "model_metrics",
+      "model_versions",
+      "pv_policy_files",
+      "pv_station_tariff_check",
+      "pv_tariff_period_rules",
+      "pv_tariff_rules",
+      "raw_load",
+      "raw_market",
+      "raw_renewable",
+      "raw_weather",
+      "report_reviews",
+      "report_runs",
+      "roles",
+      "southern_grid_tax_rules",
+      "task_logs",
+      "task_runs",
+      "users"
+    ],
+    "critical_tables_missing": [],
+    "index_count": 48,
+    "indexes": [
+      "idx_ai_traces_evidence_gin",
+      "idx_ai_traces_intent",
+      "idx_ai_traces_session",
+      "idx_ai_traces_tools_gin",
+      "idx_audit_logs_action",
+      "idx_audit_logs_actor",
+      "idx_audit_logs_created_at",
+      "idx_feature_importance_model",
+      "idx_feature_importance_rank",
+      "idx_forecast_results_datetime",
+      "idx_forecast_results_risk",
+      "idx_forecast_results_run_id",
+      "idx_kb_chunks_doc_id",
+      "idx_kb_chunks_keywords_gin",
+      "idx_kb_documents_source",
+      "idx_market_power_month",
+      "idx_market_power_region",
+      "idx_model_metrics_date",
+      "idx_model_metrics_version",
+      "idx_pv_policy_doc_number",
+      "idx_pv_policy_region",
+      "idx_pv_tariff_period_region",
+      "idx_pv_tariff_rules_period",
+      "idx_pv_tariff_rules_region",
+      "idx_raw_load_datetime",
+      "idx_raw_load_market",
+      "idx_raw_market_datetime",
+      "idx_raw_market_market_type",
+      "idx_raw_renewable_datetime",
+      "idx_raw_renewable_market",
+      "idx_raw_weather_datetime",
+      "idx_raw_weather_point",
+      "idx_report_reviews_report_id",
+      "idx_report_runs_run_id",
+      "idx_report_runs_status",
+      "idx_southern_grid_region",
+      "idx_southern_grid_station",
+      "idx_station_tariff_region",
+      "idx_station_tariff_station",
+      "idx_task_logs_run_id",
+      "idx_task_logs_status",
+      "idx_task_logs_task_id",
+      "idx_task_runs_created_at",
+      "idx_task_runs_created_by",
+      "idx_task_runs_kind",
+      "idx_task_runs_status",
+      "idx_users_role_id",
+      "idx_users_status"
+    ],
+    "empty_db_runtime_check": "not_run",
+    "empty_db_runtime_check_reason": "默认脚本不读取真实 .env，也未连接外部数据库；如需实测，请在独立空库设置 DATABASE_URL 后运行 alembic upgrade head。"
+  },
+  "runtime": {
+    "runtime_check_available": true,
+    "runtime_check_status": "pass",
+    "report_path": "tests/productization/output/postgres_runtime_report.json",
+    "alembic_upgrade_executed": true
+  },
+  "legacy_fallback_policy": {
+    "setting_exists": true,
+    "env_example_mentions_development": true,
+    "env_example_mentions_production": false,
+    "production_warning_exists": true,
+    "policy": "development may enable legacy fallback; production should keep it disabled"
+  },
+  "stage1_repository_status": {
+    "status": "stage1_gap_known",
+    "domains": {
+      "weather_data": {
+        "status": "postgresql_ready",
+        "repository": "backend.app.repositories.weather_repository",
+        "repository_importable": true,
+        "tables": [
+          {
+            "name": "raw_weather",
+            "declared_in_migration": true,
+            "exists_runtime": true
+          }
+        ],
+        "source_file": "backend/app/stage1_services.py",
+        "source_hits": [
+          "load_weather_forecast_from_postgres",
+          "weather_raw.xlsx"
+        ],
+        "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+      },
+      "load_data": {
+        "status": "postgresql_ready",
+        "repository": "backend.app.repositories.load_repository",
+        "repository_importable": true,
+        "tables": [
+          {
+            "name": "raw_load",
+            "declared_in_migration": true,
+            "exists_runtime": true
+          },
+          {
+            "name": "raw_forecast_load_selected",
+            "declared_in_migration": false,
+            "exists_runtime": true
+          }
+        ],
+        "source_file": "backend/app/stage1_services.py",
+        "source_hits": [
+          "load_forecast_load_from_postgres",
+          "forecast_load_selected.xlsx"
+        ],
+        "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+      },
+      "market_data": {
+        "status": "postgresql_ready",
+        "repository": "backend.app.repositories.market_data_repository",
+        "repository_importable": true,
+        "tables": [
+          {
+            "name": "raw_market",
+            "declared_in_migration": true,
+            "exists_runtime": true
+          },
+          {
+            "name": "raw_da_price",
+            "declared_in_migration": false,
+            "exists_runtime": true
+          }
+        ],
+        "source_file": "backend/app/stage1_services.py",
+        "source_hits": [
+          "load_market_history_from_postgres",
+          "da_price_raw.xlsx"
+        ],
+        "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+      },
+      "renewable_data": {
+        "status": "postgresql_ready",
+        "repository": "backend.app.repositories.renewable_repository",
+        "repository_importable": true,
+        "tables": [
+          {
+            "name": "raw_renewable",
+            "declared_in_migration": true,
+            "exists_runtime": true
+          },
+          {
+            "name": "raw_renewable_forecast",
+            "declared_in_migration": false,
+            "exists_runtime": false
+          },
+          {
+            "name": "raw_solar_forecast",
+            "declared_in_migration": false,
+            "exists_runtime": false
+          },
+          {
+            "name": "raw_wind_forecast",
+            "declared_in_migration": false,
+            "exists_runtime": false
+          }
+        ],
+        "source_file": "backend/app/stage1_services.py",
+        "source_hits": [],
+        "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+      },
+      "feature_importance": {
+        "status": "postgresql_ready",
+        "repository": "backend.app.repositories.feature_repository",
+        "repository_importable": true,
+        "tables": [
+          {
+            "name": "model_feature_importance",
+            "declared_in_migration": false,
+            "exists_runtime": true
+          },
+          {
+            "name": "feature_importance",
+            "declared_in_migration": true,
+            "exists_runtime": true
+          }
+        ],
+        "source_file": "backend/app/stage1_services.py",
+        "source_hits": [
+          "load_feature_importance_from_postgres",
+          "13_"
+        ],
+        "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+      },
+      "report_review": {
+        "status": "postgresql_ready",
+        "repository": "backend.app.repositories.report_repository",
+        "repository_importable": true,
+        "tables": [
+          {
+            "name": "report_reviews",
+            "declared_in_migration": true,
+            "exists_runtime": true
+          }
+        ],
+        "source_file": "backend/app/platform_services.py",
+        "source_hits": [
+          "report_reviews",
+          "web_report_reviews.json"
+        ],
+        "recommendation": "Keep PostgreSQL as the first path and keep legacy fallback disabled in production."
+      }
+    },
+    "summary": {
+      "postgresql_ready": 6,
+      "postgresql_path_ready_pending_data": 0,
+      "pending_schema_or_data_migration": 0,
+      "fallback_only": 0
+    }
+  },
+  "production_fallback_risk": "controlled_by_warning_and_env",
+  "hardcoded_path_risk": {
+    "count": 7,
+    "recommendation": "Remove hardcoded local project paths from docs/scripts before deployment images are finalized."
+  },
+  "recommended_next_steps": [
+    "Keep DATABASE_ALLOW_LEGACY_FALLBACK=0 in production.",
+    "Move task execution to Celery/Redis in the next enterprise hardening batch."
+  ]
+}

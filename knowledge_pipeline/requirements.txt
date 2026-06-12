@@ -1,0 +1,7 @@
+pymupdf
+python-docx
+openpyxl
+beautifulsoup4
+lxml
+chardet
+tqdm

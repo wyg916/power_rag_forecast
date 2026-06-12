@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="renderer" content="webkit">
+    <title>部门事项-宁夏政务服务网</title><META Name="keywords" Content="宁夏政务服务网，宁夏政务，宁夏回族自治区政务服务网，宁夏政务网，宁夏，政务网，自治区政务网，自治区政务" />
+
+    <link rel="stylesheet" href="../layui/css/layui.css">
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/swiper.min.css">
+    
+    <link href="../css/style.min.css" rel="stylesheet">
+    <link href="../css/base.min.css" rel="stylesheet">
+    <link href="../css/list.min.css" rel="stylesheet">
+    <script src="../js/lib/jquery.min.js"></script>
+    <script src="../js/comment.js"></script>
+    <script src="../js/lib/base64.js"></script>
+    <script src="../layui/layui.all.js"></script>
+   
+   <!--Announced by Visual SiteBuilder 9-->
+<link rel="stylesheet" type="text/css" href="../_sitegray/_sitegray_d.css" />
+<script language="javascript" src="../_sitegray/_sitegray.js"></script>
+<!-- CustomerNO:776562626572323078764655525b5742000000024556 -->
+<link rel="stylesheet" type="text/css" href="bmbssxList.vsb.css" />
+<script type="text/javascript" src="/system/resource/js/counter.js"></script>
+<script type="text/javascript">_jsq_(4365,'/nxzw/bmbssxList.jsp',-1,1102077206)</script>
+</head>
+
+<body >
+
+    
+
+
+
+<script>
+
+
+$(function(){
+ 
+    getItemDiv2("../api/areacode.jsp?urltype=tree.TreeTempUrl&wbtreeid=6190", {areaCode:"ZZQ" }, "areacode_zw", 13, 12, "#areacode");
+
+loginDiv();
+});
+
+function loginDiv(){
+
+ getItemDiv2("../api/login.jsp?urltype=tree.TreeTempUrl&wbtreeid=6192", {areaCode:"ZZQ", autoLogin:"index" }, "login_zw", 10, 10, "#login");
+
+}
+  
+//自动登录
+var urlStr = window.document.location.href;
+if (urlStr.indexOf("loginSuccess") != -1) {
+  urlStr = getPosStr(urlStr.indexOf("loginSuccess"));
+}
+if (urlStr.indexOf("timenow") != -1) {
+  urlStr = getPosStr(urlStr.indexOf("timenow"));
+}
+if (urlStr.indexOf("Authorization") != -1) {
+  urlStr = getPosStr(urlStr.indexOf("Authorization"));
+}
+if (urlStr.indexOf("areacode") != -1) {
+  urlStr = getPosStr(urlStr.indexOf("areacode"));
+}
+
+
+
+
+function getPosStr(posStr){
+   return urlStr =  urlStr.substring(0,posStr-1);
+}
+function getSignFn(urlStr){
+    $.ajax({
+    url:"/system/resource/tysfrz/getSign.jsp",
+    type:"post",
+    dataType:"json",
+    data:{hdurl:urlStr},
+    success:function(r){  
+          
+              window.location.href = "https://tysfrz.zwfw.nx.gov.cn/puias/login?clientId=dcff97483ee6499e92e3efee&redirectUrl="+encodeURIComponent(urlStr)+"&sign="+r[0].sign;
+         
+
+        }
+    })
+}
+
+
+function getUserInfoU() {
+    getAjaxFn('/system/resource/tysfrz/getUserInfo.jsp?authorization=null','',function(res){
+    var aaaa = urlStr;
+    if(res.code != "4"){
+      getSignFn(urlStr);
+    }
+    })
+}
+
+function getLoginStatus(){
+    $.ajax({
+       url:'https://zwfw.nx.gov.cn/system/resource/tysfrz/getUserInfo.jsp?authorization='
+    })
+}
+
+function ShowDetail() {
+      if (window.top.document.getElementById("rrbay_toolbar_div")) {  return false; }
+      window.location.href = "https://zwfw.nx.gov.cn/canyou/default.html?url="+ urlStr;
+}
+
+function location_href(url) { location.href = url }
+
+function areacodeFn(areacode){
+ window.location.href = urlStr+'&areacode='+areacode;
+}
+
+//退出统一身份认证
+function quitTysfrzAll(resUrl,typeCode){
+
+    $.ajax({
+        url:"/system/resource/tysfrz/quiteTysfrzWt.jsp",
+        type:"get",
+        dataType:"json",
+        success:function(r){
+        console.log(r);
+       // debugger;
+           if(r.result == "OK"){
+             $("#loginhide").show();
+            removeSessionStorage();
+            var loginStr = "";
+            loginStr += '<a href="javascript:void(0)" class="end-line" onclick="openLoginTysfrz();">登录</a>';
+            loginStr += '<a href="https://tysfrz.zwfw.nx.gov.cn/puias/register?clientId=dcff97483ee6499e92e3efee&redirectUrl=http%253A%252F%252Fzwfw.nx.gov.cn%252Fndq%252Findex.htm&sign=d7a71a094490d02d780529aedcd9b3ef&loginType=2" class="end-line">注册</a>';
+            loginStr += '<a href="javascript:void(0);" onmousedown="ShowDetail()" >无障碍浏览</a>';
+            $('#loginshow').html(loginStr);
+            
+           }
+            if(typeCode == "1"){
+              //setTimeout(function(){ openLoginTysfrz2(resUrl)},1000);
+              //return false;
+            }
+            window.location.href=resUrl;
+ 
+         }
+    })
+}
+//删除session信息
+function removeSessionToken(sessionName, tokenKey) {
+
+    $.ajax({
+    url: '/system/resource/tysfrz/removeSessionTokenWt.jsp',
+    type: 'post',
+    data: {
+        sessionName: sessionName,
+        token: ""
+    },
+    dataType: "json",
+    success: function (r) {
+         removeSessionStorage();
+    }
+    });
+}
+</script>
+    <!-- 顶部logo + 功能区 -->
+    <div class="w-300 mx-auto flex-bc header-top">
+        <div class="flex">
+           
+<a class="logo" href="../index.jsp?urltype=tree.TreeTempUrl&wbtreeid=1001&areacode=ZZQ" title="政务服务网"> <img class="imgLogo" src="../img/index_new/img1.png" alt="宁夏政务服务网logo图"></a>
+           <div class="areacode  flex-c" id="areacode"></div>
+
+        </div>
+        <div class="flex flex-col items-end">
+        <a class="flex-cc bg-c-blue text-white py-1 px-2 mb-4 hover:text-white" href="https://gjzwfw.www.gov.cn/" target="_blank">国家政务服务平台</a>
+            <div id="login" class="login-box"></div>
+
+        </div>
+    </div>
+
+
+    <!-- 导航 -->
+    <div class="nav-list">
+       <ul class="menu_ul w-300 mx-auto flex">
+
+<li class="nav-item  ">
+ <a id="url_index" href="../index.jsp?urltype=tree.TreeTempUrl&wbtreeid=1001&areacode=ZZQ" class="menu_a nxzw-nav-name" target="">首页</a>
+</li>
+
+<li class="nav-item  ">
+    <a id="url_index" href="../grbs.jsp?urltype=tree.TreeTempUrl&wbtreeid=6251" class="menu_a nxzw-nav-name" target="">个人办事</a>
+</li>
+
+<li class="nav-item  ">
+    <a id="url_index" href="../frbs.jsp?urltype=tree.TreeTempUrl&wbtreeid=6252" class="menu_a nxzw-nav-name" target="">法人办事</a>
+</li>
+
+<li class="nav-item  ">
+    <a id="url_index" href="../bmbs.jsp?urltype=tree.TreeTempUrl&wbtreeid=6249" class="menu_a nxzw-nav-name" target="">部门办事</a>
+</li>
+
+    <li class="nav-item  ">
+        <a id="url_index" href="https://www.nx.gov.cn/zwgk/zc/index.html" class="menu_a nxzw-nav-name" target="target="_blank"">政务公开</a>
+</li>
+
+<li class="nav-item  ">
+    <a id="url_index" href="../hdjl/12345.jsp?urltype=tree.TreeTempUrl&wbtreeid=6270" class="menu_a nxzw-nav-name" target="">网上12345&amp;信访</a>
+</li>
+<li class="nav-item ">
+    <a id="url_index" href="../ycsgsgg/newslist_zzq.jsp?urltype=tree.TreeTempUrl&wbtreeid=6079" class="menu_a nxzw-nav-name">公示公告</a>
+</li>
+</ul>
+
+
+    </div>
+    <!-- banner + 菜单 + 热门应用 -->
+    <div class="index_banner relative h-p330 overflow-hidden">
+
+    
+
+
+
+<div class="index_banner_swiper absolute">
+<div class="swiper-wrapper">
+
+    <div class="swiper-slide">
+        
+        <img src="https://zwfw.nx.gov.cn/img/01_81fb.png" alt="">
+        
+    </div>
+
+</div>
+</div>
+
+         <!-- search -->
+        <div class="w-300a top-0">
+
+
+<div class="w-300a top-0 h-full z-50">
+<div class="w-300 mx-auto relative">
+    <img class="absolute yhfw hidden" src="https://zwfw.nx.gov.cn/img/index/yhfw.png">
+    
+    <div class="search-input-box w-300 mx-auto absolute ">
+    <form method="post" action="../wzsearch.jsp?urltype=tree.TreeTempUrl&wbtreeid=4848" id="searchform" class="search-form">
+    <input class="searchInput" type="text"  id="searchText" name="searchText" placeholder="请输入关键词进行内容搜索" autocomplete="off">
+    <button type="submit" onclick="return checkButton()" class="nxzw-search-btn"></button>
+    <ul class="search_list " id="search_list" style="display:none;"></ul>
+        <div class="hot_div flex-cc hidden">
+             <span class="hotSearch">热搜</span>
+        </div>
+         <div class="search-form-association" id="hot-search">
+            <div class="search-form-hot-service">
+                <p class="hot-search-word">热门搜索：</p>
+                <div class="rm-div flex justify-between">
+                    <a href="javascript:void(0);" title="社保">社保</a>
+                    <a href="javascript:void(0);" title="养老">养老</a>
+                    <a href="javascript:void(0);" title="公积金">公积金</a>
+                    <a href="javascript:void(0);" title="开公司">开公司</a>
+                    <a href="javascript:void(0);" title="异地医保">异地医保</a>
+                </div>
+                <div class="search-list flex flex-wrap">
+                    <a href="https://zwfw.nx.gov.cn/rmyy_new/gkch.jsp?urltype=tree.TreeTempUrl&wbtreeid=7240" title="高考" class="hot">高考</a>
+                    <a href="javascript:void(0);" title="结婚" class="hot">结婚</a>
+                    <a href="javascript:void(0);" title="身份证" class="hot">身份证 </a>
+                    <a href="javascript:void(0);" title="个税">个税</a>
+                    <a href="javascript:void(0);" title="惠企">惠企</a>
+                    <a href="javascript:void(0);" title="卫生证">卫生证</a>
+                    <a href="javascript:void(0);" title="就业补贴">就业补贴</a>
+                    <a href="javascript:void(0);" title="特种设备">特种设备</a>
+                    <a href="javascript:void(0);" class=""hidden title="建筑许可">建筑许可</a>
+    
+                </div>
+            </div>
+        </div>
+    </form>
+    <script>
+        $(document).click(function(e) {
+                if ($(e.target).attr("id") != "searchText") { //除了 目标框 showColBox 外的任何位置点击都会关闭，
+                    if ($(e.target).attr("id") != "hot-search") {
+                        if ($(e.target).attr("id") != "hot-search-word") {
+                            $("#hot-search").hide();
+                        }
+                    }
+                }
+    
+            })
+            // search
+        $("#searchText").click(function() {
+            $("#hot-search").show();
+        });
+    
+        $("#search-box-keyword").blur(function() {
+            var val = $(this).val().trim();
+            if (!val || val == "") {}
+        });
+    
+    
+    
+    $('#searchText').on('keyup', searchListFn)
+    function searchListFn() {
+            var pageSize = 10; //每页的条数
+            var _thiscontent = $("#search_list");
+            var text_search = $('#searchText').val();
+            if(text_search.length<=0){
+            return false;
+            }
+            if(text_search && text_search.length>0){
+             $.ajax({
+                url: '/system/resource/nxzw/api/getSearch.jsp',
+                type: 'get',
+                data: {
+                    'keywords': stringToBase32($('#searchText').val()),
+                    'queryType':'matter_xzxk_yjs',
+                    'sessionToken':"p1qRS48dXmy2m4fFnnq69RQfb2ef3e0w"
+                },
+                dataType: 'json',
+                success: function(res) {
+                    var matterInfo = "";
+                    if (res.ok) {{
+                        matterInfoList = res.data.data[0].content;
+                        var arr = [];
+                        if(matterInfoList.length != 0){
+                        layui.each(matterInfoList, function(index, item) {
+                            arr.push('<li class="item"><a href="javascript:void(0);">' + item.matterName + '</a></li>');
+                             _thiscontent.empty().append(arr).show();
+                        });
+                       // arr = arr.join('');
+                       
+                        }
+                           
+                        }
+                    }
+                }
+            })
+         }   
+    }
+    $('#search_list').on('click','.item a',function(){
+       $('#searchText').val($(this).text());
+       $('#searchform').submit();
+    })
+    
+    $("#hot-search a").click(function(){
+       $('#searchText').val($(this).text());
+       $('#searchform').submit();
+    })
+    </script>
+</div>
+
+</div>
+</div></div>
+        <div class="w-300a bottom-0">
+           <div class="nxzw-name-title">
+    <h2 class="nxzw-name">部门事项</h2>
+</div>
+        </div>
+    </div>
+
+    <!-- 您当前位置：-->
+    <div class="w-300 mx-auto">
+    
+
+<div class="site my-5 flex-c text-c999">
+<span class="w-icon pl-8">当前位置：</span>
+<div>
+
+
+
+<a href="../index.jsp&deptId=ZZQ133">首页</a>
+
+
+
+
+
+<a href="bmbs.jsp?urltype=tree.TreeTempUrl&wbtreeid=4351&deptId=ZZQ133">部门办事</a>
+
+
+
+
+<span class="text-c333">部门事项</span>
+
+
+</div>
+</div>
+
+    </div>
+    <!-- dept-box -->
+    <div class="w-300 mx-auto bm-box flex">
+
+
+<h3 class="name text-30 font-bold text-white flex-1 bg-c-blue flex-cc h-p100" style="height:112px">自治区发展改革委</h3>
+<div class="bm-tab-list flex flex-col justify-center flex-1 bg-cf0f9ff pl-8 text-base py-3">
+ <div class="fzggwyh-right">
+    <div class="row">
+        <div class="col-xs-12 ffwz">官方网站：
+            
+                
+                <a href="http://fzggw.nx.gov.cn/" target="_blank">自治区发展改革委</a>
+                
+        </div>
+    </div>
+    <div class="row relative">
+        <div class="col-xs-12 lxfs">联系方式：
+            <span>电话：0951-6982636</span><br>
+            <span style="padding-left:100px;">地址：银川市兴庆区解放西街361号</span>
+        </div>
+        
+    </div>
+</div>
+</div></div>
+    <!-- 类型-search -->
+    <div class="w-300 mx-auto flex-bc my-5 form">
+       
+
+<form class="xl flex-cc" action=""  name="wsbslist1">
+<input type="hidden" name="wbtreeid" value="4365">
+<input type="hidden" name="deptId" value="ZZQ133">
+<input type="hidden" name="sxlx" id="sxlx1">
+
+<label for="" class="mb-0">选择类型：</label>
+<div class="input-default select_box w-32">
+    <span class="sx_name" id="null">全部</span>
+    <ul class="Ul_list" id="xklxId">
+    </ul>
+</div>
+
+<script>
+    $(function(){
+        xklx();
+        var sxlx='null';
+        if(sxlx==null){
+            $("#QB").addClass("tab-active");
+        }else{
+            $("a").removeClass("tab-active");
+
+            if("XK"==sxlx){
+                $("#XK").addClass("tab-active").text("行政许可");
+            }else if("CF"==sxlx){
+                $("#CF").addClass("tab-active".text("公共服务"));
+            }else if("CF"==sxlx){
+                $("#CF").addClass("tab-active").text("公共服务");
+            }else if("ZS"==sxlx){
+                $("#ZS").addClass("tab-active").text("公共服务");
+            }else if("JF"==sxlx){
+                $("#JF").addClass("tab-active").text("公共服务");
+            }else if("CJ"==sxlx){
+                $("#CJ").addClass("tab-active").text("公共服务");
+            }else if("QR"==sxlx){
+                $("#QR").addClass("tab-active").text("行政确认");
+            }else if("JC"==sxlx){
+                $("#JC").addClass("tab-active").text("公共服务");
+            }else if("JC"==sxlx){
+                $("#JC").addClass("tab-active").text("公共服务");
+            }else if("QT"==sxlx){
+                $("#QT").addClass("tab-active").text("其他类别");
+            }else if("GF"==sxlx){
+                $("#GF").addClass("tab-active").text("公共服务");
+            }else{
+                $("#QB").addClass("tab-active").text("全部");
+            }
+        }
+
+    });
+
+    function xklx(){
+        $.ajax({
+            type: "POST",
+            url:'/system/resource/nxzw/bm/queryDeptProType.jsp',
+            data:{areaCode:"ZZQ",deptId:"ZZQ133",mentype:""},
+            async: false,
+            dataType:"json",
+            success: function(r) {
+                var a = r.length+1;
+                var strTemp = "";
+                strTemp += '<li class="item flex"><a class="tab-menu flex-1 tab-menu'+a+'" href="javascript:void(0);" onclick="sxflForm(\'\')" id="QB">全部</a></li>';
+                for(var i=0;i<r.length;i++){
+                   strTemp += '<li class="item flex"><a class="tab-menu flex-1 tab-menu'+a+'" href="javascript:void(0);" onclick="sxflForm(\''+r[i].commons_a+'\')">'+r[i].commons_b+'</a></li>';
+                }
+                $("#xklxId").html(strTemp);
+            }
+        });
+    }
+
+function sxflForm(xslx){
+    if(xslx){
+       document.getElementById("sxlx1").value =xslx;
+    }else{
+    
+       document.getElementById("sxlx1").remove();
+    }
+    document.forms['wsbslist1'].submit();
+}
+
+</script>
+</form >
+       
+<div class="search-box w-87 relative">
+
+
+<input type="text" id="scId" class="input-default" placeholder="请输入您需要办理事项的名称" autocomplete="off">
+<button class="search-btn absolute right-0 top-0 h-full w-15" onclick="return doSearch2()"></button>
+
+
+<script>
+
+function doSearch2()
+{
+
+    var a = Base64.encode($('#scId').val());
+     document.getElementById("searchtext").value = a;
+    document.forms['wsbslist'].submit();
+}
+</script>
+</div>
+
+    </div>
+
+    <!-- 事项列表 -->
+    <div class="w-300 mx-auto sx-list">
+
+
+
+
+<form class="" action=""  name="wsbslist">
+    <input type="hidden" name="wbtreeid" value="4365">
+    <input type="hidden" name="searchtext" id="searchtext">
+    
+    <input type="hidden" name="deptId" value="ZZQ133">
+    
+
+    
+    
+    
+    
+    
+    <div class="sx-header flex-bc">
+        <span class="name flex-1">事项名称</span>
+        <span class="cz flex-cc">操作</span>
+    </div>
+    
+    <div class="sx-body">
+        
+        
+        <div class="item flex-bc hover_a">
+            <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888005a0bd24cf" class="link-a w76-b" title="外商投资准入负面清单中非禁止投资领域总投资（含增资）3亿美元以下的外商投资项目核准（省级权限）">
+                <span class="truncate">1. 外商投资准入负面清单中非禁止投资领域总投资（含增资）3亿美元以下的外商投资项目核准（省级权限）</span>
+            </a>
+            <div class="cz-tab">
+
+                <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888005a0bd24cf&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                
+                
+                <a class="flex-cc sq" href="../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid=8b81ac8f887fcb5b01888005a0bd24cf&fileId=BDDD3007C22D48C7A47330C05EE8B3A4&deptId=ZZQ133&zyxtlj=aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6" target="_blank">在线申请</a>
+                
+                
+            </div>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        
+        <div class="item flex-bc hover_a">
+            <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c2b054131" class="link-a w76-b" title="其他水利工程项目核准（省级权限）">
+                <span class="truncate">2. 其他水利工程项目核准（省级权限）</span>
+            </a>
+            <div class="cz-tab">
+
+                <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c2b054131&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                
+                
+                <a class="flex-cc sq" href="../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid=8b81ac8f887fcb5b0188800c2b054131&fileId=88C29C25969E465293E3792443D8395F&deptId=ZZQ133&zyxtlj=aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6" target="_blank">在线申请</a>
+                
+                
+            </div>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        
+        <div class="item flex-bc hover_a">
+            <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a23a24085" class="link-a w76-b" title="新建煤制烯烃项目、新建煤制对二甲苯（PX）项目、新建年产超过100万吨的煤制甲醇项目核准">
+                <span class="truncate">3. 新建煤制烯烃项目、新建煤制对二甲苯（PX）项目、新建年产超过100万吨的煤制甲醇项目核准</span>
+            </a>
+            <div class="cz-tab">
+
+                <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a23a24085&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                
+                
+                <a class="flex-cc sq" href="../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid=8b81ac8f887fcb5b0188800a23a24085&fileId=9CCD45F688BD4B3E9100BDF650420A77&deptId=ZZQ133&zyxtlj=aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6" target="_blank">在线申请</a>
+                
+                
+            </div>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        
+        <div class="item flex-bc hover_a">
+            <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a0be6407c" class="link-a w76-b" title="铁矿、有色矿山开发项目核准">
+                <span class="truncate">4. 铁矿、有色矿山开发项目核准</span>
+            </a>
+            <div class="cz-tab">
+
+                <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a0be6407c&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                
+                
+                <a class="flex-cc sq" href="../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid=8b81ac8f887fcb5b0188800a0be6407c&fileId=ADBDF838970E41189DA80E95CD4F29F9&deptId=ZZQ133&zyxtlj=aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6" target="_blank">在线申请</a>
+                
+                
+            </div>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        
+        <div class="item flex-bc hover_a">
+            <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d95c8417f" class="link-a w76-b" title="黄金采选矿项目核准">
+                <span class="truncate">5. 黄金采选矿项目核准</span>
+            </a>
+            <div class="cz-tab">
+
+                <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d95c8417f&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                
+                
+                <a class="flex-cc sq" href="../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid=8b81ac8f887fcb5b0188800d95c8417f&fileId=0B5483101544412D8A8EB1F66A532767&deptId=ZZQ133&zyxtlj=aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6" target="_blank">在线申请</a>
+                
+                
+            </div>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        
+        <div class="item flex-bc hover_a">
+            <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800dc4e64191" class="link-a w76-b" title="新建乙烯、对二甲苯（PX）、二苯基甲烷二异氰酸酯（MDI）项目核准">
+                <span class="truncate">6. 新建乙烯、对二甲苯（PX）、二苯基甲烷二异氰酸酯（MDI）项目核准</span>
+            </a>
+            <div class="cz-tab">
+
+                <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800dc4e64191&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                
+                
+                <a class="flex-cc sq" href="../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid=8b81ac8f887fcb5b0188800dc4e64191&fileId=EC22BC0DB1DB4E08913F6E3F7AF3E23D&deptId=ZZQ133&zyxtlj=aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6" target="_blank">在线申请</a>
+                
+                
+            </div>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">7. 大型和中小型主题公园项目核准（省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d51db416f" class="link-a w80-b" title="大型和中小型主题公园项目新设核准（省级权限）">
+                        <span class="truncate">（1）大型和中小型主题公园项目新设核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d51db416f&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800d51db416f','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d245d4168" class="link-a w80-b" title="大型和中小型主题公园项目变更核准（省级权限）">
+                        <span class="truncate">（2）大型和中小型主题公园项目变更核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d245d4168&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800d245d4168','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d7e1a4176" class="link-a w80-b" title="大型和中小型主题公园项目延续核准（省级权限）">
+                        <span class="truncate">（3）大型和中小型主题公园项目延续核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d7e1a4176&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800d7e1a4176','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">8. 旅游项目核准（省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b7b5640d0" class="link-a w80-b" title="旅游项目新设核准（省级权限）">
+                        <span class="truncate">（1）旅游项目新设核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b7b5640d0&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800b7b5640d0','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b4f7040c9" class="link-a w80-b" title="旅游项目变更核准（省级权限）">
+                        <span class="truncate">（2）旅游项目变更核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b4f7040c9&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800b4f7040c9','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b229c40c2" class="link-a w80-b" title="旅游项目延续核准（省级权限）">
+                        <span class="truncate">（3）旅游项目延续核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b229c40c2&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800b229c40c2','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">9. 在非跨界河流、跨省（区、市）河流上建设的水电站项目，以及跨界河流、跨省（区、市）河流上建设的单站总装机容量50万千瓦以下水电站项目核准（不含长江流域、省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800cdfdf4158" class="link-a w80-b" title="在非跨界河流、跨省（区、市）河流上建设、以及跨界河流、跨省（区、市）河流上建设的单站总装机容量50万千瓦以下水电站项目新设核准（不含长江流域、省级权限）">
+                        <span class="truncate">（1）在非跨界河流、跨省（区、市）河流上建设、以及跨界河流、跨省（区、市）河流上建设的单站总装机容量50万千瓦以下水电站项目新设核准（不含长江流域、省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800cdfdf4158&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800cdfdf4158','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d0c56415f" class="link-a w80-b" title="在非跨界河流、跨省（区、市）河流上建设、以及跨界河流、跨省（区、市）河流上建设的单站总装机容量50万千瓦以下水电站项目变更核准（不含长江流域、省级权限）">
+                        <span class="truncate">（2）在非跨界河流、跨省（区、市）河流上建设、以及跨界河流、跨省（区、市）河流上建设的单站总装机容量50万千瓦以下水电站项目变更核准（不含长江流域、省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800d0c56415f&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800d0c56415f','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800cb3364151" class="link-a w80-b" title="在非跨界河流、跨省（区、市）河流上建设、以及跨界河流、跨省（区、市）河流上建设的单站总装机容量50万千瓦以下水电站项目延续核准（不含长江流域、省级权限）">
+                        <span class="truncate">（3）在非跨界河流、跨省（区、市）河流上建设、以及跨界河流、跨省（区、市）河流上建设的单站总装机容量50万千瓦以下水电站项目延续核准（不含长江流域、省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800cb3364151&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800cb3364151','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">10. 不涉及跨境、跨省（区、市）输电的±500千伏及以上直流项目和500千伏、750千伏、1000千伏交流项目核准</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800add2340b2" class="link-a w80-b" title="不涉及跨境、跨省（区、市）输电的±500千伏及以上直流项目和500千伏、750千伏、1000千伏交流项目新设核准">
+                        <span class="truncate">（1）不涉及跨境、跨省（区、市）输电的±500千伏及以上直流项目和500千伏、750千伏、1000千伏交流项目新设核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800add2340b2&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800add2340b2','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b0acd40b9" class="link-a w80-b" title="不涉及跨境、跨省（区、市）输电的±500千伏及以上直流项目和500千伏、750千伏、1000千伏交流项目延期核准">
+                        <span class="truncate">（2）不涉及跨境、跨省（区、市）输电的±500千伏及以上直流项目和500千伏、750千伏、1000千伏交流项目延期核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800b0acd40b9&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800b0acd40b9','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800ab00840ab" class="link-a w80-b" title="不涉及跨境、跨省（区、市）输电的±500千伏及以上直流项目和500千伏、750千伏、1000千伏交流项目变更核准">
+                        <span class="truncate">（3）不涉及跨境、跨省（区、市）输电的±500千伏及以上直流项目和500千伏、750千伏、1000千伏交流项目变更核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800ab00840ab&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800ab00840ab','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">11. ±500千伏以下直流项目和500千伏以下交流项目核准（省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800848782576" class="link-a w80-b" title="±500千伏以下直流项目和500千伏以下交流项目新设核准（省级权限）">
+                        <span class="truncate">（1）±500千伏以下直流项目和500千伏以下交流项目新设核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800848782576&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800848782576','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888008a3283437" class="link-a w80-b" title="±500千伏以下直流项目和500千伏以下交流项目延期核准（省级权限）">
+                        <span class="truncate">（2）±500千伏以下直流项目和500千伏以下交流项目延期核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888008a3283437&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888008a3283437','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800877032c05" class="link-a w80-b" title="±500千伏以下直流项目和500千伏以下交流项目变更核准（省级权限）">
+                        <span class="truncate">（3）±500千伏以下直流项目和500千伏以下交流项目变更核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800877032c05&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800877032c05','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">12. 火电站（含自备电站）项目核准（其中燃煤燃气火电项目应在国家依据总量控制制定的建设规划内核准）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800957394053" class="link-a w80-b" title="火电站（含自备电站）项目新设核准（燃煤燃气火电项目应在国家依据总量控制制定的建设规划内核准）">
+                        <span class="truncate">（1）火电站（含自备电站）项目新设核准（燃煤燃气火电项目应在国家依据总量控制制定的建设规划内核准）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800957394053&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800957394053','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880092afc404c" class="link-a w80-b" title="火电站（含自备电站）项目延期核准（燃煤燃气火电项目应在国家依据总量控制制定的建设规划内核准）">
+                        <span class="truncate">（2）火电站（含自备电站）项目延期核准（燃煤燃气火电项目应在国家依据总量控制制定的建设规划内核准）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880092afc404c&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b018880092afc404c','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009835b405a" class="link-a w80-b" title="火电站（含自备电站）项目变更核准（燃煤燃气火电项目应在国家依据总量控制制定的建设规划内核准）">
+                        <span class="truncate">（3）火电站（含自备电站）项目变更核准（燃煤燃气火电项目应在国家依据总量控制制定的建设规划内核准）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009835b405a&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888009835b405a','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">13. 热电站（含自备电站）项目核准（其中抽凝式燃煤热电项目由省级政府在国家依据总量控制制定的建设规划内核准）（省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880099ad84063" class="link-a w80-b" title="热电站（含自备电站）项目新设核准（抽凝式燃煤热电项目由省级政府在国家依据总量控制制定的建设规划内核准）">
+                        <span class="truncate">（1）热电站（含自备电站）项目新设核准（抽凝式燃煤热电项目由省级政府在国家依据总量控制制定的建设规划内核准）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880099ad84063&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b018880099ad84063','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009f3824073" class="link-a w80-b" title="热电站（含自备电站）项目延期核准（抽凝式燃煤热电项目由省级政府在国家依据总量控制制定的建设规划内核准）">
+                        <span class="truncate">（2）热电站（含自备电站）项目延期核准（抽凝式燃煤热电项目由省级政府在国家依据总量控制制定的建设规划内核准）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009f3824073&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888009f3824073','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009c6dd406a" class="link-a w80-b" title="热电站（含自备电站）项目变更核准（抽凝式燃煤热电项目由省级政府在国家依据总量控制制定的建设规划内核准）">
+                        <span class="truncate">（3）热电站（含自备电站）项目变更核准（抽凝式燃煤热电项目由省级政府在国家依据总量控制制定的建设规划内核准）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009c6dd406a&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888009c6dd406a','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">14. 风电站项目核准（省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c9b6a4148" class="link-a w80-b" title="风电站项目新设核准（省级权限）">
+                        <span class="truncate">（1）风电站项目新设核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c9b6a4148&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800c9b6a4148','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c6e694141" class="link-a w80-b" title="风电站项目变更核准（省级权限）">
+                        <span class="truncate">（2）风电站项目变更核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c6e694141&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800c6e694141','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c426b413a" class="link-a w80-b" title="风电站项目延续核准（省级权限）">
+                        <span class="truncate">（3）风电站项目延续核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800c426b413a&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800c426b413a','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">15. 非跨境、跨省（区、市）干线输油管网（不含油田集输管网）项目核准（省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880081df02564" class="link-a w80-b" title="非跨境、跨省（区、市）干线输油管网（不含油田集输管网）项目新设核准（省级权限）">
+                        <span class="truncate">（1）非跨境、跨省（区、市）干线输油管网（不含油田集输管网）项目新设核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880081df02564&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b018880081df02564','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800772f12534" class="link-a w80-b" title="非跨境、跨省（区、市）干线输油管网（不含油田集输管网）项目变更核准（省级权限）">
+                        <span class="truncate">（2）非跨境、跨省（区、市）干线输油管网（不含油田集输管网）项目变更核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800772f12534&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800772f12534','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888007c8a12542" class="link-a w80-b" title="非跨境、跨省（区、市）干线输油管网（不含油田集输管网）项目延续核准（省级权限）">
+                        <span class="truncate">（3）非跨境、跨省（区、市）干线输油管网（不含油田集输管网）项目延续核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888007c8a12542&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888007c8a12542','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">16. 非跨境、跨省（区、市）干线输气管网（不含油气田集输管网）项目核准（省级权限）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800e097f41a1" class="link-a w80-b" title="非跨境、跨省（区、市）干线输气管网（不含油气田集输管网）项目新设核准（省级权限）">
+                        <span class="truncate">（1）非跨境、跨省（区、市）干线输气管网（不含油气田集输管网）项目新设核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800e097f41a1&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800e097f41a1','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800ddd49419a" class="link-a w80-b" title="非跨境、跨省（区、市）干线输气管网（不含油气田集输管网）项目变更核准（省级权限）">
+                        <span class="truncate">（2）非跨境、跨省（区、市）干线输气管网（不含油气田集输管网）项目变更核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800ddd49419a&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800ddd49419a','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800e35b841a8" class="link-a w80-b" title="非跨境、跨省（区、市）干线输气管网（不含油气田集输管网）项目延续核准（省级权限）">
+                        <span class="truncate">（3）非跨境、跨省（区、市）干线输气管网（不含油气田集输管网）项目延续核准（省级权限）</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800e35b841a8&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800e35b841a8','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">17. 除新建（含异地扩建）进口液化天然气接收、储运设施项目核准</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888008baaa3851" class="link-a w80-b" title="除新建（含异地扩建）进口液化天然气接收、储运设施项目新设核准">
+                        <span class="truncate">（1）除新建（含异地扩建）进口液化天然气接收、储运设施项目新设核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888008baaa3851&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888008baaa3851','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009135c4043" class="link-a w80-b" title="除新建（含异地扩建）进口液化天然气接收、储运设施项目变更核准">
+                        <span class="truncate">（2）除新建（含异地扩建）进口液化天然气接收、储运设施项目变更核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888009135c4043&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888009135c4043','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888008e7693fd0" class="link-a w80-b" title="除新建（含异地扩建）进口液化天然气接收、储运设施项目延续核准">
+                        <span class="truncate">（3）除新建（含异地扩建）进口液化天然气接收、储运设施项目延续核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888008e7693fd0&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888008e7693fd0','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">18. 新建炼油及扩建一次炼油项目核准（由省级政府按照国家批准的相关规划核准）</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888005cab524e1" class="link-a w80-b" title="新建炼油及扩建一次炼油项目新设核准">
+                        <span class="truncate">（1）新建炼油及扩建一次炼油项目新设核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888005cab524e1&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888005cab524e1','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888006721e24fd" class="link-a w80-b" title="新建炼油及扩建一次炼油项目变更核准">
+                        <span class="truncate">（2）新建炼油及扩建一次炼油项目变更核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b01888006721e24fd&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b01888006721e24fd','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880061e8424ef" class="link-a w80-b" title="新建炼油及扩建一次炼油项目延续核准">
+                        <span class="truncate">（3）新建炼油及扩建一次炼油项目延续核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b018880061e8424ef&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b018880061e8424ef','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        <div class="item">
+            <div class="sx flex w88-b active"><span class="truncate">19. 变性燃料乙醇项目核准</span><span class="count flex-c">3项</span></div>
+            <ul class="child_ul">
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a6a124099" class="link-a w80-b" title="变性燃料乙醇项目新设核准">
+                        <span class="truncate">（1）变性燃料乙醇项目新设核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a6a124099&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800a6a124099','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a3cbd4090" class="link-a w80-b" title="变性燃料乙醇项目变更核准">
+                        <span class="truncate">（2）变性燃料乙醇项目变更核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a3cbd4090&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800a3cbd4090','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+                <li class="c_item  flex-bc hover_a">
+                    <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a976940a2" class="link-a w80-b" title="变性燃料乙醇项目延续核准">
+                        <span class="truncate">（3）变性燃料乙醇项目延续核准</span>
+                    </a>
+                    <div class="cz-tab">
+
+                        <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800a976940a2&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                        
+                        
+                          <a class="flex-cc sq" href="javascript:void(0);" onclick="onlineApplicationZyxt('8b81ac8f887fcb5b0188800a976940a2','ZZQ133','','1','ZZQ','aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6','专业系统')"><span class="flex-cc">我要申请</span></a>
+                        
+                        
+                    </div>
+                </li>
+                <!-- 第二层结束 -->
+                
+            </ul>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        
+        <div class="item flex-bc hover_a">
+            <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800f26e14202" class="link-a w76-b" title="涉及荒地的农业项目核准">
+                <span class="truncate">20. 涉及荒地的农业项目核准</span>
+            </a>
+            <div class="cz-tab">
+
+                <a href="../bszn.jsp?urltype=tree.TreeTempUrl&wbtreeid=6254&deptId=ZZQ133&proId=8b81ac8f887fcb5b0188800f26e14202&areacode=ZZQ" class="flex-cc zn">办事指南</a>
+                
+                
+                <a class="flex-cc sq" href="../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid=8b81ac8f887fcb5b0188800f26e14202&fileId=CA21EE658A8047818E3F4625BAA84D99&deptId=ZZQ133&zyxtlj=aHR0cHM6Ly96d2Z3Lm54Lmdvdi5jbi9ueHp3ZncyL3p6eW0uanNwP3VybHR5cGU9dHJlZS5UcmVlVGVtcFVybCZ3YnRyZWVpZD00ODQ2JmluZGV4dHlwZT16eHR6" target="_blank">在线申请</a>
+                
+                
+            </div>
+        </div>
+        
+        <!-- 第一层结束 -->
+        
+        
+
+    </div>
+    
+    <div class="page" align="center">
+        
+        <INPUT TYPE=hidden NAME=wsbslistCURURI VALUE="75DC4E44E1250949E44FA51EE7F486AB"><INPUT TYPE=hidden NAME=wsbslistKEYTYPES VALUE="12,12"><INPUT TYPE=hidden NAME="actiontype" id="actiontype" VALUE=""><input type=hidden name=wsbslistORDER value="ASC"><input type=hidden name=wsbslistORDERKEY value="baseprocode">
+<style type="text/css">
+.headStyle2t5v839gx3, .headStyle2t5v839gx3 td, .headStyle2t5v839gx3 div {font-size: 12px;font-family:宋体; color: #000000; margin-left: auto; margin-right: auto; line-height:14px;}
+.defaultButtonStyle {font-size: 12px;font-family:宋体; height:20px;color: #000000;BORDER: #AFD5F5 1px solid; margin: 0px;padding: 0px; FILTER:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr=#ffffff, EndColorStr=#BDDBF7);  CURSOR: pointer; line-height:14px;background:-webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#BDDBF7));background: -moz-linear-gradient( top,#ffffff,#BDDBF7);background:-ms-linear-gradient(top,#ffffff 0%,#bddbf7 100%)}
+.defaultinputStyle {font-size: 12px;font-family:宋体; height:20px; border:1px solid #AFD5F5; line-height:14px;}
+.colHeader {font-size: 12px;font-family:宋体; line-height:14px;}
+.headStyle2t5v839gx3 a, .pageList .this-page {font-size: 12px;font-family:宋体; display:inline-block; height:14px; padding: 2px 4px; border: solid 1px #AFD5F5; background: #fff; text-decoration: none; MARGIN-RIGHT: 1px;line-height:14px;}
+.headStyle2t5v839gx3 a:visited {font-size: 12px;font-family:宋体; color: #000000; text-decoration: none; line-height:14px;}
+.headStyle2t5v839gx3 .PrevDisabled {font-size: 12px;font-family:宋体; display:inline-block;height:14px;  margin-right: 3px; padding: 2px 4px; background: #fff;color:#ccc;border: solid 1px #AFD5F5; line-height:14px;}
+.headStyle2t5v839gx3 .SelectList {font-size: 12px;font-family:宋体;line-height:14px;}
+.headStyle2t5v839gx3 .Prev { font-size: 12px;font-family:宋体; margin-right: 3px; padding: 2px 4px;line-height:14px;}
+.headStyle2t5v839gx3 .break {font-size: 12px;font-family:宋体; border: none; text-decoration: none; line-height:14px;}
+.headStyle2t5v839gx3 .NextDisabled { font-size: 12px;font-family:宋体;display:inline-block; height:14px; margin-left: 2px; padding: 2px 4px;background: #fff;color:#ccc;border: solid 1px #AFD5F5; line-height:14px; }
+.headStyle2t5v839gx3 .Next { font-size: 12px;font-family:宋体; margin-left: 2px; padding: 2px 4px;line-height:14px;}
+.headStyle2t5v839gx3 .this-page {font-size: 12px;font-family:宋体;display:inline-block;height:14px;padding: 2px 4px; border: solid 1px #AFD5F5; background: #E1F0FD; font-weight: bold; color:black; MARGIN-RIGHT: 1px;line-height:14px;}
+.headStyle2t5v839gx3 a:hover {font-size: 12px;font-family:宋体;color: black; background: #EFF7FE; border-color: #AFD5F5; text-decoration: none;line-height:14px;}
+.headStyle2t5v839gx3 a:link {font-size: 12px;font-family:宋体;color: #000000; text-decoration: none;line-height:14px;}
+.headStyle2t5v839gx3 a:active { font-size: 12px;font-family:宋体;color: black; text-decoration: none; background: #EFF7FE; line-height:14px;}
+</style><TR><td colspan=2><table cellspacing=0 class="headStyle2t5v839gx3 head_style_common" width="100%" cellpadding=1><tr valign=middle><TD nowrap align=left width=1% ><span >共69条&nbsp;</span><input type=hidden name=wsbslistCountNo value="20">&nbsp;<span>1/4</span>&nbsp;</td><td nowrap align=left><div><span class=PrevDisabled>上页</span><span class=this-page>1</span><a class="Next" href="javascript:document.forms['wsbslist'].wsbslistNOWPAGE.value=2;document.forms['wsbslist'].submit();">2</a><a class="Next" href="javascript:document.forms['wsbslist'].wsbslistNOWPAGE.value=3;document.forms['wsbslist'].submit();">3</a><a class="Next" href="javascript:document.forms['wsbslist'].wsbslistNOWPAGE.value=4;document.forms['wsbslist'].submit();">4</a><a href="javascript:document.forms['wsbslist'].actiontype.value='NextPage';document.forms['wsbslist'].submit()" class="Next">下页</a></div></td><TD nowrap align=right></td><INPUT TYPE=hidden NAME=wsbslistNOWPAGE VALUE=''><INPUT TYPE=hidden NAME=wsbslistPAGE VALUE="0"><INPUT TYPE=Hidden NAME=wsbslistrowCount VALUE="69"></tr></table></td></tr>
+        
+    </div>
+    
+
+
+
+</form></div>
+
+
+ <!-- 尾部 -->
+<div class="nxzw-footer" style="margin-top:48px;">
+    
+
+
+<div class="footer-fluid">
+<script language="javascript" src="../_dwr/engine.js"></script>
+<script language="javascript" src="../_dwr/util.js"></script>
+<script language="javascript" src="../_dwr/interface/PageCounterDWR.js"></script>
+<div class="nxzw-container" style="position:relative;margin:0 auto;">
+<div class="footer-text">
+<p><span>联系电话：0951-6982717    0951-6982712</span><span>地址：宁夏银川市兴庆区解放西街361号</span></p>
+<p><span>主办单位：宁夏回族自治区人民政府办公厅</span><span>政府网站标识码：6400000037</span></p>
+<p><a href="https://beian.miit.gov.cn/#/Integrated/recordQuery" target="_blank"><span class="nxgaba">ICP备案号：宁ICP备19000129号</span></a><a href="https://zwfw.nx.gov.cn/zwfw/weblink.jsp?urltype=tree.TreeTempUrl&wbtreeid=5886&weblink=beian" target="_blank"><span class="nxgaba">宁公网安备 64010402000799号</span></a></p>
+<p><span>总访问人数：<b  id="a5411" name="a5411"></b>次</span><span>建议您使用IE9以上版本、Edge、Chrome、Firefox、360等主流浏览器浏览本网站</span></p>
+</div>
+<div id="areabox3" style="display:none;">
+<ul class="selectlist01" id="haveUl">
+</ul>
+</div>
+<div style="position:absolute;top:20px;right:0;display:flex;">
+    <span id="_span_jiucuo">
+        <img onclick="javascript:window.open('https://zfwzgl.www.gov.cn/exposure/jiucuo.html?site_code=6400000091&url=https%3A%2F%2Fwww.nx.gov.cn%2F')" style="margin:0;border:0;cursor: pointer;" src="https://zfwzgl.www.gov.cn/exposure/images/jiucuo.png?v=6400000091">
+   </span>
+  <a class="mr20 wzafw" style="margin-left:20px" href="javascript:;" onmousedown="ShowDetail()">
+      <img class="icon" src="https://zwfw.nx.gov.cn/2022/img/nx2022_icon-footer3.png" alt="" srcset="">
+   </a>
+   <a class="mr20 ip6" style="margin-left:20px" href="javascript:;">
+      <img class="icon" src="https://zwfw.nx.gov.cn/2022/img/nx2022_icon-footer4.png" alt="" srcset="">
+    </a>
+</div>
+</div>
+<script>
+function getvisittimeform5411()
+{       PageCounterDWR.getVisittime('1102077206','4365','TOTAL_COUNTER','0','6',callbackdataform5411);
+}
+function callbackdataform5411(data)
+{
+    document.getElementById("a5411").innerHTML = data; 
+}
+getvisittimeform5411();
+
+</script>
+
+</div>
+    <div class="nxzw-container" style="position:relative">
+        <div class="zfbs" style="position:absolute;top:-100px; left:0px; width:80px;height:80px;">
+        <iframe src="zwbs.jsp?urltype=tree.TreeTempUrl&wbtreeid=5397" scrolling="no" frameborder="0" style="width:100px;height:100px;border:0;"></iframe>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script>
+
+    var flage = true;
+    var zyxt2 = "";
+    var zymc2 = "";
+    //跨省通办
+    
+    
+
+
+    function onlineApplicationYjsAndYyyz(proId,deptId,token,userType,areacode,dsuid){
+
+        $("#dsuid").val(dsuid);
+        $("#proid").val(proId);
+        $("#deptid").val(deptId);
+        if(userType == '2') {
+            userType = "";
+        }
+        randomValue(proId, deptId);
+    }
+
+    function onlineApplicationWssb(proId,deptId,token,userType,areacode,bmtype,jumpType,modelId){
+        $("#proid").val(proId);
+        $("#deptid").val(deptId);
+        if(jumpType && jumpType != ""){
+            $("#jumpType").val(jumpType);
+            $("#proid").val(modelId);
+        }
+        randomValue(proId, deptId);
+    }
+    function onlineApplicationSd2(deptId,areacode){
+        $("#deptid").val(deptId);
+
+        $.ajax({
+            url:"/system/resource/hope2/renewToken.jsp",
+            type:"post",
+            dataType:"json",
+            data:{token:""},
+            async:false,
+            success:function(r){
+                
+                $("#peoForm").attr('action','https://grbs.zwfw.nx.gov.cn/PeoService/incwork/temp/temp_bm.jsp');
+                $("#peoForm").submit();
+            }
+        });
+
+    }
+    function onlineApplication(proId,deptId,token,userType,areacode,fileId,bmtype){
+        debugger;
+        
+        $("#proid").val(proId);
+        
+        $.ajax({
+            url:"/system/resource/nxzw/bszn/queryLinkHttps.jsp",
+            type:"post",
+            dataType:"json",
+            data:{proId:proId},
+            async:false,
+            success:function(r){
+                debugger;
+                console.log(r);
+                if(r.code == "200"){
+                    proId = r.modelid;
+                    $("#proid").val(r.modelid);
+                    $("#jumpType").val("h5");
+                    $("#zyxtType").val(r.zyxtType);
+                    if(r.target == "zwfw"){
+                        window.open("../ztlm/zyxtzt.jsp?urltype=tree.TreeTempUrl&wbtreeid=7441&indextype="+proId+"&fileId="+fileId+"&mentype="+userType+"&is_wz_show="+r.is_wz_show+"&zyxtType="+r.zyxtType+"&url="+stringToBase32(r.url));
+                        return false;
+                    }
+                }
+
+                applicationForm(proId,deptId,token,userType,areacode,bmtype);
+            }
+        })
+
+    }
+
+    //专业系统
+    function onlineApplicationZyxt(proId,deptId,token,userType,areacode,fileId,zyxt,zymc){
+        debugger;
+       
+        $.ajax({
+            url:"/system/resource/nxzw/bszn/queryLinkHttps.jsp",
+            type:"post",
+            dataType:"json",
+            data:{proId:proId},
+            async:false,
+            success:function(r){
+                debugger;
+                console.log(r);
+                if(r.code == "200"){
+                    proId = r.modelid;
+                    $("#proid").val(r.modelid);
+                    $("#jumpType").val("h5");
+                    $("#zyxtType").val(r.zyxtType);
+                    if(r.target == "zwfw"){
+                        window.open("../ztlm/zyxtzt.jsp?urltype=tree.TreeTempUrl&wbtreeid=7441&indextype="+proId+"&fileId="+fileId+"&mentype="+userType+"&is_wz_show="+r.is_wz_show+"&zyxtType="+r.zyxtType+"&url="+stringToBase32(r.url));
+                        return false;
+                    }
+                }
+
+                 zyxt2 = zyxt;
+                zymc2 = zymc;
+                queryNoticeMap(proId,deptId,token,userType);
+            }
+        })
+    }
+
+    //智能审批
+    function onlineApplicationZnsp(proId,deptId,token,userType,areacode){
+        var bmtype = 0;
+        $("#jumpType").val("znsp");
+        $("#proid").val(proId);
+        applicationForm(proId,deptId,token,userType,areacode,bmtype);
+    }
+
+    function onlineApplicationHttps(modelId,deptId,token,userType,areacode){
+        $("#proid").val(modelId);
+        applicationForm(modelId,deptId,token,userType,areacode);
+    }
+
+    function getXzbmCount(proId){
+        var str = "";
+        $.ajax({
+            url:"/system/resource/hope2/searchXzbmCount.jsp",
+            type:"post",
+            dataType:"json",
+            data:{proId:proId},
+            async:false,
+            success:function(r){
+                if("0" == r[0].xzbmCount){
+                    str = "1";//业务局办理,直接跳转
+                }else{
+                    str = "2";//乡镇便民事项，温馨提示
+                }
+            }
+        });
+        return str;
+    }
+
+    function applicationForm(proId, deptId, token, userType, areacode,bmtype) {
+        $("#deptid").val(deptId);
+        if(bmtype){
+            $("#isCon").val("0");
+        }
+
+        if (areacode) {
+            $('#areacode').val(areacode);
+        }
+        if (userType != "" && userType != "2") {
+            openLogin(userType);
+            return;
+        }
+
+        if (userType == "2") {
+            userType = "";
+        }
+        queryNoticeMap(proId,deptId,token,userType);
+
+    }
+    //申报是否转为HTTPS
+    function queryLinkHttps(proId,deptId, token, userType) {
+        $.ajax({
+            url: '/system/resource/nxzw/bszn/queryLinkHttps.jsp',
+            type: 'get',
+            dataType: 'json',
+            data: { "proId": proId },
+            success: function(res) {
+                console.log(res);
+            }
+        })
+    }
+    function queryNoticeMap(proId, deptId, token, userType) {
+        $.ajax({
+            url: '/system/resource/nxzw/bszn/queryNoticeMap.jsp',
+            type: 'get',
+            dataType: 'json',
+            data: { "proId": proId },
+            success: function(res) {
+                console.log(res);
+                if(res.ok == "true"){
+                    openReadText(proId,deptId,token,userType,'ZZQ',res.promision_report_state);
+                    $('.titlename').html(res.promision_title);
+                    $('.content').html(res.promision_centext);
+                }else{
+                    randomValue(proId, deptId);
+                }
+
+            }
+        })
+    }
+
+    //function randomValue(token,userType,peoBasePath,entBasePath) {
+    //  if ("0" == userType) {
+    //    $("#peoForm").attr('action', peoBasePath);
+    //  $("#peoForm").submit();
+    //} else if ("1" == userType) {
+    //  $("#peoForm").attr('action', entBasePath);
+    //$("#peoForm").submit();
+    // }
+
+    //}
+    function randomValue(proId, deptId) {
+    
+        debugger;
+        if(zymc2 == "专业系统"){
+            window.open("../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid="+proId+"&deptId="+deptId+"&zyxtlj="+zyxt2+"");
+            return;
+        }
+        $.ajax({
+            url: "/system/resource/hope2/renewToken.jsp",
+            type: "post",
+            dataType: "json",
+            data: { token: "" },
+            async: false,
+            success: function(r) {
+                if(r[0].state=="1"){
+                    debugger;
+                    $("#randomValue").val(r[0].randomValue);
+                    
+                    $("#peoForm").attr('action', 'https://grbs.zwfw.nx.gov.cn/PeoService/incwork/temp/temp_bm.jsp');
+                    $("#peoForm").submit();
+
+                    
+
+                }else{
+                    layer.open({
+                        title: false
+                        ,closeBtn:false
+                        ,content: '您的账号登录已超时，请重新登录'
+                        ,yes: function(index, layero){
+                            openLoginTysfrz();
+                            layer.close(index);
+                        }
+                    });
+
+                }
+            }
+        });
+    }
+
+
+
+    function renewTokenFn(){
+
+
+        $.ajax({
+            url: "/system/resource/hope2/renewToken.jsp",
+            type: "post",
+            dataType: "json",
+            data: { token: ""},
+            async: false,
+            success: function(r) {
+                if(r[0].state=="1"){
+                    $('#customType').val("1");
+                    $('#areacode').val("ZZQ");
+                    $("#randomValue").val(r[0].randomValue);
+                }else{
+                    layer.open({
+                        title: false
+                        ,closeBtn:false
+                        ,content: '您的账号登录已超时，请重新登录'
+                        ,yes: function(index, layero){
+                            openLoginTysfrz();
+                            layer.close(index);
+                        }
+                    });
+
+                }
+            }
+        });
+    }
+    
+</script>
+
+<form action='' method="post" id="peoForm" name="peoForm"  target="_blank" >
+    
+    <input type="hidden" name="proid" id="proid" value="b5e36f40-3acd-4e96-ab26-e8b8093282ff" />
+    <input type="hidden" name="deptid" id="deptid" value="ZZQ133" />
+    <input type="hidden" name="token" value="" />
+    <input type="hidden" name="areacode"  value="ZZQ" />
+    <input type="hidden" name="customType" id="customType"  value="1"/>
+    <input type="hidden" name="randomValue"  value="" />
+    <input type="hidden" name="jumpType" id="jumpType" value="" />
+    <input type="hidden" name="AuthorizationToken" id="AuthorizationToken" value="" />
+    
+    <input type="hidden" name="isCon" id="isCon" />
+    
+    
+    
+    <input type="hidden" name="dsuid" id="dsuid" value="" />
+    
+    
+    
+    
+
+    
+
+    <input type="hidden" name="zyxtType" id="zyxtType" value="null" />
+
+</form>
+
+
+
+
+<div class="noticebg " style="display:none;">
+    <div class="noticediv">
+        <div class="noticetop">申报告知</div>
+        <div class="noticebody">
+            <h3 class="titlename"></h3>
+            <p class="content"></p>
+        </div>
+        <div class="noticebottom">
+            <button class="noticebtn grey">我已阅读告知内容</button>
+        </div>
+        <a href="javascript:closeNoticeFn();" class="close close-btn"></a>
+    </div>
+</div>
+
+<script>
+    var flag = true;
+    var settimeout  = null;
+    var time = 11;
+    function openReadText(proId,deptId,token,userType,areacode,state){
+
+        $('.noticebg').show();
+        if(flag){
+            settimeout = setInterval(function(){
+                time--;
+                if(time == 0){
+                    $('.noticebtn ').attr('class','noticebtn');
+                    $('.noticebtn ').html("我已阅读告知内容并同意").attr("onclick","noticeRead('"+proId+"','"+deptId+"','"+token+"','"+userType+"','"+state+"');");
+                    clearInterval(settimeout);
+                    return false;
+                }
+                $('.noticebtn ').html("("+time+") 我已阅读告知内容并同意");
+
+            },1000)
+            flag = false;
+        }
+    }
+    function closeNoticeFn(){
+        $('.noticebg').hide();
+    }
+    function noticeRead(proId,deptId,token,userType,state){
+        $('.noticebg').hide();
+        flage = true;
+        if(state == 1 && zymc2 == "专业系统"){
+            window.open("../zyxt.jsp?urltype=tree.TreeTempUrl&wbtreeid=6789&proid="+proId+"&deptId="+deptId+"&zyxtlj="+zyxt2+"");
+            return;
+        }
+        if(state == 1){
+            randomValue(proId, deptId);
+        }
+    }
+
+</script>
+</body>
+
+</html>

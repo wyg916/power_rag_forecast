@@ -1,0 +1,43 @@
+- id: weather_latest_001
+  question: "天气数据截止的日期"
+  expected_intent: "weather_data_latest_time"
+  expected_tool: "get_data_freshness"
+  expected_keywords:
+    - "最新时间"
+    - "数据范围"
+    - "raw_weather"
+
+- id: current_date_001
+  question: "今天是几号"
+  expected_intent: "current_date_query"
+  expected_tool: "get_current_date_context"
+  expected_keywords:
+    - "当前日期"
+
+- id: storage_discharge_001
+  question: "哪些时段适合储能放电？"
+  expected_intent: "storage_discharge_advice"
+  expected_tool: "get_storage_discharge_windows"
+  expected_keywords:
+    - "放电"
+    - "高价"
+    - "时段"
+
+- id: low_price_reason_001
+  question: "最低电价 0.00 USD/MWh，低价窗口：2026-05-26 04:00，为什么？"
+  expected_intent: "low_price_reason"
+  expected_tool: "explain_low_price_hour"
+  expected_keywords:
+    - "低价窗口"
+    - "非高峰"
+    - "低于未来24小时均价"
+
+- id: report_explain_001
+  question: "本次运行专属电价智能分析报告基于运行ID 20260528_163940生成，数据窗口为2024-05-28 00:00:00至2026-05-25 23:00:00，预测窗口为2026-05-26 00:00:00至2026-05-26 23:00:00。未来24小时均价为61.9582 USD/MWh，最高价194.0627 USD/MWh出现在17:00，最低价-26.9293 USD/MWh出现在06:00，峰谷价差达220.9920 USD/MWh。模型采用高峰增强融合模型，测试集RMSE为13.6538，MAE为7.4830，R2为0.8835。帮我解答"
+  expected_intent: "user_provided_text_explain"
+  expected_tool: "explain_user_provided_text"
+  expected_keywords:
+    - "预测窗口"
+    - "最高价"
+    - "最低价"
+    - "峰谷价差"

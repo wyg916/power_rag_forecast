@@ -1,0 +1,184 @@
+{
+  "用电量": [
+    "负荷",
+    "电力需求",
+    "load"
+  ],
+  "价格冲高": [
+    "高价风险",
+    "尖峰价格",
+    "暴涨",
+    "spike"
+  ],
+  "价格偏高": [
+    "高价",
+    "高价风险",
+    "峰值电价",
+    "尖峰"
+  ],
+  "明天": [
+    "日前",
+    "下一自然日",
+    "day-ahead"
+  ],
+  "电价风险": [
+    "电价预测",
+    "价格预测",
+    "风险等级",
+    "尖峰风险",
+    "高价风险",
+    "price_forecast_logic",
+    "peak_spike_risk_explanation"
+  ],
+  "电价预测": [
+    "价格预测",
+    "日前电价预测",
+    "预测逻辑",
+    "风险等级",
+    "预测可信度",
+    "price_forecast_logic"
+  ],
+  "预测区间": [
+    "置信区间",
+    "不确定性",
+    "区间变宽",
+    "prediction interval"
+  ],
+  "误差变大": [
+    "RMSE上升",
+    "MAE上升",
+    "模型退化",
+    "预测偏差"
+  ],
+  "模型漂移": [
+    "模型退化",
+    "特征漂移",
+    "数据分布变化",
+    "预测误差"
+  ],
+  "绿电证书": [
+    "绿证",
+    "绿色电力证书",
+    "GEC"
+  ],
+  "代理买电": [
+    "电网代理购电",
+    "代理购电"
+  ],
+  "实时市场": [
+    "real-time",
+    "实时电价",
+    "RT"
+  ],
+  "日前市场": [
+    "day-ahead",
+    "日前电价",
+    "DA"
+  ],
+  "LMP": [
+    "pjm_lmp_price_mechanism",
+    "PJM",
+    "DOM",
+    "Dominion",
+    "节点电价",
+    "边际价格",
+    "拥塞",
+    "损耗",
+    "locational marginal price"
+  ],
+  "节点电价": [
+    "LMP",
+    "locational marginal price",
+    "边际价格"
+  ],
+  "峰谷价差": [
+    "分时电价",
+    "高峰",
+    "低谷",
+    "TOU"
+  ],
+  "市场清算": [
+    "市场出清",
+    "出清价格",
+    "结算"
+  ],
+  "售电公司": [
+    "零售商",
+    "电力零售",
+    "交易主体"
+  ],
+  "新能源": [
+    "光伏",
+    "风电",
+    "储能",
+    "可再生能源"
+  ],
+  "低价窗口": [
+    "低价机会",
+    "采购窗口",
+    "负价",
+    "低谷"
+  ],
+  "异常价格": [
+    "异常电价",
+    "价格跳变",
+    "数据异常",
+    "市场异常"
+  ],
+  "交易策略": [
+    "高价风险策略",
+    "低价机会策略",
+    "峰谷价差策略",
+    "合约敞口"
+  ],
+  "系统使用": [
+    "系统概览",
+    "预测中心",
+    "策略中心",
+    "模型运维",
+    "开发者模式"
+  ],
+  "????": [
+    "????",
+    "evidence_based_answer_policy",
+    "trading_decision_boundary"
+  ],
+  "?????": [
+    "??????",
+    "????",
+    "forecast_window",
+    "last_update",
+    "weather_data_freshness_policy"
+  ],
+  "???": [
+    "????",
+    "??",
+    "peak hour",
+    "peak_spike_probability_explanation",
+    "peak_hour_detection_logic"
+  ],
+  "??": [
+    "????",
+    "GEC",
+    "???????",
+    "green certificate",
+    "green_certificate_explanation"
+  ],
+  "DeepSeek": [
+    "????",
+    "Ollama",
+    "model_provider_selection_explanation"
+  ],
+  "Ollama": [
+    "????",
+    "DeepSeek",
+    "deepseek_ollama_fallback_explanation"
+  ],
+  "PJM": [
+    "PJM??",
+    "PJM????",
+    "DOM",
+    "Dominion",
+    "pjm_lmp_price_mechanism"
+  ]
+}

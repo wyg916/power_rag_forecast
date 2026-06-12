@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+
+def tools_for_intent(intent: str) -> list[str]:
+    mapping = {
+        "current_date_query": ["get_current_date_context"],
+        "prediction_window_query": ["get_current_date_context"],
+        "weather_data_latest_time": ["get_data_freshness"],
+        "price_data_latest_time": ["get_data_freshness"],
+        "load_data_latest_time": ["get_data_freshness"],
+        "database_table_freshness": ["get_data_freshness"],
+        "forecast_max_price": ["get_forecast_metrics"],
+        "forecast_min_price": ["get_forecast_metrics"],
+        "forecast_avg_price": ["get_forecast_metrics"],
+        "forecast_spread": ["get_forecast_metrics"],
+        "forecast_risk_hours": ["get_high_risk_hours"],
+        "low_price_reason": ["explain_low_price_hour"],
+        "high_price_reason": ["explain_high_price_hour"],
+        "risk_reason": ["explain_high_price_hour"],
+        "storage_discharge_advice": ["get_storage_discharge_windows"],
+        "storage_charge_advice": ["get_storage_charge_windows"],
+        "storage_spread_analysis": ["get_storage_discharge_windows"],
+        "trading_risk_summary": ["get_storage_discharge_windows", "get_high_risk_hours", "get_weather_summary", "get_model_error_summary"],
+        "weather_summary": ["get_weather_summary"],
+        "weather_impact_on_price": ["get_weather_summary", "get_forecast_metrics"],
+        "report_summary": ["get_report_summary"],
+        "user_provided_text_explain": ["explain_user_provided_text"],
+        "model_error_status": ["get_model_error_summary"],
+        "model_retrain_suggestion": ["get_model_error_summary"],
+        "tariff_query": ["query_pv_tariff"],
+        "station_tariff_check": ["check_station_tariff"],
+        "tariff_policy_search": ["search_tariff_policy"],
+        "market_power_price_query": ["query_market_power_price"],
+        "southern_grid_tax_query": ["query_southern_grid_tax_rule"],
+        "knowledge_search": ["search_business_knowledge"],
+    }
+    return mapping.get(intent, [])

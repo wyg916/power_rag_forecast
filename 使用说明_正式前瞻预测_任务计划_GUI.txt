@@ -1,0 +1,243 @@
+﻿智能运营分析项目使用说明
+
+零、首次环境配置
+1. 复制项目根目录下的 .env.example，重命名为 .env。
+2. 在 .env 中填写 DB_PASSWORD 等本机真实配置。PJM_SUBSCRIPTION_KEY 可选，未填写时会默认从 Data Miner 2 公开前端配置自动发现 subscription key。
+3. 如需新环境安装依赖，请运行：
+   python -m pip install -r requirements.txt
+4. 真实数据库密码不再写入代码或 llm_service_config.yaml；生产环境仍建议在 .env 中填写自有 PJM Key。
+5. 一键启动 bat 已统一启用 UTF-8；缺少 .env 时会提示，并使用系统环境变量和安全默认配置。
+
+一、你现在可以直接怎么用
+1. 双击：
+E:\智能运营分析项目\启动智能运营分析GUI.bat
+2. 打开图形界面后，优先使用以下按钮：
+- 更新数据并全流程
+- 直接全流程
+- 仅生成 AI 报告
+- 预测并生成报告
+- 创建/覆盖任务计划
+
+二、各按钮的作用
+1. 更新数据并全流程
+先更新本地公开数据，再依次执行预测引擎、AI 摘要、Word 报告、结果归档。
+
+2. 直接全流程
+不更新数据，直接执行全流程。
+
+3. 仅生成 AI 报告
+不重新跑预测，只基于当前已有结果重新生成 Word 报告和归档文件夹。
+
+4. 预测并生成报告
+重新运行预测引擎，并生成 AI 报告与归档结果，但不刷新数据。
+
+5. 模型盘点
+重新扫描本机模型、显卡、内存和 Ollama 情况。
+
+6. 创建/覆盖任务计划
+把当前流程写入 Windows 任务计划，按设定时间自动运行。
+
+三、输出结果放在哪里
+默认总输出目录：
+E:\智能运营分析项目\全流程预测结果数据存放
+
+每次运行后，系统都会生成一个新的时间戳文件夹，例如：
+20260330_160500_电价预测运行结果
+
+该文件夹下通常包含：
+1. 01_正式预测结果
+2. 02_AI报告
+3. 03_关键模型结果
+4. 04_运行日志
+
+其中最重要的文件是：
+1. 未来24小时正式前瞻预测结果.xlsx
+2. 电价智能分析综合报告.docx
+
+四、如何修改结果输出目录
+1. 打开 GUI
+2. 在“总输出目录”输入框中选择新的目录
+3. 点击“保存配置”
+4. 以后新的运行结果会自动输出到新的总目录
+
+五、当前“未来24小时正式前瞻版”是什么意思
+1. 演示版
+演示版不是严格意义上的真实未来预测，它主要用于展示流程是否跑通，通常基于历史已知完整特征去做最后24小时的模拟输出。
+
+2. 正式前瞻版
+正式前瞻版才是用于真实未来时点预测的版本。它会面向未来24个目标小时逐小时递推，并尽量使用预测时点真正可获得的数据。
+
+正式前瞻版优先使用：
+1. 已有历史真实数据
+2. PJM 的未来负荷预测数据
+3. 可获取的天气预报数据
+
+如果未来真实值在预测时天然不可得，系统会使用安全代理特征，例如：
+1. 历史同小时或滞后天气代理
+2. 历史模式代理负荷
+3. 历史实时价差代理
+
+因此，正式前瞻版不是“全部基于未来真实实况值”，而是“基于预测时刻真实可得信息 + 合理代理特征”的正式预测口径。这才符合真实部署场景。
+
+六、数据更新规则
+当前数据更新不是每次全量重下，而是：
+1. 读取本地已保存的数据
+2. 只抓取缺失的最新增量时间段
+3. 自动去重
+4. 保留最近24个月窗口
+
+也就是说，更新后你拿到的是：
+在之前基础上，补齐到当前最新可获取的数据。
+
+七、日志怎么看
+1. GUI 下方日志框会实时滚动显示当前步骤
+2. 状态栏会显示当前执行步骤和已耗时
+3. 所有日志也会在运行结果文件夹和自动化日志目录中保留
+
+八、任务计划怎么用
+1. 在 GUI 中填写任务名称、执行时间、执行模式
+2. 点击“创建/覆盖任务计划”
+3. Windows 会按设定时间自动运行
+
+推荐执行模式：
+refresh_data
+含义：先更新数据，再跑预测和报告，最适合日常自动运行。
+
+九、如果只想看说明
+GUI 中“打开使用说明”按钮现在会直接打开这个 txt 文件，不再打开 md 文件。
+
+十、阶段一稳定性优化说明
+1. skip-prediction 会先检查正式预测表和 AI 报告依赖表是否存在。
+2. 最新归档不再通过删除 latest 目录生成，而是通过 dispatch/latest_pointer.txt 指向最新时间戳目录。
+3. LLM 报告生成已增加 JSON 容错、重试和模板回退。
+4. requirements.txt 和 .env.example 已补齐，便于新环境复现和安全配置。
+
+十一、阶段二工程化优化说明
+1. main_daily_run.py 已通过 services 服务层调度数据刷新、预测、AI 摘要、LLM 报告和归档。
+2. 预测引擎已新增 prediction_engine 模块化封装，v4_fix1 保留为兼容入口。
+3. 每次训练后会尝试保存 model_artifacts/model_<run_id>，包含 joblib 模型、特征列、训练配置、指标、阈值和模型说明。
+4. 正式未来24小时预测结果会增加 P10/P90 预测区间字段，用于提示价格波动范围。
+5. 数据库新增表结构放在 migrations 目录，可用 apply_database_migrations 执行，重复执行不会破坏已有表。
+6. 一键启动 bat 已更新为阶段二版本，继续优先使用当前 Python 3.11 并启用 UTF-8。
+
+十二、阶段三/四自优化与运维说明
+1. 数据库可用时，预测结果会写入 prediction_tracking，模型 artifact 会登记到 model_registry。
+
+v2.0.0 现代化控制台更新：
+1. 新版 GUI 入口为“启动智能运营分析GUI.bat”，内部执行 python -m ui.app。
+2. 旧版 Tkinter 入口保留为“启动旧版智能运营分析GUI.bat”。
+3. 新版界面采用深色科技风，包含左侧导航、顶部状态栏、卡片式控制区、右侧快速状态区、底部状态栏和终端风格日志。
+4. 已迁移原 GUI 的一键运行、停止任务、数据库连接测试、输出目录配置、任务计划创建、目录打开、数据库浏览/查询等功能。
+5. 新增 run_daily_pipeline_prediction_report_only.bat，对应 prediction_report_only 模式。
+6. 新增 08_sync_database_closure.py，可将现有核心数据、结果表和 prediction_tracking 同步到 MySQL，补齐数据库闭环。
+7. v2.1.0 新增“模型中心”和“AI报告中心”：模型中心展示 Active 模型、版本列表、误差指标、artifact 和候选模型对比入口；AI报告中心展示最新报告、历史报告、Word/JSON 路径和可信检查结果。
+8. 模型中心优先读取 model_registry、prediction_tracking、model_performance_daily；数据库不可用时会从 model_artifacts 和 ai_input_summary.json 降级展示。
+9. AI报告中心优先读取 ai_report_runs、ai_input_summary_runs；数据库不可用时会从 自动化输出/current 和 全流程预测结果数据存放 降级读取。
+10. run_model_ops_daily.bat 可执行真实值回填、误差统计、模型退化监控和重训任务登记。
+11. 07_compare_and_promote_model.py 可执行候选模型与 active 模型对比，并支持人工指定模型版本上线。
+12. run_health_check.bat 可检查依赖、数据库、关键文件和输出目录，报告保存在 自动化输出/logs。
+13. run_smoke_test.bat 可执行轻量整体自检，不跑完整训练，适合验证启动链路是否正常。
+14. 一键启动 bat 已修复闪退问题：统一使用 Windows CRLF 换行，失败时显示错误码并停留窗口。
+15. 没有 .env 或 DB_PASSWORD 时，主流程会自动使用本地文件模式，不再直接中断；数据库落库能力会明确跳过。
+
+v2.2.0 预测结果中心更新：
+1. 左侧导航新增“预测结果中心”，用于查看未来24小时正式前瞻预测、峰谷风险、预测区间、运行批次和业务解读。
+2. 预测结果中心优先读取数据库 vw_latest_forward_24h_formal、result_forward_24h_formal、ai_input_summary_runs、pipeline_run_events。
+3. 数据库不可用时，会从 结果-3、自动化输出/current、全流程预测结果数据存放 和 output 自动寻找最新正式预测 Excel 与 ai_input_summary.json。
+4. 页面支持摘要卡片、深色预测表、风险筛选、高峰/尖峰过滤、趋势图、风险时段分析、导出当前表格、复制业务摘要和打开来源文件。
+5. 页面内“重新运行预测并生成报告”和“仅重新生成 AI 报告”会复用 main_daily_run.py 的现有模式，不重写业务逻辑。
+6. 所有一键启动 bat 已更新为 v2.2.0，继续使用 UTF-8 和窗口保留策略。
+
+v2.3.0 图表与 AI 报告审批流更新：
+1. 新增统一深色图表组件，集中处理中文字体、负号、网格、图例、坐标轴、最高/最低点和风险时段注释。
+2. 预测结果中心趋势图改为基于当前预测表真实渲染，优先展示蓝色预测曲线、P10/P90 区间、高风险红点和高峰橙点。
+3. 顶部业务摘要改为更紧凑的 KPI 卡片布局，给预测趋势图和预测表保留更多空间。
+4. AI 报告中心新增审批状态、审核人、审核时间、审核意见、通过/驳回/待审核和派发前检查。
+5. 数据库可用时审批状态写入 ai_report_review_runs；数据库不可用时降级写入 自动化输出/current/ai_report_review_status.json 和 自动化输出/review_status。
+6. 报告派发前会检查审批状态、可信检查结果和 Word 文件是否存在；未满足条件时只提示原因，不直接标记派发。
+7. 所有一键启动 bat 已更新为 v2.3.0。
+
+v2.4.0 全局自适应布局更新：
+1. 主窗口默认 1600x900，最小 1280x720，启动居中，支持最大化和手动缩放。
+2. 左侧导航重构为分组导航，支持展开/折叠、选中高亮条、蓝色选中态和 hover 态。
+3. 新增响应式网格组件，KPI 卡片和操作按钮会根据窗口宽度自动换列，减少横向挤压。
+4. 控制台首页、预测结果中心、模型中心、AI 报告中心改用滚动区和 QSplitter，窗口较小时通过滚动完整查看。
+5. 预测结果中心压缩顶部 KPI，只保留核心指标，数据来源和 run_id 放到二级信息行；预测表和趋势图支持左右拖拽。
+6. AI 报告中心历史列表、报告预览、可信检查使用三栏 QSplitter；模型中心使用左右 QSplitter 和下方 Tab。
+7. 左侧导航菜单主体可滚动，底部版本、环境和折叠按钮固定保留，避免低分辨率下被裁切。
+8. 控制台首页右侧快速状态、运行模式说明、运行日志改为垂直 QSplitter，可手动调整日志空间。
+9. 所有一键启动 bat 已更新为 v2.4.0。
+
+v2.4.1 数据刷新与数据库闭环容错更新：
+1. 更新数据并全流程在未配置 PJM_SUBSCRIPTION_KEY 时不再直接中断，会记录 WARNING 并复用本地/数据库现有数据继续执行。
+2. forecast_load_selected.xlsx 为空时，会从 forecast_load_raw.xlsx 自动重建，避免预测输入和数据库闭环失败。
+3. 数据库闭环同步遇到 0 字节、损坏或无法识别格式的 Excel 时会跳过并记录 WARNING，不再导致整条同步任务退出。
+4. fetch_power_market_data.py 直接运行时也支持缺少 PJM Key 的本地降级同步。
+5. 所有一键启动 bat 已更新为 v2.4.1。
+
+v2.5.0 快速预测与模型自学习闭环更新：
+1. 新增快速预测模式：python main_daily_run.py --fast-forecast。该模式加载当前 Active 模型推理，不重新训练。
+2. 新增刷新数据 + 快速预测模式：python main_daily_run.py --refresh-data --fast-forecast。该模式先刷新或降级同步数据，再执行快速推理。
+3. 新增完整重训模式：python main_daily_run.py --retrain-model。该模式重新训练模型，保存 candidate artifact，并登记到 model_registry。
+4. 新增模型自优化模式：python main_daily_run.py --model-auto-optimize。该模式回填真实值、更新误差记忆、判断是否退化，必要时才触发候选模型重训。
+5. 新增一键启动文件：run_daily_pipeline_fast_forecast.bat、run_daily_pipeline_refresh_fast_forecast.bat、run_daily_pipeline_retrain_model.bat、run_model_auto_optimize.bat。
+6. create_windows_task.ps1 的 Mode 新增 fast_forecast、refresh_fast_forecast、retrain_model、model_auto_optimize。
+7. 快速预测结果新增 raw_predicted_price、bias_adjustment、corrected_predicted_price、predicted_price、correction_reason、model_version、feature_version 等字段。
+8. 新增 model_error_memory 和 model_strategy_memory，用于误差记忆、场景偏差修正、策略记忆和自动重训判断。
+9. 样本不足时不会强行校正，默认同类场景至少 10 个样本才会应用偏差修正；否则 bias_adjustment 为 0，并写明未校正原因。
+10. 模型中心新增 Active 可用性、Artifact 完整性、快速预测可用性、误差记忆、自学习状态、偏差校正开关、自动优化和最新候选设为 Active。
+11. 快速预测落库只同步正式预测结果、预测输入特征和业务摘要，避免日常推理重复写入历史训练大表。
+12. 所有一键启动 bat 已更新为 v2.5.0，继续保持 UTF-8 无 BOM、CRLF 换行和失败窗口保留策略。
+
+v2.5.1 PJM 数据刷新更新：
+1. fetch_power_market_data.py 会优先读取 .env / 系统环境变量中的 PJM_SUBSCRIPTION_KEY。
+2. 如果未配置 PJM_SUBSCRIPTION_KEY，会默认读取 https://dataminer2.pjm.com/config/settings.json 中公开的 subscriptionKey，继续执行 PJM 外部数据刷新。
+3. services/data_service.py 不再因为本机未配置 PJM_SUBSCRIPTION_KEY 提前跳过外部刷新；只有真实刷新失败时才降级复用本地/数据库数据。
+4. 新增配置：PJM_AUTO_DISCOVER_SUBSCRIPTION_KEY、PJM_SETTINGS_URL。
+5. 所有一键启动 bat 已更新为 v2.5.1。
+
+v2.6.0 Web 产品化二次优化：
+1. 新增浏览器访问版“售电交易 AI 辅助决策平台”。
+2. 双击 run_web_platform.bat 可同时启动 FastAPI 后端和 React 前端。
+3. 前端访问：http://127.0.0.1:5173
+4. 后端 API 文档：http://127.0.0.1:8000/docs
+5. Web 平台包含首页驾驶舱、数据接入、预测分析、策略建议、AI 助手、异常解释、AI 报告、模型监控和任务日志。
+6. 新增 run_web_backend.bat、run_web_frontend.bat、run_web_smoke_test.bat。
+7. 预测模型不重写，Web 平台复用现有快速预测、AI 报告、模型运维和数据库闭环能力。
+
+v2.6.1 Web 交互与启动稳定性优化：
+1. run_web_platform.bat 支持端口检测和已有服务复用，重复双击不再导致启动失败。
+2. Web 界面新增可拖动 AI 悬浮助手、页面级 AI 解读、数据源官网展示和定时任务管理。
+3. 优化左侧导航、整体字号、模型监控和任务日志页面布局。
+
+v2.6.3 AI 问答助手与报告中心修复：
+1. 新增 run_project.bat 统一核心启动入口，日常建议优先使用它。
+2. AI 分析助手按“意图识别 + 工具调用 + 数据依据 + Answer Guard”落地，不再固定模板式答复。
+3. AI 问答输入框改为稳定原生多行输入，支持自定义输入、Enter 发送和 Shift+Enter 换行。
+4. AI 报告中心修复操作建议竖排显示问题，摘要保持非技术人员友好阅读视图。
+5. 新增工具调用日志和 Prompt 模板迁移表，便于后续审计与二次开发。
+
+v2.7.0 第一阶段 AI 智能问答落地：
+1. 新增预测概览、预测明细、历史电价、天气、负荷、新能源状态、模型解释和风险等级标准接口。
+2. 新增 Dify 可选桥接和本地千问模型网关，未配置 Dify 时自动使用本地数据增强助手。
+3. 新增电力业务知识库和问答反馈记录，支持回答文档验收问题。
+4. Web 聊天窗口新增历史会话、复制回答、清空会话、点赞/点踩和数据使用标签。
+5. 所有一键启动脚本同步为 v2.7.0。
+
+v2.7.1 AI 助手交互与数据表查看修复：
+1. AI 助手新增发送防抖、请求锁和按键重复拦截，避免自动重复发送。
+2. 输入框新增中文输入法组合输入保护，支持逐字逐字符中英文输入。
+3. 普通天气问题直接回答天气数据，不再答非所问到电价分析。
+4. 优化 Web 自适应布局和 AI 抽屉高度，减少内容显示不全。
+5. 数据接入中心新增数据库表查看、表名筛选和单表内容筛选。
+6. 所有一键启动脚本同步为 v2.7.1。
+
+v2.9.1 LangGraph 多 Agent 分析落地：
+1. 新增第二阶段多 Agent 工作流，包含意图、数据、预测、风险、报告和答案整合节点。
+2. 新增 /api/ai/agent/analyze 复杂分析接口，返回 workflow、agent_trace、data_used、risk_level 等字段。
+3. AI 助手复杂业务问题会联合预测、负荷、天气、历史价格、模型解释、风险和知识库数据回答。
+4. 本地模型可用时参与答案整合，未连接时使用多 Agent 工具链兜底并明确提示。
+5. Web 聊天窗口新增 Agent 工作流标签和模型状态提示。
+6. 所有一键启动脚本同步为 v2.9.1。
+
+
