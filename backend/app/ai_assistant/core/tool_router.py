@@ -9,6 +9,7 @@ def tools_for_intent(intent: str) -> list[str]:
         "price_data_latest_time": ["get_data_freshness"],
         "load_data_latest_time": ["get_data_freshness"],
         "database_table_freshness": ["get_data_freshness"],
+        "data_sql_query": ["query_business_data"],
         "forecast_max_price": ["get_forecast_metrics"],
         "forecast_min_price": ["get_forecast_metrics"],
         "forecast_avg_price": ["get_forecast_metrics"],

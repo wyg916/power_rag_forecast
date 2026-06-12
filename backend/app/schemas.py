@@ -78,6 +78,12 @@ class AnswerFeedbackRequest(BaseModel):
     feedback_comment: str = Field(default="", max_length=2000)
 
 
+class ReadOnlySqlRequest(BaseModel):
+    sql: str = Field(..., min_length=1, max_length=5000)
+    params: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
+    limit: int = Field(default=100, ge=1, le=500)
+
+
 class ReviewRequest(BaseModel):
     reviewer: str = Field(default="web_user", max_length=64)
     review_comment: str = Field(default="", max_length=2000)

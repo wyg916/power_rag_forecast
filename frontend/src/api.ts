@@ -90,6 +90,20 @@ export const api = {
     request<any>(`/api/users/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   dashboard: () => request<any>('/api/dashboard/summary'),
   dataStatus: () => request<any>('/api/data/status'),
+  dataCatalog: (includeRuntime = false) => request<any>(`/api/data/catalog${includeRuntime ? '?include_runtime=true' : ''}`),
+  dataFields: (table?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (table) params.set('table', table);
+    if (search) params.set('search', search);
+    return request<any>(`/api/data/fields${params.toString() ? `?${params}` : ''}`);
+  },
+  dataFreshness: (tables: string[] = []) => {
+    const params = new URLSearchParams();
+    tables.forEach((table) => params.append('tables', table));
+    return request<any>(`/api/data/freshness${params.toString() ? `?${params}` : ''}`);
+  },
+  readOnlySql: (payload: { sql: string; params?: Record<string, any>; limit?: number }) =>
+    request<any>('/api/data/sql/query', { method: 'POST', body: JSON.stringify(payload) }),
   dataRefresh: () => request<any>('/api/data/refresh', { method: 'POST', body: '{}' }),
   syncCoreData: () => request<any>('/api/data/sync-core', { method: 'POST', body: '{}' }),
   dataQuality: () => request<any>('/api/data/quality').then(unwrapApi),

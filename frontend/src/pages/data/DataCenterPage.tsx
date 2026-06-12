@@ -1,5 +1,5 @@
 import { ApiOutlined, DatabaseOutlined, EyeOutlined, SafetyCertificateOutlined, SyncOutlined, WarningOutlined } from '@ant-design/icons';
-import { Button, Col, Input, Row, Space, Table, Tag, Upload, message } from 'antd';
+import { Alert, Button, Col, Input, Row, Space, Table, Tag, Upload, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
@@ -18,6 +18,7 @@ const icons = [<DatabaseOutlined />, <SyncOutlined />, <WarningOutlined />, <Saf
 const tabs = [
   { key: 'data-access', label: '数据接入' },
   { key: 'data-quality', label: '数据质量' },
+  { key: 'data-catalog', label: '数据目录' },
   { key: 'data-tables', label: '数据库表' },
   { key: 'data-import', label: '导入导出' }
 ];
@@ -31,6 +32,9 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [detailTitle, setDetailTitle] = useState('详情');
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
   const [tablePreview, setTablePreview] = useState<any[]>([]);
+  const [sqlText, setSqlText] = useState('SELECT datetime, temperature FROM raw_weather ORDER BY datetime DESC');
+  const [sqlLoading, setSqlLoading] = useState(false);
+  const [sqlResult, setSqlResult] = useState<any | null>(null);
 
   async function loadData() {
     setLoading(true);
@@ -81,7 +85,38 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     window.open(api.exportTableUrl(tableName), '_blank');
   }
 
+  async function runReadOnlySql() {
+    setSqlLoading(true);
+    try {
+      const result = await api.readOnlySql({ sql: sqlText, limit: 20 });
+      setSqlResult(result);
+      if (result.safe === false) message.warning('SQL 未执行：已被只读安全规则拦截');
+      else if (!result.available) message.info(result.not_found_reason || '查询未返回数据');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '只读 SQL 查询失败');
+    } finally {
+      setSqlLoading(false);
+    }
+  }
+
+  function showCatalogFields(row: any) {
+    setDetailTitle(`字段映射：${row.table_name}`);
+    setDetailData({
+      table_name: row.table_name,
+      display_name: row.display_name,
+      business_domain: row.business_domain,
+      time_field: row.time_field,
+      source_system: row.source_system,
+      fields: (row.fields || []).map((field: any) => `${field.field_name}：${field.business_name || '-'}，${field.meaning || '-'}`).join('\n')
+    });
+    setTablePreview([]);
+    setDetailOpen(true);
+  }
+
   const filteredTables = (data.tables || []).filter((row: any[]) => !tableSearch || String(row[0]).toLowerCase().includes(tableSearch.toLowerCase()));
+  const catalogRows = (data.catalog || []).filter(
+    (row: any) => !tableSearch || String(row.table_name || '').toLowerCase().includes(tableSearch.toLowerCase()) || String(row.display_name || '').includes(tableSearch)
+  );
 
   return (
     <div className="page-stack">
@@ -164,6 +199,69 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
                 { title: '新鲜度', dataIndex: 'freshness_score', render: (text) => `${text}` },
                 { title: '最近时间', dataIndex: 'latest_time' },
                 { title: '说明', dataIndex: 'message' }
+              ]}
+            />
+          </Col>
+        </Row>
+      )}
+
+      {activeSubKey === 'data-catalog' && (
+        <Row gutter={[16, 16]} className="balanced-row">
+          <Col xs={24} xl={15}>
+            <TableCard
+              title="P1 数据目录与字段映射"
+              loading={loading}
+              extra={<Space><Tag>{data.catalogVersion || 'catalog'}</Tag><Input.Search allowClear placeholder="搜索表名/中文名" onSearch={setTableSearch} /><Button onClick={loadData}>刷新</Button></Space>}
+              dataSource={catalogRows.map((row: any) => ({ key: row.table_name, ...row }))}
+              columns={[
+                { title: '表名', dataIndex: 'table_name' },
+                { title: '中文名', dataIndex: 'display_name' },
+                { title: '业务域', dataIndex: 'business_domain' },
+                { title: '粒度', dataIndex: 'grain' },
+                { title: '时间字段', dataIndex: 'time_field' },
+                { title: '来源', dataIndex: 'source_system' },
+                { title: '状态', render: (_, record: any) => <Tag color={record.runtime?.exists === false ? 'warning' : 'success'}>{record.runtime?.exists === false ? '未建表' : '已登记'}</Tag> },
+                { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => showCatalogFields(record)}>字段</Button> }
+              ]}
+            />
+          </Col>
+          <Col xs={24} xl={9}>
+            <SectionCard title="只读 SQL 查数" loading={loading} extra={<Button loading={sqlLoading} type="primary" onClick={runReadOnlySql}>执行</Button>}>
+              <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                <Input.TextArea rows={5} value={sqlText} onChange={(event) => setSqlText(event.target.value)} />
+                {sqlResult ? (
+                  <Alert
+                    showIcon
+                    type={sqlResult.safe === false ? 'warning' : sqlResult.available ? 'success' : 'info'}
+                    message={sqlResult.query_summary || '只读查询结果'}
+                    description={sqlResult.not_found_reason || `返回 ${sqlResult.row_count || 0} 条，表：${(sqlResult.tables || []).join(', ') || '-'}`}
+                  />
+                ) : null}
+                {sqlResult?.records?.length ? (
+                  <Table
+                    size="small"
+                    pagination={{ pageSize: 3 }}
+                    scroll={{ x: 'max-content' }}
+                    dataSource={sqlResult.records.map((row: any, index: number) => ({ key: index, ...row }))}
+                    columns={(sqlResult.columns || Object.keys(sqlResult.records[0] || {})).map((key: string) => ({ title: key, dataIndex: key, ellipsis: true }))}
+                  />
+                ) : null}
+              </Space>
+            </SectionCard>
+          </Col>
+          <Col xs={24}>
+            <TableCard
+              title="数据新鲜度"
+              loading={loading}
+              dataSource={(data.freshnessItems || []).map((row: any) => ({ key: row.table_name, ...row }))}
+              columns={[
+                { title: '表名', dataIndex: 'table_name' },
+                { title: '状态', dataIndex: 'status', render: (text) => <Tag color={text === 'ok' ? 'success' : 'warning'}>{text}</Tag> },
+                { title: '时间字段', dataIndex: 'datetime_field' },
+                { title: '起始时间', dataIndex: 'min_datetime' },
+                { title: '最新时间', dataIndex: 'max_datetime' },
+                { title: '记录数', dataIndex: 'row_count', align: 'right' },
+                { title: '查不到原因', dataIndex: 'not_found_reason' }
               ]}
             />
           </Col>

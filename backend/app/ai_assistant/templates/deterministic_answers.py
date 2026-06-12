@@ -61,6 +61,46 @@ def answer_data_freshness(result: dict[str, Any], label: str) -> str:
     )
 
 
+def answer_data_sql_query(result: dict[str, Any]) -> str:
+    table = result.get("table_name") or "-"
+    fields = result.get("fields") or result.get("columns") or []
+    field_text = "、".join(str(field) for field in fields[:10]) if fields else "-"
+    time_range = result.get("time_range") or {}
+    range_start = time_range.get("start") or time_range.get("requested_start") or "-"
+    range_end = time_range.get("end") or time_range.get("requested_end") or "-"
+    time_field = time_range.get("field") or "-"
+    query_summary = result.get("query_summary") or "执行只读查数。"
+    if not result.get("available"):
+        return (
+            "结论：本次没有查到可用数据。\n\n"
+            "查数口径：\n"
+            f"1. 表名：{table}\n"
+            f"2. 字段：{field_text}\n"
+            f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
+            f"4. 查询摘要：{query_summary}\n"
+            f"5. 查不到原因：{result.get('not_found_reason') or '未返回匹配记录'}。"
+        )
+    records = result.get("records") or []
+    preview_lines: list[str] = []
+    for idx, row in enumerate(records[:3], 1):
+        pieces = []
+        for key in (result.get("columns") or fields)[:5]:
+            if key in row:
+                pieces.append(f"{key}={row.get(key)}")
+        preview_lines.append(f"{idx}. " + "；".join(pieces))
+    preview = "\n".join(preview_lines) if preview_lines else "已返回记录，但无可展示字段。"
+    return (
+        f"结论：已按只读 SQL 查到 {result.get('row_count') or len(records)} 条结果预览。\n\n"
+        "查数口径：\n"
+        f"1. 表名：{table}\n"
+        f"2. 字段：{field_text}\n"
+        f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
+        f"4. 查询摘要：{query_summary}\n\n"
+        "结果预览：\n"
+        f"{preview}"
+    )
+
+
 def answer_forecast_metric(result: dict[str, Any], intent: str) -> str:
     if not result.get("available"):
         return "结论：当前系统未查询到可用预测数据。\n\n建议：先运行今日分析或快速预测后再提问。"

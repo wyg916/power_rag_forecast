@@ -30,6 +30,7 @@ export const menuGroups: MenuGroup[] = [
     children: [
       { key: 'data-access', label: '数据接入' },
       { key: 'data-quality', label: '数据质量' },
+      { key: 'data-catalog', label: '数据目录' },
       { key: 'data-tables', label: '数据源表' },
       { key: 'data-import', label: '导入导出' }
     ]

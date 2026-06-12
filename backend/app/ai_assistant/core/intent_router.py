@@ -27,6 +27,13 @@ def _extract_table_names(question: str) -> list[str]:
     return list(dict.fromkeys(candidates))[:8]
 
 
+def _extract_limit(question: str) -> int | None:
+    match = re.search(r"(?:前|最新|最近)?\s*(\d{1,3})\s*(?:条|行|个|笔)", question)
+    if not match:
+        return None
+    return max(1, min(int(match.group(1)), 50))
+
+
 def _hour(question: str) -> int | None:
     match = re.search(r"(?<!\d)([01]?\d|2[0-3])\s*(?:点|时|:00|：00)", question)
     return int(match.group(1)) if match else None
@@ -59,8 +66,25 @@ def route_intent(question: str) -> IntentDecision:
     latin_q = normalized.lower()
     entities: dict[str, object] = {}
     table_names = _extract_table_names(normalized)
-    if table_names and any(term in latin_q for term in ["raw_", "table", "database", "forecast_results", "latest", "freshness"]):
-        return IntentDecision("database_table_freshness", 0.96, {"tables": table_names}, normalized)
+    if table_names:
+        freshness_terms = ["新鲜度", "更新", "截止", "到哪天", "最新时间", "数据范围", "freshness", "latest time"]
+        query_terms = ["查数", "查询", "查一下", "看一下", "最新几条", "最新", "多少条", "记录数", "sql", "select", "table", "database"]
+        if any(term in q or term in latin_q for term in freshness_terms) or ("最新" in q and any(term in q for term in ["几号", "哪天", "时间", "截止", "范围"])):
+            return IntentDecision("database_table_freshness", 0.96, {"tables": table_names}, normalized)
+        if any(term in q or term in latin_q for term in query_terms):
+            query_entities: dict[str, object] = {"tables": table_names}
+            limit = _extract_limit(normalized)
+            if limit:
+                query_entities["limit"] = limit
+            return IntentDecision("data_sql_query", 0.94, query_entities, normalized)
+    if any(k in q for k in ["查数", "数据库", "数据表", "最新几条", "最近几条", "多少条", "记录数"]) and any(
+        k in q for k in ["天气", "预测结果", "负荷", "电价", "模型误差", "任务", "特征"]
+    ):
+        query_entities = {}
+        limit = _extract_limit(normalized)
+        if limit:
+            query_entities["limit"] = limit
+        return IntentDecision("data_sql_query", 0.9, query_entities, normalized)
     hour = _hour(normalized)
     if hour is not None:
         entities["hour"] = hour

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ...ai.tool_registry import get_high_risk_hours, get_model_error_summary
+from ...services.data_trust_service import query_business_data
 from .data_freshness_tools import get_data_freshness
 from .forecast_tools import explain_high_price_hour, explain_low_price_hour, get_forecast_metrics
 from .knowledge_tools import search_business_knowledge
@@ -23,6 +24,7 @@ from .weather_tools import get_weather_summary
 TOOLS = {
     "get_current_date_context": get_current_date_context,
     "get_data_freshness": get_data_freshness,
+    "query_business_data": query_business_data,
     "get_forecast_metrics": get_forecast_metrics,
     "get_high_risk_hours": get_high_risk_hours,
     "explain_low_price_hour": explain_low_price_hour,

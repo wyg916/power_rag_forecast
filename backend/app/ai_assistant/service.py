@@ -25,7 +25,7 @@ from .prompts import build_expert_messages
 from .schemas import ConversationState, IntentDecision, ToolResult
 from ..services.core_data_sync import save_ai_trace_record
 from ..services.rag_service import rag_enabled, rag_search
-from .templates.deterministic_answers import answer_current_date, answer_data_freshness, answer_forecast_metric, answer_prediction_window
+from .templates.deterministic_answers import answer_current_date, answer_data_freshness, answer_data_sql_query, answer_forecast_metric, answer_prediction_window
 from .templates.fallback_answers import (
     answer_high_price_reason,
     answer_low_price_reason,
@@ -572,6 +572,7 @@ def _tool_args(name: str, decision: IntentDecision, run_id: str, question: str) 
         "query_market_power_price",
         "query_southern_grid_tax_rule",
         "search_business_knowledge",
+        "query_business_data",
     }:
         args["question"] = question
         args["keyword"] = decision.entities.get("keyword") or question
@@ -624,6 +625,7 @@ def _data_used(results: list[ToolResult]) -> dict[str, bool]:
         "report": False,
         "storage": False,
         "data_freshness": False,
+        "data_query": False,
         "user_text": False,
         "tariff": False,
         "knowledge": False,
@@ -641,6 +643,15 @@ def _data_used(results: list[ToolResult]) -> dict[str, bool]:
                 used["weather"] = True
             if domain in {"load", "forecast_load"}:
                 used["load"] = True
+        if name == "query_business_data":
+            used["data_query"] = True
+            table = str(result.output.get("table_name") or "")
+            if "weather" in table:
+                used["weather"] = True
+            if "load" in table:
+                used["load"] = True
+            if "forecast" in table:
+                used["prediction"] = True
         if name in {"get_storage_discharge_windows", "get_storage_charge_windows"}:
             used["storage"] = True
             used["prediction"] = True
@@ -805,6 +816,8 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
                 "建议：先检查天气源 last_update、预测窗口、负荷预测和价格预测是否同步更新，再判断天气是否是晚高峰风险的主要驱动。"
             )
         return answer_data_freshness(first, DATA_LABELS[intent])
+    if intent == "data_sql_query":
+        return answer_data_sql_query(first)
     if intent in {"forecast_max_price", "forecast_min_price", "forecast_avg_price", "forecast_spread"}:
         return answer_forecast_metric(first, intent)
     if intent == "storage_discharge_advice" or intent == "storage_spread_analysis":

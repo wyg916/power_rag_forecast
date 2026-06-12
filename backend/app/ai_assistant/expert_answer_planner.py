@@ -23,6 +23,7 @@ DETERMINISTIC_INTENTS = {
     "price_data_latest_time",
     "load_data_latest_time",
     "database_table_freshness",
+    "data_sql_query",
     "forecast_max_price",
     "forecast_min_price",
     "forecast_avg_price",

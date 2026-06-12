@@ -5,7 +5,7 @@ import { mockFallback, withServiceState } from './serviceState';
 export async function getDataCenterData() {
   try {
     const partialErrors: string[] = [];
-    const [status, quality, tables, importExport] = await Promise.all([
+    const [status, quality, tables, importExport, catalog, freshness] = await Promise.all([
       api.dataStatus(),
       api.dataQuality().catch((error) => {
         partialErrors.push(error instanceof Error ? error.message : String(error));
@@ -18,22 +18,33 @@ export async function getDataCenterData() {
       api.importExportRecords().catch((error) => {
         partialErrors.push(error instanceof Error ? error.message : String(error));
         return null;
+      }),
+      api.dataCatalog(true).catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.dataFreshness().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
       })
     ]);
     const sources = Array.isArray(status?.sources) ? status.sources : [];
     const qualityItems = Array.isArray(quality?.items) ? quality.items : [];
     const tableRows = Array.isArray(tables?.tables) ? tables.tables : [];
     const records = Array.isArray(importExport?.records) ? importExport.records : [];
+    const catalogRows = Array.isArray(catalog?.datasets) ? catalog.datasets : [];
+    const freshnessItems = Array.isArray(freshness?.items) ? freshness.items : [];
     const missingRate = Number(quality?.summary?.avg_missing_rate || 0);
     const passRate = Number(quality?.summary?.avg_check_pass_rate || 100);
     const exceptionCount = Number(quality?.summary?.exception_count || 0);
+    const freshnessProblems = freshnessItems.filter((item: any) => item.status !== 'ok').length;
     return withServiceState({
       ...dataMock,
       dataSource: tables?.available ? 'postgresql' : 'file_fallback',
       metrics: [
-        { ...dataMock.metrics[0], value: sources.length || tableRows.length, note: '来自数据源状态' },
+        { ...dataMock.metrics[0], value: catalogRows.length || sources.length || tableRows.length, note: '来自 P1 数据目录' },
         { ...dataMock.metrics[1], value: records.length, note: `异常 ${exceptionCount}` },
-        { ...dataMock.metrics[2], value: exceptionCount },
+        { ...dataMock.metrics[2], value: exceptionCount || freshnessProblems },
         { ...dataMock.metrics[3], value: passRate.toFixed(2), unit: '%' }
       ],
       flow: sources.length
@@ -63,6 +74,9 @@ export async function getDataCenterData() {
           ])
         : dataMock.tables,
       rawTables: tableRows,
+      catalog: catalogRows,
+      freshnessItems,
+      catalogVersion: catalog?.catalog_version || freshness?.catalog_version || '',
       imports: records.length
         ? records.map((row: any) => [
             row.type || '--',
@@ -76,9 +90,9 @@ export async function getDataCenterData() {
         : dataMock.imports,
       rawImportExportRecords: records
     }, {
-      empty: !sources.length && !tableRows.length && !records.length,
-      mockFallback: !sources.length && !tableRows.length,
-      fallbackReason: !sources.length && !tableRows.length ? '数据状态和数据库表接口未返回真实记录，数据中心展示本地兜底结构。' : undefined,
+      empty: !sources.length && !tableRows.length && !records.length && !catalogRows.length,
+      mockFallback: !sources.length && !tableRows.length && !catalogRows.length,
+      fallbackReason: !sources.length && !tableRows.length && !catalogRows.length ? '数据状态、数据目录和数据库表接口未返回真实记录，数据中心展示本地兜底结构。' : undefined,
       partialErrors
     });
   } catch (error) {
