@@ -6,7 +6,10 @@
 
 - 当前分支：`p2-forecast-accuracy-model-engineering`
 - P2 基线来源提交：`410d7c4c9fa6adf77413334d14a7e66254570df0`
+- P2 dataset builder 提交：`5af1d523cccd999d7ca3d36ca9928e48e8783768`
+- P2 baseline/backtest 与 schema guard 提交：`26b0425bf90074c8bd1bd1512f1ea9cf88727899`
 - 远程仓库：`https://github.com/wyg916/power_rag_forecast.git`
+- 当前推送状态：未完成。`git push -u origin p2-forecast-accuracy-model-engineering` 在 124 秒后超时；随后 `git ls-remote --heads origin p2-forecast-accuracy-model-engineering` 返回 `Recv failure: Connection was reset`。未触碰 `main`，未强推。
 - 本轮是否修改业务逻辑：否。现阶段只新增 `prediction_engine/dataset_builder.py`、聚焦测试和本报告；未修改现有预测算法、预测 API、P1 SQL 安全拦截、AI 查数链路。
 - 本轮是否删除 legacy 脚本：否。
 - 本轮是否提交模型权重或大体积工件：否。`model_artifacts/` 和 `output/` 仍由 `.gitignore` 忽略。
