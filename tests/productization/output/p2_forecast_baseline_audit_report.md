@@ -178,3 +178,108 @@
 - 整体/高峰/尖峰/极端天气分组指标。
 - 训练与预测 feature schema 一致性校验。
 - active model 注册的 PostgreSQL 兼容性核查。
+
+## 12. P2-2 baseline/backtest 工程底座补充
+
+补充时间：2026-06-13 13:03（本地运行态）
+
+新增模块：`prediction_engine/baseline_backtest.py`
+
+新增模块：`prediction_engine/schema_guard.py`
+
+本次补充仍未修改现有预测算法、预测 API、P1 SQL 安全拦截或 AI 查数链路。
+
+### baseline 定义
+
+当前只建立可解释的 naive baseline，不训练新模型：
+
+- `persistence_24h`：使用 `da_price_lag_24`。
+- `persistence_168h`：使用 `da_price_lag_168`。
+- `rolling_mean_24h`：使用 `da_price_roll_mean_24`。
+- `rolling_mean_168h`：使用 `da_price_roll_mean_168`。
+- `blend_lag24_lag168`：使用 `da_price_lag_24` 与 `da_price_lag_168` 均值。
+
+### backtest 与 schema gate
+
+- 输入：`output/p2/train_dataset.csv`、`validation_dataset.csv`、`test_dataset.csv`、`feature_schema.json`。
+- 默认强制校验 `feature_schema.json` 与 train/validation/test 字段一致性。
+- 若 schema 缺失字段，默认直接中断，不继续输出误导性指标。
+- 回测完全沿用 P2 dataset builder 的时间切分，不做随机打乱。
+- 尖峰阈值从训练集目标列分位数计算，当前使用 `0.95` 分位，阈值为 `149.37279159999994`。
+
+`schema_guard` 提供后续训练/预测共用的 feature frame 校验入口：
+
+- `load_feature_schema()`：读取 `feature_schema.json`。
+- `validate_feature_frame_schema()`：检查缺失字段、额外字段、字段顺序和数值 dtype 兼容性。
+- `select_schema_features()`：按 schema 顺序抽取特征，不一致时直接抛错。
+
+### 输出文件
+
+- `output/p2/baseline_metrics.csv`
+- `output/p2/baseline_backtest_summary.json`
+
+`output/p2` 为本地运行输出，继续由 `.gitignore` 忽略，不提交。
+
+### 指标覆盖
+
+回测输出以下回归指标：
+
+- MAE
+- RMSE
+- MAPE
+- R2
+- bias
+- median absolute error
+- p90 absolute error
+
+回测输出以下分组：
+
+- overall
+- peak
+- spike
+- extreme_weather
+
+尖峰识别额外输出：
+
+- precision
+- recall
+- f1
+- accuracy
+- tp/fp/fn/tn
+
+### 真实数据 baseline 结果摘要
+
+验证集整体最优 baseline：
+
+- baseline：`blend_lag24_lag168`
+- rows：720
+- MAE：18.510646991666665
+- RMSE：29.658156451372776
+- MAPE：29.650525496719425
+- R2：0.4902090573667719
+
+测试集整体表现：
+
+- `persistence_24h`：MAE 34.29408390152566，RMSE 93.67125526177168，MAPE 35.302029921714656，R2 0.3286761290611552。
+- `blend_lag24_lag168`：MAE 42.388619422330095，RMSE 97.73819555130957，MAPE 51.77182285985077，R2 0.2691166921431568。
+- `rolling_mean_24h`：MAE 52.69812948763291，RMSE 103.41270763688917，MAPE 85.89925842028818，R2 0.1817853927349169。
+- `rolling_mean_168h`：MAE 65.49332094997028，RMSE 118.58911856319305，MAPE 115.35347830226013，R2 -0.07599212309401482。
+- `persistence_168h`：MAE 67.36978587517338，RMSE 149.6562679665856，MAPE 87.12726432870927，R2 -0.7135991244014344。
+
+`blend_lag24_lag168` 分组结果：
+
+- validation overall：rows 720，MAE 18.510646991666665，RMSE 29.658156451372776。
+- validation peak：rows 300，MAE 22.914081941666662，RMSE 37.197264372066016。
+- validation spike：rows 26，MAE 84.05322821153845，RMSE 101.13836397546308。
+- validation extreme_weather：rows 134，MAE 36.52091495522388，RMSE 52.928763393539285。
+- test overall：rows 721，MAE 42.388619422330095，RMSE 97.73819555130957。
+- test peak：rows 300，MAE 43.89187755166667，RMSE 96.0764986733798。
+- test spike：rows 91，MAE 150.99550080219777，RMSE 231.21381221008906。
+- test extreme_weather：rows 142，MAE 94.5251949612676，RMSE 185.59059219294502。
+
+### 结论
+
+- baseline/backtest 底座已可复现运行。
+- schema gate 已落地，字段不一致会阻断回测。
+- 当前测试集和验证集存在明显表现差异，后续模型优化必须同时汇报 validation/test、overall/peak/spike/extreme_weather 指标。
+- 当前尖峰和极端天气分组误差显著高于 overall，是 P2 后续模型改进的优先问题。
