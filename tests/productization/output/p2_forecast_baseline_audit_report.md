@@ -286,3 +286,159 @@
 - schema gate 已落地，字段不一致会阻断回测。
 - 当前测试集和验证集存在明显表现差异，后续模型优化必须同时汇报 validation/test、overall/peak/spike/extreme_weather 指标。
 - 当前尖峰和极端天气分组误差显著高于 overall，是 P2 后续模型改进的优先问题。
+
+## 13. P2-2 至 P2-5 可复现回测底座交付
+
+补充时间：2026-06-13 13:31（本地运行态）
+
+### 新增模块
+
+- `prediction_engine/feature_builder.py`
+- `prediction_engine/leakage_checker.py`
+- `prediction_engine/backtest_runner.py`
+
+本轮未修改前端，未执行 `npm run build`。本轮未修改 P1 SQL 安全拦截逻辑，未开放写 SQL，未修改 AI 查数链路，未替换现有 legacy 预测链路。
+
+### feature_builder
+
+目标：统一训练和预测的特征生成与 schema 合同。
+
+当前输出：
+
+- `output/p2/feature_schema.json`
+- `output/p2/feature_summary.json`
+
+schema 已包含：
+
+- feature name
+- dtype
+- nullable
+- source table
+- source column
+- transform
+- allow_missing_at_prediction
+- leakage_risk
+
+真实数据运行结果：
+
+- 特征数：62
+- source table 统计：raw_load 12，raw_weather_or_weather_forecast 2，engineered 17，raw_market 23，raw_weather 8。
+- 需要预测时天气预报合同的字段：`temperature`、`wind_speed`。
+- 新增 baseline 需要的 7 天同小时字段：`da_price_same_hour_7d_mean`、`da_price_same_hour_7d_std`。
+
+### leakage_checker
+
+输出：
+
+- `output/p2/leakage_check_result.json`
+- `output/p2/leakage_check_report.md`
+
+真实数据运行结果：
+
+- acceptable_for_backtest：true
+- high_risk_count：0
+- medium_risk_count：0
+- time_split_chronological：true
+- random_shuffle_detected：false
+- target_not_used_as_feature：true
+- forecast_results_not_used：true
+- feature_time_not_after_target：true
+
+切分窗口：
+
+- train：16,077 行，2024-06-10T00:00:00 至 2026-04-10T22:00:00
+- validation：720 行，2026-04-10T23:00:00 至 2026-05-10T22:00:00
+- test：721 行，2026-05-10T23:00:00 至 2026-06-09T23:00:00
+
+### backtest_runner
+
+输出：
+
+- `output/p2/metrics.json`
+- `output/p2/backtest_report.md`
+- `output/p2/backtest_predictions.csv`
+
+已支持：
+
+- 时间切分 backtest。
+- baseline 模型。
+- legacy active model 包装入口。
+- 后续新增模型对比扩展。
+- 高风险泄露时标记 backtest 不可接受。
+- 指标与 baseline 对比，不报告孤立单次训练结果。
+
+本轮 baseline 方法：
+
+- `persistence_24h`：使用前一天同小时价格。
+- `rolling_same_hour_7d`：使用过去 7 天同小时价格均值。
+- `legacy_active_model`：已接入包装入口；真实运行时因 active legacy 模型期望 100 个 P2 schema 中不存在的 legacy 特征，按 schema gate 跳过并记录 warning，未做不公平比较。
+
+### metrics.json 摘要
+
+backtest 可接受性：
+
+- acceptable_for_backtest：true
+- leakage high risk：0
+- spike threshold：149.37279159999994
+
+validation：
+
+- `persistence_24h`：MAE 18.843595069444444，RMSE 30.050441718651506，MAPE 31.0986443904978，R2 0.47663396839886585，样本数 720。
+- `rolling_same_hour_7d`：MAE 21.88089577559524，RMSE 36.19413866867949，MAPE 36.005685639543984，R2 0.24075786207720673，样本数 720。
+
+test：
+
+- `persistence_24h`：MAE 34.29408390152566，RMSE 93.67125526177168，MAPE 35.302029921714656，R2 0.3286761290611552，样本数 721。
+- `rolling_same_hour_7d`：MAE 55.49389364473945，RMSE 116.244296436898，MAPE 74.36970283314702，R2 -0.033862341551309516，样本数 721。
+
+当前结论：
+
+- `persistence_24h` 在 validation 和 test 上均优于 `rolling_same_hour_7d`。
+- 当前 legacy active model 因 schema 不一致，不能与 P2 baseline 做公平比较；后续需要为 legacy 模型补齐独立 schema 适配或只在 legacy 原生特征集上比较。
+- 后续模型优化必须超过 `persistence_24h`，并同时报告 overall、peak、spike、extreme_weather、per-hour 指标。
+
+### P1 安全回归
+
+已执行：
+
+- `python -m pytest tests/test_data_trust_service.py tests/test_ai_database_table_freshness.py -q --durations=20`
+
+结果：
+
+- 11 passed
+
+覆盖：
+
+- `users` / `audit_logs` 敏感表拦截。
+- insert/update/delete/drop/truncate/alter/create 写 SQL 拦截。
+- 多语句和危险函数如 `pg_sleep` 拦截。
+- 最大行数限制。
+- P1 数据目录、字段映射、新鲜度和 AI 查数工具合同未回退。
+
+### 指定验收命令
+
+已执行：
+
+- `python -m py_compile prediction_engine/dataset_builder.py prediction_engine/feature_builder.py prediction_engine/leakage_checker.py prediction_engine/backtest_runner.py`
+- `python -m pytest tests/test_p2_dataset_builder.py tests/test_p2_feature_schema.py tests/test_p2_leakage_checker.py tests/test_p2_backtest_runner.py -q --durations=20`
+
+结果：
+
+- py_compile 通过。
+- P2 指定测试 9 passed。
+
+### 是否可以进入 P2 下一步模型优化
+
+可以进入 P2 下一步模型优化，但必须以当前 `metrics.json` 中的 `persistence_24h` 作为最低 baseline 门槛，并保持以下硬约束：
+
+- 任一候选模型必须通过 `feature_schema.json` 一致性校验。
+- 任一候选模型必须通过 `leakage_checker`。
+- 任一候选模型必须和 baseline 对比 validation/test、overall/peak/spike/extreme_weather/per-hour 指标。
+- 不允许只报告单次训练结果。
+
+### 最终推送状态
+
+- 本轮功能提交已在本地完成。
+- `git push -u origin p2-forecast-accuracy-model-engineering` 失败。
+- 错误：`fatal: unable to access 'https://github.com/wyg916/power_rag_forecast.git/': Recv failure: Connection was reset`
+- 未触碰 `main`，未强推。

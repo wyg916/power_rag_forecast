@@ -1,0 +1,42 @@
+{
+  "created_at": "2026-06-13T13:30:15",
+  "config": {
+    "dataset_dir": "output\\p2",
+    "output_dir": "output\\p2",
+    "target_field": "da_price",
+    "time_field": "datetime"
+  },
+  "acceptable_for_backtest": true,
+  "high_risk_count": 0,
+  "medium_risk_count": 0,
+  "issue_count": 0,
+  "issues": [],
+  "checks": {
+    "time_split_chronological": true,
+    "random_shuffle_detected": false,
+    "target_not_used_as_feature": true,
+    "forecast_results_not_used": true,
+    "feature_time_not_after_target": true
+  },
+  "split_windows": {
+    "train": {
+      "rows": 16077,
+      "start": "2024-06-10T00:00:00",
+      "end": "2026-04-10T22:00:00"
+    },
+    "validation": {
+      "rows": 720,
+      "start": "2026-04-10T23:00:00",
+      "end": "2026-05-10T22:00:00"
+    },
+    "test": {
+      "rows": 721,
+      "start": "2026-05-10T23:00:00",
+      "end": "2026-06-09T23:00:00"
+    }
+  },
+  "output_paths": {
+    "leakage_check_result": "output\\p2\\leakage_check_result.json",
+    "leakage_check_report": "output\\p2\\leakage_check_report.md"
+  }
+}

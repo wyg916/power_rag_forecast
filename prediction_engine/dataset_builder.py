@@ -15,6 +15,8 @@ from sqlalchemy import text
 from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 
+from prediction_engine.feature_builder import FeatureBuildConfig, build_features
+
 
 TIME_FIELD = "datetime"
 TARGET_FIELD = "da_price"
@@ -457,6 +459,7 @@ def write_dataset_outputs(
     output_dir: Path,
     splits: dict[str, pd.DataFrame],
     feature_schema: dict[str, Any],
+    feature_summary: dict[str, Any],
     summary: dict[str, Any],
     output_format: str = "csv",
 ) -> dict[str, str]:
@@ -477,12 +480,15 @@ def write_dataset_outputs(
 
     summary_path = output_dir / "dataset_summary.json"
     schema_path = output_dir / "feature_schema.json"
+    feature_summary_path = output_dir / "feature_summary.json"
     leakage_path = output_dir / "leakage_check.json"
     _write_json(summary_path, summary)
     _write_json(schema_path, feature_schema)
+    _write_json(feature_summary_path, feature_summary)
     _write_json(leakage_path, summary.get("leakage_check", {}))
     paths["dataset_summary"] = str(summary_path)
     paths["feature_schema"] = str(schema_path)
+    paths["feature_summary"] = str(feature_summary_path)
     paths["leakage_check"] = str(leakage_path)
     return paths
 
@@ -507,9 +513,16 @@ def build_p2_datasets(config: DatasetBuilderConfig | None = None, engine: Engine
     if cfg.max_rows:
         assembled = assembled.tail(int(cfg.max_rows)).reset_index(drop=True)
         warnings.append(f"max_rows={cfg.max_rows} applied after source assembly.")
-    dataset, feature_columns, segment_columns = add_p2_safe_features(assembled, cfg.target_field)
+    feature_result = build_features(
+        assembled,
+        FeatureBuildConfig(target_field=cfg.target_field, time_field=cfg.time_field, output_dir=cfg.output_dir, mode="training"),
+    )
+    dataset = feature_result.frame
+    feature_columns = feature_result.feature_columns
+    segment_columns = feature_result.segment_columns
     splits, split_info = split_by_time(dataset, cfg)
-    feature_schema = build_feature_schema(dataset, feature_columns, segment_columns, cfg.target_field)
+    feature_schema = feature_result.feature_schema
+    feature_summary = feature_result.feature_summary
     schema_check = validate_feature_schema_consistency(splits, feature_columns)
     leak_check = leakage_check(dataset, feature_columns, split_info)
 
@@ -527,13 +540,14 @@ def build_p2_datasets(config: DatasetBuilderConfig | None = None, engine: Engine
         "feature_count": len(feature_columns),
         "feature_columns": feature_columns,
         "segment_columns": segment_columns,
+        "feature_summary": feature_summary,
         "assembly_diagnostics": diagnostics,
         "missing_stats": _missing_stats(dataset[[cfg.time_field, cfg.target_field] + feature_columns]),
         "split": split_info,
         "schema_consistency": schema_check,
         "leakage_check": leak_check,
     }
-    output_paths = write_dataset_outputs(cfg.output_dir, splits, feature_schema, summary, cfg.output_format)
+    output_paths = write_dataset_outputs(cfg.output_dir, splits, feature_schema, feature_summary, summary, cfg.output_format)
     summary["output_paths"] = output_paths
     _write_json(Path(output_paths["dataset_summary"]), summary)
     return {"summary": summary, "feature_schema": feature_schema, "splits": splits, "output_paths": output_paths}

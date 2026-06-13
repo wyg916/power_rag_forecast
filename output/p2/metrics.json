@@ -1,0 +1,1096 @@
+{
+  "created_at": "2026-06-13T13:30:26",
+  "config": {
+    "dataset_dir": "output\\p2",
+    "output_dir": "output\\p2",
+    "target_field": "da_price",
+    "time_field": "datetime",
+    "spike_quantile": 0.95,
+    "include_legacy": true,
+    "fail_on_high_risk_leakage": false
+  },
+  "acceptable_for_backtest": true,
+  "spike_threshold": 149.37279159999994,
+  "baseline_methods": {
+    "persistence_24h": "使用前一天同小时价格 da_price_lag_24 作为预测。",
+    "rolling_same_hour_7d": "使用过去 7 天同小时价格均值作为预测。",
+    "legacy_active_model": "可选包装 model_ops.active_model_loader 的当前 active legacy 模型；不可用时只记录 warning。"
+  },
+  "schema_checks": {
+    "train": {
+      "ok": true,
+      "expected_feature_count": 62,
+      "actual_column_count": 80,
+      "missing_features": [],
+      "extra_columns": [
+        "datetime",
+        "da_price",
+        "rt_price",
+        "lmp",
+        "raw_market_row_count",
+        "actual_load",
+        "raw_load_row_count",
+        "humidity",
+        "raw_weather_row_count",
+        "solar_mw",
+        "wind_mw",
+        "storage_mw",
+        "renewable_total_mw",
+        "raw_renewable_row_count",
+        "humidity_lag_1",
+        "humidity_lag_24",
+        "renewable_total_mw_lag_1",
+        "renewable_total_mw_lag_24"
+      ],
+      "order_ok": true,
+      "dtype_mismatches": [],
+      "ordered_feature_columns": [
+        "forecast_load",
+        "temperature",
+        "wind_speed",
+        "hour",
+        "day_of_week",
+        "month",
+        "day",
+        "day_of_year",
+        "week_of_year",
+        "is_weekend",
+        "hour_sin",
+        "hour_cos",
+        "dow_sin",
+        "dow_cos",
+        "month_sin",
+        "month_cos",
+        "is_morning_peak",
+        "is_evening_peak",
+        "is_peak_hour",
+        "da_price_lag_1",
+        "da_price_lag_2",
+        "da_price_lag_3",
+        "da_price_lag_24",
+        "da_price_lag_48",
+        "da_price_lag_72",
+        "da_price_lag_96",
+        "da_price_lag_120",
+        "da_price_lag_144",
+        "da_price_lag_168",
+        "forecast_load_lag_1",
+        "forecast_load_lag_24",
+        "forecast_load_lag_168",
+        "actual_load_lag_1",
+        "actual_load_lag_24",
+        "actual_load_lag_168",
+        "temperature_lag_1",
+        "temperature_lag_24",
+        "wind_speed_lag_1",
+        "wind_speed_lag_24",
+        "rt_price_lag_24",
+        "rt_price_lag_168",
+        "lmp_lag_24",
+        "lmp_lag_168",
+        "da_price_roll_mean_24",
+        "da_price_roll_std_24",
+        "da_price_roll_max_24",
+        "forecast_load_roll_mean_24",
+        "forecast_load_roll_std_24",
+        "temperature_roll_mean_24",
+        "temperature_roll_std_24",
+        "da_price_roll_mean_168",
+        "da_price_roll_std_168",
+        "da_price_roll_max_168",
+        "forecast_load_roll_mean_168",
+        "forecast_load_roll_std_168",
+        "temperature_roll_mean_168",
+        "temperature_roll_std_168",
+        "da_price_same_hour_7d_mean",
+        "da_price_same_hour_7d_std",
+        "forecast_load_x_peak",
+        "price_lag_24_vs_168",
+        "is_extreme_weather"
+      ]
+    },
+    "validation": {
+      "ok": true,
+      "expected_feature_count": 62,
+      "actual_column_count": 80,
+      "missing_features": [],
+      "extra_columns": [
+        "datetime",
+        "da_price",
+        "rt_price",
+        "lmp",
+        "raw_market_row_count",
+        "actual_load",
+        "raw_load_row_count",
+        "humidity",
+        "raw_weather_row_count",
+        "solar_mw",
+        "wind_mw",
+        "storage_mw",
+        "renewable_total_mw",
+        "raw_renewable_row_count",
+        "humidity_lag_1",
+        "humidity_lag_24",
+        "renewable_total_mw_lag_1",
+        "renewable_total_mw_lag_24"
+      ],
+      "order_ok": true,
+      "dtype_mismatches": [],
+      "ordered_feature_columns": [
+        "forecast_load",
+        "temperature",
+        "wind_speed",
+        "hour",
+        "day_of_week",
+        "month",
+        "day",
+        "day_of_year",
+        "week_of_year",
+        "is_weekend",
+        "hour_sin",
+        "hour_cos",
+        "dow_sin",
+        "dow_cos",
+        "month_sin",
+        "month_cos",
+        "is_morning_peak",
+        "is_evening_peak",
+        "is_peak_hour",
+        "da_price_lag_1",
+        "da_price_lag_2",
+        "da_price_lag_3",
+        "da_price_lag_24",
+        "da_price_lag_48",
+        "da_price_lag_72",
+        "da_price_lag_96",
+        "da_price_lag_120",
+        "da_price_lag_144",
+        "da_price_lag_168",
+        "forecast_load_lag_1",
+        "forecast_load_lag_24",
+        "forecast_load_lag_168",
+        "actual_load_lag_1",
+        "actual_load_lag_24",
+        "actual_load_lag_168",
+        "temperature_lag_1",
+        "temperature_lag_24",
+        "wind_speed_lag_1",
+        "wind_speed_lag_24",
+        "rt_price_lag_24",
+        "rt_price_lag_168",
+        "lmp_lag_24",
+        "lmp_lag_168",
+        "da_price_roll_mean_24",
+        "da_price_roll_std_24",
+        "da_price_roll_max_24",
+        "forecast_load_roll_mean_24",
+        "forecast_load_roll_std_24",
+        "temperature_roll_mean_24",
+        "temperature_roll_std_24",
+        "da_price_roll_mean_168",
+        "da_price_roll_std_168",
+        "da_price_roll_max_168",
+        "forecast_load_roll_mean_168",
+        "forecast_load_roll_std_168",
+        "temperature_roll_mean_168",
+        "temperature_roll_std_168",
+        "da_price_same_hour_7d_mean",
+        "da_price_same_hour_7d_std",
+        "forecast_load_x_peak",
+        "price_lag_24_vs_168",
+        "is_extreme_weather"
+      ]
+    },
+    "test": {
+      "ok": true,
+      "expected_feature_count": 62,
+      "actual_column_count": 80,
+      "missing_features": [],
+      "extra_columns": [
+        "datetime",
+        "da_price",
+        "rt_price",
+        "lmp",
+        "raw_market_row_count",
+        "actual_load",
+        "raw_load_row_count",
+        "humidity",
+        "raw_weather_row_count",
+        "solar_mw",
+        "wind_mw",
+        "storage_mw",
+        "renewable_total_mw",
+        "raw_renewable_row_count",
+        "humidity_lag_1",
+        "humidity_lag_24",
+        "renewable_total_mw_lag_1",
+        "renewable_total_mw_lag_24"
+      ],
+      "order_ok": true,
+      "dtype_mismatches": [],
+      "ordered_feature_columns": [
+        "forecast_load",
+        "temperature",
+        "wind_speed",
+        "hour",
+        "day_of_week",
+        "month",
+        "day",
+        "day_of_year",
+        "week_of_year",
+        "is_weekend",
+        "hour_sin",
+        "hour_cos",
+        "dow_sin",
+        "dow_cos",
+        "month_sin",
+        "month_cos",
+        "is_morning_peak",
+        "is_evening_peak",
+        "is_peak_hour",
+        "da_price_lag_1",
+        "da_price_lag_2",
+        "da_price_lag_3",
+        "da_price_lag_24",
+        "da_price_lag_48",
+        "da_price_lag_72",
+        "da_price_lag_96",
+        "da_price_lag_120",
+        "da_price_lag_144",
+        "da_price_lag_168",
+        "forecast_load_lag_1",
+        "forecast_load_lag_24",
+        "forecast_load_lag_168",
+        "actual_load_lag_1",
+        "actual_load_lag_24",
+        "actual_load_lag_168",
+        "temperature_lag_1",
+        "temperature_lag_24",
+        "wind_speed_lag_1",
+        "wind_speed_lag_24",
+        "rt_price_lag_24",
+        "rt_price_lag_168",
+        "lmp_lag_24",
+        "lmp_lag_168",
+        "da_price_roll_mean_24",
+        "da_price_roll_std_24",
+        "da_price_roll_max_24",
+        "forecast_load_roll_mean_24",
+        "forecast_load_roll_std_24",
+        "temperature_roll_mean_24",
+        "temperature_roll_std_24",
+        "da_price_roll_mean_168",
+        "da_price_roll_std_168",
+        "da_price_roll_max_168",
+        "forecast_load_roll_mean_168",
+        "forecast_load_roll_std_168",
+        "temperature_roll_mean_168",
+        "temperature_roll_std_168",
+        "da_price_same_hour_7d_mean",
+        "da_price_same_hour_7d_std",
+        "forecast_load_x_peak",
+        "price_lag_24_vs_168",
+        "is_extreme_weather"
+      ]
+    }
+  },
+  "leakage_check": {
+    "created_at": "2026-06-13T13:30:15",
+    "config": {
+      "dataset_dir": "output\\p2",
+      "output_dir": "output\\p2",
+      "target_field": "da_price",
+      "time_field": "datetime"
+    },
+    "acceptable_for_backtest": true,
+    "high_risk_count": 0,
+    "medium_risk_count": 0,
+    "issue_count": 0,
+    "issues": [],
+    "checks": {
+      "time_split_chronological": true,
+      "random_shuffle_detected": false,
+      "target_not_used_as_feature": true,
+      "forecast_results_not_used": true,
+      "feature_time_not_after_target": true
+    },
+    "split_windows": {
+      "train": {
+        "rows": 16077,
+        "start": "2024-06-10T00:00:00",
+        "end": "2026-04-10T22:00:00"
+      },
+      "validation": {
+        "rows": 720,
+        "start": "2026-04-10T23:00:00",
+        "end": "2026-05-10T22:00:00"
+      },
+      "test": {
+        "rows": 721,
+        "start": "2026-05-10T23:00:00",
+        "end": "2026-06-09T23:00:00"
+      }
+    },
+    "output_paths": {
+      "leakage_check_result": "output\\p2\\leakage_check_result.json",
+      "leakage_check_report": "output\\p2\\leakage_check_report.md"
+    }
+  },
+  "metrics": [
+    {
+      "split": "validation",
+      "model": "persistence_24h",
+      "time_range": {
+        "start": "2026-04-10T23:00:00",
+        "end": "2026-05-10T22:00:00"
+      },
+      "overall": {
+        "mae": 18.843595069444444,
+        "rmse": 30.050441718651506,
+        "mape": 31.0986443904978,
+        "r2": 0.47663396839886585,
+        "sample_count": 720
+      },
+      "peak": {
+        "peak_hour_mae": 24.580582213333333,
+        "peak_hour_rmse": 38.92733528046465,
+        "peak_hour_bias": -0.5590475199999997,
+        "peak_hour_sample_count": 300
+      },
+      "spike": {
+        "spike_threshold": 149.37279159999994,
+        "precision": 0.4230769230769231,
+        "recall": 0.4230769230769231,
+        "f1": 0.4230769230769231,
+        "false_positive_count": 15,
+        "false_negative_count": 15,
+        "true_positive_count": 11
+      },
+      "extreme_weather": {
+        "definition": "is_extreme_weather=1 from shifted rolling temperature quantiles",
+        "extreme_weather_mae": 30.88016044776119,
+        "extreme_weather_rmse": 47.67942684458275,
+        "sample_count": 134
+      },
+      "hourly": [
+        {
+          "hour": 0,
+          "mae": 12.128099233333332,
+          "rmse": 16.516283895310668,
+          "sample_count": 30
+        },
+        {
+          "hour": 1,
+          "mae": 7.988109333333335,
+          "rmse": 11.471696227827865,
+          "sample_count": 30
+        },
+        {
+          "hour": 2,
+          "mae": 7.565844066666667,
+          "rmse": 10.286214242343798,
+          "sample_count": 30
+        },
+        {
+          "hour": 3,
+          "mae": 6.869609866666665,
+          "rmse": 9.098264324736192,
+          "sample_count": 30
+        },
+        {
+          "hour": 4,
+          "mae": 6.4140667,
+          "rmse": 9.121886326114712,
+          "sample_count": 30
+        },
+        {
+          "hour": 5,
+          "mae": 9.493461866666667,
+          "rmse": 11.728736053403093,
+          "sample_count": 30
+        },
+        {
+          "hour": 6,
+          "mae": 23.0461428,
+          "rmse": 33.20919953546839,
+          "sample_count": 30
+        },
+        {
+          "hour": 7,
+          "mae": 20.53066073333334,
+          "rmse": 28.991820582837693,
+          "sample_count": 30
+        },
+        {
+          "hour": 8,
+          "mae": 13.679640233333332,
+          "rmse": 19.357683567600606,
+          "sample_count": 30
+        },
+        {
+          "hour": 9,
+          "mae": 13.620130866666667,
+          "rmse": 19.414679350526658,
+          "sample_count": 30
+        },
+        {
+          "hour": 10,
+          "mae": 13.657849166666665,
+          "rmse": 19.054618771602748,
+          "sample_count": 30
+        },
+        {
+          "hour": 11,
+          "mae": 15.524179633333336,
+          "rmse": 20.245813690670534,
+          "sample_count": 30
+        },
+        {
+          "hour": 12,
+          "mae": 14.54623533333333,
+          "rmse": 17.54522497011379,
+          "sample_count": 30
+        },
+        {
+          "hour": 13,
+          "mae": 18.9919674,
+          "rmse": 22.155164945322174,
+          "sample_count": 30
+        },
+        {
+          "hour": 14,
+          "mae": 21.173821466666666,
+          "rmse": 25.237910388495223,
+          "sample_count": 30
+        },
+        {
+          "hour": 15,
+          "mae": 22.820085199999998,
+          "rmse": 28.357764015080225,
+          "sample_count": 30
+        },
+        {
+          "hour": 16,
+          "mae": 26.797903799999997,
+          "rmse": 35.591631608915065,
+          "sample_count": 30
+        },
+        {
+          "hour": 17,
+          "mae": 30.049784,
+          "rmse": 42.963015601878084,
+          "sample_count": 30
+        },
+        {
+          "hour": 18,
+          "mae": 37.9633343,
+          "rmse": 55.58019505846634,
+          "sample_count": 30
+        },
+        {
+          "hour": 19,
+          "mae": 50.588700100000004,
+          "rmse": 73.38522538437174,
+          "sample_count": 30
+        },
+        {
+          "hour": 20,
+          "mae": 40.928851699999996,
+          "rmse": 52.77961422298114,
+          "sample_count": 30
+        },
+        {
+          "hour": 21,
+          "mae": 16.266332600000002,
+          "rmse": 20.618911343438675,
+          "sample_count": 30
+        },
+        {
+          "hour": 22,
+          "mae": 11.263708433333337,
+          "rmse": 14.182079426914068,
+          "sample_count": 30
+        },
+        {
+          "hour": 23,
+          "mae": 10.337762833333331,
+          "rmse": 12.33131030074133,
+          "sample_count": 30
+        }
+      ]
+    },
+    {
+      "split": "validation",
+      "model": "rolling_same_hour_7d",
+      "time_range": {
+        "start": "2026-04-10T23:00:00",
+        "end": "2026-05-10T22:00:00"
+      },
+      "overall": {
+        "mae": 21.88089577559524,
+        "rmse": 36.19413866867949,
+        "mape": 36.005685639543984,
+        "r2": 0.24075786207720673,
+        "sample_count": 720
+      },
+      "peak": {
+        "peak_hour_mae": 28.27713019523809,
+        "peak_hour_rmse": 45.859013324412146,
+        "peak_hour_bias": -1.0280889352380962,
+        "peak_hour_sample_count": 300
+      },
+      "spike": {
+        "spike_threshold": 149.37279159999994,
+        "precision": 0.11764705882352941,
+        "recall": 0.07692307692307693,
+        "f1": 0.0930232558139535,
+        "false_positive_count": 15,
+        "false_negative_count": 24,
+        "true_positive_count": 2
+      },
+      "extreme_weather": {
+        "definition": "is_extreme_weather=1 from shifted rolling temperature quantiles",
+        "extreme_weather_mae": 40.93296970149253,
+        "extreme_weather_rmse": 64.38013900077017,
+        "sample_count": 134
+      },
+      "hourly": [
+        {
+          "hour": 0,
+          "mae": 11.870995823809523,
+          "rmse": 15.623770480020706,
+          "sample_count": 30
+        },
+        {
+          "hour": 1,
+          "mae": 9.342711214285714,
+          "rmse": 10.944518444386699,
+          "sample_count": 30
+        },
+        {
+          "hour": 2,
+          "mae": 8.684964604761905,
+          "rmse": 10.20942200220777,
+          "sample_count": 30
+        },
+        {
+          "hour": 3,
+          "mae": 8.296055719047617,
+          "rmse": 9.65158520322956,
+          "sample_count": 30
+        },
+        {
+          "hour": 4,
+          "mae": 8.555004642857142,
+          "rmse": 10.229623920853863,
+          "sample_count": 30
+        },
+        {
+          "hour": 5,
+          "mae": 9.694243914285716,
+          "rmse": 12.485264884475844,
+          "sample_count": 30
+        },
+        {
+          "hour": 6,
+          "mae": 24.616060190476194,
+          "rmse": 35.74253516267328,
+          "sample_count": 30
+        },
+        {
+          "hour": 7,
+          "mae": 24.441403685714285,
+          "rmse": 33.793537842674226,
+          "sample_count": 30
+        },
+        {
+          "hour": 8,
+          "mae": 11.812890366666664,
+          "rmse": 15.80462822419278,
+          "sample_count": 30
+        },
+        {
+          "hour": 9,
+          "mae": 12.039929609523808,
+          "rmse": 15.57933306009705,
+          "sample_count": 30
+        },
+        {
+          "hour": 10,
+          "mae": 12.7281217,
+          "rmse": 16.846804507510353,
+          "sample_count": 30
+        },
+        {
+          "hour": 11,
+          "mae": 15.953181800000005,
+          "rmse": 20.483710586936766,
+          "sample_count": 30
+        },
+        {
+          "hour": 12,
+          "mae": 16.511325866666667,
+          "rmse": 19.371380483417592,
+          "sample_count": 30
+        },
+        {
+          "hour": 13,
+          "mae": 20.831291709523803,
+          "rmse": 25.39140565603534,
+          "sample_count": 30
+        },
+        {
+          "hour": 14,
+          "mae": 24.66878177619048,
+          "rmse": 31.15888998632149,
+          "sample_count": 30
+        },
+        {
+          "hour": 15,
+          "mae": 28.65565426666667,
+          "rmse": 38.81328193912097,
+          "sample_count": 30
+        },
+        {
+          "hour": 16,
+          "mae": 34.80670575714285,
+          "rmse": 48.59739056979578,
+          "sample_count": 30
+        },
+        {
+          "hour": 17,
+          "mae": 40.807961119047626,
+          "rmse": 58.42001973377456,
+          "sample_count": 30
+        },
+        {
+          "hour": 18,
+          "mae": 52.53200239523811,
+          "rmse": 73.4105460526853,
+          "sample_count": 30
+        },
+        {
+          "hour": 19,
+          "mae": 65.68107463809524,
+          "rmse": 89.54635355107783,
+          "sample_count": 30
+        },
+        {
+          "hour": 20,
+          "mae": 46.07217515714285,
+          "rmse": 59.33729454937918,
+          "sample_count": 30
+        },
+        {
+          "hour": 21,
+          "mae": 16.894462409523808,
+          "rmse": 22.05646542837341,
+          "sample_count": 30
+        },
+        {
+          "hour": 22,
+          "mae": 10.236680509523811,
+          "rmse": 13.363655770774292,
+          "sample_count": 30
+        },
+        {
+          "hour": 23,
+          "mae": 9.407819738095238,
+          "rmse": 11.729215764778298,
+          "sample_count": 30
+        }
+      ]
+    },
+    {
+      "split": "test",
+      "model": "persistence_24h",
+      "time_range": {
+        "start": "2026-05-10T23:00:00",
+        "end": "2026-06-09T23:00:00"
+      },
+      "overall": {
+        "mae": 34.29408390152566,
+        "rmse": 93.67125526177168,
+        "mape": 35.302029921714656,
+        "r2": 0.3286761290611552,
+        "sample_count": 721
+      },
+      "peak": {
+        "peak_hour_mae": 34.98774460666666,
+        "peak_hour_rmse": 91.222870825881,
+        "peak_hour_bias": -0.6375805133333349,
+        "peak_hour_sample_count": 300
+      },
+      "spike": {
+        "spike_threshold": 149.37279159999994,
+        "precision": 0.6666666666666666,
+        "recall": 0.6373626373626373,
+        "f1": 0.651685393258427,
+        "false_positive_count": 29,
+        "false_negative_count": 33,
+        "true_positive_count": 58
+      },
+      "extreme_weather": {
+        "definition": "is_extreme_weather=1 from shifted rolling temperature quantiles",
+        "extreme_weather_mae": 96.46806099295775,
+        "extreme_weather_rmse": 197.8047995475103,
+        "sample_count": 142
+      },
+      "hourly": [
+        {
+          "hour": 0,
+          "mae": 9.047183166666667,
+          "rmse": 13.534883070885908,
+          "sample_count": 30
+        },
+        {
+          "hour": 1,
+          "mae": 7.342872033333333,
+          "rmse": 13.326145600552678,
+          "sample_count": 30
+        },
+        {
+          "hour": 2,
+          "mae": 7.138556833333333,
+          "rmse": 13.12861888367392,
+          "sample_count": 30
+        },
+        {
+          "hour": 3,
+          "mae": 6.439814566666667,
+          "rmse": 11.832114158077387,
+          "sample_count": 30
+        },
+        {
+          "hour": 4,
+          "mae": 6.684340100000001,
+          "rmse": 12.562023829680324,
+          "sample_count": 30
+        },
+        {
+          "hour": 5,
+          "mae": 8.247688299999998,
+          "rmse": 12.063382238851405,
+          "sample_count": 30
+        },
+        {
+          "hour": 6,
+          "mae": 12.948878400000002,
+          "rmse": 17.786271037825294,
+          "sample_count": 30
+        },
+        {
+          "hour": 7,
+          "mae": 11.406218366666668,
+          "rmse": 16.504598069975476,
+          "sample_count": 30
+        },
+        {
+          "hour": 8,
+          "mae": 10.856129133333337,
+          "rmse": 16.949183891697533,
+          "sample_count": 30
+        },
+        {
+          "hour": 9,
+          "mae": 11.728035366666665,
+          "rmse": 17.706257966768728,
+          "sample_count": 30
+        },
+        {
+          "hour": 10,
+          "mae": 16.080683933333333,
+          "rmse": 24.977175556557064,
+          "sample_count": 30
+        },
+        {
+          "hour": 11,
+          "mae": 15.692632033333338,
+          "rmse": 21.53360518661966,
+          "sample_count": 30
+        },
+        {
+          "hour": 12,
+          "mae": 24.988378666666673,
+          "rmse": 33.65653643019806,
+          "sample_count": 30
+        },
+        {
+          "hour": 13,
+          "mae": 44.236002766666665,
+          "rmse": 65.33130955612432,
+          "sample_count": 30
+        },
+        {
+          "hour": 14,
+          "mae": 52.05051296666667,
+          "rmse": 80.40771155030744,
+          "sample_count": 30
+        },
+        {
+          "hour": 15,
+          "mae": 75.41225293333333,
+          "rmse": 122.26334322332946,
+          "sample_count": 30
+        },
+        {
+          "hour": 16,
+          "mae": 100.24507386666667,
+          "rmse": 217.3148194689583,
+          "sample_count": 30
+        },
+        {
+          "hour": 17,
+          "mae": 106.80856013333333,
+          "rmse": 227.79474842596147,
+          "sample_count": 30
+        },
+        {
+          "hour": 18,
+          "mae": 99.58157386666663,
+          "rmse": 203.05733311745055,
+          "sample_count": 30
+        },
+        {
+          "hour": 19,
+          "mae": 77.65020526666667,
+          "rmse": 147.71023636448191,
+          "sample_count": 30
+        },
+        {
+          "hour": 20,
+          "mae": 66.36128773333331,
+          "rmse": 124.94796889251684,
+          "sample_count": 30
+        },
+        {
+          "hour": 21,
+          "mae": 27.571801966666666,
+          "rmse": 47.712023383911344,
+          "sample_count": 30
+        },
+        {
+          "hour": 22,
+          "mae": 14.097014066666665,
+          "rmse": 21.603500757427028,
+          "sample_count": 30
+        },
+        {
+          "hour": 23,
+          "mae": 11.211728999999998,
+          "rmse": 16.625686382218472,
+          "sample_count": 31
+        }
+      ]
+    },
+    {
+      "split": "test",
+      "model": "rolling_same_hour_7d",
+      "time_range": {
+        "start": "2026-05-10T23:00:00",
+        "end": "2026-06-09T23:00:00"
+      },
+      "overall": {
+        "mae": 55.49389364473945,
+        "rmse": 116.244296436898,
+        "mape": 74.36970283314702,
+        "r2": -0.033862341551309516,
+        "sample_count": 721
+      },
+      "peak": {
+        "peak_hour_mae": 56.57637245333334,
+        "peak_hour_rmse": 114.19558150311535,
+        "peak_hour_bias": -3.0610416561904783,
+        "peak_hour_sample_count": 300
+      },
+      "spike": {
+        "spike_threshold": 149.37279159999994,
+        "precision": 0.29347826086956524,
+        "recall": 0.2967032967032967,
+        "f1": 0.29508196721311475,
+        "false_positive_count": 65,
+        "false_negative_count": 64,
+        "true_positive_count": 27
+      },
+      "extreme_weather": {
+        "definition": "is_extreme_weather=1 from shifted rolling temperature quantiles",
+        "extreme_weather_mae": 119.399488777666,
+        "extreme_weather_rmse": 218.43749363256023,
+        "sample_count": 142
+      },
+      "hourly": [
+        {
+          "hour": 0,
+          "mae": 15.901218866666664,
+          "rmse": 21.055303482498452,
+          "sample_count": 30
+        },
+        {
+          "hour": 1,
+          "mae": 11.853941100000002,
+          "rmse": 17.697289013281985,
+          "sample_count": 30
+        },
+        {
+          "hour": 2,
+          "mae": 9.834062771428572,
+          "rmse": 15.00757554785742,
+          "sample_count": 30
+        },
+        {
+          "hour": 3,
+          "mae": 9.13866623333333,
+          "rmse": 13.617037682372237,
+          "sample_count": 30
+        },
+        {
+          "hour": 4,
+          "mae": 9.503847433333334,
+          "rmse": 14.815838233412157,
+          "sample_count": 30
+        },
+        {
+          "hour": 5,
+          "mae": 13.157227890476188,
+          "rmse": 18.31164115226726,
+          "sample_count": 30
+        },
+        {
+          "hour": 6,
+          "mae": 18.52995080952381,
+          "rmse": 24.68058194877385,
+          "sample_count": 30
+        },
+        {
+          "hour": 7,
+          "mae": 17.311113033333335,
+          "rmse": 25.28503737268497,
+          "sample_count": 30
+        },
+        {
+          "hour": 8,
+          "mae": 17.281820876190476,
+          "rmse": 25.77591185845764,
+          "sample_count": 30
+        },
+        {
+          "hour": 9,
+          "mae": 19.18961176666667,
+          "rmse": 28.122795411049005,
+          "sample_count": 30
+        },
+        {
+          "hour": 10,
+          "mae": 25.358186366666665,
+          "rmse": 36.93904951321852,
+          "sample_count": 30
+        },
+        {
+          "hour": 11,
+          "mae": 27.55955725714286,
+          "rmse": 38.182235741848636,
+          "sample_count": 30
+        },
+        {
+          "hour": 12,
+          "mae": 42.0463630047619,
+          "rmse": 55.08036688447014,
+          "sample_count": 30
+        },
+        {
+          "hour": 13,
+          "mae": 66.68718784285714,
+          "rmse": 89.00921201155944,
+          "sample_count": 30
+        },
+        {
+          "hour": 14,
+          "mae": 83.53389084761905,
+          "rmse": 109.07656658180096,
+          "sample_count": 30
+        },
+        {
+          "hour": 15,
+          "mae": 116.71006227142858,
+          "rmse": 156.2223991794478,
+          "sample_count": 30
+        },
+        {
+          "hour": 16,
+          "mae": 170.29000659047622,
+          "rmse": 261.58918167569243,
+          "sample_count": 30
+        },
+        {
+          "hour": 17,
+          "mae": 180.04655668571428,
+          "rmse": 275.0607312697249,
+          "sample_count": 30
+        },
+        {
+          "hour": 18,
+          "mae": 160.6744687666667,
+          "rmse": 245.77774269412205,
+          "sample_count": 30
+        },
+        {
+          "hour": 19,
+          "mae": 132.6819760095238,
+          "rmse": 192.96954107957862,
+          "sample_count": 30
+        },
+        {
+          "hour": 20,
+          "mae": 103.88320790000002,
+          "rmse": 153.81564390790243,
+          "sample_count": 30
+        },
+        {
+          "hour": 21,
+          "mae": 43.29383174761905,
+          "rmse": 59.80788785721897,
+          "sample_count": 30
+        },
+        {
+          "hour": 22,
+          "mae": 22.32786286190476,
+          "rmse": 28.797778549365976,
+          "sample_count": 30
+        },
+        {
+          "hour": 23,
+          "mae": 16.363185479262675,
+          "rmse": 20.90427548794053,
+          "sample_count": 31
+        }
+      ]
+    }
+  ],
+  "baseline_comparisons": [
+    {
+      "split": "validation",
+      "model": "rolling_same_hour_7d",
+      "reference_model": "persistence_24h",
+      "overall_rmse_delta": 6.143696950027987,
+      "overall_mae_delta": 3.037300706150795,
+      "is_better_than_reference_overall_rmse": false
+    },
+    {
+      "split": "test",
+      "model": "rolling_same_hour_7d",
+      "reference_model": "persistence_24h",
+      "overall_rmse_delta": 22.57304117512632,
+      "overall_mae_delta": 21.19980974321379,
+      "is_better_than_reference_overall_rmse": false
+    }
+  ],
+  "warnings": [
+    "validation: legacy active model schema mismatch; skipped for fair backtest. missing_expected_features=['year', 'is_month_start', 'is_month_end', 'doy_sin', 'doy_cos', 'forecast_issue_lead_hours', 'is_valley_hour', 'is_transition_hour', 'forecast_load_change_1h_safe', 'forecast_load_change_24h_safe', 'forecast_vs_hist24_ratio', 'forecast_load_change_1h_x_peak', 'forecast_load_change_24h_x_peak', 'da_price_hist_hour_mean', 'da_price_hist_hour_std', 'da_price_hist_dow_mean', 'da_price_hist_month_mean', 'da_price_hist_weekend_mean', 'da_price_lag_6', 'da_price_lag_12'], total_missing=100",
+    "test: legacy active model schema mismatch; skipped for fair backtest. missing_expected_features=['year', 'is_month_start', 'is_month_end', 'doy_sin', 'doy_cos', 'forecast_issue_lead_hours', 'is_valley_hour', 'is_transition_hour', 'forecast_load_change_1h_safe', 'forecast_load_change_24h_safe', 'forecast_vs_hist24_ratio', 'forecast_load_change_1h_x_peak', 'forecast_load_change_24h_x_peak', 'da_price_hist_hour_mean', 'da_price_hist_hour_std', 'da_price_hist_dow_mean', 'da_price_hist_month_mean', 'da_price_hist_weekend_mean', 'da_price_lag_6', 'da_price_lag_12'], total_missing=100"
+  ],
+  "output_paths": {
+    "metrics": "output\\p2\\metrics.json",
+    "backtest_report": "output\\p2\\backtest_report.md",
+    "backtest_predictions": "output\\p2\\backtest_predictions.csv"
+  }
+}

@@ -88,9 +88,13 @@ def test_build_p2_datasets_uses_chronological_splits_and_writes_schema(tmp_path)
     assert schema["schema_version"].startswith("p2_features_")
     assert schema["feature_count"] == len(summary["feature_columns"])
     weather_feature = next(item for item in schema["features"] if item["name"] == "temperature")
-    assert weather_feature["availability"] == "requires_weather_forecast_at_prediction_time"
+    assert weather_feature["source_table"] == "raw_weather_or_weather_forecast"
+    assert weather_feature["source_column"] == "temperature"
+    assert weather_feature["transform"] == "current_or_forecast_weather_value"
+    assert weather_feature["allow_missing_at_prediction"] is False
+    assert weather_feature["leakage_risk"] == "medium_requires_weather_forecast_at_prediction_time"
 
-    for key in ["dataset_summary", "feature_schema", "leakage_check", "train_dataset", "validation_dataset", "test_dataset"]:
+    for key in ["dataset_summary", "feature_schema", "feature_summary", "leakage_check", "train_dataset", "validation_dataset", "test_dataset"]:
         assert Path(result["output_paths"][key]).exists()
 
 
