@@ -231,12 +231,35 @@ def _read_text_file(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+def _classify_failure(path: Path, message: str = "") -> str:
+    suffix = path.suffix.lower()
+    value = (message or "").lower()
+    if suffix == ".pdf":
+        return "scanned_pdf_needs_ocr"
+    if suffix not in {".md", ".txt"}:
+        return "unsupported_format"
+    if "unicode" in value or "decode" in value or "encoding" in value:
+        return "encoding_exception"
+    return "parse_failed"
+
+
+def _failure_summary(items: list[dict[str, str]]) -> dict[str, int]:
+    summary: dict[str, int] = {}
+    for item in items:
+        reason = str(item.get("reason") or "unknown")
+        summary[reason] = summary.get(reason, 0) + 1
+    return summary
+
+
 def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
     indexed = 0
     failed: list[dict[str, str]] = []
     for root in SEARCH_ROOTS:
         if not root.exists():
             continue
+        for path in sorted(item for item in root.rglob("*") if item.is_file() and item.suffix.lower() not in {".md", ".txt"})[:limit_files]:
+            reason = _classify_failure(path)
+            failed.append({"path": str(path), "message": reason, "reason": reason})
         candidates = sorted([*root.rglob("*.md"), *root.rglob("*.txt")])
         for path in candidates[:limit_files]:
             try:
@@ -250,9 +273,11 @@ def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
                 if result.get("available"):
                     indexed += 1
                 else:
-                    failed.append({"path": str(path), "message": str(result.get("message") or "")})
+                    message = str(result.get("message") or "")
+                    failed.append({"path": str(path), "message": message, "reason": _classify_failure(path, message)})
             except Exception as exc:
-                failed.append({"path": str(path), "message": str(exc)})
+                message = str(exc)
+                failed.append({"path": str(path), "message": message, "reason": _classify_failure(path, message)})
     indexed += index_policy_rows()
     backfill = backfill_missing_embeddings()
     refresh = refresh_stale_embeddings()
@@ -264,6 +289,7 @@ def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
         "available": True,
         "indexed_documents": indexed,
         "failed": failed,
+        "failure_summary": _failure_summary(failed),
         "embedding_backfill": backfill,
         "embedding_refresh": refresh,
         "stats": knowledge_stats(),

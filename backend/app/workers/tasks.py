@@ -12,6 +12,7 @@ from backend.app.config import PROJECT_ROOT, project_paths
 from backend.app.observability import log_suppressed_exception
 from backend.app.repositories.task_repository import save_task_record
 from backend.app.services.core_data_sync import sync_core_facts_and_tariff_assets
+from backend.app.services.rag_health_service import rag_health
 from backend.app.services.rag_service import index_local_knowledge
 from backend.app.repositories.knowledge_repository import backfill_missing_embeddings, refresh_stale_embeddings
 from backend.app.workers.celery_app import celery_app
@@ -236,9 +237,21 @@ def _knowledge_import_handler(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _embedding_refresh_handler(payload: dict[str, Any]) -> dict[str, Any]:
+    before_health = rag_health()
+    backfill = backfill_missing_embeddings()
+    refresh = refresh_stale_embeddings()
+    after_health = rag_health()
+    warnings: list[str] = []
+    if before_health.get("fallback_enabled"):
+        warnings.append("RAG fallback was enabled before embedding refresh: " + ", ".join(before_health.get("fallback_reasons") or []))
+    if after_health.get("fallback_enabled"):
+        warnings.append("RAG fallback is enabled after embedding refresh: " + ", ".join(after_health.get("fallback_reasons") or []))
     result = {
-        "embedding_backfill": backfill_missing_embeddings(),
-        "embedding_refresh": refresh_stale_embeddings(),
+        "embedding_backfill": backfill,
+        "embedding_refresh": refresh,
+        "rag_health_before": before_health,
+        "rag_health_after": after_health,
+        "warnings": warnings,
         "result_ref": "kb_chunks.embedding_json",
     }
     return result

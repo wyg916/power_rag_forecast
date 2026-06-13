@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
 from ....repositories.knowledge_repository import knowledge_stats
+from ....services.rag_health_service import rag_health
 from ....services.rag_service import rag_search
 from ....workers.dispatcher import enqueue_task
 
@@ -19,6 +20,13 @@ def get_knowledge_stats(
     _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> dict:
     return knowledge_stats()
+
+
+@router.get("/api/knowledge/health")
+def get_rag_health(
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+) -> dict:
+    return rag_health()
 
 
 @router.get("/api/knowledge/search")

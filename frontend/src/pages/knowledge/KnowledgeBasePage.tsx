@@ -1,6 +1,6 @@
-import { DatabaseOutlined, FileTextOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Col, Input, Row, Select, Space, Table, Tag, Tree, Upload, message } from 'antd';
-import { useEffect, useState } from 'react';
+import { DatabaseOutlined, FileTextOutlined, ReloadOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
+import { Alert, Button, Col, Descriptions, Input, Row, Space, Tag, message } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { SectionCard } from '../../components/cards/SectionCard';
@@ -16,13 +16,20 @@ const tabs = [
   { key: 'knowledge-policy', label: '文档管理' },
   { key: 'knowledge-index', label: '索引管理' },
   { key: 'knowledge-rag', label: '知识检索' },
-  { key: 'knowledge-qa', label: 'QA测试' }
+  { key: 'knowledge-qa', label: 'QA 测试' }
 ];
+
+function ragStatusTag(status: string, fallback: boolean) {
+  if (status === 'normal' && !fallback) return <Tag color="success">正常</Tag>;
+  if (status === 'partial') return <Tag color="processing">部分完成</Tag>;
+  if (status === 'disabled' || status === 'not_configured') return <Tag color="default">未配置</Tag>;
+  return <Tag color="warning">降级</Tag>;
+}
 
 export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
   const [data, setData] = useState<any>(knowledgeMock);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('浙江 光伏 电价 政策');
+  const [query, setQuery] = useState('分时电价 现货交易 风险');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [answer, setAnswer] = useState('');
@@ -46,7 +53,18 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
     setLoading(true);
     try {
       const res = await api.knowledgeIndexLocal();
-      message.success(`索引完成：${res.indexed_documents || 0} 个文档`);
+      message.success(`知识库索引任务已提交：${res.task_id || res.indexed_documents || 'knowledge_import'}`);
+      await loadData();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function refreshEmbeddings() {
+    setLoading(true);
+    try {
+      const res = await api.knowledgeEmbeddingRefresh();
+      message.success(`Embedding 刷新任务已提交：${res.task_id || 'embedding_refresh'}`);
       await loadData();
     } finally {
       setLoading(false);
@@ -57,8 +75,9 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
     setSearching(true);
     try {
       const payload = await searchKnowledge(query, 5);
-      setResults(payload.items || []);
-      setAnswer((payload.items || []).length ? `根据知识库命中结果，问题“${query}”可参考 ${payload.items.length} 条证据。请优先查看相似度最高的文档片段。` : '未检索到高相关文档。');
+      const items = payload.items || [];
+      setResults(items);
+      setAnswer(items.length ? `检索到 ${items.length} 条证据，请优先查看相似度最高的片段。` : '未检索到可用证据。');
     } catch (error) {
       message.error(error instanceof Error ? error.message : '检索失败');
     } finally {
@@ -66,9 +85,15 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
     }
   }
 
-  const documentRows = results.length
-    ? results.map((item) => [item.title, item.source_type || 'local_file', item.source, item.chunk_id, '已索引'])
-    : data.documents;
+  const ragHealth = data.ragHealth || {};
+  const fallbackReasons = Array.isArray(ragHealth.fallback_reasons) ? ragHealth.fallback_reasons : [];
+  const documentRows = useMemo(
+    () =>
+      results.length
+        ? results.map((item) => [item.title, item.source_type || 'local_file', item.source, item.chunk_id, '已检索'])
+        : data.documents || [],
+    [data.documents, results]
+  );
 
   return (
     <div className="page-stack">
@@ -84,52 +109,76 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
         partialErrors={data.partialErrors}
         onRetry={loadData}
       />
+
       <div className="knowledge-top-grid">
         <MetricGrid items={data.metrics || []} icons={(data.metrics || []).map(() => <FileTextOutlined />)} loading={loading} minColumnWidth={180} />
-        <SectionCard title="索引服务状态" loading={loading} compact>
+        <SectionCard title="RAG 运行状态" loading={loading} compact>
           <div className="index-status">
-            <Tag color="success">健康</Tag>
-            <p><DatabaseOutlined /> PostgreSQL 索引正常</p>
-            <p><DatabaseOutlined /> RAG 检索可用</p>
+            {ragStatusTag(String(ragHealth.status || 'unknown'), Boolean(ragHealth.fallback_enabled))}
+            <p><DatabaseOutlined /> Provider：{ragHealth.embedding_provider || 'unknown'} / {ragHealth.rerank_provider || 'unknown'}</p>
+            <p>Embedding 维度：{ragHealth.embedding_dim || 0}；Chunks：{ragHealth.kb_chunk_count || 0}；已向量化：{ragHealth.embedded_chunk_count || 0}</p>
+            <p>Embedding 路径：{ragHealth.embedding_model_path || '未配置'}（{ragHealth.embedding_model_path_exists ? '存在' : '不存在'}）</p>
+            <p>Reranker 路径：{ragHealth.rerank_model_path || '未配置'}（{ragHealth.rerank_model_path_exists ? '存在' : '不存在'}）</p>
+            {fallbackReasons.length > 0 && <Alert type="warning" showIcon message="RAG 当前处于降级模式" description={fallbackReasons.join('；')} />}
             <DataSourceTag source={data.dataSource} />
           </div>
         </SectionCard>
       </div>
 
       {activeSubKey === 'knowledge-policy' && (
-        <div className="knowledge-two-column">
-            <SectionCard title="文档分类" scrollable>
-              <Input prefix={<SearchOutlined />} placeholder="搜索分类名称" />
-              <Tree
-                className="knowledge-tree"
-                defaultExpandAll
-                treeData={[{ title: `全部文档（${data.metrics?.[0]?.value || 0}）`, key: 'all', children: data.categories.map((item: any[]) => ({ title: `${item[0]}（${item[1]}）`, key: item[0] })) }]}
-              />
-              <Button block icon={<PlusOutlined />} onClick={() => message.success('分类已记录到页面状态')}>新建分类</Button>
-            </SectionCard>
-            <TableCard
-              title="文档列表"
-              loading={loading}
-              minHeight={460}
-              extra={<Space><Button onClick={loadData}>刷新</Button><Upload beforeUpload={() => { message.success('文档已登记，请重建索引'); return false; }}><Button type="primary" icon={<PlusOutlined />}>上传文档</Button></Upload></Space>}
-              dataSource={documentRows.map((row: any[], index: number) => ({ key: `${row[0]}-${index}`, row }))}
-              columns={[
-                { title: '文档名称', render: (_, record: any) => record.row[0] },
-                { title: '类型/来源', render: (_, record: any) => <Tag>{record.row[1]}</Tag> },
-                { title: '路径/时间', render: (_, record: any) => record.row[2] },
-                { title: 'Chunk', render: (_, record: any) => record.row[3] },
-                { title: '索引状态', render: (_, record: any) => <Tag color={String(record.row[4]).includes('已') ? 'success' : 'processing'}>{record.row[4]}</Tag> },
-                { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailData({ name: record.row[0], type: record.row[1], source: record.row[2], chunk: record.row[3] }); setDetailOpen(true); }}>详情</Button> }
-              ]}
-            />
-        </div>
+        <TableCard
+          title="文档列表"
+          loading={loading}
+          minHeight={420}
+          extra={<Button onClick={loadData} icon={<ReloadOutlined />}>刷新</Button>}
+          dataSource={documentRows.map((row: any[], index: number) => ({ key: `${row[0]}-${index}`, row }))}
+          columns={[
+            { title: '文档名称', render: (_, record: any) => record.row[0] },
+            { title: '来源', render: (_, record: any) => <Tag>{record.row[1]}</Tag> },
+            { title: '路径/时间', render: (_, record: any) => record.row[2] },
+            { title: 'Chunk', render: (_, record: any) => record.row[3] },
+            { title: '状态', render: (_, record: any) => <Tag color="success">{record.row[4]}</Tag> },
+            {
+              title: '操作',
+              render: (_, record: any) => (
+                <Button type="link" size="small" onClick={() => { setDetailData({ name: record.row[0], type: record.row[1], source: record.row[2], chunk: record.row[3] }); setDetailOpen(true); }}>
+                  详情
+                </Button>
+              )
+            }
+          ]}
+        />
       )}
 
       {activeSubKey === 'knowledge-index' && (
-        <SectionCard title="索引重建" extra={<Button type="primary" loading={loading} onClick={rebuildIndex}>重建本地索引</Button>}>
-          <p>当前索引文档数：{data.metrics?.[0]?.value || 0}，切片数：{data.metrics?.[1]?.value || 0}。</p>
-          <p>索引来源包括本地知识库目录、电价政策摘要和 PostgreSQL 中已入库的政策记录。</p>
-        </SectionCard>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={12}>
+            <SectionCard title="索引与向量刷新" loading={loading}>
+              <Space wrap>
+                <Button type="primary" icon={<SyncOutlined />} loading={loading} onClick={rebuildIndex}>重建本地索引</Button>
+                <Button icon={<ReloadOutlined />} loading={loading} onClick={refreshEmbeddings}>刷新 Embedding</Button>
+              </Space>
+              <Descriptions column={1} size="small" style={{ marginTop: 16 }}>
+                <Descriptions.Item label="文档数">{ragHealth.kb_document_count || 0}</Descriptions.Item>
+                <Descriptions.Item label="Chunk 数">{ragHealth.kb_chunk_count || 0}</Descriptions.Item>
+                <Descriptions.Item label="已向量化">{ragHealth.embedded_chunk_count || 0}</Descriptions.Item>
+                <Descriptions.Item label="最近刷新">{ragHealth.last_embedding_refresh_at || '未知'}</Descriptions.Item>
+              </Descriptions>
+            </SectionCard>
+          </Col>
+          <Col xs={24} lg={12}>
+            <SectionCard title="模型挂载检查" loading={loading}>
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Embedding provider">{ragHealth.embedding_provider || 'unknown'}</Descriptions.Item>
+                <Descriptions.Item label="Embedding path">{ragHealth.embedding_model_path || '未配置'}</Descriptions.Item>
+                <Descriptions.Item label="Embedding path exists">{String(Boolean(ragHealth.embedding_model_path_exists))}</Descriptions.Item>
+                <Descriptions.Item label="Rerank provider">{ragHealth.rerank_provider || 'unknown'}</Descriptions.Item>
+                <Descriptions.Item label="Rerank path">{ragHealth.rerank_model_path || '未配置'}</Descriptions.Item>
+                <Descriptions.Item label="Rerank path exists">{String(Boolean(ragHealth.rerank_model_path_exists))}</Descriptions.Item>
+              </Descriptions>
+            </SectionCard>
+          </Col>
+        </Row>
       )}
 
       {(activeSubKey === 'knowledge-rag' || activeSubKey === 'knowledge-qa') && (
@@ -138,9 +187,8 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
             <SectionCard title={activeSubKey === 'knowledge-qa' ? 'QA 测试' : '检索测试'}>
               <Input.TextArea rows={6} value={query} onChange={(event) => setQuery(event.target.value)} />
               <div className="search-config">
-                <span>检索设置</span>
-                <Select value="Top K = 5" options={[{ value: 'Top K = 5', label: 'Top K = 5' }]} />
-                <Button type="primary" loading={searching} onClick={runSearch}>检索</Button>
+                <span>Top K = 5</span>
+                <Button type="primary" loading={searching} icon={<SearchOutlined />} onClick={runSearch}>检索</Button>
               </div>
             </SectionCard>
           </Col>
@@ -152,9 +200,9 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
               locale={{ emptyText: <EmptyState description="请先执行检索" /> }}
               pagination={false}
               columns={[
-                { title: '命中文档', dataIndex: 'title' },
-                { title: '相似度', dataIndex: 'score' },
-                { title: '命中片段', dataIndex: 'content', ellipsis: true },
+                { title: '文档', dataIndex: 'title' },
+                { title: '分数', dataIndex: 'score' },
+                { title: '片段', dataIndex: 'content', ellipsis: true },
                 { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailData(record); setDetailOpen(true); }}>查看</Button> }
               ]}
             />

@@ -167,6 +167,7 @@ export const api = {
   retrainSuggestion: () => request<any>('/api/models/retrain-suggestion'),
   localModelStatus: () => request<any>('/api/ai/local-model/status'),
   knowledgeStats: () => request<any>('/api/knowledge/stats'),
+  knowledgeHealth: () => request<any>('/api/knowledge/health'),
   knowledgeSearch: (q: string, topK = 5) => {
     const params = new URLSearchParams({ q, top_k: String(topK) });
     return request<any>(`/api/knowledge/search?${params}`);
