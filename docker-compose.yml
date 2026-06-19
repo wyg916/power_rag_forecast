@@ -111,7 +111,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.backend
     restart: unless-stopped
-    command: ["celery", "-A", "backend.app.workers.celery_app:celery_app", "worker", "--loglevel=INFO", "--pool=solo"]
+    command: ["celery", "-A", "backend.app.workers.celery_app:celery_app", "worker", "--loglevel=INFO", "--pool=solo", "-Q", "default,rag,embedding,report,forecast,data_sync,celery"]
     environment:
       APP_ENV: ${APP_ENV:-production}
       AUTH_REQUIRED: ${AUTH_REQUIRED:-1}

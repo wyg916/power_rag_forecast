@@ -184,22 +184,17 @@ export const api = {
   settingsConfig: () => request<any>('/api/settings/config').then(unwrapApi),
   saveSettingsConfig: (payload: any) => request<any>('/api/settings/config', { method: 'POST', body: JSON.stringify(payload) }).then(unwrapApi),
   settingsHealth: () => request<any>('/api/settings/health').then(unwrapApi),
-  runTask: (kind: string) => request<any>('/api/tasks/run', { method: 'POST', body: JSON.stringify({ kind }) }),
+  runTask: (kind: string, payload: any = {}) => request<any>('/api/tasks/run', { method: 'POST', body: JSON.stringify({ kind, payload }) }),
   createTask: (kind: string, payload: any = {}) => request<any>('/api/tasks', { method: 'POST', body: JSON.stringify({ kind, payload }) }),
   tasks: () => request<any>('/api/tasks'),
+  tasksHealth: () => request<any>('/api/tasks/health'),
   taskDetail: (taskId: string) => request<any>(`/api/tasks/${encodeURIComponent(taskId)}`),
-  taskCancel: (taskId: string) => request<any>(`/api/tasks/${encodeURIComponent(taskId)}/cancel`, { method: 'POST', body: '{}' }),
+  taskCancel: (taskId: string, reason = '前端用户请求取消') => request<any>(`/api/tasks/${encodeURIComponent(taskId)}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
   taskRetry: (taskId: string) => request<any>(`/api/tasks/${encodeURIComponent(taskId)}/retry`, { method: 'POST', body: '{}' }),
   scheduledTasks: () => request<any>('/api/scheduled-tasks'),
   createScheduledTask: (payload: any) => request<any>('/api/scheduled-tasks', { method: 'POST', body: JSON.stringify(payload) }),
   deleteScheduledTask: (taskName: string) =>
     request<any>(`/api/scheduled-tasks/${encodeURIComponent(taskName)}`, { method: 'DELETE' }),
-  taskLogs: async (taskId: string) => {
-    const token = getStoredAccessToken();
-    const response = await fetch(`${API_BASE}/api/tasks/${encodeURIComponent(taskId)}/logs`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined
-    });
-    if (!response.ok) throw new Error(await response.text());
-    return response.text();
-  }
+  taskLogs: (taskId: string, page = 1, pageSize = 50) =>
+    request<any>(`/api/tasks/${encodeURIComponent(taskId)}/logs?page=${page}&page_size=${pageSize}`)
 };

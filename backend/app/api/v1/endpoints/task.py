@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import PlainTextResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
+from ....repositories.task_repository import append_task_log, get_task_record, list_recent_tasks, list_task_log_entries, task_log_text, update_task_runtime_state
 from ....schedule_service import create_scheduled_task, delete_scheduled_task, list_scheduled_tasks
 from ....schemas import ScheduledTaskCreateRequest, TaskCreateRequest, TaskRunRequest
-from ....repositories.task_repository import get_task_record, list_recent_tasks, save_task_record, task_log_text, update_task_runtime_state
+from ....services.task_runtime import normalize_task_kind, task_policy
 from ....task_manager import task_manager
-from ....workers.dispatcher import celery_available, enqueue_task, task_execution_mode
+from ....workers.dispatcher import enqueue_task, task_runtime_health
 
 
 router = APIRouter()
@@ -24,13 +24,22 @@ def _enqueue_or_503(kind: str, payload: dict | None = None) -> dict:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+def _runtime_payload(payload: TaskRunRequest) -> dict:
+    data = dict(payload.payload or {})
+    if payload.idempotency_key:
+        data["idempotency_key"] = payload.idempotency_key
+    if payload.dedupe_window_seconds is not None:
+        data["dedupe_window_seconds"] = payload.dedupe_window_seconds
+    return data
+
+
 @router.post("/api/tasks/run")
 def task_run(
     payload: TaskRunRequest,
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("task:run"))],
 ) -> dict:
-    result = _enqueue_or_503(payload.kind, payload.payload or {})
+    result = _enqueue_or_503(payload.kind, _runtime_payload(payload))
     write_audit_log(
         action="task.run",
         user=user,
@@ -48,7 +57,7 @@ def task_create(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("task:run"))],
 ) -> dict:
-    create_payload = dict(payload.payload or {})
+    create_payload = _runtime_payload(payload)
     create_payload.setdefault("created_by", payload.created_by)
     result = _enqueue_or_503(payload.kind, create_payload)
     write_audit_log(
@@ -69,20 +78,13 @@ def task_list() -> dict:
     for row in memory_rows:
         merged[row.get("task_id")] = row
     rows = [row for row in merged.values() if row.get("task_id")]
-    rows.sort(key=lambda item: str(item.get("started_at") or item.get("updated_at") or ""), reverse=True)
+    rows.sort(key=lambda item: str(item.get("started_at") or item.get("updated_at") or item.get("created_at") or ""), reverse=True)
     return {"tasks": rows[:100]}
 
 
 @router.get("/api/tasks/health")
 def task_health() -> dict:
-    mode = task_execution_mode()
-    celery_ok = celery_available()
-    return {
-        "ok": bool(mode != "celery" or celery_ok),
-        "execution_mode": mode,
-        "celery_available": celery_ok,
-        "message": "ok" if mode != "celery" or celery_ok else "TASK_EXECUTION_MODE=celery but Celery/Redis is unavailable",
-    }
+    return task_runtime_health()
 
 
 @router.get("/api/tasks/{task_id}")
@@ -93,18 +95,32 @@ def task_detail(task_id: str) -> dict:
         record = get_task_record(task_id)
         if record:
             return record
-        raise HTTPException(status_code=404, detail="任务不存在") from None
+        raise HTTPException(status_code=404, detail="task not found") from None
 
 
-@router.get("/api/tasks/{task_id}/logs", response_class=PlainTextResponse)
-def task_logs(task_id: str) -> str:
+@router.get("/api/tasks/{task_id}/logs")
+def task_logs(
+    task_id: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+) -> dict:
+    entries = list_task_log_entries(task_id, page=page, page_size=page_size)
+    if entries is not None:
+        return entries
     try:
-        return task_manager.logs(task_id)
+        text_value = task_manager.logs(task_id)
     except KeyError:
-        value = task_log_text(task_id)
-        if value is not None:
-            return value
-        raise HTTPException(status_code=404, detail="任务不存在") from None
+        text_value = task_log_text(task_id)
+    if text_value is None:
+        raise HTTPException(status_code=404, detail="task not found")
+    return {
+        "task_id": task_id,
+        "page": page,
+        "page_size": page_size,
+        "total": 1 if text_value else 0,
+        "items": [{"level": "info", "step": "summary", "message": text_value}],
+        "text": text_value,
+    }
 
 
 @router.post("/api/tasks/{task_id}/cancel")
@@ -112,15 +128,25 @@ def task_cancel(
     task_id: str,
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("task:run"))],
+    payload: dict | None = None,
 ) -> dict:
+    cancel_reason = str((payload or {}).get("reason") or "cancel requested by user")[:500]
     record = get_task_record(task_id)
     if record:
         status = str(record.get("status") or "").lower()
-        if status in {"success", "failed", "cancelled"}:
+        if status in {"success", "failed", "cancelled", "timeout"}:
             result = {"task_id": task_id, "status": status, "message": "task already finished"}
         elif status in {"pending", "queued"}:
-            update_task_runtime_state(task_id, status="cancelled", message="cancelled before start", cancel_requested=True, finish=True)
-            result = {"task_id": task_id, "status": "cancelled", "message": "pending task cancelled"}
+            update_task_runtime_state(
+                task_id,
+                status="cancelled",
+                message="cancelled before start",
+                cancel_requested=True,
+                cancel_reason=cancel_reason,
+                finish=True,
+            )
+            append_task_log(task_id, level="warning", step="cleanup", message=cancel_reason, status="cancelled")
+            result = {"task_id": task_id, "status": "cancelled", "message": "pending task cancelled", "cancel_reason": cancel_reason}
         else:
             revoke_message = "cancel request recorded"
             celery_task_id = str(record.get("celery_task_id") or "")
@@ -138,9 +164,11 @@ def task_cancel(
                 status="cancel_requested",
                 message=revoke_message,
                 cancel_requested=True,
-                metadata={"cancel_requested_by": getattr(user, "username", "system")},
+                cancel_reason=cancel_reason,
+                metadata={"cancel_requested_by": getattr(user, "username", "system"), "cancel_reason": cancel_reason},
             )
-            result = {"task_id": task_id, "status": "cancel_requested", "message": revoke_message}
+            append_task_log(task_id, level="warning", step="cleanup", message=cancel_reason, status="cancel_requested")
+            result = {"task_id": task_id, "status": "cancel_requested", "message": revoke_message, "cancel_reason": cancel_reason}
         write_audit_log(
             action="task.cancel",
             user=user,
@@ -162,7 +190,7 @@ def task_cancel(
         )
         return result
     except KeyError:
-        raise HTTPException(status_code=404, detail="任务不存在") from None
+        raise HTTPException(status_code=404, detail="task not found") from None
 
 
 @router.post("/api/tasks/{task_id}/retry")
@@ -175,14 +203,30 @@ def task_retry(
     if not record:
         raise HTTPException(status_code=404, detail="task not found")
     status = str(record.get("status") or "").lower()
-    if status in {"running", "pending", "queued", "cancel_requested"}:
+    if status in {"running", "pending", "queued", "retrying", "cancel_requested"}:
         raise HTTPException(status_code=400, detail=f"task status {status} cannot be retried")
-    if status not in {"failed", "cancelled"}:
+    if status not in {"failed", "cancelled", "timeout"}:
         raise HTTPException(status_code=400, detail=f"task status {status or 'unknown'} cannot be retried")
+    kind = normalize_task_kind(str(record.get("kind") or record.get("task_kind") or record.get("task_name")))
+    max_retries = int(record.get("max_retries") if record.get("max_retries") is not None else task_policy(kind).max_retries)
+    retry_count = int(record.get("retry_count") or 0)
+    if retry_count >= max_retries:
+        raise HTTPException(status_code=400, detail=f"task retry limit exceeded: {retry_count}/{max_retries}")
     payload = dict(record.get("payload") or {})
     payload["retry_of"] = task_id
-    payload["retry_count"] = int(record.get("retry_count") or 0) + 1
-    result = _enqueue_or_503(str(record.get("kind") or record.get("task_kind") or record.get("task_name")), payload)
+    payload["parent_task_id"] = task_id
+    payload["original_task_id"] = record.get("original_task_id") or task_id
+    payload["retry_count"] = retry_count + 1
+    payload["force_new"] = True
+    result = _enqueue_or_503(kind, payload)
+    append_task_log(
+        task_id,
+        level="info",
+        step="prepare",
+        message=f"retry created: {result.get('task_id')}",
+        status=status,
+        metadata={"retry_task_id": result.get("task_id")},
+    )
     write_audit_log(
         action="task.retry",
         user=user,

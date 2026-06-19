@@ -10,10 +10,11 @@ from typing import Any
 
 from backend.app.config import PROJECT_ROOT, project_paths
 from backend.app.observability import log_suppressed_exception
-from backend.app.repositories.task_repository import save_task_record
+from backend.app.repositories.task_repository import append_task_log, get_task_record, save_task_record, update_task_runtime_state
 from backend.app.services.core_data_sync import sync_core_facts_and_tariff_assets
 from backend.app.services.rag_health_service import rag_health
 from backend.app.services.rag_service import index_local_knowledge
+from backend.app.services.task_runtime import queue_for_kind, task_policy, timeout_at
 from backend.app.repositories.knowledge_repository import backfill_missing_embeddings, refresh_stale_embeddings
 from backend.app.workers.celery_app import celery_app
 from backend.app.workers.task_commands import command_for_kind
@@ -53,7 +54,17 @@ def _record(
     worker_id: str = "",
     celery_task_id: str = "",
     cancel_requested: bool = False,
+    queued_at: str | datetime | None = None,
+    timeout_seconds: int | None = None,
+    timeout_at_value: str | datetime | None = None,
+    max_retries: int | None = None,
+    queue_name: str = "",
+    error_code: str = "",
+    error_detail: str = "",
+    cancel_reason: str = "",
+    cancelled_at: str | datetime | None = None,
 ) -> dict[str, Any]:
+    policy = task_policy(kind)
     return {
         "task_id": task_id,
         "run_id": run_id,
@@ -62,11 +73,15 @@ def _record(
         "status": status,
         "command": command,
         "log_path": log_path,
+        "queued_at": queued_at,
         "started_at": started_at,
         "ended_at": ended_at,
+        "finished_at": ended_at,
         "duration_seconds": duration_seconds,
         "returncode": returncode,
+        "error_code": error_code,
         "error_message": error_message,
+        "error_detail": error_detail,
         "progress": progress,
         "message": message,
         "result_ref": result_ref,
@@ -76,13 +91,35 @@ def _record(
         "worker_id": worker_id,
         "celery_task_id": celery_task_id,
         "cancel_requested": cancel_requested,
+        "cancel_reason": cancel_reason,
+        "cancelled_at": cancelled_at,
+        "timeout_seconds": timeout_seconds if timeout_seconds is not None else policy.timeout_seconds,
+        "timeout_at": timeout_at_value,
+        "max_retries": max_retries if max_retries is not None else policy.max_retries,
+        "queue_name": queue_name or queue_for_kind(kind),
     }
+
+
+def _current_record(task_id: str) -> dict[str, Any]:
+    return get_task_record(task_id) or {}
+
+
+def _cancel_requested(task_id: str) -> bool:
+    return bool((_current_record(task_id) or {}).get("cancel_requested"))
+
+
+def _task_timeout_seconds(kind: str, task_id: str) -> int:
+    record = _current_record(task_id)
+    return int(record.get("timeout_seconds") or task_policy(kind).timeout_seconds)
 
 
 @_task_decorator("power_trading.run_command_task")
 def run_command_task(kind: str, task_id: str, run_id: str) -> dict[str, Any]:
     started = datetime.now()
     command = command_for_kind(kind)
+    policy = task_policy(kind)
+    timeout_seconds = _task_timeout_seconds(kind, task_id)
+    timeout_at_dt = timeout_at(started, timeout_seconds)
     paths = project_paths()
     paths.log_dir.mkdir(parents=True, exist_ok=True)
     log_path = paths.log_dir / f"celery_task_{kind}_{run_id}.log"
@@ -98,9 +135,12 @@ def run_command_task(kind: str, task_id: str, run_id: str) -> dict[str, Any]:
             progress=10,
             message="running",
             worker_id=socket.gethostname(),
+            timeout_seconds=timeout_seconds,
+            timeout_at_value=timeout_at_dt,
         ),
         status="running",
     )
+    append_task_log(task_id, level="info", step="prepare", message=f"command task started: {kind}", status="running", run_id=run_id, task_name=kind, task_kind=kind, metadata={"command": command, "timeout_seconds": timeout_seconds})
     env = os.environ.copy()
     env["PYTHONUTF8"] = "1"
     env["NO_PAUSE"] = "1"
@@ -108,20 +148,55 @@ def run_command_task(kind: str, task_id: str, run_id: str) -> dict[str, Any]:
     with open(log_path, "w", encoding="utf-8", errors="replace") as log_file:
         log_file.write(f"[{started.isoformat(sep=' ', timespec='seconds')}] Celery task started: {kind}\n")
         log_file.write("command: " + " ".join(command) + "\n")
-        process = subprocess.run(
+        process = subprocess.Popen(
             command,
             cwd=str(PROJECT_ROOT),
             stdout=log_file,
             stderr=subprocess.STDOUT,
             env=env,
             text=True,
-            check=False,
             stdin=subprocess.DEVNULL,
             creationflags=_creationflags(),
         )
+        status = "running"
+        error_message = ""
+        error_code = ""
+        while True:
+            returncode = process.poll()
+            if returncode is not None:
+                status = "success" if returncode == 0 else "failed"
+                error_message = "" if returncode == 0 else f"returncode={returncode}"
+                error_code = "" if returncode == 0 else "PROCESS_FAILED"
+                break
+            if _cancel_requested(task_id):
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except Exception:
+                    process.kill()
+                    process.wait(timeout=10)
+                returncode = process.returncode
+                status = "cancelled"
+                error_message = "cancel requested"
+                error_code = "TASK_CANCELLED"
+                append_task_log(task_id, level="warning", step="cleanup", message="task cancelled by request", status=status, run_id=run_id, task_name=kind, task_kind=kind)
+                break
+            if time.perf_counter() - start_counter > timeout_seconds:
+                process.terminate()
+                try:
+                    process.wait(timeout=10)
+                except Exception:
+                    process.kill()
+                    process.wait(timeout=10)
+                returncode = process.returncode
+                status = "timeout"
+                error_message = f"task timeout after {timeout_seconds}s"
+                error_code = "TASK_TIMEOUT"
+                append_task_log(task_id, level="error", step="execute", message=error_message, status=status, run_id=run_id, task_name=kind, task_kind=kind)
+                break
+            time.sleep(2)
         ended = datetime.now()
-        status = "success" if process.returncode == 0 else "failed"
-        log_file.write(f"\n[{ended.isoformat(sep=' ', timespec='seconds')}] Celery task finished: {status}, returncode={process.returncode}\n")
+        log_file.write(f"\n[{ended.isoformat(sep=' ', timespec='seconds')}] Celery task finished: {status}, returncode={returncode}\n")
     duration = round(time.perf_counter() - start_counter, 3)
     log_text = Path(log_path).read_text(encoding="utf-8", errors="replace")[-4000:]
     final_record = _record(
@@ -134,14 +209,22 @@ def run_command_task(kind: str, task_id: str, run_id: str) -> dict[str, Any]:
         started_at=started,
         ended_at=ended,
         duration_seconds=duration,
-        returncode=process.returncode,
-        error_message="" if process.returncode == 0 else f"returncode={process.returncode}",
-        progress=100 if process.returncode == 0 else 100,
-        message="success" if process.returncode == 0 else "failed",
+        returncode=returncode,
+        error_code=error_code,
+        error_message=error_message,
+        error_detail=log_text[-1200:] if status in {"failed", "timeout"} else "",
+        progress=100,
+        message=status,
         result_ref=str(log_path),
         worker_id=socket.gethostname(),
+        timeout_seconds=timeout_seconds,
+        timeout_at_value=timeout_at_dt,
+        max_retries=policy.max_retries,
+        cancel_reason="cancel requested" if status == "cancelled" else "",
+        cancelled_at=ended if status == "cancelled" else None,
     )
     save_task_record(final_record, status=status, log_text=log_text)
+    append_task_log(task_id, level="error" if status in {"failed", "timeout"} else "info", step="persist", message=f"task finished: {status}", status=status, run_id=run_id, task_name=kind, task_kind=kind, metadata={"duration_seconds": duration, "result_ref": str(log_path)})
     return final_record
 
 
@@ -154,6 +237,9 @@ def _run_python_task(
     handler,
 ) -> dict[str, Any]:
     started = datetime.now()
+    policy = task_policy(kind)
+    timeout_seconds = _task_timeout_seconds(kind, task_id)
+    timeout_at_dt = timeout_at(started, timeout_seconds)
     log_lines = [f"[{started.isoformat(sep=' ', timespec='seconds')}] Task started: {kind}"]
     save_task_record(
         _record(
@@ -168,34 +254,93 @@ def _run_python_task(
             message="running",
             payload=payload,
             worker_id=socket.gethostname(),
+            timeout_seconds=timeout_seconds,
+            timeout_at_value=timeout_at_dt,
+            max_retries=policy.max_retries,
         ),
         status="running",
         log_text="\n".join(log_lines),
     )
+    append_task_log(task_id, level="info", step="prepare", message=f"python task started: {kind}", status="running", run_id=run_id, task_name=kind, task_kind=kind, metadata={"timeout_seconds": timeout_seconds})
     started_counter = time.perf_counter()
     try:
+        if _cancel_requested(task_id):
+            ended = datetime.now()
+            final_record = _record(
+                task_id=task_id,
+                run_id=run_id,
+                kind=kind,
+                status="cancelled",
+                command=[],
+                log_path="",
+                started_at=started,
+                ended_at=ended,
+                duration_seconds=round(time.perf_counter() - started_counter, 3),
+                returncode=1,
+                error_code="TASK_CANCELLED",
+                error_message="cancel requested before execution",
+                progress=100,
+                message="cancelled",
+                payload=payload,
+                worker_id=socket.gethostname(),
+                timeout_seconds=timeout_seconds,
+                timeout_at_value=timeout_at_dt,
+                cancel_reason="cancel requested before execution",
+                cancelled_at=ended,
+            )
+            save_task_record(final_record, status="cancelled", log_text="cancel requested before execution")
+            append_task_log(task_id, level="warning", step="validate", message="cancel requested before execution", status="cancelled", run_id=run_id, task_name=kind, task_kind=kind)
+            return final_record
+        append_task_log(task_id, level="info", step="execute", message="handler execution started", status="running", run_id=run_id, task_name=kind, task_kind=kind)
         result = handler(payload or {})
         ended = datetime.now()
+        duration = round(time.perf_counter() - started_counter, 3)
+        if _cancel_requested(task_id):
+            status = "cancelled"
+            error_code = "TASK_CANCELLED"
+            error_message = "cancel requested"
+            message = "cancelled"
+            cancel_reason = "cancel requested"
+        elif duration > timeout_seconds:
+            status = "timeout"
+            error_code = "TASK_TIMEOUT"
+            error_message = f"task timeout after {timeout_seconds}s"
+            message = "timeout"
+            cancel_reason = ""
+        else:
+            status = "success"
+            error_code = ""
+            error_message = ""
+            message = "success"
+            cancel_reason = ""
         final_record = _record(
             task_id=task_id,
             run_id=run_id,
             kind=kind,
-            status="success",
+            status=status,
             command=[],
             log_path="",
             started_at=started,
             ended_at=ended,
-            duration_seconds=round(time.perf_counter() - started_counter, 3),
-            returncode=0,
+            duration_seconds=duration,
+            returncode=0 if status == "success" else 1,
+            error_code=error_code,
+            error_message=error_message,
             progress=100,
-            message="success",
+            message=message,
             result_ref=str(result.get("result_ref") or result.get("report_path") or result.get("stats") or kind),
             payload=payload,
             metadata={"result": result},
             worker_id=socket.gethostname(),
+            timeout_seconds=timeout_seconds,
+            timeout_at_value=timeout_at_dt,
+            max_retries=policy.max_retries,
+            cancel_reason=cancel_reason,
+            cancelled_at=ended if status == "cancelled" else None,
         )
         log_lines.append(json_safe(result))
-        save_task_record(final_record, status="success", log_text="\n".join(log_lines)[-4000:])
+        save_task_record(final_record, status=status, log_text="\n".join(log_lines)[-4000:])
+        append_task_log(task_id, level="error" if status == "timeout" else "info", step="persist", message=f"task finished: {status}", status=status, run_id=run_id, task_name=kind, task_kind=kind, metadata={"duration_seconds": duration, "result_ref": final_record.get("result_ref")})
         return final_record
     except Exception as exc:
         ended = datetime.now()
@@ -212,14 +357,20 @@ def _run_python_task(
             ended_at=ended,
             duration_seconds=round(time.perf_counter() - started_counter, 3),
             returncode=1,
+            error_code=exc.__class__.__name__,
             error_message=error,
+            error_detail=repr(exc)[:1200],
             progress=100,
             message="failed",
             payload=payload,
             worker_id=socket.gethostname(),
+            timeout_seconds=timeout_seconds,
+            timeout_at_value=timeout_at_dt,
+            max_retries=policy.max_retries,
         )
         log_lines.append(error)
         save_task_record(final_record, status="failed", log_text="\n".join(log_lines)[-4000:])
+        append_task_log(task_id, level="error", step="execute", message=error, status="failed", run_id=run_id, task_name=kind, task_kind=kind, metadata={"error_code": exc.__class__.__name__})
         return final_record
 
 
@@ -302,15 +453,20 @@ def sync_core_data_task(task_id: str, run_id: str) -> dict[str, Any]:
             progress=10,
             message="running",
             worker_id=socket.gethostname(),
+            timeout_seconds=_task_timeout_seconds("sync_core_data", task_id),
+            timeout_at_value=timeout_at(started, _task_timeout_seconds("sync_core_data", task_id)),
         ),
         status="running",
     )
+    append_task_log(task_id, level="info", step="prepare", message="sync core data task started", status="running", run_id=run_id, task_name="sync_core_data", task_kind="sync_core_data")
 
     def log(message: str) -> None:
         log_lines.append(f"[{datetime.now().isoformat(sep=' ', timespec='seconds')}] {message}")
 
     start_counter = time.perf_counter()
     try:
+        if _cancel_requested(task_id):
+            raise RuntimeError("cancel requested before sync")
         result = sync_core_facts_and_tariff_assets(log=log)
         status = "success" if result.get("available") else "failed"
         error = "" if status == "success" else str(result)
@@ -322,6 +478,12 @@ def sync_core_data_task(task_id: str, run_id: str) -> dict[str, Any]:
         error = str(exc)
         returncode = 1
     ended = datetime.now()
+    duration = round(time.perf_counter() - start_counter, 3)
+    timeout_seconds = _task_timeout_seconds("sync_core_data", task_id)
+    if status == "success" and duration > timeout_seconds:
+        status = "timeout"
+        error = f"task timeout after {timeout_seconds}s"
+        returncode = 1
     final_record = _record(
         task_id=task_id,
         run_id=run_id,
@@ -331,14 +493,18 @@ def sync_core_data_task(task_id: str, run_id: str) -> dict[str, Any]:
         log_path="",
         started_at=started,
         ended_at=ended,
-        duration_seconds=round(time.perf_counter() - start_counter, 3),
+        duration_seconds=duration,
         returncode=returncode,
+        error_code="TASK_TIMEOUT" if status == "timeout" else ("SYNC_FAILED" if status == "failed" else ""),
         error_message=error,
         progress=100,
         message=status,
         result_ref="core_data_sync" if status == "success" else "",
         worker_id=socket.gethostname(),
+        timeout_seconds=timeout_seconds,
+        timeout_at_value=timeout_at(started, timeout_seconds),
     )
     log_lines.append(str(result))
     save_task_record(final_record, status=status, log_text="\n".join(log_lines)[-4000:])
+    append_task_log(task_id, level="error" if status in {"failed", "timeout"} else "info", step="persist", message=f"sync core data finished: {status}", status=status, run_id=run_id, task_name="sync_core_data", task_kind="sync_core_data", metadata={"duration_seconds": duration})
     return final_record

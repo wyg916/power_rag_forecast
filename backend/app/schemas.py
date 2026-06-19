@@ -18,8 +18,12 @@ class TaskRunRequest(BaseModel):
         "knowledge_import",
         "embedding_refresh",
         "report_generate",
+        "data_sync",
+        "forecast_run",
     ] = "today_analysis"
     payload: dict | None = None
+    idempotency_key: str | None = Field(default=None, max_length=256)
+    dedupe_window_seconds: int | None = Field(default=None, ge=0, le=86400)
 
 
 class TaskCreateRequest(TaskRunRequest):
