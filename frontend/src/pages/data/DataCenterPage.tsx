@@ -8,7 +8,7 @@ import { TableCard } from '../../components/cards/TableCard';
 import { Sparkline } from '../../components/charts/Sparkline';
 import { PageTabs } from '../../components/common/PageTabs';
 import { DataSourceTag, DataStateBanner, EmptyState } from '../../components/common/States';
-import { MetricGrid } from '../../components/layout/UnifiedPage';
+import { MetricGrid, ResponsiveGrid } from '../../components/layout/UnifiedPage';
 import { dataMock } from '../../mock/dataMock';
 import { getDataCenterData } from '../../services/dataApi';
 import type { PageProps } from '../../types/ui';
@@ -23,6 +23,8 @@ const tabs = [
   { key: 'data-import', label: '导入导出' }
 ];
 
+const corePredictionTables = ['raw_market', 'raw_load', 'raw_weather', 'forecast_results', 'raw_renewable'];
+
 export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [data, setData] = useState<any>(dataMock);
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [sqlText, setSqlText] = useState('SELECT datetime, temperature FROM raw_weather ORDER BY datetime DESC');
   const [sqlLoading, setSqlLoading] = useState(false);
   const [sqlResult, setSqlResult] = useState<any | null>(null);
+  const [sqlError, setSqlError] = useState('');
 
   async function loadData() {
     setLoading(true);
@@ -87,13 +90,17 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   async function runReadOnlySql() {
     setSqlLoading(true);
+    setSqlError('');
     try {
       const result = await api.readOnlySql({ sql: sqlText, limit: 20 });
       setSqlResult(result);
       if (result.safe === false) message.warning('SQL 未执行：已被只读安全规则拦截');
       else if (!result.available) message.info(result.not_found_reason || '查询未返回数据');
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '只读 SQL 查询失败');
+      const messageText = error instanceof Error ? error.message : '只读 SQL 查询失败';
+      setSqlError(messageText);
+      setSqlResult(null);
+      message.error(messageText);
     } finally {
       setSqlLoading(false);
     }
@@ -117,6 +124,22 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const catalogRows = (data.catalog || []).filter(
     (row: any) => !tableSearch || String(row.table_name || '').toLowerCase().includes(tableSearch.toLowerCase()) || String(row.display_name || '').includes(tableSearch)
   );
+  const freshnessByTable = Object.fromEntries((data.freshnessItems || []).map((row: any) => [row.table_name, row]));
+  const catalogByTable = Object.fromEntries((data.catalog || []).map((row: any) => [row.table_name, row]));
+  const coreCards = corePredictionTables.map((tableName) => {
+    const freshness = freshnessByTable[tableName] || {};
+    const catalog = catalogByTable[tableName] || {};
+    const rowCount = Number(freshness.row_count || 0);
+    const exists = catalog.runtime?.exists !== false && freshness.available !== false;
+    return {
+      tableName,
+      displayName: catalog.display_name || tableName,
+      rowCount,
+      status: exists && rowCount > 0 ? 'ok' : exists ? 'empty' : 'missing',
+      timeRange: freshness.min_datetime && freshness.max_datetime ? `${freshness.min_datetime} ~ ${freshness.max_datetime}` : '--',
+      reason: freshness.not_found_reason || (exists ? '已登记，等待数据刷新' : '未建表或未纳入运行态')
+    };
+  });
 
   return (
     <div className="page-stack">
@@ -207,6 +230,25 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
       {activeSubKey === 'data-catalog' && (
         <Row gutter={[16, 16]} className="balanced-row">
+          <Col xs={24}>
+            <ResponsiveGrid minColumnWidth={220}>
+              {coreCards.map((item) => (
+                <SectionCard
+                  key={item.tableName}
+                  compact
+                  title={item.tableName}
+                  extra={<Tag color={item.status === 'ok' ? 'success' : item.status === 'empty' ? 'warning' : 'error'}>{item.status === 'ok' ? '可用' : item.status === 'empty' ? '空表' : '缺失'}</Tag>}
+                >
+                  <div className="operation-card">
+                    <strong>{item.displayName}</strong>
+                    <p>记录数：{item.rowCount || 0}</p>
+                    <p>时间范围：{item.timeRange}</p>
+                    {item.status !== 'ok' && <p>{item.reason}</p>}
+                  </div>
+                </SectionCard>
+              ))}
+            </ResponsiveGrid>
+          </Col>
           <Col xs={24} xl={15}>
             <TableCard
               title="P1 数据目录与字段映射"
@@ -228,7 +270,14 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           <Col xs={24} xl={9}>
             <SectionCard title="只读 SQL 查数" loading={loading} extra={<Button loading={sqlLoading} type="primary" onClick={runReadOnlySql}>执行</Button>}>
               <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                <Alert
+                  showIcon
+                  type="info"
+                  message="只读查询入口"
+                  description="仅允许 P1 数据目录白名单表的单条 SELECT；敏感表、系统 schema、写操作、多语句和危险函数会被后端拦截，最大返回行数会被限制。"
+                />
                 <Input.TextArea rows={5} value={sqlText} onChange={(event) => setSqlText(event.target.value)} />
+                {sqlError ? <Alert showIcon type="error" message="查询失败" description={sqlError} /> : null}
                 {sqlResult ? (
                   <Alert
                     showIcon

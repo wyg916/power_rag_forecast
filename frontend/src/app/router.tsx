@@ -43,7 +43,8 @@ export const menuGroups: MenuGroup[] = [
       { key: 'forecast-24h', label: '24小时预测' },
       { key: 'forecast-history', label: '历史对比' },
       { key: 'forecast-detail', label: '预测明细' },
-      { key: 'forecast-peak', label: '峰谷分析' }
+      { key: 'forecast-peak', label: '峰谷分析' },
+      { key: 'forecast-model', label: '模型评估' }
     ]
   },
   {
@@ -117,6 +118,7 @@ export const menuGroups: MenuGroup[] = [
     label: '系统设置',
     icon: <SettingOutlined />,
     children: [
+      { key: 'settings-status', label: '系统状态' },
       { key: 'settings-user', label: '用户权限' },
       { key: 'settings-role', label: '角色配置' },
       { key: 'settings-param', label: '参数配置' },
@@ -169,7 +171,8 @@ const childAliases: Partial<Record<RouteKey, Record<string, string>>> = {
     '24h-forecast': 'forecast-24h',
     history: 'forecast-history',
     detail: 'forecast-detail',
-    peak: 'forecast-peak'
+    peak: 'forecast-peak',
+    model: 'forecast-model'
   },
   strategy: {
     'high-risk': 'strategy-high',
@@ -208,6 +211,7 @@ const childAliases: Partial<Record<RouteKey, Record<string, string>>> = {
     retry: 'task-retry'
   },
   settings: {
+    status: 'settings-status',
     user: 'settings-user',
     role: 'settings-role',
     param: 'settings-param',

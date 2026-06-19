@@ -1,6 +1,6 @@
 import { ApiOutlined, DatabaseOutlined, HeartOutlined, SafetyCertificateOutlined, UsergroupAddOutlined } from '@ant-design/icons';
 import type { ReactNode } from 'react';
-import { Button, Col, Form, Input, Row, Space, Switch, message } from 'antd';
+import { Alert, Button, Col, Form, Input, Row, Space, Switch, Tag, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { SectionCard } from '../../components/cards/SectionCard';
@@ -17,6 +17,7 @@ import { UserManagementPage } from './UserManagementPage';
 const icons = [<UsergroupAddOutlined />, <SafetyCertificateOutlined />, <ApiOutlined />, <HeartOutlined />];
 
 const tabs = [
+  { key: 'settings-status', label: '系统状态' },
   { key: 'settings-user', label: '用户管理' },
   { key: 'settings-role', label: '角色配置' },
   { key: 'settings-param', label: '参数配置' },
@@ -71,6 +72,42 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
         onRetry={loadData}
       />
       <MetricGrid items={data.metrics || []} icons={icons} loading={loading} minColumnWidth={190} />
+
+      {effectiveSubKey === 'settings-status' && (
+        <Row gutter={[16, 16]} className="balanced-row">
+          <Col xs={24} lg={9}>
+            <ConfigCard title="运行态摘要" icon={<HeartOutlined />}>
+              <div className="health-list">
+                {(data.systemStatus || []).map((item: any) => (
+                  <p key={item.name}>
+                    <span>{item.name}</span>
+                    <Tag color={item.ok ? 'success' : 'warning'}>{item.status}</Tag>
+                  </p>
+                ))}
+              </div>
+              <Alert
+                showIcon
+                type={(data.systemStatus || []).every((item: any) => item.ok) ? 'success' : 'warning'}
+                message="生产化状态"
+                description="该页只展示运行态和脱敏配置，不展示真实 API key、token 或密码。"
+              />
+            </ConfigCard>
+          </Col>
+          <Col xs={24} lg={15}>
+            <TableCard
+              title="系统状态明细"
+              loading={loading}
+              dataSource={(data.systemStatus || []).map((item: any) => ({ key: item.name, ...item }))}
+              columns={[
+                { title: '模块', dataIndex: 'name' },
+                { title: '状态', dataIndex: 'status', render: (_: any, record: any) => <Tag color={record.ok ? 'success' : 'warning'}>{record.status}</Tag> },
+                { title: '摘要', dataIndex: 'summary' },
+                { title: '详情', dataIndex: 'detail', render: (value) => <pre className="inline-json">{JSON.stringify(value || {}, null, 2)}</pre> }
+              ]}
+            />
+          </Col>
+        </Row>
+      )}
 
       {effectiveSubKey === 'settings-user' && (
         canReadUsers ? <UserManagementPage /> : <SectionCard title="无权限"><p>当前账号没有用户管理权限。</p></SectionCard>
@@ -137,4 +174,3 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
 function ConfigCard({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return <SectionCard className="config-card" title={<Space>{icon}{title}</Space>}>{children}</SectionCard>;
 }
-

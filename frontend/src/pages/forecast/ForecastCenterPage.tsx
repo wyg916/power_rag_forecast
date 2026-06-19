@@ -1,5 +1,5 @@
 import { CalendarOutlined, CloudDownloadOutlined, LineChartOutlined, ReloadOutlined, RiseOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import { Button, Col, DatePicker, Row, Select, Space, Table, Tag, message } from 'antd';
+import { Alert, Button, Col, DatePicker, Row, Select, Space, Table, Tag, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
@@ -11,7 +11,7 @@ import { GaugeChart } from '../../components/charts/GaugeChart';
 import { PriceCurveChart } from '../../components/charts/PriceCurveChart';
 import { PageTabs } from '../../components/common/PageTabs';
 import { DataSourceTag, DataStateBanner, RiskTag } from '../../components/common/States';
-import { MetricGrid } from '../../components/layout/UnifiedPage';
+import { MetricGrid, ResponsiveGrid } from '../../components/layout/UnifiedPage';
 import { forecastMock } from '../../mock/forecastMock';
 import { getForecastCenterData } from '../../services/forecastApi';
 import type { PageProps } from '../../types/ui';
@@ -22,8 +22,14 @@ const tabs = [
   { key: 'forecast-24h', label: '24小时预测' },
   { key: 'forecast-history', label: '历史对比' },
   { key: 'forecast-detail', label: '预测明细' },
-  { key: 'forecast-peak', label: '峰谷分析' }
+  { key: 'forecast-peak', label: '峰谷分析' },
+  { key: 'forecast-model', label: '模型评估' }
 ];
+
+const metricNumber = (value: unknown, digits = 4) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toFixed(digits) : '--';
+};
 
 export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [forecastData, setForecastData] = useState<any>(forecastMock);
@@ -103,6 +109,16 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       ]}
     />
   );
+  const backtest = forecastData.backtestSummary || {};
+  const referenceBaseline = backtest.reference_baseline || {};
+  const overall = referenceBaseline.overall || {};
+  const peak = referenceBaseline.peak || {};
+  const spike = referenceBaseline.spike || {};
+  const extreme = referenceBaseline.extreme_weather || {};
+  const leakage = forecastData.leakageCheck || {};
+  const schema = forecastData.featureSchema || {};
+  const schemaGateOk = Boolean(schema.schema_gate?.ok);
+  const leakageGateOk = leakage.gate_status === 'passed';
 
   return (
     <div className="page-stack">
@@ -203,6 +219,74 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
             </SectionCard>
           </Col>
         </Row>
+      )}
+
+      {activeSubKey === 'forecast-model' && (
+        <>
+          <Alert
+            showIcon
+            type={leakageGateOk && schemaGateOk ? 'success' : 'warning'}
+            message={leakageGateOk && schemaGateOk ? 'P2 模型工程化门禁通过' : 'P2 模型工程化门禁需要复核'}
+            description={`schema=${schemaGateOk ? 'ok' : 'missing'}，leakage=${leakage.gate_status || '--'}，backtest=${backtest.acceptable_for_backtest === false ? 'blocked' : backtest.available ? 'available' : 'missing'}。该页只读取 P2 输出文件，不触发训练或预测逻辑。`}
+          />
+          <ResponsiveGrid minColumnWidth={220}>
+            <SectionCard compact title="Baseline" extra={<Tag>{referenceBaseline.model || '--'}</Tag>} loading={loading}>
+              <div className="operation-card">
+                <strong>MAE {metricNumber(overall.mae)}</strong>
+                <p>RMSE {metricNumber(overall.rmse)}，MAPE {metricNumber(overall.mape)}，R2 {metricNumber(overall.r2)}</p>
+                <p>样本数：{overall.sample_count ?? '--'}</p>
+              </div>
+            </SectionCard>
+            <SectionCard compact title="高峰指标" extra={<Tag color="blue">peak</Tag>} loading={loading}>
+              <div className="operation-card">
+                <strong>MAE {metricNumber(peak.mae)}</strong>
+                <p>RMSE {metricNumber(peak.rmse)}，Bias {metricNumber(peak.bias)}</p>
+                <p>样本数：{peak.sample_count ?? '--'}</p>
+              </div>
+            </SectionCard>
+            <SectionCard compact title="尖峰识别" extra={<Tag color="warning">spike</Tag>} loading={loading}>
+              <div className="operation-card">
+                <strong>F1 {metricNumber(spike.f1)}</strong>
+                <p>Precision {metricNumber(spike.precision)}，Recall {metricNumber(spike.recall)}</p>
+                <p>阈值：{metricNumber(spike.threshold)}</p>
+              </div>
+            </SectionCard>
+            <SectionCard compact title="极端天气" extra={<Tag color="purple">weather</Tag>} loading={loading}>
+              <div className="operation-card">
+                <strong>MAE {metricNumber(extreme.mae)}</strong>
+                <p>RMSE {metricNumber(extreme.rmse)}，样本数 {extreme.sample_count ?? '--'}</p>
+                <p>{extreme.definition || '未定义'}</p>
+              </div>
+            </SectionCard>
+            <SectionCard compact title="Feature Schema" extra={<Tag color={schemaGateOk ? 'success' : 'warning'}>{schema.feature_count ?? 0} features</Tag>} loading={loading}>
+              <div className="operation-card">
+                <strong>{schema.target?.name || '--'}</strong>
+                <p>time_field：{schema.time_field || '--'}</p>
+                <p>schema_version：{schema.schema_version || '--'}</p>
+              </div>
+            </SectionCard>
+            <SectionCard compact title="Leakage Gate" extra={<Tag color={leakageGateOk ? 'success' : 'error'}>{leakage.gate_status || '--'}</Tag>} loading={loading}>
+              <div className="operation-card">
+                <strong>高风险 {leakage.high_risk_count ?? '--'}</strong>
+                <p>中风险 {leakage.medium_risk_count ?? '--'}，问题数 {leakage.issue_count ?? '--'}</p>
+                <p>time split：{leakage.checks?.time_split_chronological ? '按时间切分' : '需复核'}</p>
+              </div>
+            </SectionCard>
+          </ResponsiveGrid>
+          <TableCard
+            title="Baseline 对比"
+            loading={loading}
+            dataSource={(backtest.baseline_comparisons || []).map((row: any, index: number) => ({ key: index, ...row }))}
+            columns={[
+              { title: 'split', dataIndex: 'split' },
+              { title: '模型', dataIndex: 'model' },
+              { title: '参考模型', dataIndex: 'reference_model' },
+              { title: 'RMSE 差值', dataIndex: 'overall_rmse_delta', render: (value) => metricNumber(value) },
+              { title: 'MAE 差值', dataIndex: 'overall_mae_delta', render: (value) => metricNumber(value) },
+              { title: '是否优于参考', dataIndex: 'is_better_than_reference_overall_rmse', render: (value) => <Tag color={value ? 'success' : 'warning'}>{value ? '是' : '否'}</Tag> }
+            ]}
+          />
+        </>
       )}
 
       <DetailDrawer title="单小时预测解释" open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)} />

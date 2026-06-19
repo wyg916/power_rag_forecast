@@ -1,5 +1,5 @@
 import { CopyOutlined, PlusOutlined, RobotOutlined, SearchOutlined, SendOutlined } from '@ant-design/icons';
-import { Button, Input, List, Select, Space, Switch, Table, Tag, message } from 'antd';
+import { Alert, Button, Input, List, Select, Space, Switch, Table, Tag, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { SectionCard } from '../../components/cards/SectionCard';
@@ -89,6 +89,45 @@ function sectionText(answer: string, title: string, fallback = '-') {
   const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const match = answer.match(new RegExp(`${escaped}[：:]?\\s*([\\s\\S]*?)(?=\\n\\s*(结论|数据依据|原因解释|业务建议|风险提示)[：:]?|$)`));
   return (match?.[1] || fallback).trim();
+}
+
+function asList(value: any): string[] {
+  if (Array.isArray(value)) return value.map((item) => String(item)).filter(Boolean);
+  if (value === undefined || value === null || value === '') return [];
+  return [String(value)];
+}
+
+function firstBusinessOutput(response: any) {
+  const calls = Array.isArray(response?.tool_calls) ? response.tool_calls : [];
+  const outputs = calls.map((item: any) => item.output).filter(Boolean);
+  return outputs.find((item: any) => item.query_summary || item.table_name || item.tables || item.fields || item.not_found_reason) || {};
+}
+
+function extractBusinessMeta(response: any) {
+  const output = firstBusinessOutput(response);
+  const tables = Array.from(new Set([...asList(output.table_name), ...asList(output.tables)].flatMap((item) => String(item).split(',')).map((item) => item.trim()).filter(Boolean)));
+  const fields = Array.from(new Set(asList(output.fields).flatMap((item) => String(item).split(',')).map((item) => item.trim()).filter(Boolean))).slice(0, 12);
+  const timeRange = output.time_range
+    ? `${output.time_range.field || '时间字段'}：${output.time_range.start || output.time_range.min || '--'} ~ ${output.time_range.end || output.time_range.max || '--'}`
+    : '';
+  return {
+    tables,
+    fields,
+    timeRange,
+    rowCount: output.row_count ?? output.total ?? undefined,
+    querySummary: output.query_summary || output.summary || '',
+    notFoundReason: output.not_found_reason || output.reason || '',
+    safe: output.safe,
+    available: output.available,
+    knowledgeEvidence: compactEvidenceItems(response?.knowledge_evidence_summary || [])
+  };
+}
+
+function hasBusinessMeta(meta: any) {
+  return Boolean(
+    meta &&
+      (meta.tables?.length || meta.fields?.length || meta.timeRange || meta.rowCount !== undefined || meta.querySummary || meta.notFoundReason || meta.knowledgeEvidence?.length)
+  );
 }
 
 export function AssistantPage({ activeSubKey, onSubNavigate }: PageProps) {
@@ -191,12 +230,14 @@ export function AssistantPage({ activeSubKey, onSubNavigate }: PageProps) {
         debug: developerMode && canUseDeveloperMode
       });
       const rawSource = response.dataSource || response.model_provider_used || response.intent;
+      const businessMeta = extractBusinessMeta(response);
       setAnswerState({
         source: providerDisplayName(rawSource),
         rawSource,
         error: response.error,
         mockFallback: response.mockFallback,
         fallbackReason: response.fallbackReason,
+        businessMeta,
         evidenceSummary: developerMode && canUseDeveloperMode ? compactEvidenceItems(response.evidence_summary || []) : [],
         knowledgeEvidenceSummary: developerMode && canUseDeveloperMode ? compactEvidenceItems(response.knowledge_evidence_summary || []) : [],
         rag: response.rag,
@@ -453,6 +494,44 @@ export function AssistantPage({ activeSubKey, onSubNavigate }: PageProps) {
                   {currentAnswer ? (
                     <>
                       <div className="answer-text">{renderAnswerText(currentAnswer)}</div>
+                      {hasBusinessMeta(answerState.businessMeta) && (
+                        <div className="answer-meta-card">
+                          <div className="answer-meta-row">
+                            <span>数据表</span>
+                            <div>{answerState.businessMeta.tables?.length ? answerState.businessMeta.tables.map((item: string) => <Tag key={item}>{item}</Tag>) : <Tag>未命中业务表</Tag>}</div>
+                          </div>
+                          {!!answerState.businessMeta.fields?.length && (
+                            <div className="answer-meta-row">
+                              <span>字段</span>
+                              <div>{answerState.businessMeta.fields.map((item: string) => <Tag key={item} color="blue">{item}</Tag>)}</div>
+                            </div>
+                          )}
+                          {!!answerState.businessMeta.timeRange && (
+                            <div className="answer-meta-row">
+                              <span>时间范围</span>
+                              <strong>{answerState.businessMeta.timeRange}</strong>
+                            </div>
+                          )}
+                          {answerState.businessMeta.rowCount !== undefined && (
+                            <div className="answer-meta-row">
+                              <span>记录数</span>
+                              <strong>{answerState.businessMeta.rowCount}</strong>
+                            </div>
+                          )}
+                          {!!answerState.businessMeta.querySummary && (
+                            <Alert showIcon type="info" message="查询摘要" description={answerState.businessMeta.querySummary} />
+                          )}
+                          {!!answerState.businessMeta.notFoundReason && (
+                            <Alert showIcon type={answerState.businessMeta.safe === false ? 'warning' : 'info'} message="查不到或拒绝原因" description={answerState.businessMeta.notFoundReason} />
+                          )}
+                          {!!answerState.businessMeta.knowledgeEvidence?.length && (
+                            <details className="answer-evidence-details">
+                              <summary>知识依据摘要</summary>
+                              <ul>{answerState.businessMeta.knowledgeEvidence.map((item: string) => <li key={item}>{item}</li>)}</ul>
+                            </details>
+                          )}
+                        </div>
+                      )}
                       {!!answerState.evidenceSummary?.length && (
                         <>
                           <h4>数据依据</h4>

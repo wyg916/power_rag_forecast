@@ -1,5 +1,5 @@
 import { BellOutlined, CheckCircleOutlined, CloseCircleOutlined, PlayCircleOutlined, PlusOutlined, ReloadOutlined, ScheduleOutlined } from '@ant-design/icons';
-import { Alert, Button, DatePicker, Descriptions, Form, Input, Modal, Select, Space, Tag, message } from 'antd';
+import { Alert, Button, DatePicker, Descriptions, Form, Input, Modal, Select, Space, Tag, Timeline, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
@@ -50,6 +50,33 @@ function failureAdvice(task: any) {
   if (task.status === 'failed') return '任务失败。请先查看最后一条 error 日志和 error_detail，再决定是否重试。';
   if (task.status === 'cancelled') return '任务已取消。如需继续，请确认业务参数后重新提交。';
   return '当前状态无需处理。';
+}
+
+function canCancelTask(status: string) {
+  return ['pending', 'queued', 'running', 'retrying', 'cancel_requested'].includes(String(status || '').toLowerCase());
+}
+
+function canRetryTask(task: any) {
+  const status = String(task?.status || '').toLowerCase();
+  const retryCount = Number(task?.retry_count ?? 0);
+  const maxRetries = Number(task?.max_retries ?? 0);
+  return ['failed', 'timeout'].includes(status) && retryCount < maxRetries;
+}
+
+function taskTimelineItems(task: any) {
+  return [
+    ['created_at', '创建'],
+    ['queued_at', '入队'],
+    ['started_at', '开始'],
+    ['timeout_at', '超时'],
+    ['cancelled_at', '取消'],
+    ['finished_at', '完成']
+  ]
+    .filter(([key]) => task?.[key])
+    .map(([key, label]) => ({
+      color: key === 'timeout_at' ? 'orange' : key === 'cancelled_at' ? 'gray' : key === 'finished_at' && task?.status === 'failed' ? 'red' : 'green',
+      children: `${label}：${task[key]}`
+    }));
 }
 
 export function TaskCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
@@ -191,8 +218,8 @@ export function TaskCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               render: (_: any, record: any) => (
                 <Space>
                   <Button type="link" size="small" onClick={() => openLogs(record.task_id)}>日志</Button>
-                  <Button type="link" size="small" onClick={() => cancelTask(record.task_id)}>取消</Button>
-                  <Button type="link" size="small" onClick={() => retryTask(record.task_id)}>重试</Button>
+                  <Button type="link" size="small" disabled={!canCancelTask(record.status)} onClick={() => cancelTask(record.task_id)}>取消</Button>
+                  <Button type="link" size="small" disabled={!canRetryTask(record)} onClick={() => retryTask(record.task_id)}>重试</Button>
                   <Button type="link" size="small" onClick={() => { setDetailData(record); setDetailOpen(true); }}>详情</Button>
                 </Space>
               )
@@ -239,7 +266,7 @@ export function TaskCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
             { title: '原因', dataIndex: 'error_message' },
             { title: '重试次数', render: (_: any, record: any) => `${record.retry_count ?? 0}/${record.max_retries ?? 0}` },
             { title: '处理建议', render: (_: any, record: any) => failureAdvice(record) },
-            { title: '操作', render: (_: any, record: any) => <Button type="link" size="small" onClick={() => retryTask(record.task_id)}>重试</Button> }
+            { title: '操作', render: (_: any, record: any) => <Button type="link" size="small" disabled={!canRetryTask(record)} onClick={() => retryTask(record.task_id)}>重试</Button> }
           ]}
         />
       )}
@@ -296,7 +323,25 @@ export function TaskCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           </Form.Item>
         </Form>
       </Modal>
-      <DetailDrawer title="任务详情" open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)} />
+      <DetailDrawer title="任务详情" open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)}>
+        {detailData?.task_id ? (
+          <div className="task-detail-summary">
+            <Alert
+              showIcon
+              type={['failed', 'timeout'].includes(String(detailData.status)) ? 'warning' : String(detailData.status) === 'cancelled' ? 'info' : 'success'}
+              message={`当前状态：${statusText(detailData.status)}`}
+              description={failureAdvice(detailData)}
+            />
+            <Timeline items={taskTimelineItems(detailData)} />
+            {(detailData.error_message || detailData.error_detail) && (
+              <Alert showIcon type="error" message="最后错误摘要" description={String(detailData.error_message || detailData.error_detail)} />
+            )}
+            {(detailData.parent_task_id || detailData.original_task_id) && (
+              <Alert showIcon type="info" message="重试链路" description={`parent=${detailData.parent_task_id || '--'}，original=${detailData.original_task_id || '--'}`} />
+            )}
+          </div>
+        ) : null}
+      </DetailDrawer>
       <TaskLogViewer open={logOpen} title="任务分页日志" log={logText} loading={logLoading} onClose={() => setLogOpen(false)} />
     </div>
   );

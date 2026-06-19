@@ -89,6 +89,7 @@ export const api = {
   disableUser: (userId: string) =>
     request<any>(`/api/users/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   dashboard: () => request<any>('/api/dashboard/summary'),
+  dbHealth: () => request<any>('/api/db/health'),
   dataStatus: () => request<any>('/api/data/status'),
   dataCatalog: (includeRuntime = false) => request<any>(`/api/data/catalog${includeRuntime ? '?include_runtime=true' : ''}`),
   dataFields: (table?: string, search?: string) => {
@@ -165,6 +166,9 @@ export const api = {
   models: () => request<any>('/api/models/metrics'),
   modelErrors: () => request<any>('/api/models/errors'),
   retrainSuggestion: () => request<any>('/api/models/retrain-suggestion'),
+  modelBacktestSummary: () => request<any>('/api/models/backtest/summary'),
+  modelFeatureSchema: () => request<any>('/api/models/feature-schema'),
+  modelLeakageCheck: () => request<any>('/api/models/leakage-check'),
   localModelStatus: () => request<any>('/api/ai/local-model/status'),
   knowledgeStats: () => request<any>('/api/knowledge/stats'),
   knowledgeHealth: () => request<any>('/api/knowledge/health'),

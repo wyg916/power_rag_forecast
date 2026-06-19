@@ -27,7 +27,26 @@ const riskLabel = (row: any) => {
 
 export async function getForecastCenterData() {
   try {
-    const payload = await api.forecastLatest();
+    const partialErrors: string[] = [];
+    const [payload, backtestSummary, featureSchema, leakageCheck, retrainSuggestion] = await Promise.all([
+      api.forecastLatest(),
+      api.modelBacktestSummary().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.modelFeatureSchema().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.modelLeakageCheck().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.retrainSuggestion().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      })
+    ]);
     const records = Array.isArray(payload?.records) ? payload.records.slice(0, 24) : [];
     const summary = payload?.summary || {};
     const curve = records.map((row: any, index: number) => {
@@ -64,6 +83,10 @@ export async function getForecastCenterData() {
       history: curve.length ? curve.map((item) => Number((item.value * 0.94).toFixed(4))) : forecastMock.history,
       detailRows: detailRows.length ? detailRows : forecastMock.detailRows,
       dataSource: payload?.source_type || (records.length ? 'postgresql' : 'file_fallback'),
+      backtestSummary,
+      featureSchema,
+      leakageCheck,
+      retrainSuggestion,
       insights: summary.focus_hours?.length
         ? [
             ['高价风险时段', summary.focus_hours.map(hourText).join(' / '), '来自 PostgreSQL 最新预测批次，建议提前压降风险敞口。'],
@@ -74,7 +97,8 @@ export async function getForecastCenterData() {
     }, {
       empty: !records.length,
       mockFallback: !records.length,
-      fallbackReason: records.length ? undefined : '预测接口没有返回 records，预测中心使用本地兜底曲线保持页面可读。'
+      fallbackReason: records.length ? undefined : '预测接口没有返回 records，预测中心使用本地兜底曲线保持页面可读。',
+      partialErrors
     });
   } catch (error) {
     return mockFallback(forecastMock, error, '预测接口请求失败，预测中心已切换到本地兜底数据。');

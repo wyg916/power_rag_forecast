@@ -7,7 +7,7 @@ import {
   SafetyCertificateOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
-import { Button, List, Space, Table, Tag, message } from 'antd';
+import { Alert, Button, List, Space, Table, Tag, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
@@ -37,6 +37,27 @@ const tabs = [
   { key: 'dashboard-risk', label: '风险提醒' },
   { key: 'dashboard-shortcut', label: '快捷入口' }
 ];
+
+function operationColor(status?: string) {
+  if (status === 'success') return 'success';
+  if (status === 'danger') return 'error';
+  if (status === 'warning') return 'warning';
+  return 'processing';
+}
+
+function formatTaskLogs(payload: any) {
+  if (typeof payload === 'string') return payload;
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  if (!items.length) return payload?.text || '暂无日志';
+  return items
+    .map((item: any) => {
+      const level = String(item.level || 'info').toUpperCase();
+      const step = item.step || 'summary';
+      const time = item.created_at || '';
+      return `[${level}] ${step} ${time} ${item.message || item.log_text || ''}`;
+    })
+    .join('\n');
+}
 
 export function DashboardPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [dashboardData, setDashboardData] = useState<any>(dashboardMock);
@@ -75,7 +96,7 @@ export function DashboardPage({ activeSubKey, onSubNavigate }: PageProps) {
     setLogOpen(true);
     setLogLoading(true);
     try {
-      setLogText(await api.taskLogs(taskId));
+      setLogText(formatTaskLogs(await api.taskLogs(taskId)));
     } catch (error) {
       setLogText(error instanceof Error ? error.message : '日志读取失败');
     } finally {
@@ -84,6 +105,8 @@ export function DashboardPage({ activeSubKey, onSubNavigate }: PageProps) {
   }
 
   const riskCount = dashboardData.risks?.length || 0;
+  const operationCards = dashboardData.operationalCards || [];
+  const alertSummary = dashboardData.alertSummary || [];
 
   return (
     <div className="dashboard-grid">
@@ -124,6 +147,28 @@ export function DashboardPage({ activeSubKey, onSubNavigate }: PageProps) {
         </SectionCard>
       ) : (
         <>
+          <ResponsiveGrid minColumnWidth={220}>
+            {operationCards.map((item: any) => (
+              <SectionCard
+                key={item.title}
+                compact
+                title={item.title}
+                extra={<Tag color={operationColor(item.status)}>{item.status === 'success' ? '正常' : item.status === 'danger' ? '异常' : item.status === 'warning' ? '关注' : '待确认'}</Tag>}
+                loading={loading}
+              >
+                <div className="operation-card">
+                  <strong>{item.value}</strong>
+                  <p>{item.description}</p>
+                </div>
+              </SectionCard>
+            ))}
+          </ResponsiveGrid>
+          <Alert
+            showIcon
+            type={alertSummary.length ? 'warning' : 'success'}
+            message={alertSummary.length ? `当前有 ${alertSummary.length} 条运营关注项` : '当前核心运行态未发现阻塞项'}
+            description={alertSummary.length ? alertSummary.map((item: string) => <div key={item}>{item}</div>) : '数据新鲜度、任务中心、RAG 和 P2 回测摘要已纳入首页巡检。'}
+          />
           <TwoColumnLayout className="dashboard-main-layout" left={{ xs: 24, lg: 17 }} right={{ xs: 24, lg: 7 }}>
             <EnergyScene />
             <SectionCard

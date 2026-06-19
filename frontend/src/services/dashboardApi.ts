@@ -23,16 +23,47 @@ const hourRange = (items: unknown[]) => {
   return values.length === 1 ? values[0] : `${values[0]}-${values[values.length - 1]}`;
 };
 
+const countByStatus = (items: any[] = [], status = 'ok') => items.filter((item) => String(item.status || '').toLowerCase() === status).length;
+
+const taskProblemCount = (health: any) => Number(health?.failed_task_count || 0) + Number(health?.timeout_task_count || 0);
+
+const operationStatus = (status: 'success' | 'warning' | 'danger' | 'info', value: unknown, title: string, description: string) => ({
+  status,
+  value,
+  title,
+  description
+});
+
 export async function getDashboardData() {
   try {
     const partialErrors: string[] = [];
-    const [summary, forecast, tasks] = await Promise.all([
+    const [summary, forecast, tasks, freshness, taskHealth, ragHealth, dbHealth, backtest] = await Promise.all([
       api.dashboard(),
       api.forecastLatest().catch((error) => {
         partialErrors.push(error instanceof Error ? error.message : String(error));
         return null;
       }),
       api.tasks().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.dataFreshness().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.tasksHealth().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.knowledgeHealth().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.dbHealth().catch((error) => {
+        partialErrors.push(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      api.modelBacktestSummary().catch((error) => {
         partialErrors.push(error instanceof Error ? error.message : String(error));
         return null;
       })
@@ -51,6 +82,54 @@ export async function getDashboardData() {
     });
     const focusHours = Array.isArray(forecastSummary.focus_hours) ? forecastSummary.focus_hours : [];
     const taskRows = Array.isArray(tasks?.tasks) ? tasks.tasks.slice(0, 5) : [];
+    const freshnessItems = Array.isArray(freshness?.items) ? freshness.items : [];
+    const okFreshness = countByStatus(freshnessItems);
+    const staleTables = freshnessItems.filter((item: any) => String(item.status || '').toLowerCase() !== 'ok');
+    const ragFallback = Boolean(ragHealth?.fallback_enabled || ragHealth?.status === 'fallback');
+    const ragComplete = Number(ragHealth?.kb_chunk_count || 0) === 0
+      ? 0
+      : Math.round((Number(ragHealth?.embedded_chunk_count || 0) / Math.max(Number(ragHealth?.kb_chunk_count || 0), 1)) * 100);
+    const taskProblems = taskProblemCount(taskHealth);
+    const backtestOk = backtest?.available && backtest?.acceptable_for_backtest !== false && backtest?.leakage_check?.acceptable_for_backtest !== false;
+    const reference = backtest?.reference_baseline?.overall || {};
+    const alertSummary = [
+      ...staleTables.slice(0, 3).map((item: any) => `数据表 ${item.table_name} 新鲜度异常：${item.not_found_reason || item.status || '需检查'}`),
+      ...(taskProblems ? [`任务中心存在失败/超时任务 ${taskProblems} 个，建议查看任务中心运行健康。`] : []),
+      ...(ragFallback ? [`RAG 当前处于降级模式：${(ragHealth?.fallback_reasons || []).join('；') || '模型路径或 embedding 状态需检查'}`] : []),
+      ...(backtest?.available && !backtestOk ? ['P2 回测或泄露检查未通过，进入模型优化前需复核。'] : [])
+    ];
+    const operationalCards = [
+      operationStatus(
+        staleTables.length ? 'warning' : freshnessItems.length ? 'success' : 'info',
+        freshnessItems.length ? `${okFreshness}/${freshnessItems.length}` : '--',
+        '数据新鲜度',
+        freshnessItems.length ? `核心数据表 ${okFreshness} 个正常，${staleTables.length} 个需关注。` : '数据新鲜度接口未返回表状态。'
+      ),
+      operationStatus(
+        dbHealth?.ok ? 'success' : 'danger',
+        dbHealth?.active || '--',
+        '数据库',
+        dbHealth?.message || (dbHealth?.ok ? 'PostgreSQL 主事实源可用。' : '数据库健康接口异常或未返回。')
+      ),
+      operationStatus(
+        taskProblems ? 'warning' : 'success',
+        taskHealth?.execution_mode || '--',
+        '任务中心',
+        `运行 ${taskHealth?.running_task_count ?? 0}，排队 ${taskHealth?.pending_task_count ?? 0}，失败/超时 ${taskProblems}。`
+      ),
+      operationStatus(
+        ragFallback ? 'warning' : 'success',
+        ragHealth?.embedding_dim || '--',
+        'RAG / BGE',
+        ragFallback ? 'RAG 发生 fallback，知识检索质量可能下降。' : `embedding 完整度 ${ragComplete}% ，rerank=${ragHealth?.rerank_provider || '--'}。`
+      ),
+      operationStatus(
+        backtestOk ? 'success' : backtest?.available ? 'warning' : 'info',
+        reference.mae !== undefined ? Number(reference.mae).toFixed(4) : '--',
+        'P2 回测基线',
+        backtest?.available ? `baseline=${backtest.reference_baseline?.model || '--'}，样本数 ${reference.sample_count ?? '--'}。` : 'P2 回测摘要暂不可用。'
+      )
+    ];
     return withServiceState({
       ...dashboardMock,
       metrics: [
@@ -86,6 +165,13 @@ export async function getDashboardData() {
           ])
         : dashboardMock.taskLogs,
       rawTasks: taskRows,
+      dataFreshness: freshnessItems,
+      taskHealth,
+      ragHealth,
+      dbHealth,
+      modelBacktest: backtest,
+      operationalCards,
+      alertSummary,
       dataSource: records.length ? 'postgresql' : 'file_fallback'
     }, {
       empty: !records.length,
