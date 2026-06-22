@@ -32,6 +32,17 @@ const metricNumber = (value: unknown, digits = 4) => {
   return Number.isFinite(num) ? num.toFixed(digits) : '--';
 };
 
+function priceNumber(value: unknown) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function windowRange(points: any[], predicate: (item: any) => boolean) {
+  const hits = points.filter(predicate);
+  if (!hits.length) return '--';
+  return hits.length === 1 ? hits[0].time : `${hits[0].time}-${hits[hits.length - 1].time}`;
+}
+
 export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [forecastData, setForecastData] = useState<any>(forecastMock);
   const [loading, setLoading] = useState(true);
@@ -120,6 +131,17 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const schema = forecastData.featureSchema || {};
   const schemaGateOk = Boolean(schema.schema_gate?.ok);
   const leakageGateOk = leakage.gate_status === 'passed';
+  const curveValues = (forecastData.curve || []).map((item: any) => priceNumber(item.value)).filter((value: number) => value > 0);
+  const sortedCurve = [...curveValues].sort((a, b) => a - b);
+  const lowThreshold = sortedCurve[Math.floor(sortedCurve.length * 0.25)] ?? 0;
+  const highThreshold = sortedCurve[Math.floor(sortedCurve.length * 0.75)] ?? 0;
+  const lowWindow = windowRange(forecastData.curve || [], (item) => priceNumber(item.value) <= lowThreshold);
+  const highWindow = windowRange(forecastData.curve || [], (item) => priceNumber(item.value) >= highThreshold);
+  const peakPoint = (forecastData.curve || []).reduce((max: any, item: any) => priceNumber(item.value) > priceNumber(max?.value) ? item : max, null);
+  const confidenceAvg = Math.round(
+    (forecastData.detailRows || []).reduce((sum: number, row: any) => sum + Number(String(row.confidence || '0').replace('%', '')), 0)
+    / Math.max((forecastData.detailRows || []).length, 1)
+  );
 
   return (
     <div className="page-stack">
@@ -158,20 +180,65 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
       {activeSubKey === 'forecast-24h' && (
         <>
+          <div className="forecast-window-grid">
+            <div className="forecast-window-card window-low">
+              <strong>低价采购窗口</strong>
+              <span>{lowWindow}</span>
+              <p>低于 25% 分位价格，适合补充采购或储能充电。</p>
+              <DataSourceTag source="derived_forecast_curve" />
+            </div>
+            <div className="forecast-window-card window-high">
+              <strong>高价风险时段</strong>
+              <span>{highWindow}</span>
+              <p>高于 75% 分位价格，建议锁定敞口并复核策略。</p>
+              <DataSourceTag source="derived_forecast_curve" />
+            </div>
+            <div className="forecast-window-card window-confidence">
+              <strong>预测可信度</strong>
+              <span>{Number.isFinite(confidenceAvg) ? `${confidenceAvg}%` : '--'}</span>
+              <p>基于小时明细置信度均值派生；置信带来自 upper/lower 字段。</p>
+              <DataSourceTag source={forecastData.dataSource || 'derived_forecast_curve'} />
+            </div>
+            <div className="forecast-window-card window-peak">
+              <strong>峰值点</strong>
+              <span>{peakPoint ? `${peakPoint.time} / ${metricNumber(peakPoint.value)}` : '--'}</span>
+              <p>用于定位峰值风险和右侧洞察说明。</p>
+              <DataSourceTag source="derived_forecast_curve" />
+            </div>
+          </div>
           <div className="forecast-main-grid">
-            <SectionCard title="24小时电价预测" extra={<span className="card-unit">单位：元/kWh</span>} loading={loading} height={520}>
+            <SectionCard title="24小时电价预测（含置信区间）" extra={<Space><span className="card-unit">单位：元/kWh</span><DataSourceTag source={forecastData.dataSource || 'derived_forecast_curve'} /></Space>} loading={loading} height={520}>
               <PriceCurveChart data={forecastData.curve} height={460} showActual={false} />
             </SectionCard>
             <SectionCard title="策略洞察" extra={<a className="card-link" onClick={() => { window.location.hash = '/strategy/strategy-high'; }}>更多洞察</a>} loading={loading} height={520} scrollable>
-              <div className="insight-list">
-                {(forecastData.insights || []).map((item: any[], index: number) => (
-                  <div className={`insight-item insight-${index}`} key={item[0]} onClick={() => { setDetailData({ title: item[0], period: item[1], suggestion: item[2] }); setDetailOpen(true); }}>
-                    <strong>{item[0]}</strong>
-                    <span>{item[1]}</span>
-                    <p>{item[2]}</p>
-                    <a>查看依据</a>
-                  </div>
-                ))}
+              <div className="forecast-insight-stack">
+                <div className="forecast-insight-block">
+                  <strong>今日核心结论</strong>
+                  <p>预计 {highWindow} 出现高价风险，峰值 {peakPoint ? `${peakPoint.time} 达到 ${metricNumber(peakPoint.value)} 元/kWh` : '--'}；{lowWindow} 为低价采购窗口。</p>
+                </div>
+                <div className="forecast-insight-block danger">
+                  <strong>高价风险时段</strong>
+                  <div className="time-chip-row">{String(highWindow).split('-').filter(Boolean).map((item) => <Tag color="red" key={item}>{item}</Tag>)}</div>
+                  <p>建议控制敞口，必要时锁定部分采购价格。</p>
+                </div>
+                <div className="forecast-insight-block success">
+                  <strong>低价采购窗口</strong>
+                  <div className="time-chip-row">{String(lowWindow).split('-').filter(Boolean).map((item) => <Tag color="success" key={item}>{item}</Tag>)}</div>
+                  <p>建议增加采购或触发储能充电策略，降低综合成本。</p>
+                </div>
+                <div className="forecast-insight-block">
+                  <strong>AI 建议摘要</strong>
+                  {(forecastData.insights || []).slice(0, 3).map((item: any[], index: number) => (
+                    <button type="button" key={item[0]} onClick={() => { setDetailData({ title: item[0], period: item[1], suggestion: item[2], data_source: 'derived_forecast_curve' }); setDetailOpen(true); }}>
+                      <span>{index + 1}</span>
+                      <p>{item[0]}：{item[2]}</p>
+                    </button>
+                  ))}
+                </div>
+                <div className="forecast-insight-block info">
+                  <strong>风险提示 / 可信度说明</strong>
+                  <p>本页置信区间来自预测曲线 upper/lower 字段；若接口降级或使用兜底数据，页面会在上方数据状态与标签中显式标注。</p>
+                </div>
               </div>
             </SectionCard>
           </div>

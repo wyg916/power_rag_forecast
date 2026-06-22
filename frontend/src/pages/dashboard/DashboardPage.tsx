@@ -1,9 +1,11 @@
 import {
   BarChartOutlined,
   ClockCircleOutlined,
+  DatabaseOutlined,
   FileTextOutlined,
   LineChartOutlined,
   RiseOutlined,
+  RobotOutlined,
   SafetyCertificateOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
@@ -15,7 +17,6 @@ import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
 import { RiskAlertCard } from '../../components/cards/RiskAlertCard';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { PriceCurveChart } from '../../components/charts/PriceCurveChart';
-import { EnergyScene } from '../../components/common/EnergyScene';
 import { PageTabs } from '../../components/common/PageTabs';
 import { DataSourceTag, DataStateBanner, EmptyState } from '../../components/common/States';
 import { MetricGrid, ResponsiveGrid, TwoColumnLayout } from '../../components/layout/UnifiedPage';
@@ -57,6 +58,21 @@ function formatTaskLogs(payload: any) {
       return `[${level}] ${step} ${time} ${item.message || item.log_text || ''}`;
     })
     .join('\n');
+}
+
+function parseAmount(value: unknown) {
+  const num = Number(String(value ?? '0').replace(/,/g, ''));
+  return Number.isFinite(num) ? num : 0;
+}
+
+function formatMoney(value: number) {
+  return `¥ ${value.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}`;
+}
+
+function metricValue(metrics: any[] = [], index: number, fallback = '--') {
+  const item = metrics[index];
+  if (!item) return fallback;
+  return item.unit ? `${item.value}${item.unit}` : String(item.value ?? fallback);
 }
 
 export function DashboardPage({ activeSubKey, onSubNavigate }: PageProps) {
@@ -107,6 +123,63 @@ export function DashboardPage({ activeSubKey, onSubNavigate }: PageProps) {
   const riskCount = dashboardData.risks?.length || 0;
   const operationCards = dashboardData.operationalCards || [];
   const alertSummary = dashboardData.alertSummary || [];
+  const taskHealth = dashboardData.taskHealth || {};
+  const taskProblemCount = Number(taskHealth.failed_task_count || 0) + Number(taskHealth.timeout_task_count || 0);
+  const strategyRevenue = (dashboardData.storagePlan || []).reduce((sum: number, row: any) => sum + parseAmount(row.revenue), 0);
+  const dataHealth = operationCards.find((item: any) => String(item.title || '').includes('数据新鲜度'));
+  const forecastTrust = dashboardData.modelBacktest?.reference_baseline?.overall?.mae !== undefined
+    ? `MAE ${Number(dashboardData.modelBacktest.reference_baseline.overall.mae).toFixed(4)}`
+    : metricValue(dashboardData.metrics, 5);
+  const reportPending = Array.isArray(dashboardData.reports) ? dashboardData.reports.length : 0;
+  const aiAdvice = [
+    alertSummary[0] || `高风险窗口 ${metricValue(dashboardData.metrics, 4)}，建议提前复核敞口。`,
+    `低价窗口 ${metricValue(dashboardData.metrics, 5)}，可联动低价采购或储能充电策略。`,
+    taskProblemCount ? `任务中心存在 ${taskProblemCount} 个失败/超时项，建议先处理再生成日报。` : '任务运行状态未发现阻塞项，可继续推进日报和策略复核。'
+  ];
+  const executiveSignals = [
+    {
+      title: '供需风险',
+      value: riskCount ? `${riskCount} 项` : '低风险',
+      desc: dashboardData.risks?.[0]?.description || '当前未发现高优先级供需风险。',
+      status: riskCount ? 'danger' : 'success',
+      icon: <SafetyCertificateOutlined />
+    },
+    {
+      title: '预测可信度',
+      value: forecastTrust,
+      desc: dashboardData.modelBacktest?.available ? '来自 P2 回测基线与最新预测批次。' : '当前以预测曲线派生可信度摘要。',
+      status: dashboardData.modelBacktest?.available ? 'success' : 'info',
+      icon: <LineChartOutlined />
+    },
+    {
+      title: '策略收益',
+      value: formatMoney(strategyRevenue),
+      desc: '按储能充放电建议收益合计派生，待执行回填接入。',
+      status: 'success',
+      icon: <ThunderboltOutlined />
+    },
+    {
+      title: '报告待审',
+      value: `${reportPending} 份`,
+      desc: '当前报告数据未含真实审核状态，按最新报告列表待接入展示。',
+      status: 'warning',
+      icon: <FileTextOutlined />
+    },
+    {
+      title: '任务提醒',
+      value: taskProblemCount ? `${taskProblemCount} 项` : '无阻塞',
+      desc: `运行 ${taskHealth.running_task_count ?? 0}，排队 ${taskHealth.pending_task_count ?? 0}。`,
+      status: taskProblemCount ? 'danger' : 'success',
+      icon: <ClockCircleOutlined />
+    },
+    {
+      title: '数据健康',
+      value: dataHealth?.value || '--',
+      desc: dataHealth?.description || '数据健康摘要来自 freshness / db health 聚合。',
+      status: dataHealth?.status || 'info',
+      icon: <DatabaseOutlined />
+    }
+  ];
 
   return (
     <div className="dashboard-grid">
@@ -147,50 +220,86 @@ export function DashboardPage({ activeSubKey, onSubNavigate }: PageProps) {
         </SectionCard>
       ) : (
         <>
-          <ResponsiveGrid minColumnWidth={220}>
-            {operationCards.map((item: any) => (
-              <SectionCard
+          <div className="dashboard-action-row">
+            <Space wrap>
+              <Button type="primary" icon={<FileTextOutlined />} onClick={() => api.generateReport().then((res) => message.success(`报告任务已启动：${res.task_id || 'report_only'}`))}>生成日报</Button>
+              <Button icon={<RobotOutlined />} onClick={() => { window.location.hash = '/assistant/assistant-chat'; }}>AI 智能问答</Button>
+              <Button icon={<LineChartOutlined />} onClick={() => { window.location.hash = '/forecast/forecast-24h'; }}>查看 24h 预测</Button>
+              <Button onClick={loadData}>刷新总览</Button>
+            </Space>
+            <DataSourceTag source={dashboardData.mockFallback ? 'mock_fallback' : dashboardData.dataSource || 'derived_dashboard'} />
+          </div>
+          <div className="executive-signal-grid">
+            {executiveSignals.map((item) => (
+              <button
+                type="button"
+                className={`executive-signal executive-signal-${item.status}`}
                 key={item.title}
-                compact
-                title={item.title}
-                extra={<Tag color={operationColor(item.status)}>{item.status === 'success' ? '正常' : item.status === 'danger' ? '异常' : item.status === 'warning' ? '关注' : '待确认'}</Tag>}
-                loading={loading}
+                onClick={() => openDetail(item.title, { ...item, data_source: dashboardData.dataSource || 'derived_dashboard' })}
               >
-                <div className="operation-card">
+                <span className="executive-signal-icon">{item.icon}</span>
+                <span className="executive-signal-main">
+                  <small>{item.title}</small>
                   <strong>{item.value}</strong>
-                  <p>{item.description}</p>
-                </div>
-              </SectionCard>
+                  <em>{item.desc}</em>
+                </span>
+              </button>
             ))}
-          </ResponsiveGrid>
+          </div>
           <Alert
             showIcon
             type={alertSummary.length ? 'warning' : 'success'}
             message={alertSummary.length ? `当前有 ${alertSummary.length} 条运营关注项` : '当前核心运行态未发现阻塞项'}
             description={alertSummary.length ? alertSummary.map((item: string) => <div key={item}>{item}</div>) : '数据新鲜度、任务中心、RAG 和 P2 回测摘要已纳入首页巡检。'}
           />
-          <TwoColumnLayout className="dashboard-main-layout" left={{ xs: 24, lg: 17 }} right={{ xs: 24, lg: 7 }}>
-            <EnergyScene />
+          <div className="dashboard-first-screen">
             <SectionCard
-              title="风险预警"
+              className="dashboard-chart-card"
+              title="今日供需风险总览（24小时）"
               loading={loading}
-              scrollable
-              extra={<a className="card-link" onClick={() => onSubNavigate('dashboard-risk')}>全部({riskCount})</a>}
+              extra={<Space><span className="card-unit">预测电价 / 置信区间</span><DataSourceTag source={dashboardData.dataSource || 'derived_dashboard'} /></Space>}
             >
-              {riskCount ? (
-                <div className="risk-list">
-                  {dashboardData.risks.slice(0, 6).map((item: any, index: number) => (
-                    <div onClick={() => openDetail('风险预警详情', item)} key={`${item.title}-${index}`}>
-                      <RiskAlertCard level={item.level as UiStatus} title={item.title} description={item.description} time={item.time} />
+              <div className="window-summary-row">
+                <Tag color="red">高风险：{metricValue(dashboardData.metrics, 4)}</Tag>
+                <Tag color="success">低价窗口：{metricValue(dashboardData.metrics, 5)}</Tag>
+                <Tag color="blue">均价：{metricValue(dashboardData.metrics, 2)}</Tag>
+              </div>
+              <PriceCurveChart data={dashboardData.priceCurve || []} height={360} showActual={false} />
+            </SectionCard>
+            <div className="dashboard-right-stack">
+              <SectionCard title="AI 建议摘要" compact extra={<DataSourceTag source="derived_dashboard" />} loading={loading}>
+                <div className="ai-advice-list">
+                  {aiAdvice.map((item, index) => (
+                    <div className="ai-advice-item" key={item}>
+                      <span>{index + 1}</span>
+                      <p>{item}</p>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <EmptyState description="暂无风险预警" />
-              )}
-              <a className="section-footer-link" onClick={() => onSubNavigate('dashboard-risk')}>查看全部预警 →</a>
-            </SectionCard>
-          </TwoColumnLayout>
+              </SectionCard>
+              <SectionCard title="策略执行摘要" compact extra={<a className="card-link" onClick={() => { window.location.hash = '/strategy/strategy-high'; }}>更多</a>} loading={loading}>
+                <div className="summary-metric-row">
+                  <div><small>预计收益</small><strong>{formatMoney(strategyRevenue)}</strong></div>
+                  <div><small>高风险</small><strong>{riskCount}</strong></div>
+                  <div><small>人工复核</small><strong>{Math.max(1, Math.min(riskCount, 3))}</strong></div>
+                </div>
+              </SectionCard>
+              <SectionCard title="任务提醒" compact extra={<a className="card-link" onClick={() => { window.location.hash = '/task/task-schedule'; }}>任务中心</a>} loading={loading}>
+                <div className="task-reminder-list">
+                  {(dashboardData.rawTasks || dashboardData.taskLogs || []).slice(0, 4).map((item: any, index: number) => {
+                    const row = Array.isArray(item) ? { name: item[0], status: item[1], time: item[2], task_id: item[3] } : item;
+                    return (
+                      <button key={`${row.task_id || row.name || index}`} type="button" onClick={() => openTaskLog(row.task_id)}>
+                        <Tag color={operationColor(row.status === 'failed' ? 'danger' : row.status === 'success' ? 'success' : 'info')}>{row.status || '--'}</Tag>
+                        <span>{row.task_name || row.kind || row.name || '系统任务'}</span>
+                        <small>{String(row.updated_at || row.started_at || row.time || '--').slice(0, 16)}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </SectionCard>
+            </div>
+          </div>
 
           <ResponsiveGrid minColumnWidth={300} className="dashboard-bottom-grid">
             <SectionCard title="24小时电价趋势" extra={<Tag>最新预测</Tag>} loading={loading}>

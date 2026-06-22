@@ -6,8 +6,9 @@ import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { TableCard } from '../../components/cards/TableCard';
+import { FilterBar } from '../../components/common/FilterBar';
 import { PageTabs } from '../../components/common/PageTabs';
-import { DataStateBanner } from '../../components/common/States';
+import { DataSourceTag, DataStateBanner, EmptyState } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
 import { taskMock } from '../../mock/taskMock';
 import { durationText, getTaskCenterData, statusText } from '../../services/taskApi';
@@ -168,22 +169,35 @@ export function TaskCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const retryRows = Array.isArray(taskData.retryQueue) ? taskData.retryQueue : [];
   const queueRows = Array.isArray(health.queue_summary) ? health.queue_summary.map((row: any) => ({ key: row.queue_name, ...row })) : [];
   const failedRows = useMemo(() => tasks.filter((task: any) => ['failed', 'timeout', 'cancelled'].includes(String(task.status))), [tasks]);
+  const normalizedRetryRows = retryRows.map((row: any, index: number) => Array.isArray(row)
+    ? { key: index, task_name: row[0], failed_at: row[1], error_message: row[2], status: 'failed', retry_count: 0, max_retries: 1 }
+    : { key: row.task_id || index, ...row });
+  const recentLogRows = tasks.slice(0, 5);
 
   return (
     <div className="page-stack">
       <PageTabs items={tabs} activeKey={activeSubKey} onChange={onSubNavigate} />
-      <div className="page-toolbar">
-        <Space wrap>
+      <FilterBar
+        actions={
+          <>
+            <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
+            <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => runTask()}>启动任务</Button>
+          </>
+        }
+      >
+        <Space size={16} wrap>
+          <span>任务类型</span>
           <Select value={selectedTaskKind} options={taskOptions} onChange={setSelectedTaskKind} style={{ width: 180 }} />
+          <span>日期范围</span>
           <DatePicker />
+          <span>取消原因</span>
           <Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="取消原因" style={{ width: 220 }} />
+          <DataSourceTag source={taskData.mockFallback ? 'mock_fallback' : taskData.dataSource || 'postgresql.task_runs'} />
           <Button onClick={() => runTask('knowledge_import')}>Knowledge</Button>
           <Button onClick={() => runTask('embedding_refresh')}>Embedding</Button>
           <Button onClick={() => runTask('report_generate')}>Report</Button>
-          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
-          <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => runTask()}>启动任务</Button>
         </Space>
-      </div>
+      </FilterBar>
       <DataStateBanner
         scope="任务中心"
         loading={loading}
@@ -198,34 +212,83 @@ export function TaskCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       <MetricGrid items={taskData.metrics || []} icons={icons} loading={loading} minColumnWidth={180} />
 
       {activeSubKey === 'task-schedule' && (
-        <TableCard
-          title="任务列表"
-          loading={loading}
-          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建定时任务</Button>}
-          dataSource={tasks.map((task: any) => ({ key: task.task_id, ...task }))}
-          columns={[
-            { title: '任务类型', dataIndex: 'kind', render: (_: any, record: any) => record.task_name || record.kind || record.task_kind },
-            { title: '状态', dataIndex: 'status', render: (value: string) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> },
-            { title: '进度', dataIndex: 'progress', render: (value: any) => `${value ?? 0}%` },
-            { title: '队列', dataIndex: 'queue_name', render: (value: string) => value || 'default' },
-            { title: '创建时间', dataIndex: 'created_at', render: (value: string) => value || '--' },
-            { title: '开始时间', dataIndex: 'started_at', render: (value: string) => value || '--' },
-            { title: '完成时间', render: (_: any, record: any) => record.finished_at || record.ended_at || '--' },
-            { title: '重试', render: (_: any, record: any) => `${record.retry_count ?? 0}/${record.max_retries ?? 0}` },
-            { title: '执行模式', dataIndex: 'execution_mode', render: (value: string) => value || '--' },
-            {
-              title: '操作',
-              render: (_: any, record: any) => (
-                <Space>
-                  <Button type="link" size="small" onClick={() => openLogs(record.task_id)}>日志</Button>
-                  <Button type="link" size="small" disabled={!canCancelTask(record.status)} onClick={() => cancelTask(record.task_id)}>取消</Button>
-                  <Button type="link" size="small" disabled={!canRetryTask(record)} onClick={() => retryTask(record.task_id)}>重试</Button>
-                  <Button type="link" size="small" onClick={() => { setDetailData(record); setDetailOpen(true); }}>详情</Button>
-                </Space>
-              )
-            }
-          ]}
-        />
+        <div className="task-overview-layout">
+          <div className="task-overview-main">
+            <TableCard
+              title="任务列表"
+              loading={loading}
+              extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建定时任务</Button>}
+              locale={{
+                emptyText: (
+                  <EmptyState
+                    title="暂无任务记录"
+                    description="当前接口没有返回任务记录，可先启动一个任务或新建定时任务。"
+                    action={<Space><Button type="primary" onClick={() => runTask()}>启动任务</Button><Button onClick={() => setCreateOpen(true)}>新建定时任务</Button></Space>}
+                  />
+                )
+              }}
+              dataSource={tasks.map((task: any) => ({ key: task.task_id, ...task }))}
+              columns={[
+                { title: '任务类型', dataIndex: 'kind', render: (_: any, record: any) => record.task_name || record.kind || record.task_kind },
+                { title: '状态', dataIndex: 'status', render: (value: string) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> },
+                { title: '进度', dataIndex: 'progress', render: (value: any) => `${value ?? 0}%` },
+                { title: '队列', dataIndex: 'queue_name', render: (value: string) => value || 'default' },
+                { title: '创建时间', dataIndex: 'created_at', render: (value: string) => value || '--' },
+                { title: '开始时间', dataIndex: 'started_at', render: (value: string) => value || '--' },
+                { title: '完成时间', render: (_: any, record: any) => record.finished_at || record.ended_at || '--' },
+                { title: '重试', render: (_: any, record: any) => `${record.retry_count ?? 0}/${record.max_retries ?? 0}` },
+                { title: '执行模式', dataIndex: 'execution_mode', render: (value: string) => value || '--' },
+                {
+                  title: '操作',
+                  render: (_: any, record: any) => (
+                    <Space>
+                      <Button type="link" size="small" onClick={() => openLogs(record.task_id)}>日志</Button>
+                      <Button type="link" size="small" disabled={!canCancelTask(record.status)} onClick={() => cancelTask(record.task_id)}>取消</Button>
+                      <Button type="link" size="small" disabled={!canRetryTask(record)} onClick={() => retryTask(record.task_id)}>重试</Button>
+                      <Button type="link" size="small" onClick={() => { setDetailData(record); setDetailOpen(true); }}>详情</Button>
+                    </Space>
+                  )
+                }
+              ]}
+            />
+          </div>
+          <div className="task-overview-side">
+            <SectionCard title="任务健康" compact loading={loading} extra={<Button type="link" onClick={() => onSubNavigate('task-alert')}>详情</Button>}>
+              <div className="task-health-grid">
+                <div><span>execution_mode</span><strong>{health.execution_mode || '--'}</strong></div>
+                <div><span>Redis</span><strong>{health.redis?.ok ? '运行中' : '待确认'}</strong></div>
+                <div><span>Celery</span><strong>{health.celery?.ok || health.celery_available ? '运行中' : '待确认'}</strong></div>
+                <div><span>active_workers</span><strong>{(health.active_workers || []).length || '--'}</strong></div>
+                <div><span>running</span><strong>{health.running_task_count ?? 0}</strong></div>
+                <div><span>pending</span><strong>{health.pending_task_count ?? 0}</strong></div>
+                <div><span>failed</span><strong>{health.failed_task_count ?? failedRows.length}</strong></div>
+                <div><span>timeout</span><strong>{health.timeout_task_count ?? 0}</strong></div>
+              </div>
+            </SectionCard>
+            <SectionCard title="运行日志入口" compact loading={loading} extra={<Button type="link" onClick={() => onSubNavigate('task-log')}>更多</Button>}>
+              <div className="task-side-list">
+                {recentLogRows.length ? recentLogRows.map((row: any) => (
+                  <button type="button" key={row.task_id || row.task_name} onClick={() => openLogs(row.task_id)}>
+                    <Tag color={statusColor(row.status)}>{statusText(row.status)}</Tag>
+                    <span>{row.task_name || row.kind || row.task_kind || '系统任务'}</span>
+                    <small>{row.worker_id || row.celery_task_id || '查看日志'}</small>
+                  </button>
+                )) : <EmptyState description="暂无日志记录" />}
+              </div>
+            </SectionCard>
+            <SectionCard title="失败重试" compact loading={loading} extra={<Button type="link" onClick={() => onSubNavigate('task-retry')}>更多</Button>}>
+              <div className="task-side-list">
+                {normalizedRetryRows.length ? normalizedRetryRows.slice(0, 4).map((row: any) => (
+                  <button type="button" key={row.task_id || row.key} onClick={() => retryTask(row.task_id)}>
+                    <Tag color={statusColor(row.status)}>{statusText(row.status)}</Tag>
+                    <span>{row.task_name || '失败任务'}</span>
+                    <small>{row.error_message || failureAdvice(row)}</small>
+                  </button>
+                )) : <EmptyState description="暂无失败或超时任务" />}
+              </div>
+            </SectionCard>
+          </div>
+        </div>
       )}
 
       {activeSubKey === 'task-log' && (
@@ -258,7 +321,7 @@ export function TaskCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         <TableCard
           title="失败/超时/取消任务"
           loading={loading}
-          dataSource={retryRows}
+          dataSource={normalizedRetryRows}
           columns={[
             { title: '任务名称', dataIndex: 'task_name' },
             { title: '状态', dataIndex: 'status', render: (value: string) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> },

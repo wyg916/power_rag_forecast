@@ -1,11 +1,12 @@
 import { ApiOutlined, DatabaseOutlined, EyeOutlined, SafetyCertificateOutlined, SyncOutlined, WarningOutlined } from '@ant-design/icons';
-import { Alert, Button, Col, Input, Row, Space, Table, Tag, Upload, message } from 'antd';
+import { Alert, Button, Col, DatePicker, Input, Row, Select, Space, Table, Tag, Upload, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { TableCard } from '../../components/cards/TableCard';
 import { Sparkline } from '../../components/charts/Sparkline';
+import { FilterBar } from '../../components/common/FilterBar';
 import { PageTabs } from '../../components/common/PageTabs';
 import { DataSourceTag, DataStateBanner, EmptyState } from '../../components/common/States';
 import { MetricGrid, ResponsiveGrid } from '../../components/layout/UnifiedPage';
@@ -140,10 +141,32 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       reason: freshness.not_found_reason || (exists ? '已登记，等待数据刷新' : '未建表或未纳入运行态')
     };
   });
+  const freshnessProblems = (data.freshnessItems || []).filter((item: any) => String(item.status || '').toLowerCase() !== 'ok');
+  const failedImports = (data.imports || []).filter((row: any[]) => String(row[2] || '').includes('失败') || String(row[2] || '').toLowerCase().includes('fail'));
+  const healthScore = data.metrics?.[3]?.value ? `${data.metrics[3].value}${data.metrics[3].unit || ''}` : '--';
 
   return (
     <div className="page-stack">
       <PageTabs items={tabs} activeKey={activeSubKey} onChange={onSubNavigate} />
+      <FilterBar
+        actions={
+          <>
+            <Button loading={syncing} onClick={() => syncCoreData('core')}>核心数据入库</Button>
+            <Button type="primary" loading={syncing} onClick={() => syncCoreData('refresh')}>手动同步</Button>
+            <Button onClick={loadData}>刷新总览</Button>
+          </>
+        }
+      >
+        <Space size={16} wrap>
+          <span>数据域</span>
+          <Select value="all" style={{ width: 120 }} options={[{ value: 'all', label: '全部' }, { value: 'forecast', label: '预测核心' }]} />
+          <span>时间范围</span>
+          <DatePicker />
+          <span>数据源状态</span>
+          <Select value="all" style={{ width: 120 }} options={[{ value: 'all', label: '全部' }, { value: 'ok', label: '正常' }, { value: 'warning', label: '关注' }]} />
+          <DataSourceTag source={data.mockFallback ? 'mock_fallback' : data.dataSource || 'derived_data_center'} />
+        </Space>
+      </FilterBar>
       <DataStateBanner
         scope="数据中心"
         loading={loading}
@@ -158,12 +181,13 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       <MetricGrid items={data.metrics || []} icons={icons} loading={loading} minColumnWidth={190} />
 
       {activeSubKey === 'data-access' && (
-        <Row gutter={[16, 16]} className="balanced-row">
-          <Col xs={24} xl={14}>
+        <>
+          <div className="data-overview-layout">
             <SectionCard
+              className="data-flow-overview"
               title="数据接入流程"
               loading={loading}
-              extra={<Space><DataSourceTag source={data.dataSource} /><Button loading={syncing} onClick={() => syncCoreData('core')}>核心数据入库</Button><Button type="primary" loading={syncing} onClick={() => syncCoreData('refresh')}>全部同步</Button></Space>}
+              extra={<Space><DataSourceTag source={data.dataSource} /><Button type="link" onClick={() => onSubNavigate('data-catalog')}>查看目录详情</Button></Space>}
             >
               <div className="data-flow">
                 {(data.flow || []).map((item: any[], index: number) => (
@@ -178,9 +202,54 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
                 ))}
               </div>
             </SectionCard>
-          </Col>
-          <Col xs={24} xl={10}>
-            <TableCard
+            <div className="data-overview-side">
+              <SectionCard title="数据健康摘要" compact loading={loading} extra={<DataSourceTag source={data.dataSource || 'derived_data_center'} />}>
+                <div className="data-health-summary">
+                  <div className="data-health-score">
+                    <strong>{healthScore}</strong>
+                    <span>整体完整率 / 校验通过率</span>
+                  </div>
+                  <div className="health-kv-grid">
+                    <div><span>异常表</span><strong>{data.metrics?.[2]?.value ?? 0}</strong></div>
+                    <div><span>新鲜度异常</span><strong>{freshnessProblems.length}</strong></div>
+                    <div><span>同步失败</span><strong>{failedImports.length}</strong></div>
+                    <div><span>目录表</span><strong>{catalogRows.length || data.metrics?.[0]?.value || 0}</strong></div>
+                  </div>
+                </div>
+              </SectionCard>
+              <SectionCard title="快速操作" compact loading={loading}>
+                <div className="quick-action-grid">
+                  <Button onClick={() => onSubNavigate('data-catalog')}>查看目录</Button>
+                  <Button onClick={() => onSubNavigate('data-quality')}>质量巡检</Button>
+                  <Button onClick={() => onSubNavigate('data-import')}>导入导出</Button>
+                  <Button onClick={() => onSubNavigate('data-tables')}>数据表</Button>
+                </div>
+              </SectionCard>
+              <SectionCard title="最近告警 / 异常提醒" compact loading={loading} extra={<Button type="link" onClick={() => onSubNavigate('data-quality')}>更多</Button>}>
+                <div className="data-alert-list">
+                  {[...freshnessProblems.slice(0, 3), ...failedImports.slice(0, 2)].length ? (
+                    <>
+                      {freshnessProblems.slice(0, 3).map((item: any) => (
+                        <div key={item.table_name || item.status}>
+                          <Tag color="warning">新鲜度</Tag>
+                          <span>{item.table_name || '--'}：{item.not_found_reason || item.status || '需检查'}</span>
+                        </div>
+                      ))}
+                      {failedImports.slice(0, 2).map((row: any[], index: number) => (
+                        <div key={`${row[1]}-${index}`}>
+                          <Tag color="error">同步失败</Tag>
+                          <span>{row[1]}：{row[6] || row[2]}</span>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <EmptyState description="暂无异常提醒" />
+                  )}
+                </div>
+              </SectionCard>
+            </div>
+          </div>
+          <TableCard
               title="同步与导入记录"
               loading={loading}
               dataSource={(data.imports || []).map((row: any[], index: number) => ({ key: index, row }))}
@@ -192,8 +261,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
                 { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailTitle('同步详情'); setDetailData({ record: record.row }); setDetailOpen(true); }}>详情</Button> }
               ]}
             />
-          </Col>
-        </Row>
+        </>
       )}
 
       {activeSubKey === 'data-quality' && (
