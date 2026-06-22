@@ -1,13 +1,11 @@
 import { FileTextOutlined, ReloadOutlined, RobotOutlined } from '@ant-design/icons';
 import { Button, message, Space, Tag } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../api';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
 import { HomeAuxiliaryGrid } from '../../components/dashboard/HomeAuxiliaryGrid';
-import { HomeDataState } from '../../components/dashboard/HomeDataState';
 import { HomeForecastChart } from '../../components/dashboard/HomeForecastChart';
 import { HomeKpiStrip } from '../../components/dashboard/HomeKpiStrip';
-import { HomeQuickActions } from '../../components/dashboard/HomeQuickActions';
 import { HomeSideRail } from '../../components/dashboard/HomeSideRail';
 import { loadHomeDashboard, type HomeDashboardData } from '../../services/homeDashboardApi';
 import type { PageProps } from '../../types/ui';
@@ -28,34 +26,17 @@ function formatTaskLogs(payload: any) {
 
 export function DashboardPage(_: PageProps) {
   const [data, setData] = useState<HomeDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [logOpen, setLogOpen] = useState(false);
   const [logLoading, setLogLoading] = useState(false);
   const [logText, setLogText] = useState('');
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      setData(await loadHomeDashboard());
-    } finally {
-      setLoading(false);
-    }
+    setData(await loadHomeDashboard());
   }, []);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const sources = useMemo(
-    () => [
-      data?.kpi?.data_source,
-      data?.risk?.data_source,
-      data?.strategy?.data_source,
-      data?.forecast?.data_source,
-      data?.tasks?.data_source
-    ].filter(Boolean) as string[],
-    [data]
-  );
 
   async function generateReport() {
     try {
@@ -91,15 +72,6 @@ export function DashboardPage(_: PageProps) {
           <div className="home-breadcrumb">首页 / 总览驾驶舱</div>
           <h1>总览驾驶舱</h1>
           <p>汇总今日供需风险、预测、策略、报告与任务状态，辅助经营决策。</p>
-        </div>
-        <div className="home-title-center">
-          <HomeQuickActions />
-          <HomeDataState
-            loading={loading}
-            errors={data?.partialErrors || []}
-            sources={sources}
-            onRetry={loadData}
-          />
         </div>
         <Space wrap>
           <Tag color={data?.risk?.risk_level === 'high' ? 'error' : data?.risk?.risk_level === 'medium' ? 'warning' : 'success'}>

@@ -1,4 +1,12 @@
-import { MessageOutlined } from '@ant-design/icons';
+import {
+  FileDoneOutlined,
+  FundOutlined,
+  MessageOutlined,
+  RobotOutlined,
+  SafetyCertificateOutlined,
+  ScheduleOutlined,
+  ThunderboltOutlined
+} from '@ant-design/icons';
 import { Button, Empty, Space, Tag } from 'antd';
 import { HomeSourceTag } from './HomeDataState';
 import { dateTimeText, formatCompact, formatNumber, statusClass } from './utils';
@@ -13,6 +21,15 @@ interface HomeSideRailProps {
 function go(hash: string) {
   window.location.hash = hash;
 }
+
+const quickEntries = [
+  { label: '查看24小时预测', icon: <FundOutlined />, hash: '/forecast/forecast-24h' },
+  { label: '进入策略中心', icon: <SafetyCertificateOutlined />, hash: '/strategy/strategy-high' },
+  { label: '打开AI助手', icon: <RobotOutlined />, hash: '/assistant/assistant-chat' },
+  { label: '审核报告', icon: <FileDoneOutlined />, hash: '/report/report-review' },
+  { label: '模型评估', icon: <ThunderboltOutlined />, hash: '/model/model-active' },
+  { label: '任务中心', icon: <ScheduleOutlined />, hash: '/task/task-schedule' }
+];
 
 function itemText(item: any) {
   return item?.advice_text || item?.description || item?.message || item?.title || '接口未返回建议内容';
@@ -94,6 +111,23 @@ export function HomeSideRail({ risk, strategy, tasks, onOpenTaskLog }: HomeSideR
           <Tag color={failedCount ? 'error' : 'success'}>失败/超时 {failedCount}</Tag>
         </Space>
         {healthUnavailable ? <p className="home-derived-note">任务统计接口异常：{healthErrorText}</p> : null}
+      </section>
+
+      <section className="home-card home-side-card home-quick-card">
+        <div className="home-card-head compact">
+          <div>
+            <h2>快捷入口</h2>
+            <p>按参考图保留高频业务跳转</p>
+          </div>
+        </div>
+        <div className="home-quick-grid">
+          {quickEntries.map((entry) => (
+            <button key={entry.hash} type="button" onClick={() => go(entry.hash)}>
+              {entry.icon}
+              <span>{entry.label}</span>
+            </button>
+          ))}
+        </div>
       </section>
     </aside>
   );
