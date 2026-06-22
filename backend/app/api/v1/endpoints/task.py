@@ -9,6 +9,7 @@ from ....repositories.audit_repository import write_audit_log
 from ....repositories.task_repository import append_task_log, get_task_record, list_recent_tasks, list_task_log_entries, task_log_text, update_task_runtime_state
 from ....schedule_service import create_scheduled_task, delete_scheduled_task, list_scheduled_tasks
 from ....schemas import ScheduledTaskCreateRequest, TaskCreateRequest, TaskRunRequest
+from ....services.dashboard_home_service import task_recent_payload
 from ....services.task_runtime import normalize_task_kind, task_policy
 from ....task_manager import task_manager
 from ....workers.dispatcher import enqueue_task, task_runtime_health
@@ -85,6 +86,11 @@ def task_list() -> dict:
 @router.get("/api/tasks/health")
 def task_health() -> dict:
     return task_runtime_health()
+
+
+@router.get("/api/task/recent")
+def task_recent(limit: int = Query(default=8, ge=1, le=20)) -> dict:
+    return task_recent_payload(limit=limit)
 
 
 @router.get("/api/tasks/{task_id}")

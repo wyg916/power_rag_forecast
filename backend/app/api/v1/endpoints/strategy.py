@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from ....core.security import CurrentUser, require_permission
 from ....platform_services import generate_anomaly_explanations, generate_strategy_advice
 from ....repositories.audit_repository import write_audit_log
+from ....services.dashboard_home_service import strategy_today_payload
 from ....services.ui_platform_service import _read_runtime_settings, response, save_system_config
 
 
@@ -21,6 +22,11 @@ def strategy_generate(_: Annotated[CurrentUser, Depends(require_permission("task
 @router.get("/api/strategy/latest")
 def strategy_latest() -> dict:
     return generate_strategy_advice(persist=False)
+
+
+@router.get("/api/strategy/today")
+def strategy_today() -> dict:
+    return strategy_today_payload()
 
 
 @router.get("/api/strategy/config")

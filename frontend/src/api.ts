@@ -89,6 +89,8 @@ export const api = {
   disableUser: (userId: string) =>
     request<any>(`/api/users/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   dashboard: () => request<any>('/api/dashboard/summary'),
+  dashboardKpi: () => request<any>('/api/dashboard/kpi'),
+  riskSummary: () => request<any>('/api/risk/summary'),
   dbHealth: () => request<any>('/api/db/health'),
   dataStatus: () => request<any>('/api/data/status'),
   dataCatalog: (includeRuntime = false) => request<any>(`/api/data/catalog${includeRuntime ? '?include_runtime=true' : ''}`),
@@ -127,9 +129,11 @@ export const api = {
     return request<any>(`/api/data/tables/${encodeURIComponent(tableName)}/rows?${params}`);
   },
   forecastLatest: () => request<any>('/api/forecast/latest'),
+  forecast24h: () => request<any>('/api/forecast/24h'),
   runForecast: (mode = 'refresh_fast_forecast') =>
     request<any>('/api/forecast/run', { method: 'POST', body: JSON.stringify({ mode }) }),
   strategyLatest: () => request<any>('/api/strategy/latest'),
+  strategyToday: () => request<any>('/api/strategy/today'),
   generateStrategy: () => request<any>('/api/strategy/generate', { method: 'POST', body: '{}' }),
   strategyConfig: () => request<any>('/api/strategy/config').then(unwrapApi),
   saveStrategyConfig: (payload: any) => request<any>('/api/strategy/config', { method: 'POST', body: JSON.stringify(payload) }).then(unwrapApi),
@@ -191,6 +195,7 @@ export const api = {
   runTask: (kind: string, payload: any = {}) => request<any>('/api/tasks/run', { method: 'POST', body: JSON.stringify({ kind, payload }) }),
   createTask: (kind: string, payload: any = {}) => request<any>('/api/tasks', { method: 'POST', body: JSON.stringify({ kind, payload }) }),
   tasks: () => request<any>('/api/tasks'),
+  taskRecent: (limit = 8) => request<any>(`/api/task/recent?limit=${limit}`),
   tasksHealth: () => request<any>('/api/tasks/health'),
   taskDetail: (taskId: string) => request<any>(`/api/tasks/${encodeURIComponent(taskId)}`),
   taskCancel: (taskId: string, reason = '前端用户请求取消') => request<any>(`/api/tasks/${encodeURIComponent(taskId)}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),

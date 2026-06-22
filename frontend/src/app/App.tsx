@@ -59,7 +59,7 @@ export function App() {
       onCollapse={() => setCollapsed((value) => !value)}
       onNavigate={handleNavigate}
     >
-      <PageContainer title={title.title} subtitle={title.subtitle}>
+      <PageContainer title={title.title} subtitle={title.subtitle} hideHeader={routeState.route === 'dashboard'}>
         <Suspense fallback={<LoadingBlock rows={8} />}>
           <ActivePage
             activeSubKey={routeState.childKey}
