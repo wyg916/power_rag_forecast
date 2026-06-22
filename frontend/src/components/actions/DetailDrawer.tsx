@@ -11,10 +11,10 @@ interface DetailDrawerProps {
 
 export function DetailDrawer({ title, open, data, children, onClose }: DetailDrawerProps) {
   return (
-    <Drawer width={720} title={title} open={open} onClose={onClose} destroyOnClose>
+    <Drawer className="detail-drawer" width={720} title={title} open={open} onClose={onClose} destroyOnClose>
       {children}
       {data && (
-        <Descriptions bordered size="small" column={1}>
+        <Descriptions className="detail-drawer-descriptions" bordered size="small" column={1}>
           {Object.entries(data).map(([key, value]) => (
             <Descriptions.Item key={key} label={key}>
               {typeof value === 'object' ? (

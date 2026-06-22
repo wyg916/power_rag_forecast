@@ -58,6 +58,13 @@ export interface MenuGroup {
   children: MenuChild[];
 }
 
+export interface MenuSection {
+  key: string;
+  label: string;
+  description?: string;
+  routes: RouteKey[];
+}
+
 export interface TimePoint {
   time: string;
   value: number;

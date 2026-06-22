@@ -10,7 +10,7 @@ interface PageContainerProps {
 
 export function PageContainer({ title, subtitle, extra, children }: PageContainerProps) {
   return (
-    <section className="page-container">
+    <section className="page-container page-container-standard">
       <PageHeader title={title} subtitle={subtitle} extra={extra} />
       {children}
     </section>

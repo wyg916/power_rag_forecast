@@ -2,7 +2,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, ThunderboltFilled } from '@ant-de
 import { Button, Menu } from 'antd';
 import type { ItemType } from 'antd/es/menu/interface';
 import type { RouteKey } from '../types/ui';
-import { menuGroups } from '../app/router';
+import { menuGroups, menuSections } from '../app/router';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -12,14 +12,17 @@ interface SidebarProps {
   onNavigate: (route: RouteKey, childKey?: string) => void;
 }
 
-export function Sidebar({ collapsed, route, onCollapse, onNavigate }: SidebarProps) {
-  const items: ItemType[] = menuGroups.map((group) => ({
-    key: group.key,
-    icon: group.icon,
-    label: group.label
-  }));
-
+export function Sidebar({ collapsed, route, activeSubKey, onCollapse, onNavigate }: SidebarProps) {
+  const groupByKey = new Map(menuGroups.map((group) => [group.key, group]));
   const selectedKeys = [route];
+  const activeGroup = groupByKey.get(route);
+  const activeChild = activeGroup?.children.find((child) => child.key === activeSubKey);
+
+  const handleMenuClick = (key: string) => {
+    const parent = groupByKey.get(key as RouteKey);
+    if (!parent) return;
+    onNavigate(parent.key, parent.children[0]?.key);
+  };
 
   return (
     <aside className={`sidebar-shell ${collapsed ? 'collapsed' : ''}`}>
@@ -27,19 +30,50 @@ export function Sidebar({ collapsed, route, onCollapse, onNavigate }: SidebarPro
         <div className="brand-mark">
           <ThunderboltFilled />
         </div>
-        {!collapsed && <div className="brand-title">AI 售电交易决策平台</div>}
+        {!collapsed && (
+          <div className="brand-copy">
+            <div className="brand-title">智能运营分析</div>
+            <div className="brand-subtitle">售电交易决策平台</div>
+          </div>
+        )}
       </div>
-      <Menu
-        mode="inline"
-        inlineCollapsed={collapsed}
-        selectedKeys={selectedKeys}
-        items={items}
-        onClick={(info) => {
-          const parent = menuGroups.find((group) => group.key === info.key);
-          if (!parent) return;
-          onNavigate(parent.key, parent.children[0]?.key);
-        }}
-      />
+      <nav className="sidebar-nav" aria-label="主导航">
+        {menuSections.map((section) => {
+          const items: ItemType[] = section.routes
+            .map((key) => groupByKey.get(key))
+            .filter(Boolean)
+            .map((group) => ({
+              key: group!.key,
+              icon: group!.icon,
+              label: group!.label
+            }));
+
+          return (
+            <div className="sidebar-section" key={section.key}>
+              {!collapsed && (
+                <div className="sidebar-section-label">
+                  <span>{section.label}</span>
+                  <small>{section.description}</small>
+                </div>
+              )}
+              <Menu
+                mode="inline"
+                inlineCollapsed={collapsed}
+                selectedKeys={selectedKeys}
+                items={items}
+                onClick={(info) => handleMenuClick(String(info.key))}
+              />
+            </div>
+          );
+        })}
+      </nav>
+      {!collapsed && activeGroup && (
+        <div className="sidebar-current">
+          <span>当前板块</span>
+          <strong>{activeGroup.label}</strong>
+          <small>{activeChild?.label || activeGroup.children[0]?.label}</small>
+        </div>
+      )}
       <div className="collapse-entry">
         <Button type="text" icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={onCollapse}>
           {!collapsed && '收起菜单'}
