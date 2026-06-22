@@ -17,11 +17,7 @@ export const menuGroups: MenuGroup[] = [
     key: 'dashboard',
     label: '首页',
     icon: <HomeOutlined />,
-    children: [
-      { key: 'dashboard-overview', label: '驾驶舱' },
-      { key: 'dashboard-risk', label: '风险提醒' },
-      { key: 'dashboard-shortcut', label: '快捷入口' }
-    ]
+    children: [{ key: 'dashboard-overview', label: '总览驾驶舱' }]
   },
   {
     key: 'data',
@@ -129,10 +125,17 @@ export const menuGroups: MenuGroup[] = [
 
 export const menuSections: MenuSection[] = [
   {
+    key: 'home',
+    label: '首页',
+    description: '系统入口与总览驾驶舱',
+    compact: true,
+    routes: ['dashboard']
+  },
+  {
     key: 'business',
     label: '业务中心',
-    description: '驾驶舱、数据、预测、策略与报告',
-    routes: ['dashboard', 'data', 'forecast', 'strategy', 'report']
+    description: '数据、预测、策略与报告',
+    routes: ['data', 'forecast', 'strategy', 'report']
   },
   {
     key: 'intelligence',
@@ -185,7 +188,8 @@ const routeAliases: Record<string, RouteKey> = {
 const childAliases: Partial<Record<RouteKey, Record<string, string>>> = {
   dashboard: {
     overview: 'dashboard-overview',
-    risk: 'dashboard-risk'
+    risk: 'dashboard-overview',
+    shortcut: 'dashboard-overview'
   },
   forecast: {
     '24h': 'forecast-24h',

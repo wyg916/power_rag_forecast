@@ -1,5 +1,4 @@
 import {
-  BellOutlined,
   ClockCircleOutlined,
   DownOutlined,
   GlobalOutlined,
@@ -11,7 +10,7 @@ import {
   SyncOutlined,
   UserOutlined
 } from '@ant-design/icons';
-import { Avatar, Badge, Button, Dropdown, Input, Select, Space, Tag, Tooltip } from 'antd';
+import { Avatar, Button, Dropdown, Input, Select, Space, Tag, Tooltip } from 'antd';
 import { useAuth } from '../context/AuthContext';
 
 export function HeaderBar() {
@@ -63,22 +62,17 @@ export function HeaderBar() {
           <strong>浙江省</strong>
           <DownOutlined className="header-down" />
         </span>
-        <span className="header-meta">
+        <span className="header-meta header-model-meta">
           模型版本：
           <strong>v3.2.1</strong>
           <Tag color="success">最新</Tag>
+          <Tag className="global-status-pill" color="success">
+            <SafetyCertificateOutlined />
+            只读 SQL 已启用
+          </Tag>
         </span>
       </Space>
       <Space size={10} className="header-actions">
-        <Tag className="global-status-pill" color="success">
-          <SafetyCertificateOutlined />
-          只读 SQL 已启用
-        </Tag>
-        <Badge count={12} size="small">
-          <Tooltip title="告警通知">
-            <Button type="text" shape="circle" icon={<BellOutlined />} />
-          </Tooltip>
-        </Badge>
         <Tooltip title="帮助中心">
           <Button type="text" shape="circle" icon={<QuestionCircleOutlined />} />
         </Tooltip>

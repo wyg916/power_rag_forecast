@@ -5,13 +5,14 @@ interface PageContainerProps {
   title: string;
   subtitle?: string;
   extra?: ReactNode;
+  hideHeader?: boolean;
   children: ReactNode;
 }
 
-export function PageContainer({ title, subtitle, extra, children }: PageContainerProps) {
+export function PageContainer({ title, subtitle, extra, hideHeader, children }: PageContainerProps) {
   return (
     <section className="page-container page-container-standard">
-      <PageHeader title={title} subtitle={subtitle} extra={extra} />
+      {!hideHeader && <PageHeader title={title} subtitle={subtitle} extra={extra} />}
       {children}
     </section>
   );

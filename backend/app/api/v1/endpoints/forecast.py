@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from ....core.security import CurrentUser, require_permission
 from ....data_access import dashboard_summary, load_latest_forecast
 from ....repositories.audit_repository import write_audit_log
+from ....services.dashboard_home_service import dashboard_kpi_payload, forecast_24h_payload, risk_summary_payload
 from ....workers.dispatcher import enqueue_task
 from ....schemas import ForecastRunRequest
 from ....stage1_services import (
@@ -28,6 +29,16 @@ router = APIRouter()
 @router.get("/api/dashboard/summary")
 def dashboard() -> dict:
     return dashboard_summary()
+
+
+@router.get("/api/dashboard/kpi")
+def dashboard_kpi() -> dict:
+    return dashboard_kpi_payload()
+
+
+@router.get("/api/risk/summary")
+def risk_summary() -> dict:
+    return risk_summary_payload()
 
 
 @router.post("/api/forecast/run")
@@ -56,6 +67,11 @@ def run_forecast(
 @router.get("/api/forecast/latest")
 def latest_forecast() -> dict:
     return load_latest_forecast()
+
+
+@router.get("/api/forecast/24h")
+def forecast_24h() -> dict:
+    return forecast_24h_payload()
 
 
 @router.get("/api/prediction/latest")

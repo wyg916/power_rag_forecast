@@ -62,6 +62,7 @@ export interface MenuSection {
   key: string;
   label: string;
   description?: string;
+  compact?: boolean;
   routes: RouteKey[];
 }
 

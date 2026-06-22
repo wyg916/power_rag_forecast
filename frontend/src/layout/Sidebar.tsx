@@ -50,7 +50,7 @@ export function Sidebar({ collapsed, route, activeSubKey, onCollapse, onNavigate
 
           return (
             <div className="sidebar-section" key={section.key}>
-              {!collapsed && (
+              {!collapsed && !section.compact && (
                 <div className="sidebar-section-label">
                   <span>{section.label}</span>
                   <small>{section.description}</small>
