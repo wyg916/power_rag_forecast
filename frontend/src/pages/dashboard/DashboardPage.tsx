@@ -65,6 +65,11 @@ export function DashboardPage(_: PageProps) {
 
   const riskLevel = data?.risk?.risk_level === 'high' ? '高风险' : data?.risk?.risk_level === 'medium' ? '需关注' : '运行正常';
 
+  const kpiItems = data?.kpi?.items || [];
+  const forecastConfidence = kpiItems.find((item: any) => item.key === 'forecast_confidence')?.value;
+  const dataHealth = kpiItems.find((item: any) => item.key === 'data_health')?.value;
+  const taskReminder = kpiItems.find((item: any) => item.key === 'task_reminder')?.value;
+
   return (
     <div className="home-dashboard-page">
       <div className="home-dashboard-titlebar">
@@ -72,6 +77,12 @@ export function DashboardPage(_: PageProps) {
           <div className="home-breadcrumb">首页 / 总览驾驶舱</div>
           <h1>总览驾驶舱</h1>
           <p>汇总今日供需风险、预测、策略、报告与任务状态，辅助经营决策。</p>
+        </div>
+        <div className="home-title-insights" aria-label="驾驶舱运行摘要">
+          <span><strong>{data?.risk?.high_risk_count ?? 0}</strong> 高风险窗口</span>
+          <span><strong>{forecastConfidence == null ? '--' : `${Number(forecastConfidence).toFixed(1)}%`}</strong> 预测可信度</span>
+          <span><strong>{dataHealth == null ? '--' : `${Number(dataHealth).toFixed(1)}%`}</strong> 数据健康</span>
+          <span><strong>{taskReminder ?? 0}</strong> 任务提醒</span>
         </div>
         <Space wrap>
           <Tag color={data?.risk?.risk_level === 'high' ? 'error' : data?.risk?.risk_level === 'medium' ? 'warning' : 'success'}>
@@ -83,7 +94,7 @@ export function DashboardPage(_: PageProps) {
         </Space>
       </div>
 
-      <HomeKpiStrip items={data?.kpi?.items || []} />
+      <HomeKpiStrip items={kpiItems} />
 
       <section className="home-dashboard-content">
         <div className="home-dashboard-left">
