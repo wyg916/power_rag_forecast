@@ -3,13 +3,16 @@ import type { ThemeConfig } from 'antd';
 export const themeTokens = {
   primary: '#00B894',
   primaryDark: '#008F72',
+  primaryHover: '#06C49F',
   primaryLight: '#E6F7F1',
-  pageBg: '#F7F9FC',
+  pageBg: '#F5F7FB',
   cardBg: '#FFFFFF',
-  border: '#E5EAF0',
-  title: '#1F2937',
-  text: '#374151',
-  secondary: '#6B7280',
+  softBg: '#F8FAFC',
+  border: '#DFE6EF',
+  title: '#111827',
+  text: '#334155',
+  secondary: '#64748B',
+  muted: '#94A3B8',
   danger: '#FF4D4F',
   warning: '#FAAD14',
   info: '#1677FF',
@@ -24,13 +27,22 @@ export const themeConfig: ThemeConfig = {
     colorError: themeTokens.danger,
     colorInfo: themeTokens.info,
     colorText: themeTokens.title,
+    colorTextBase: themeTokens.text,
     colorTextSecondary: themeTokens.secondary,
+    colorTextTertiary: themeTokens.muted,
     colorBorder: themeTokens.border,
+    colorBorderSecondary: '#EDF2F7',
     colorBgLayout: themeTokens.pageBg,
     colorBgContainer: themeTokens.cardBg,
-    borderRadius: 12,
-    borderRadiusLG: 16,
+    colorBgElevated: themeTokens.cardBg,
+    borderRadius: 8,
+    borderRadiusLG: 12,
     fontSize: 14,
+    fontSizeSM: 13,
+    fontSizeLG: 16,
+    controlHeight: 36,
+    controlHeightSM: 30,
+    controlHeightLG: 40,
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
   },
@@ -44,19 +56,20 @@ export const themeConfig: ThemeConfig = {
       itemSelectedBg: themeTokens.primaryLight,
       itemSelectedColor: themeTokens.primaryDark,
       itemHoverColor: themeTokens.primaryDark,
-      itemBorderRadius: 10,
+      itemBorderRadius: 8,
+      itemHeight: 42,
       subMenuItemBg: 'transparent'
     },
     Card: {
-      borderRadiusLG: 16,
-      paddingLG: 20
+      borderRadiusLG: 8,
+      paddingLG: 16
     },
     Button: {
       borderRadius: 8,
       controlHeight: 36
     },
     Table: {
-      headerBg: '#F8FAFC',
+      headerBg: themeTokens.softBg,
       rowHoverBg: '#F0FFFA',
       borderColor: themeTokens.border
     },

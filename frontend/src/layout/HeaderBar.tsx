@@ -6,10 +6,12 @@ import {
   LoginOutlined,
   LogoutOutlined,
   QuestionCircleOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
   SyncOutlined,
   UserOutlined
 } from '@ant-design/icons';
-import { Avatar, Badge, Button, Dropdown, Select, Space, Tag } from 'antd';
+import { Avatar, Badge, Button, Dropdown, Input, Select, Space, Tag, Tooltip } from 'antd';
 import { useAuth } from '../context/AuthContext';
 
 export function HeaderBar() {
@@ -34,7 +36,7 @@ export function HeaderBar() {
 
   return (
     <div className="header-bar">
-      <Space size={18} className="header-left">
+      <div className="header-left">
         <Select
           className="project-select"
           value="华东虚拟电厂示范项目"
@@ -43,6 +45,14 @@ export function HeaderBar() {
             { value: '浙江新能源聚合项目', label: '项目：浙江新能源聚合项目' }
           ]}
         />
+        <Input
+          className="header-search"
+          prefix={<SearchOutlined />}
+          placeholder="搜索页面、任务、策略"
+          allowClear
+        />
+      </div>
+      <Space size={14} className="header-meta-group">
         <span className="header-meta">
           <ClockCircleOutlined />
           数据时间：2025-06-21 10:30:00
@@ -59,12 +69,22 @@ export function HeaderBar() {
           <Tag color="success">最新</Tag>
         </span>
       </Space>
-      <Space size={16} className="header-actions">
+      <Space size={10} className="header-actions">
+        <Tag className="global-status-pill" color="success">
+          <SafetyCertificateOutlined />
+          只读 SQL 已启用
+        </Tag>
         <Badge count={12} size="small">
-          <Button type="text" shape="circle" icon={<BellOutlined />} />
+          <Tooltip title="告警通知">
+            <Button type="text" shape="circle" icon={<BellOutlined />} />
+          </Tooltip>
         </Badge>
-        <Button type="text" shape="circle" icon={<QuestionCircleOutlined />} />
-        <Button type="text" shape="circle" icon={<SyncOutlined />} />
+        <Tooltip title="帮助中心">
+          <Button type="text" shape="circle" icon={<QuestionCircleOutlined />} />
+        </Tooltip>
+        <Tooltip title="刷新当前视图">
+          <Button type="text" shape="circle" icon={<SyncOutlined />} />
+        </Tooltip>
         <Dropdown trigger={['click']} menu={{ items: menuItems }}>
           <Button type="text" className="user-area">
             <Avatar icon={<UserOutlined />} />

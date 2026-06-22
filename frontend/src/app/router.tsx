@@ -10,7 +10,7 @@ import {
   ThunderboltOutlined,
   FundOutlined
 } from '@ant-design/icons';
-import type { MenuGroup, RouteKey, RouteState } from '../types/ui';
+import type { MenuGroup, MenuSection, RouteKey, RouteState } from '../types/ui';
 
 export const menuGroups: MenuGroup[] = [
   {
@@ -124,6 +124,27 @@ export const menuGroups: MenuGroup[] = [
       { key: 'settings-param', label: '参数配置' },
       { key: 'settings-api', label: '接口配置' }
     ]
+  }
+];
+
+export const menuSections: MenuSection[] = [
+  {
+    key: 'business',
+    label: '业务中心',
+    description: '驾驶舱、数据、预测、策略与报告',
+    routes: ['dashboard', 'data', 'forecast', 'strategy', 'report']
+  },
+  {
+    key: 'intelligence',
+    label: '智能应用',
+    description: 'AI 助手与知识库检索',
+    routes: ['assistant', 'knowledge']
+  },
+  {
+    key: 'operations',
+    label: '运营管理',
+    description: '模型、任务与系统配置',
+    routes: ['model', 'task', 'settings']
   }
 ];
 

@@ -9,6 +9,7 @@ import { AppChart } from '../../components/charts/AppChart';
 import { baseGrid, chartColors } from '../../components/charts/chartTheme';
 import { GaugeChart } from '../../components/charts/GaugeChart';
 import { PriceCurveChart } from '../../components/charts/PriceCurveChart';
+import { FilterBar } from '../../components/common/FilterBar';
 import { PageTabs } from '../../components/common/PageTabs';
 import { DataSourceTag, DataStateBanner, RiskTag } from '../../components/common/States';
 import { MetricGrid, ResponsiveGrid } from '../../components/layout/UnifiedPage';
@@ -123,7 +124,14 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   return (
     <div className="page-stack">
       <PageTabs items={tabs} activeKey={activeSubKey} onChange={onSubNavigate} />
-      <div className="filter-bar">
+      <FilterBar
+        actions={
+          <>
+            <Button onClick={loadData}>刷新</Button>
+            <Button type="primary" loading={loading} onClick={runForecast}>更新预测</Button>
+          </>
+        }
+      >
         <Space size={16} wrap>
           <span>预测日期</span>
           <DatePicker suffixIcon={<CalendarOutlined />} />
@@ -133,11 +141,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           <Select value="v3.2.1（最新）" options={[{ value: 'v3.2.1（最新）', label: 'v3.2.1（最新）' }]} />
           <DataSourceTag source={forecastData.dataSource || 'postgresql_or_file'} />
         </Space>
-        <Space>
-          <Button onClick={loadData}>刷新</Button>
-          <Button type="primary" loading={loading} onClick={runForecast}>更新预测</Button>
-        </Space>
-      </div>
+      </FilterBar>
       <DataStateBanner
         scope="预测中心"
         loading={loading}

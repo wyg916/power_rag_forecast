@@ -5,8 +5,23 @@ export function LoadingBlock({ rows = 4 }: { rows?: number }) {
   return <Skeleton active paragraph={{ rows }} />;
 }
 
-export function EmptyState({ description = '暂无数据' }: { description?: ReactNode }) {
-  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={description} />;
+export function EmptyState({
+  description = '暂无数据',
+  title,
+  action
+}: {
+  description?: ReactNode;
+  title?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="empty-state">
+      {title && <div className="empty-state-title">{title}</div>}
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={description}>
+        {action}
+      </Empty>
+    </div>
+  );
 }
 
 export function ErrorState({ message, onRetry }: { message?: ReactNode; onRetry?: () => void }) {
@@ -28,8 +43,14 @@ export function InlineError({ message }: { message?: ReactNode }) {
 
 export function DataSourceTag({ source }: { source?: string }) {
   const value = source || 'unknown';
-  const color = value.includes('postgres') ? 'success' : value.includes('file') ? 'processing' : value.includes('mock') ? 'warning' : 'default';
-  return <Tag color={color}>{value}</Tag>;
+  const lower = value.toLowerCase();
+  const isMock = lower.includes('mock') || lower.includes('fallback');
+  const isDerived = lower.includes('derived') || lower.includes('calculated');
+  const isFile = lower.includes('file') || lower.includes('import');
+  const isReal = lower.includes('postgres') || lower.includes('api') || lower.includes('real');
+  const color = isMock ? 'warning' : isDerived ? 'processing' : isFile ? 'blue' : isReal ? 'success' : 'default';
+  const label = isMock ? '兜底数据' : isDerived ? '派生数据' : isFile ? '文件数据' : isReal ? '真实数据' : '数据源';
+  return <Tag className={`data-source-tag ${isMock ? 'data-source-warning' : ''}`} color={color}>{label}：{value}</Tag>;
 }
 
 export function DataStateBanner({
