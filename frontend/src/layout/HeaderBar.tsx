@@ -74,10 +74,10 @@ export function HeaderBar() {
       </Space>
       <Space size={10} className="header-actions">
         <Tooltip title="帮助中心">
-          <Button type="text" shape="circle" icon={<QuestionCircleOutlined />} />
+          <Button type="text" shape="circle" icon={<QuestionCircleOutlined />} onClick={() => { window.location.hash = '/knowledge/knowledge-search'; }} />
         </Tooltip>
         <Tooltip title="刷新当前视图">
-          <Button type="text" shape="circle" icon={<SyncOutlined />} />
+          <Button type="text" shape="circle" icon={<SyncOutlined />} onClick={() => window.location.reload()} />
         </Tooltip>
         <Dropdown trigger={['click']} menu={{ items: menuItems }}>
           <Button type="text" className="user-area">
