@@ -156,6 +156,31 @@ export const api = {
     if (date) params.set('date', date);
     return request<any>(`/api/prediction/latest${params.toString() ? `?${params}` : ''}`);
   },
+  predictionDetail: (market?: string, date?: string) => {
+    const params = new URLSearchParams();
+    if (market) params.set('market', market);
+    if (date) params.set('date', date);
+    return request<any>(`/api/prediction/detail${params.toString() ? `?${params}` : ''}`);
+  },
+  marketHistory: (market?: string, start?: string, end?: string) => {
+    const params = new URLSearchParams();
+    if (market) params.set('market', market);
+    if (start) params.set('start', start);
+    if (end) params.set('end', end);
+    return request<any>(`/api/market/history${params.toString() ? `?${params}` : ''}`);
+  },
+  modelExplain: (market?: string, date?: string) => {
+    const params = new URLSearchParams();
+    if (market) params.set('market', market);
+    if (date) params.set('date', date);
+    return request<any>(`/api/model/explain${params.toString() ? `?${params}` : ''}`);
+  },
+  riskLevel: (market?: string, date?: string) => {
+    const params = new URLSearchParams();
+    if (market) params.set('market', market);
+    if (date) params.set('date', date);
+    return request<any>(`/api/risk/level${params.toString() ? `?${params}` : ''}`);
+  },
   reportLatest: () => request<any>('/api/reports/latest'),
   reportDetail: (reportId: string) => request<any>(`/api/reports/${encodeURIComponent(reportId)}`),
   reportDownloadUrl: (reportId: string) => downloadUrl(`/api/reports/${encodeURIComponent(reportId)}/download`),

@@ -120,7 +120,7 @@ export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: a
           <HomeSourceTag source={forecast?.data_source} />
         </Space>
       </div>
-      <AppChart option={option} height={238} />
+      <AppChart option={option} height="100%" />
     </div>
   );
 }
