@@ -19,7 +19,7 @@ import {
   StrategyInsightPanel
 } from '../../components/forecast/ForecastDesign';
 import { PageTabs } from '../../components/common/PageTabs';
-import { DataSourceTag, DataStateBanner } from '../../components/common/States';
+import { DataStateBanner } from '../../components/common/States';
 import { getForecastCenterData } from '../../services/forecastApi';
 import type { PageProps } from '../../types/ui';
 
@@ -140,7 +140,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           title: '相对上一批次变化',
           value: Number.isFinite(avgChange) ? `${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}` : '--',
           unit: '%',
-          note: '均价变化，派生自市场历史接口',
+          note: '均价变化',
           trend: Number.isFinite(avgChange) ? avgChange : 0,
           tone: 'orange',
           source: data?.comparison?.derivedSource
@@ -162,10 +162,9 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           title: '评估结论',
           value: score == null ? '--' : score.toFixed(1),
           unit: '/100',
-          note: `${String(data?.leakageCheck?.status || '待接入')}，派生自评估接口`,
+          note: String(data?.leakageCheck?.status || '待接入'),
           trend: score == null ? 0 : score - 90,
-          tone: 'purple',
-          source: 'derived_from_model_evaluation_apis'
+          tone: 'purple'
         }
       ];
     }
@@ -178,13 +177,16 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   return (
     <div className="forecast-design-page">
-      <ForecastPageHeader title={title} subtitle={subtitle} tabs={tabs} />
-      <ForecastContextBar data={data} actions={actions} />
+      <ForecastPageHeader
+        title={title}
+        subtitle={subtitle}
+        tabs={tabs}
+        controls={<ForecastContextBar data={data} actions={actions} />}
+      />
       {shouldShowStateBanner ? (
         <DataStateBanner
           scope="预测中心"
           loading={loading}
-          source={data?.dataSource}
           empty={data?.empty}
           mockFallback={false}
           partialErrors={data?.partialErrors}
@@ -202,7 +204,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           </div>
           <div className="forecast-detail-grid">
             <div className="forecast-card forecast-table-card">
-              <div className="forecast-card-head"><h2>24小时预测明细</h2><DataSourceTag source="api_forecast_24h" /></div>
+              <div className="forecast-card-head"><h2>24小时预测明细</h2></div>
               <ForecastDetailTable rows={rows} compact />
             </div>
             <ForecastSummaryCards data={data} />
@@ -218,7 +220,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           </div>
           <div className="forecast-history-bottom">
             <div className="forecast-card forecast-table-card">
-              <div className="forecast-card-head"><h2>对比明细表</h2><DataSourceTag source={data?.comparison?.derivedSource} /></div>
+              <div className="forecast-card-head"><h2>对比明细表</h2></div>
               <ComparisonDetailTable rows={comparisonRows} />
             </div>
             <HistorySideCards data={data} />
