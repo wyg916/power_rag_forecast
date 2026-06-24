@@ -306,7 +306,7 @@ a {
 }
 
 .content-shell:has(.forecast-design-page) {
-  padding: 14px 20px 0;
+  padding: 8px 14px 0;
   overflow-x: hidden;
 }
 
@@ -3365,22 +3365,23 @@ a {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .forecast-design-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(340px, 0.7fr) minmax(760px, 1.75fr);
   min-width: 0;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
 }
 
 .forecast-design-header h1 {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   color: var(--color-title);
-  font-size: 23px;
+  font-size: 22px;
   font-weight: 850;
   line-height: 1.2;
 }
@@ -3388,11 +3389,25 @@ a {
 .forecast-design-header p {
   margin: 0;
   color: var(--color-secondary);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.forecast-heading-copy {
+  min-width: 0;
+}
+
+.forecast-header-utility {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .forecast-design-header .page-tabs {
-  min-width: 260px;
+  min-width: 210px;
+  flex: 0 0 auto;
 }
 
 .forecast-design-header .ant-tabs-nav {
@@ -3411,55 +3426,34 @@ a {
 
 .forecast-context-bar {
   display: flex;
+  min-height: 44px;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 7px 9px;
 }
 
 .forecast-filter-items {
   display: flex;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
   color: var(--color-secondary);
   font-size: 13px;
 }
 
 .forecast-filter-items strong {
-  margin-left: 8px;
+  margin-left: 5px;
   color: var(--color-title);
   font-weight: 800;
-}
-
-.forecast-inline-derived {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-secondary);
-}
-
-.forecast-derived-tags {
-  display: flex;
-  width: fit-content;
-  max-width: 100%;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 9px;
-  border: 1px solid var(--color-border-soft);
-  border-radius: 10px;
-  background: #fff;
-  color: var(--color-secondary);
-  font-size: 12px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045);
 }
 
 .forecast-metric-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .forecast-metric-grid.metric-count-6 {
@@ -3468,10 +3462,10 @@ a {
 
 .forecast-metric-card {
   display: flex;
-  min-height: 108px;
+  min-height: 94px;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 15px 8px;
+  gap: 4px;
+  padding: 9px 12px 6px;
 }
 
 .forecast-metric-top {
@@ -3483,14 +3477,14 @@ a {
 
 .forecast-metric-icon {
   display: grid;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
   place-items: center;
   border-radius: 10px;
   background: var(--color-primary-light);
   color: var(--color-primary-dark);
-  font-size: 19px;
+  font-size: 17px;
 }
 
 .tone-orange .forecast-metric-icon { background: var(--color-warning-bg); color: #d97706; }
@@ -3507,7 +3501,7 @@ a {
 
 .forecast-metric-card strong {
   color: var(--color-title);
-  font-size: 23px;
+  font-size: 21px;
   font-weight: 850;
   line-height: 1;
 }
@@ -3528,17 +3522,17 @@ a {
 
 .trend-up { color: var(--color-danger); }
 .trend-down { color: var(--color-primary-dark); }
-.forecast-mini-empty { height: 38px; color: var(--color-muted); font-size: 12px; line-height: 38px; }
+.forecast-mini-empty { height: 30px; color: var(--color-muted); font-size: 12px; line-height: 30px; }
 
 .forecast-primary-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.95fr) minmax(350px, 0.95fr);
-  gap: 12px;
+  gap: 8px;
   align-items: stretch;
 }
 
 .forecast-card {
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .forecast-card-head {
@@ -3547,7 +3541,7 @@ a {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .forecast-card-head > div {
@@ -3571,19 +3565,22 @@ a {
 
 .forecast-chart-card,
 .comparison-chart-card {
-  min-height: 328px;
+  height: 304px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .forecast-insight-panel {
   display: flex;
-  max-height: 372px;
+  height: 304px;
+  max-height: none;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow: auto;
 }
 
 .forecast-strategy-block {
-  padding: 10px 11px;
+  padding: 8px 9px;
   border: 1px solid var(--color-border-soft);
   border-radius: 10px;
   background: var(--color-bg-soft);
@@ -3624,7 +3621,7 @@ a {
 .forecast-baseline-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(650px, 0.9fr);
-  gap: 12px;
+  gap: 8px;
   align-items: stretch;
 }
 
@@ -3632,7 +3629,7 @@ a {
 .history-side-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .forecast-bottom-summary .forecast-card-head,
@@ -3647,14 +3644,16 @@ a {
 
 .compact-card {
   display: flex;
-  min-height: 190px;
+  min-height: 0;
+  height: 178px;
   flex-direction: column;
+  overflow: auto;
 }
 
 .kv-list {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px 12px;
+  gap: 6px 10px;
   margin: 0;
 }
 
@@ -3680,7 +3679,13 @@ a {
   grid-template-columns: 70px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+}
+
+.forecast-detail-grid > .forecast-table-card,
+.forecast-history-bottom > .forecast-table-card {
+  height: 178px;
+  overflow: hidden;
 }
 
 .decision-pill {
@@ -3757,8 +3762,13 @@ a {
 }
 
 @media (max-width: 1500px) {
-  .forecast-metric-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .forecast-design-header {
+    grid-template-columns: minmax(280px, 0.55fr) minmax(720px, 1.65fr);
+  }
+
+  .forecast-filter-items {
+    gap: 8px;
+    font-size: 12px;
   }
 
   .model-metric-grid {
@@ -3767,6 +3777,28 @@ a {
 }
 
 @media (max-width: 1180px) {
+  .forecast-design-header {
+    grid-template-columns: 1fr;
+  }
+
+  .forecast-header-utility {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .forecast-context-bar {
+    width: 100%;
+  }
+
+  .forecast-filter-items {
+    flex-wrap: wrap;
+  }
+
+  .forecast-metric-grid,
+  .forecast-metric-grid.metric-count-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .forecast-primary-grid,
   .forecast-detail-grid,
   .forecast-history-bottom,

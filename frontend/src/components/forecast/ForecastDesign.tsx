@@ -18,7 +18,7 @@ import type { ReactNode } from 'react';
 import { AppChart } from '../charts/AppChart';
 import { chartColors } from '../charts/chartTheme';
 import { GaugeChart } from '../charts/GaugeChart';
-import { DataSourceTag, RiskTag } from '../common/States';
+import { RiskTag } from '../common/States';
 
 const toneIcons: Record<string, ReactNode> = {
   orange: <RiseOutlined />,
@@ -47,35 +47,40 @@ function metricIcon(index: number) {
   return [<RiseOutlined />, <CloudDownloadOutlined />, <LineChartOutlined />, <ReloadOutlined />, <SafetyCertificateOutlined />, <ExperimentOutlined />][index] || <BarChartOutlined />;
 }
 
-export function ForecastPageHeader({ title, subtitle, tabs }: { title: string; subtitle: string; tabs?: ReactNode }) {
+export function ForecastPageHeader({
+  title,
+  subtitle,
+  tabs,
+  controls
+}: {
+  title: string;
+  subtitle: string;
+  tabs?: ReactNode;
+  controls?: ReactNode;
+}) {
   return (
     <div className="forecast-design-header">
-      <div>
+      <div className="forecast-heading-copy">
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>
-      {tabs}
+      <div className="forecast-header-utility">
+        {tabs}
+        {controls}
+      </div>
     </div>
   );
 }
 
 export function ForecastContextBar({ data, actions }: { data: any; actions: ReactNode }) {
-  const derivedFields = data?.quality?.derivedFields || [];
   return (
     <div className="forecast-context-bar">
       <div className="forecast-filter-items">
         <span>预测日期 <strong>{data?.date || '待接入'}</strong></span>
         <span>区域 <strong>{data?.region || '浙江省'}</strong></span>
         <span>模型版本 <strong>{data?.modelVersion || 'v3.2.1'}</strong><Tag color="success">最新</Tag></span>
-        <span>数据源 <DataSourceTag source={data?.dataSource} /></span>
-        {derivedFields.length ? (
-          <span className="forecast-inline-derived">
-            派生字段
-            {derivedFields.map((item: string) => <Tag key={item} color="processing">派生：{item}</Tag>)}
-          </span>
-        ) : null}
       </div>
-      <Space wrap>{actions}</Space>
+      <Space size={8}>{actions}</Space>
     </div>
   );
 }
@@ -86,7 +91,7 @@ export function MiniSparkline({ values, tone = 'green' }: { values?: number[]; t
   if (!data.length) return <div className="forecast-mini-empty">暂无趋势</div>;
   return (
     <AppChart
-      height={38}
+      height={30}
       option={{
         animation: false,
         grid: { left: 0, right: 0, top: 5, bottom: 5 },
@@ -169,7 +174,7 @@ export function ForecastChartCard({ data }: { data: any }) {
         <div><h2>24小时电价预测</h2><p>包含置信区间、低价窗口、高风险时段和峰值点标注。</p></div>
         <Space><Tag>小时</Tag><span className="card-unit">单位：元/kWh</span></Space>
       </div>
-      {series.length ? <AppChart option={option} height={276} /> : <Empty description="暂无 24 小时预测曲线" />}
+      {series.length ? <AppChart option={option} height={246} /> : <Empty description="暂无 24 小时预测曲线" />}
     </div>
   );
 }
@@ -179,7 +184,7 @@ export function StrategyInsightPanel({ data }: { data: any }) {
   const insights = data?.strategy?.must_watch || data?.strategy?.items || [];
   return (
     <div className="forecast-card forecast-insight-panel">
-      <div className="forecast-card-head"><h2>策略洞察</h2><DataSourceTag source={data?.strategy?.data_source || 'api_strategy_today'} /></div>
+      <div className="forecast-card-head"><h2>策略洞察</h2></div>
       <StrategyBlock type="success" title="今日核心结论">
         预计 {data?.highWindowLabel} 出现显著高价风险窗口，峰值 {hour(data?.summary?.maxHour)} 达到 {fmt(data?.summary?.maxPrice, 2)} 元/kWh；{data?.lowWindowLabel} 为低价采购窗口。
       </StrategyBlock>
@@ -197,7 +202,7 @@ export function StrategyInsightPanel({ data }: { data: any }) {
         ))}
       </StrategyBlock>
       <StrategyBlock type="info" title="风险提示 / 可信度说明">
-        本次预测可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%，来源：<DataSourceTag source={data?.confidence?.source} />。
+        本次预测可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%，请结合风险窗口和业务约束审慎决策。
       </StrategyBlock>
     </div>
   );
@@ -221,7 +226,7 @@ export function ForecastDetailTable({ rows, compact = false }: { rows: any[]; co
     { title: '置信度（%）', dataIndex: 'confidence', align: 'right' },
     { title: '操作', render: () => <Button type="link" size="small">小时解释</Button> }
   ];
-  return <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={compact ? false : { pageSize: 8, showSizeChanger: false }} scroll={{ y: compact ? 138 : 230, x: 780 }} />;
+  return <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={compact ? false : { pageSize: 8, showSizeChanger: false }} scroll={{ y: compact ? 86 : 210, x: 780 }} />;
 }
 
 export function ForecastSummaryCards({ data }: { data: any }) {
@@ -252,7 +257,7 @@ function ModelStatusCard({ model, data }: { model: any; data: any }) {
 function PeakSummaryCard({ data }: { data: any }) {
   return (
     <div className="forecast-card compact-card">
-      <div className="forecast-card-head"><h2>峰谷分析小结</h2><DataSourceTag source={data?.peakValley?.source} /></div>
+      <div className="forecast-card-head"><h2>峰谷分析小结</h2></div>
       <dl className="kv-list">
         <dt>峰值时段</dt><dd>{data?.peakValley?.peakRange}</dd>
         <dt>峰值电价</dt><dd>{fmt(data?.peakValley?.peakPrice, 2)} 元/kWh</dd>
@@ -267,7 +272,7 @@ function PeakSummaryCard({ data }: { data: any }) {
 export function DataHealthCard({ health }: { health: any }) {
   return (
     <div className="forecast-card compact-card">
-      <div className="forecast-card-head"><h2>数据健康状态</h2><DataSourceTag source={health?.dataSource} /></div>
+      <div className="forecast-card-head"><h2>数据健康状态</h2></div>
       <div className="forecast-health-inline">
         <Progress type="circle" size={64} percent={Math.round(health?.score || 0)} strokeColor={chartColors.green} />
         <dl className="kv-list">
@@ -301,9 +306,9 @@ export function ComparisonChartCard({ data }: { data: any }) {
     <div className="forecast-card comparison-chart-card">
       <div className="forecast-card-head">
         <div><h2>历史对比趋势（元/kWh）</h2><p>最新预测、上一批次/历史参考与近30天历史均值对比。</p></div>
-        <Space><Tag>近7天</Tag><Tag color="success">近30天</Tag><DataSourceTag source={comparison.derivedSource} /></Space>
+        <Space><Tag>近7天</Tag><Tag color="success">近30天</Tag></Space>
       </div>
-      <AppChart option={option} height={294} />
+      <AppChart option={option} height={264} />
     </div>
   );
 }
@@ -313,7 +318,7 @@ export function ComparisonInsightPanel({ data }: { data: any }) {
   const notable = rows.filter((row: any) => String(row.rate).includes('%') && Math.abs(Number(String(row.rate).replace('%', ''))) >= 6).slice(0, 4);
   return (
     <div className="forecast-card forecast-insight-panel">
-      <div className="forecast-card-head"><h2>关键变化洞察</h2><DataSourceTag source={data?.comparison?.derivedSource} /></div>
+      <div className="forecast-card-head"><h2>关键变化洞察</h2></div>
       <StrategyBlock type="success" title="差值摘要">全天均值变化 {data?.comparison?.avgChange == null ? '--' : `${data.comparison.avgChange.toFixed(2)}%`}，晚高峰变化更明显。</StrategyBlock>
       <StrategyBlock type="danger" title="关键变化点（相对参考）">
         {notable.length ? notable.map((row: any) => <p key={row.time}>{row.time} {row.remark} {row.rate}</p>) : <p>历史参考数据不足，暂无显著变化点。</p>}
@@ -357,9 +362,9 @@ export function PeakAndModelTop({ data }: { data: any }) {
         </div>
       </div>
       <div className="forecast-card peak-explain-card">
-        <div className="forecast-card-head"><h2>峰谷策略解释（业务视角）</h2><DataSourceTag source={pv.source} /></div>
+        <div className="forecast-card-head"><h2>峰谷策略解释（业务视角）</h2></div>
         <StrategyBlock type="info" title="结论">今日价差指数为 {pv.index || 0}%，高价集中在 {pv.peakRange}，低价窗口在 {pv.valleyRange}。</StrategyBlock>
-        <StrategyBlock type="success" title="数据依据">基于真实 24 小时预测曲线、风险概率、置信区间和模型解释接口识别高 / 低价形成机理。</StrategyBlock>
+        <StrategyBlock type="success" title="数据依据">基于 24 小时预测曲线、风险概率、置信区间和模型解释结果识别高 / 低价形成机理。</StrategyBlock>
         <StrategyBlock type="warning" title="业务建议">低价窗口建议补充采购或储能充电；高价风险段建议控制敞口，并人工复核大额申报与对冲策略。</StrategyBlock>
       </div>
     </div>
@@ -385,7 +390,7 @@ export function ModelEvaluationCards({ data }: { data: any }) {
   ];
   return (
     <div className="forecast-card model-eval-section">
-      <div className="forecast-card-head"><h2>模型评估摘要（P2 工程化能力）</h2><DataSourceTag source="api_models_backtest+api_models_feature_schema" /></div>
+      <div className="forecast-card-head"><h2>模型评估摘要（P2 工程化能力）</h2></div>
       <div className="model-metric-grid">
         {cards.map((card) => (
           <div className="model-metric-card" key={card.title}>
