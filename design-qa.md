@@ -44,3 +44,55 @@
 **Final Result**
 
 final result: passed
+
+---
+
+# Strategy Center UI Design QA
+
+- Source visual truth:
+  - `E:\智能运营分析项目\20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 总览主页面.png`
+  - `E:\智能运营分析项目\20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 低价窗口-储能策略页面.png`
+  - `E:\智能运营分析项目\20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 人工复核页面.png`
+- Implementation screenshots:
+  - `E:\智能运营分析项目\strategy-overview-1672x941.png`
+  - `E:\智能运营分析项目\strategy-storage-1672x941.png`
+  - `E:\智能运营分析项目\strategy-review-1672x941.png`
+- Combined comparisons:
+  - `E:\智能运营分析项目\strategy-overview-before-after-qa.png`
+  - `E:\智能运营分析项目\strategy-storage-before-after-qa.png`
+  - `E:\智能运营分析项目\strategy-review-before-after-qa.png`
+- Viewport: desktop 1672 x 941.
+- State: strategy overview, storage strategy, and manual review pages with API data loaded.
+
+**Full-View Comparison**
+
+- The three pages reproduce the reference hierarchy: page context, compact filter/action bar, KPI strip, primary workspace, right-side decision panel, and bottom summaries.
+- The overview page preserves the large strategy timeline plus decision explanation and four compact operating summaries.
+- The storage page uses the reference three-column structure: candidate windows, SOC/action chart and hourly table, then selected-period explanation.
+- The review page uses the reference master-detail structure with KPI summary, review queue, evidence panel, audit input, and queue distribution.
+- No page-level horizontal overflow was found. Long tables and evidence content scroll within their own panels.
+
+**Data And State Integrity**
+
+- Strategy, forecast, anomaly, and configuration values come from existing backend APIs.
+- No frontend mock fallback remains in the strategy service.
+- SOC is explicitly identified as parameterized because actual storage telemetry is not connected.
+- Estimated spread is presented as opportunity space, not realized revenue.
+- Approval, rejection, execution, and realized-revenue controls remain disabled or marked pending because the required backend state machines do not exist.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual mismatch remains.
+- P3: the manual review table contains six rows because the current API returns six review candidates. The remaining table space is intentionally left empty instead of fabricating records.
+- P3: the global header still includes the existing read-only SQL status pill and development identity supplied by the current application shell; these were not altered by the page-level rebuild.
+
+**Verification**
+
+- Fresh browser session: 0 console errors and 0 console warnings.
+- 1440 x 900 responsive check: no body or strategy-page horizontal overflow.
+- `npm run build`: passed.
+- `python -m py_compile backend/app/api/v1/endpoints/strategy.py`: passed.
+
+**Final Result**
+
+final result: passed
