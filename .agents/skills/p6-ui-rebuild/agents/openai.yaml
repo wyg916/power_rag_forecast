@@ -1,0 +1,4 @@
+interface:
+  display_name: "P6 UI 重构规范"
+  short_description: "智能运营分析项目页面结构级重构、真实数据接入与视觉验收强制规范"
+  default_prompt: "使用 $p6-ui-rebuild 按参考图和真实 API 重构当前页面并完成构建与浏览器验收。"
