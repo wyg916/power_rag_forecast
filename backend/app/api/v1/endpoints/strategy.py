@@ -32,7 +32,7 @@ def strategy_today() -> dict:
 @router.get("/api/strategy/config")
 def strategy_config(_: Annotated[CurrentUser, Depends(require_permission("dashboard:read"))]) -> dict:
     runtime = _read_runtime_settings()
-    config = runtime.get("strategy_config") or {
+    defaults = {
         "high_price_threshold": 160,
         "low_price_threshold": 40,
         "soc_upper": 90,
@@ -42,6 +42,7 @@ def strategy_config(_: Annotated[CurrentUser, Depends(require_permission("dashbo
         "risk_threshold": 0.5,
         "auto_suggestion": True,
     }
+    config = {**defaults, **(runtime.get("strategy_config") or {})}
     return response(config, data_source="runtime_config")
 
 

@@ -48,7 +48,7 @@ export const menuGroups: MenuGroup[] = [
     label: '策略中心',
     icon: <SafetyCertificateOutlined />,
     children: [
-      { key: 'strategy-high', label: '高价风险' },
+      { key: 'strategy-high', label: '总览' },
       { key: 'strategy-low', label: '低价窗口' },
       { key: 'strategy-storage', label: '储能策略' },
       { key: 'strategy-review', label: '人工复核' }

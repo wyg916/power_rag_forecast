@@ -1,181 +1,147 @@
-import { CheckCircleOutlined, ReloadOutlined, SafetyCertificateOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
-import { Button, Col, Form, Input, InputNumber, Modal, Row, Space, Switch, Table, Tag, message } from 'antd';
-import { useEffect, useState } from 'react';
+import { DownloadOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { Button, Form, InputNumber, Modal, Switch, Tooltip, message } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
-import { DetailDrawer } from '../../components/actions/DetailDrawer';
-import { SectionCard } from '../../components/cards/SectionCard';
-import { TableCard } from '../../components/cards/TableCard';
-import { AppChart } from '../../components/charts/AppChart';
-import { baseGrid, chartColors } from '../../components/charts/chartTheme';
-import { PageTabs } from '../../components/common/PageTabs';
-import { DataSourceTag, DataStateBanner } from '../../components/common/States';
-import { MetricGrid } from '../../components/layout/UnifiedPage';
-import { strategyMock } from '../../mock/strategyMock';
+import { DataStateBanner } from '../../components/common/States';
+import {
+  ReviewWorkspace,
+  StorageWorkspace,
+  StrategyContextBar,
+  StrategyMetricStrip,
+  StrategyOverviewBottom,
+  StrategyOverviewMain,
+  StrategyPageHeader
+} from '../../components/strategy/StrategyDesign';
 import { getStrategyCenterData } from '../../services/strategyApi';
 import type { PageProps } from '../../types/ui';
 
-const icons = [<CheckCircleOutlined />, <WarningOutlined />, <SafetyCertificateOutlined />, <ReloadOutlined />, <UserOutlined />];
+function exportCsv(filename: string, rows: Record<string, unknown>[]) {
+  if (!rows.length) {
+    message.info('当前没有可导出的策略记录');
+    return;
+  }
+  const keys = Object.keys(rows[0]);
+  const csv = [keys, ...rows.map((row) => keys.map((key) => row[key]))]
+    .map((line) => line.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}_${Date.now()}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
-const tabs = [
-  { key: 'strategy-high', label: '高价风险' },
-  { key: 'strategy-low', label: '低价窗口' },
-  { key: 'strategy-storage', label: '储能策略' },
-  { key: 'strategy-review', label: '人工复核' }
-];
-
-export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
-  const [strategyData, setStrategyData] = useState<any>(strategyMock);
+export function StrategyCenterPage({ activeSubKey }: PageProps) {
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [configOpen, setConfigOpen] = useState(false);
   const [configValues, setConfigValues] = useState<Record<string, any>>({});
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
+  const [selectedStorage, setSelectedStorage] = useState<string>();
+  const [selectedReview, setSelectedReview] = useState<string>();
 
-  async function loadData() {
+  const mode = useMemo<'overview' | 'storage' | 'review'>(() => {
+    if (activeSubKey === 'strategy-review') return 'review';
+    if (activeSubKey === 'strategy-low' || activeSubKey === 'strategy-storage') return 'storage';
+    return 'overview';
+  }, [activeSubKey]);
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getStrategyCenterData();
-      setStrategyData(data);
-      setConfigValues(data.config || {});
+      const result = await getStrategyCenterData();
+      setData(result);
+      setConfigValues(result.config || {});
+      setSelectedStorage((current) => current || result.hourlyPlan?.find((item: any) => item.action !== '观望')?.key);
+      setSelectedReview((current) => current || result.reviewRows?.[0]?.key);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '策略数据加载失败');
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
-
-  const timelineOption = {
-    ...baseGrid(),
-    legend: { top: 0, data: ['充电', '放电', '高价风险', '低价窗口'] },
-    xAxis: { ...(baseGrid().xAxis as object), data: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '24:00'] },
-    yAxis: { ...(baseGrid().yAxis as object), name: '功率（MW）' },
-    series: [
-      { name: '充电', type: 'line', step: 'middle', areaStyle: { color: 'rgba(0,184,148,0.12)' }, data: [-80, -96, -40, 0, 0, 0, 0, -65, 0], lineStyle: { color: chartColors.green } },
-      { name: '放电', type: 'line', step: 'middle', areaStyle: { color: 'rgba(59,130,246,0.12)' }, data: [0, 0, 0, 10, 60, 58, 0, 0, 0], lineStyle: { color: chartColors.blue } },
-      { name: '高价风险', type: 'bar', data: [0, 0, 0, 42, 0, 0, 48, 0, 0], itemStyle: { color: 'rgba(255,77,79,0.25)' } },
-      { name: '低价窗口', type: 'bar', data: [0, 0, 0, 0, 0, 0, 0, -35, 0], itemStyle: { color: 'rgba(0,184,148,0.25)' } }
-    ]
-  };
+  }, [loadData]);
 
   async function saveConfig() {
-    await api.saveStrategyConfig(configValues);
-    message.success('策略配置已保存');
-    setConfigOpen(false);
-    await loadData();
+    try {
+      await api.saveStrategyConfig(configValues);
+      message.success('策略配置已保存');
+      setConfigOpen(false);
+      await loadData();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '策略配置保存失败');
+    }
   }
 
-  async function saveReview(row: any[]) {
-    await api.saveStrategyReview({ id: row[0], type: row[1], period: row[2], action: row[3], reason: row[4], status: '已复核' });
-    message.success('复核记录已保存');
+  async function saveAudit(row: any, comment: string) {
+    try {
+      await api.saveStrategyReview({
+        id: row.id,
+        period: row.period,
+        risk_level: row.risk,
+        decision: 'reviewed',
+        review_comment: comment,
+        evidence: row.evidence,
+        status: 'audit_recorded'
+      });
+      message.success('复核内容已写入审计日志；当前未改变业务状态');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '复核审计保存失败');
+    }
   }
 
-  function exportStrategy() {
-    const csv = (strategyData.timeline || []).map((row: any[]) => row.join(',')).join('\n');
-    const blob = new Blob([`\uFEFF时段,动作,功率,收益\n${csv}`], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `strategy_${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  const timelineTable = (
-    <Table
-      size="small"
-      pagination={false}
-      scroll={{ x: 'max-content' }}
-      dataSource={(strategyData.timeline || []).map((row: any[], index: number) => ({ key: index, row }))}
-      columns={[
-        { title: '时段', render: (_, record: any) => record.row[0] },
-        { title: '策略动作', render: (_, record: any) => <Tag color={String(record.row[1]).includes('充') ? 'success' : String(record.row[1]).includes('放') ? 'blue' : String(record.row[1]).includes('风险') ? 'error' : 'default'}>{record.row[1]}</Tag> },
-        { title: '功率（MW）', align: 'right', render: (_, record: any) => record.row[2] },
-        { title: '预计收益（元）', align: 'right', render: (_, record: any) => record.row[3] },
-        { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailData({ period: record.row[0], action: record.row[1], power: record.row[2], revenue: record.row[3], data_source: strategyData.dataSource }); setDetailOpen(true); }}>详情</Button> }
-      ]}
-    />
+  const stateVisible = loading || data?.empty || Boolean(data?.partialErrors?.length);
+  const commonActions = (
+    <>
+      <Button icon={<ReloadOutlined />} loading={loading} onClick={loadData}>刷新</Button>
+      {mode !== 'review' && <Button icon={<DownloadOutlined />} onClick={() => exportCsv('strategy', data?.hourlyPlan || [])}>导出策略</Button>}
+      {mode === 'overview' && <Button icon={<SettingOutlined />} onClick={() => setConfigOpen(true)}>策略配置</Button>}
+      {mode === 'review' && (
+        <>
+          <Tooltip title="后端尚未提供批量状态流转接口"><Button type="primary" disabled>批量通过（待接入）</Button></Tooltip>
+          <Tooltip title="后端尚未提供批量状态流转接口"><Button danger disabled>批量驳回（待接入）</Button></Tooltip>
+        </>
+      )}
+    </>
   );
 
   return (
-    <div className="page-stack">
-      <PageTabs items={tabs} activeKey={activeSubKey} onChange={onSubNavigate} />
-      <div className="page-toolbar">
-        <Space>
-          <DataSourceTag source={strategyData.dataSource} />
-          <Button icon={<ReloadOutlined />} loading={loading} onClick={loadData}>刷新</Button>
-          <Button onClick={() => setConfigOpen(true)}>策略配置</Button>
-          <Button onClick={exportStrategy}>导出策略</Button>
-        </Space>
-      </div>
-      <DataStateBanner
-        scope="策略中心"
-        loading={loading}
-        source={strategyData.dataSource}
-        error={strategyData.error}
-        empty={strategyData.empty}
-        mockFallback={strategyData.mockFallback}
-        fallbackReason={strategyData.fallbackReason}
-        partialErrors={strategyData.partialErrors}
-        onRetry={loadData}
-      />
-      <MetricGrid items={strategyData.metrics || []} icons={icons} loading={loading} minColumnWidth={180} />
-
-      {activeSubKey === 'strategy-high' && (
-        <Row gutter={[16, 16]} className="balanced-row">
-          <Col xs={24} xl={16}>
-            <SectionCard title="高价风险时间轴" loading={loading}><AppChart option={timelineOption} height={330} /></SectionCard>
-          </Col>
-          <Col xs={24} xl={8}>
-            <SectionCard title="策略建议" loading={loading}>
-              <div className="advice-panel">
-                <h4>结论</h4><p>{strategyData.advice.conclusion}</p>
-                <h4>风险提示</h4><ul>{strategyData.advice.warning.map((item: string) => <li key={item}>{item}</li>)}</ul>
-              </div>
-            </SectionCard>
-          </Col>
-        </Row>
-      )}
-
-      {activeSubKey === 'strategy-low' && (
-        <Row gutter={[16, 16]} className="balanced-row">
-          <Col xs={24} xl={14}><SectionCard title="低价采购窗口" loading={loading}>{timelineTable}</SectionCard></Col>
-          <Col xs={24} xl={10}><SectionCard title="低价窗口说明"><p>低价窗口优先用于补充采购、储能充电和风险敞口修正，执行前需结合 SOC 与合同约束。</p></SectionCard></Col>
-        </Row>
-      )}
-
-      {activeSubKey === 'strategy-storage' && (
-        <Row gutter={[16, 16]} className="balanced-row">
-          <Col xs={24} xl={14}><SectionCard title="储能充放电建议" loading={loading}>{timelineTable}</SectionCard></Col>
-          <Col xs={24} xl={10}>
-            <SectionCard title="风险分级卡片">
-              <div className="risk-grade-list">
-                {(strategyData.riskCards || []).map((item: any[]) => (
-                  <div className={`risk-grade risk-${item[3]}`} key={item[0]} onClick={() => { setDetailData({ title: item[0], count: item[1], description: item[2] }); setDetailOpen(true); }}>
-                    <strong>{item[0]}</strong><span>{item[1]}</span><p>{item[2]}</p>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          </Col>
-        </Row>
-      )}
-
-      {activeSubKey === 'strategy-review' && (
-        <TableCard
-          title="人工复核清单"
+    <div className={`strategy-design-page strategy-${mode}-page`}>
+      <StrategyPageHeader mode={mode} />
+      <StrategyContextBar data={data} mode={mode} actions={commonActions} />
+      {stateVisible && (
+        <DataStateBanner
+          scope="策略中心"
           loading={loading}
-          dataSource={(strategyData.reviewList || []).map((row: any[]) => ({ key: row[0], row }))}
-          columns={[
-            { title: '编号', render: (_, record: any) => record.row[0] },
-            { title: '复核类型', render: (_, record: any) => record.row[1] },
-            { title: '时段', render: (_, record: any) => record.row[2] },
-            { title: '策略动作', render: (_, record: any) => record.row[3] },
-            { title: '复核原因', render: (_, record: any) => record.row[4] },
-            { title: '状态', render: (_, record: any) => <Tag color="warning">{record.row[5]}</Tag> },
-            { title: '操作', render: (_, record: any) => <Space><Button type="link" size="small" onClick={() => { setDetailData({ row: record.row }); setDetailOpen(true); }}>查看</Button><Button type="link" size="small" onClick={() => saveReview(record.row)}>标记复核</Button></Space> }
-          ]}
+          empty={data?.empty}
+          partialErrors={data?.partialErrors}
+          mockFallback={false}
+          onRetry={loadData}
+        />
+      )}
+      <StrategyMetricStrip data={data} mode={mode} />
+      {mode === 'overview' && (
+        <>
+          <StrategyOverviewMain data={data} />
+          <StrategyOverviewBottom data={data} />
+        </>
+      )}
+      {mode === 'storage' && (
+        <StorageWorkspace
+          data={data}
+          selectedKey={selectedStorage}
+          onSelect={(row) => setSelectedStorage(row.key)}
+        />
+      )}
+      {mode === 'review' && (
+        <ReviewWorkspace
+          data={data}
+          selectedKey={selectedReview}
+          onSelect={(row) => setSelectedReview(row.key)}
+          onAudit={saveAudit}
         />
       )}
 
@@ -191,7 +157,6 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           <Form.Item label="允许自动建议"><Switch checked={Boolean(configValues.auto_suggestion)} onChange={(value) => setConfigValues((prev) => ({ ...prev, auto_suggestion: value }))} /></Form.Item>
         </Form>
       </Modal>
-      <DetailDrawer title="策略详情" open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)} />
     </div>
   );
 }
