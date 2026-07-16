@@ -1,0 +1,33 @@
+{
+  "model_version": "model_20260620_063015",
+  "feature_version": "features_140db8af25f9",
+  "target_col": "da_price",
+  "datasets": [
+    {
+      "name": "train",
+      "rows": 15462,
+      "start_datetime": "2024-07-13T06:00:00",
+      "end_datetime": "2026-04-18T23:00:00"
+    },
+    {
+      "name": "validation",
+      "rows": 720,
+      "start_datetime": "2026-04-19T00:00:00",
+      "end_datetime": "2026-05-18T23:00:00"
+    },
+    {
+      "name": "test",
+      "rows": 720,
+      "start_datetime": "2026-05-19T00:00:00",
+      "end_datetime": "2026-06-17T23:00:00"
+    }
+  ],
+  "base_model_name": "Ridge",
+  "peak_model_name": "Peak_Quantile_P90_HistGB",
+  "classifier_name": "Spike_RF_Classifier",
+  "best_spike_threshold": 0.8,
+  "has_p90_model": true,
+  "extra_metadata": {
+    "engine": "v4_fix1_compat"
+  }
+}

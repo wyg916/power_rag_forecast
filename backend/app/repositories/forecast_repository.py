@@ -41,70 +41,141 @@ def _compute_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
 
-def load_latest_forecast_from_postgres() -> dict[str, Any] | None:
-    engine = postgres_engine()
+_RUN_SELECT = """
+    run_id, status, domain, target_name,
+    forecast_start_at, forecast_end_at, input_start_at, input_end_at,
+    model_id, model_version, artifact_id, artifact_hash,
+    feature_version, schema_hash, input_hash, result_hash,
+    source_type, created_at, started_at, finished_at,
+    error_code, error_message, retry_of_run_id, environment_hash, record_count
+"""
+
+
+def get_forecast_run(run_id: str, *, engine=None) -> dict[str, Any] | None:
+    engine = engine or postgres_engine()
     if engine is None:
         return None
     try:
         with engine.connect() as conn:
             run = conn.execute(
                 text(
-                    """
-                    SELECT run_id, source_path, forecast_start, forecast_end, generated_at,
-                           row_count, status, summary_json, created_at, updated_at
+                    f"SELECT {_RUN_SELECT} FROM forecast_runs WHERE run_id = :run_id"
+                ),
+                {"run_id": run_id},
+            ).mappings().first()
+    except Exception:
+        return None
+    return mapping_dict(run) if run else None
+
+
+def list_forecast_runs(
+    *,
+    status: str | None = None,
+    limit: int = 50,
+    engine=None,
+) -> list[dict[str, Any]]:
+    engine = engine or postgres_engine()
+    if engine is None:
+        return []
+    safe_limit = max(1, min(int(limit), 200))
+    where = "WHERE status = :status" if status else ""
+    params: dict[str, Any] = {"limit": safe_limit}
+    if status:
+        params["status"] = status
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    f"""
+                    SELECT {_RUN_SELECT}
                     FROM forecast_runs
-                    ORDER BY COALESCE(generated_at, updated_at, created_at) DESC, run_id DESC
+                    {where}
+                    ORDER BY COALESCE(finished_at, started_at, created_at) DESC, run_id DESC
+                    LIMIT :limit
+                    """
+                ),
+                params,
+            ).mappings().all()
+    except Exception:
+        return []
+    return mapping_list(rows)
+
+
+def load_forecast_results(run_id: str, *, engine=None) -> list[dict[str, Any]]:
+    engine = engine or postgres_engine()
+    if engine is None:
+        return []
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT run_id, forecast_time, predicted_price,
+                           model_version, feature_version, generated_at,
+                           base_prediction, peak_prediction, classifier_prediction,
+                           spike_risk_prob, p90_prediction, blend_weight,
+                           adjustment, component_outputs, source_type, source_row
+                    FROM forecast_results
+                    WHERE run_id = :run_id
+                    ORDER BY forecast_time, source_row, id
+                    """
+                ),
+                {"run_id": run_id},
+            ).mappings().all()
+    except Exception:
+        return []
+    records = []
+    for item in mapping_list(rows):
+        item["datetime"] = item.pop("forecast_time", None)
+        item["spike_probability"] = item.get("spike_risk_prob")
+        records.append(item)
+    return records
+
+
+def latest_successful_run(*, engine=None) -> dict[str, Any] | None:
+    engine = engine or postgres_engine()
+    if engine is None:
+        return None
+    try:
+        with engine.connect() as conn:
+            run = conn.execute(
+                text(
+                    f"""
+                    SELECT {_RUN_SELECT}
+                    FROM forecast_runs
+                    WHERE status = 'success' AND record_count = 24
+                      AND (SELECT COUNT(*) FROM forecast_results r WHERE r.run_id = forecast_runs.run_id) = 24
+                    ORDER BY finished_at DESC NULLS LAST, created_at DESC, run_id DESC
                     LIMIT 1
                     """
                 )
             ).mappings().first()
-            if run is None:
-                return None
-            rows = conn.execute(
-                text(
-                    """
-                    SELECT run_id, forecast_datetime, predicted_price, corrected_predicted_price,
-                           risk_level, spike_risk_prob, forecast_load, source_row, raw_json
-                    FROM forecast_results
-                    WHERE run_id = :run_id
-                    ORDER BY forecast_datetime NULLS LAST, source_row NULLS LAST, id
-                    """
-                ),
-                {"run_id": run["run_id"]},
-            ).mappings().all()
     except Exception:
         return None
+    return mapping_dict(run) if run else None
 
-    records: list[dict[str, Any]] = []
-    for item in mapping_list(rows):
-        raw = loads_json(item.get("raw_json"), default={})
-        record = raw if isinstance(raw, dict) else {}
-        record.update(
-            {
-                "run_id": item.get("run_id"),
-                "datetime": item.get("forecast_datetime"),
-                "predicted_price": item.get("predicted_price"),
-                "corrected_predicted_price": item.get("corrected_predicted_price"),
-                "risk_level": item.get("risk_level"),
-                "spike_risk_prob": item.get("spike_risk_prob"),
-                "forecast_load": item.get("forecast_load"),
-                "source_row": item.get("source_row"),
-            }
-        )
-        records.append(jsonable(record))
 
-    run_dict = mapping_dict(run)
-    summary = loads_json(run_dict.get("summary_json"), default={})
-    if not isinstance(summary, dict) or not summary:
-        summary = _compute_summary(records)
+def load_latest_forecast_from_postgres() -> dict[str, Any] | None:
+    engine = postgres_engine()
+    run_dict = latest_successful_run(engine=engine)
+    if not run_dict:
+        return None
+    records = load_forecast_results(str(run_dict["run_id"]), engine=engine)
+    if len(records) != 24:
+        return None
+    summary = _compute_summary(records)
     return {
         "run_id": run_dict.get("run_id"),
-        "source": run_dict.get("source_path") or "postgresql.forecast_runs",
-        "available": bool(records) or bool(run_dict),
-        "generated_at": run_dict.get("generated_at") or run_dict.get("updated_at") or run_dict.get("created_at"),
+        "source": "postgresql.forecast_runs",
+        "available": True,
+        "generated_at": run_dict.get("finished_at") or run_dict.get("created_at"),
         "price_column": "predicted_price",
         "risk_probability_column": "spike_risk_prob",
         "summary": jsonable(summary),
         "records": records,
         "source_type": "postgresql",
+        "model_version": run_dict.get("model_version"),
+        "feature_version": run_dict.get("feature_version"),
+        "artifact_id": run_dict.get("artifact_id"),
+        "result_hash": run_dict.get("result_hash"),
     }

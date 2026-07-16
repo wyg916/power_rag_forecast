@@ -1,6 +1,19 @@
 import { Alert, Button, Empty, Result, Skeleton, Space, Tag } from 'antd';
 import type { ReactNode } from 'react';
 
+type SourceType = 'real' | 'historical' | 'demo' | 'seed' | 'fallback' | 'derived' | 'unavailable';
+interface SourceMeta {
+  source_type: SourceType;
+  domain: string;
+  run_id: string | null;
+  generated_at: string | null;
+  model_version: string | null;
+  feature_version: string | null;
+  is_stale: boolean;
+  stale_reason: string | null;
+  unavailable_reason: string | null;
+}
+
 export function LoadingBlock({ rows = 4 }: { rows?: number }) {
   return <Skeleton active paragraph={{ rows }} />;
 }
@@ -44,13 +57,73 @@ export function InlineError({ message }: { message?: ReactNode }) {
 export function DataSourceTag({ source }: { source?: string }) {
   const value = source || 'unknown';
   const lower = value.toLowerCase();
-  const isMock = lower.includes('mock') || lower.includes('fallback');
-  const isDerived = lower.includes('derived') || lower.includes('calculated');
-  const isFile = lower.includes('file') || lower.includes('import');
-  const isReal = lower.includes('postgres') || lower.includes('api') || lower.includes('real');
-  const color = isMock ? 'warning' : isDerived ? 'processing' : isFile ? 'blue' : isReal ? 'success' : 'default';
-  const label = isMock ? '兜底数据' : isDerived ? '派生数据' : isFile ? '文件数据' : isReal ? '真实数据' : '数据源';
+  const labels: Record<string, [string, string]> = {
+    real: ['真实数据', 'success'],
+    historical: ['历史数据', 'blue'],
+    demo: ['演示数据', 'warning'],
+    seed: ['初始化样例', 'warning'],
+    fallback: ['降级数据', 'warning'],
+    derived: ['派生数据', 'processing'],
+    unavailable: ['不可用', 'default']
+  };
+  const normalized: SourceType | string =
+    Object.keys(labels).find((item) => lower === item || lower.includes(item))
+    || (lower.includes('postgres') || lower.includes('registry') ? 'real' : value);
+  const [label, color] = labels[normalized] || ['数据源', 'default'];
+  const isMock = ['demo', 'seed', 'fallback'].includes(normalized);
   return <Tag className={`data-source-tag ${isMock ? 'data-source-warning' : ''}`} color={color}>{label}：{value}</Tag>;
+}
+
+function timeText(value?: string | null) {
+  if (!value) return '--';
+  return value.replace('T', ' ').replace('Z', '').slice(0, 19);
+}
+
+export function FactStatusBar({
+  meta,
+  loading,
+  error,
+  lastRefreshedAt,
+  onRefresh
+}: {
+  meta?: SourceMeta | null;
+  loading?: boolean;
+  error?: string;
+  lastRefreshedAt?: string | null;
+  onRefresh?: () => void;
+}) {
+  if (loading) {
+    return <Alert className="fact-status-bar" type="info" showIcon message="正在核对事实来源与最新成功批次" />;
+  }
+  if (error || !meta || meta.source_type === 'unavailable') {
+    return (
+      <Alert
+        className="fact-status-bar"
+        type="warning"
+        showIcon
+        message="当前无可用真实预测"
+        description={`原因：${meta?.unavailable_reason || error || '来源元数据不可用'}；操作建议：执行预测任务或查看明确标识的历史批次。`}
+        action={onRefresh ? <Button size="small" onClick={onRefresh}>重新核对</Button> : undefined}
+      />
+    );
+  }
+  const warning = ['demo', 'seed', 'fallback'].includes(meta.source_type) || meta.is_stale || meta.source_type === 'historical';
+  return (
+    <div className={`fact-status-bar fact-status-grid ${warning ? 'fact-status-warning' : ''}`}>
+      <strong>事实状态</strong>
+      <span><small>数据来源</small><DataSourceTag source={meta.source_type} /></span>
+      <span><small>运行批次</small><b>{meta.run_id || '--'}</b></span>
+      <span><small>生成时间</small><b>{timeText(meta.generated_at)}</b></span>
+      <span><small>模型版本</small><b>{meta.model_version || '--'}</b></span>
+      <span><small>特征版本</small><b>{meta.feature_version || '--'}</b></span>
+      <span>
+        <small>事实状态</small>
+        <b>{meta.source_type === 'historical' ? '历史批次' : meta.is_stale ? `已过期：${meta.stale_reason || 'unknown'}` : '最新成功批次'}</b>
+      </span>
+      <span><small>最后刷新</small><b>{timeText(lastRefreshedAt)}</b></span>
+      {onRefresh && <Button size="small" onClick={onRefresh}>刷新状态</Button>}
+    </div>
+  );
 }
 
 export function DataStateBanner({

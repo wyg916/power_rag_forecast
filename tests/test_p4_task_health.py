@@ -11,6 +11,19 @@ def test_task_runtime_health_contains_queue_and_worker_state(monkeypatch):
     monkeypatch.setattr(dispatcher, "celery_available", lambda: True)
     monkeypatch.setattr(
         dispatcher,
+        "_celery_runtime_snapshot",
+        lambda: {
+            "available": True,
+            "source": "celery_inspect",
+            "active_workers": ["worker-1"],
+            "registered_tasks": ["power_trading.run_price_predict_task"],
+            "active_count": 0,
+            "reserved_count": 0,
+            "scheduled_count": 0,
+        },
+    )
+    monkeypatch.setattr(
+        dispatcher,
         "task_runtime_summary",
         lambda: {
             "active_workers": ["worker-1"],

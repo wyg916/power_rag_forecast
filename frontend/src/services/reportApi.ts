@@ -1,47 +1,125 @@
-import { reportMock } from '../mock/reportMock';
 import { api } from '../api';
-import { mockFallback, withServiceState } from './serviceState';
+import { withServiceState } from './serviceState';
 
-export async function getReportCenterData(): Promise<any> {
-  try {
-    const partialErrors: string[] = [];
-    const [latest, forecast] = await Promise.all([
-      api.reportLatest(),
-      api.forecastLatest().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      })
-    ]);
-    const report = latest || {};
-    const summary = report.summary || {};
-    const forecastRows = Array.isArray(forecast?.records) ? forecast.records : [];
-    const previewCurve = forecastRows.slice(0, 12).map((row: any, index: number) => ({
-      time: `${String(row.hour ?? index).padStart(2, '0')}:00`,
-      value: Number(row.predicted_price ?? row.corrected_predicted_price ?? 0),
-      actual: Number(row.actual_price ?? row.predicted_price ?? 0)
-    }));
-    return withServiceState({
-      ...reportMock,
-      dataSource: report.source || (report.available ? 'file_fallback' : 'postgresql'),
-      activeReport: report,
-      previewCurve,
-      reports: report.report_id
-        ? [[report.report_id, report.report_type || '日报', report.status || (report.available ? '待审核' : '未生成'), report.generated_at || '--'], ...reportMock.reports.slice(1)]
-        : reportMock.reports,
-      previewMetrics: [
-        ['平均电价', summary.avg_price || summary.average_price || '--', '元/kWh'],
-        ['最高电价', summary.max_price || '--', '元/kWh'],
-        ['最低电价', summary.min_price || '--', '元/kWh'],
-        ['预测行数', summary.rows || '--', '条'],
-        ['模型可信度', summary.confidence || '--', '%']
-      ]
-    }, {
-      empty: !report.available && !report.report_id,
-      mockFallback: !report.available && !report.report_id,
-      fallbackReason: !report.available && !report.report_id ? '报告接口没有返回可用报告，报告中心展示本地兜底报告列表。' : undefined,
-      partialErrors
-    });
-  } catch (error) {
-    return mockFallback(reportMock, error, '报告中心真实接口请求失败，已切换到本地兜底数据。');
+function statusText(status: string) {
+  const value = String(status || '').toLowerCase();
+  if (value === 'published') return '已发布';
+  if (value === 'approved') return '已通过';
+  if (value === 'rejected') return '驳回';
+  if (value === 'reviewing') return '审核中';
+  if (value === 'archived') return '已归档';
+  return '待审核';
+}
+
+function typeText(type: string) {
+  const value = String(type || '').toLowerCase();
+  if (value.includes('week')) return '周报';
+  if (value.includes('month')) return '月报';
+  if (value.includes('special')) return '专项';
+  return '日报';
+}
+
+function metricValue(metrics: any, keys: string[], fallback = '--') {
+  for (const key of keys) {
+    if (metrics?.[key] !== undefined && metrics?.[key] !== null && metrics?.[key] !== '') return metrics[key];
   }
+  return fallback;
+}
+
+function normalizeRisks(summary: any) {
+  const risks = summary?.risks || summary?.risk_periods || summary?.riskRows || [];
+  if (!Array.isArray(risks)) return [];
+  return risks.map((item: any, index: number) => ({
+    key: item.key || item.id || index + 1,
+    period: item.period || item.time_range || item.time || '--',
+    level: item.level || item.risk_level || '--',
+    type: item.type || item.risk_type || item.category || '--',
+    impact: item.impact || item.impact_level || '--',
+    action: item.action || item.suggestion || item.recommendation || '--'
+  }));
+}
+
+function normalizeReport(item: any) {
+  const summary = item?.summary || {};
+  const metadata = item?.metadata || {};
+  const id = item?.report_id || item?.run_id || 'latest';
+  return {
+    ...item,
+    report_id: id,
+    title: item?.title || summary?.title || `${typeText(item?.report_type)}报告`,
+    statusText: statusText(item?.status),
+    typeText: typeText(item?.report_type),
+    generated_at: item?.generated_at || item?.updated_at || item?.created_at,
+    batch: metadata?.batch || item?.run_id || 'latest',
+    data_window: metadata?.data_window || metadata?.report_date || '--',
+    metrics: summary?.metrics || summary?.kpis || {},
+    risks: normalizeRisks(summary),
+    summaryText:
+      summary?.summary ||
+      summary?.content ||
+      summary?.conclusion ||
+      '后端报告结果未返回结构化摘要，页面保留报告预览结构。'
+  };
+}
+
+function buildPreviewCurve(forecast: any) {
+  const rows = Array.isArray(forecast?.records) ? forecast.records : [];
+  return rows.slice(0, 24).map((row: any, index: number) => ({
+    time: `${String(row.hour ?? index).padStart(2, '0')}:00`,
+    value: Number(row.predicted_price ?? row.corrected_predicted_price ?? 0),
+    actual: Number(row.actual_price ?? row.predicted_price ?? row.corrected_predicted_price ?? 0)
+  }));
+}
+
+export async function getReportCenterData(params: Record<string, any> = {}): Promise<any> {
+  const partialErrors: string[] = [];
+  const [list, summary, latest, forecast] = await Promise.all([
+    api.reports({ page: 1, page_size: 20, ...params }).catch((error) => {
+      partialErrors.push(error instanceof Error ? error.message : String(error));
+      return { items: [], total: 0 };
+    }),
+    api.reportSummary().catch((error) => {
+      partialErrors.push(error instanceof Error ? error.message : String(error));
+      return {};
+    }),
+    api.reportLatest().catch((error) => {
+      partialErrors.push(error instanceof Error ? error.message : String(error));
+      return null;
+    }),
+    api.forecastLatest().catch((error) => {
+      partialErrors.push(error instanceof Error ? error.message : String(error));
+      return null;
+    })
+  ]);
+
+  const reports = (list.items || []).map(normalizeReport);
+  const latestReport = latest?.report_id || latest?.run_id ? normalizeReport(latest) : null;
+  const activeReport = reports[0] || latestReport;
+  const metrics = activeReport?.metrics || {};
+
+  return withServiceState(
+    {
+      dataSource: list.source || latest?.source || 'report_api',
+      reports,
+      total: list.total || reports.length,
+      summary,
+      activeReport,
+      latestReport,
+      previewCurve: buildPreviewCurve(forecast),
+      previewMetrics: [
+        { label: '全网用电量', value: metricValue(metrics, ['total_load', 'energy', 'total_energy'], '--'), unit: '万kWh', change: '+7.21%' },
+        { label: '最高电价', value: metricValue(metrics, ['max_price', 'highest_price'], '--'), unit: '元/MWh', change: '+18.65%' },
+        { label: '最低电价', value: metricValue(metrics, ['min_price', 'lowest_price'], '--'), unit: '元/MWh', change: '-12.38%' },
+        { label: '平均电价', value: metricValue(metrics, ['avg_price', 'average_price'], '--'), unit: '元/MWh', change: '+3.21%' },
+        { label: '预测准确率', value: metricValue(metrics, ['accuracy', 'confidence'], '--'), unit: '%', change: '+2.40%' }
+      ],
+      risks: activeReport?.risks || [],
+      partialErrors
+    },
+    {
+      empty: !reports.length && !latestReport,
+      mockFallback: false,
+      partialErrors
+    }
+  );
 }

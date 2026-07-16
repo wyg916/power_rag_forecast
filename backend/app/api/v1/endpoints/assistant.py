@@ -1,9 +1,18 @@
 from __future__ import annotations
 
-from typing import Annotated
+import io
+import json
+import re
+import time
+import uuid
+from pathlib import Path
+from typing import Annotated, Any, Iterator
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import Response, StreamingResponse
 
+from ....core.redaction import mask_secret_fields
 from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
 from ....platform_services import answer_chat, generate_ai_insights, get_chat_session, list_chat_sessions
@@ -12,6 +21,81 @@ from backend.app.ai_assistant.service import answer_chat_accurate
 
 
 router = APIRouter()
+
+ASSISTANT_UPLOAD_DIR = Path(__file__).resolve().parents[4] / "data" / "assistant_uploads"
+ASSISTANT_UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024
+
+
+def _stream_event(event: str, data: dict[str, Any]) -> str:
+    safe_data = mask_secret_fields(data)
+    return f"event: {event}\ndata: {json.dumps(jsonable_encoder(safe_data), ensure_ascii=False)}\n\n"
+
+
+def _chunk_text(text: str, chunk_size: int = 36) -> Iterator[str]:
+    value = text or ""
+    for start in range(0, len(value), chunk_size):
+        yield value[start : start + chunk_size]
+
+
+def _safe_filename(filename: str | None) -> str:
+    raw = (filename or "assistant_attachment").strip()
+    name = re.sub(r"[^\w.\-\u4e00-\u9fff]+", "_", raw, flags=re.UNICODE).strip("._")
+    return name or "assistant_attachment"
+
+
+def _append_upload_metadata(metadata: dict[str, Any]) -> None:
+    ASSISTANT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    metadata_path = ASSISTANT_UPLOAD_DIR / "metadata.jsonl"
+    with metadata_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(jsonable_encoder(metadata), ensure_ascii=False) + "\n")
+
+
+def _format_messages_for_export(messages: list[dict[str, Any]]) -> list[tuple[str, str, str]]:
+    rows: list[tuple[str, str, str]] = []
+    for item in messages:
+        role = "用户" if item.get("role") == "user" else "AI 助手"
+        created_at = str(item.get("created_at") or item.get("createdAt") or "")
+        content = str(mask_secret_fields(str(item.get("content") or ""))).strip()
+        if content:
+            rows.append((role, created_at, content))
+    return rows
+
+
+def _build_conversation_docx(payload: dict[str, Any]) -> bytes:
+    from docx import Document
+
+    document = Document()
+    document.add_heading("AI 助手会话导出", level=1)
+    session_id = mask_secret_fields(str(payload.get("session_id") or "local_session"))
+    document.add_paragraph(f"会话 ID：{session_id}")
+    document.add_paragraph(f"导出时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+    document.add_paragraph("说明：本文件由后端导出接口生成，内容来自当前会话消息，不包含隐藏调试 Trace。")
+
+    for role, created_at, content in _format_messages_for_export(payload.get("messages") or []):
+        document.add_heading(f"{role}{f' · {created_at}' if created_at else ''}", level=2)
+        for paragraph in content.splitlines() or [content]:
+            if paragraph.strip():
+                document.add_paragraph(paragraph.strip())
+
+    buffer = io.BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def _answer_chat_from_payload(payload: ChatRequest, debug_allowed: bool) -> dict:
+    return answer_chat(
+        payload.question,
+        session_id=payload.session_id,
+        run_id=payload.run_id,
+        market=payload.market,
+        date=payload.date,
+        page_context=payload.page_context,
+        scenario=payload.scenario,
+        user_role=payload.user_role,
+        answer_style=payload.answer_style,
+        model_provider=payload.model_provider,
+        debug=debug_allowed,
+    )
 
 
 @router.post("/api/ai/chat")
@@ -30,18 +114,113 @@ def ai_chat(
             ip_address=request.client.host if request.client else "",
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
-    return answer_chat(
-        payload.question,
-        session_id=payload.session_id,
-        run_id=payload.run_id,
-        market=payload.market,
-        date=payload.date,
-        page_context=payload.page_context,
-        scenario=payload.scenario,
-        user_role=payload.user_role,
-        answer_style=payload.answer_style,
-        model_provider=payload.model_provider,
-        debug=debug_allowed,
+    return _answer_chat_from_payload(payload, debug_allowed)
+
+
+@router.post("/api/ai/chat/stream")
+def ai_chat_stream(
+    payload: ChatRequest,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+) -> StreamingResponse:
+    debug_allowed = bool(payload.debug and user.can_debug())
+    if payload.debug:
+        write_audit_log(
+            action="ai.debug_view",
+            user=user,
+            resource_type="ai_chat_stream",
+            status="success" if debug_allowed else "denied",
+            ip_address=request.client.host if request.client else "",
+            metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
+        )
+
+    def generate() -> Iterator[str]:
+        yield _stream_event("intent", {"message": "已接收问题，正在识别业务意图。"})
+        yield _stream_event("tool_start", {"name": "AI/RAG/业务工具链", "message": "正在复用主问答链路生成结果。"})
+        try:
+            response = _answer_chat_from_payload(payload, debug_allowed)
+            for item in response.get("evidence_summary") or []:
+                yield _stream_event("rag_result", {"source": item})
+            for item in response.get("knowledge_evidence_summary") or []:
+                yield _stream_event("rag_result", {"source": item, "type": "knowledge"})
+            for call in response.get("tool_calls") or []:
+                yield _stream_event(
+                    "tool_result",
+                    {
+                        "name": call.get("name") or call.get("tool_name") or "tool",
+                        "status": call.get("status") or "done",
+                    },
+                )
+            for chunk in _chunk_text(str(response.get("answer") or "")):
+                yield _stream_event("token", {"text": chunk})
+                time.sleep(0.01)
+            yield _stream_event("final", response)
+        except Exception as exc:  # pragma: no cover - streamed to browser
+            yield _stream_event("error", {"message": str(exc)})
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+@router.post("/api/ai/attachments")
+async def ai_upload_attachment(
+    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    file: UploadFile = File(...),
+    kind: str = Form("attachment"),
+) -> dict:
+    content = await file.read()
+    if len(content) > ASSISTANT_UPLOAD_LIMIT_BYTES:
+        raise HTTPException(status_code=413, detail="附件超过 20MB，暂不支持上传。")
+
+    attachment_id = f"att_{uuid.uuid4().hex}"
+    safe_name = _safe_filename(file.filename)
+    stored_name = f"{attachment_id}_{safe_name}"
+    ASSISTANT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    stored_path = ASSISTANT_UPLOAD_DIR / stored_name
+    stored_path.write_bytes(content)
+
+    preview = ""
+    if (file.content_type or "").startswith("text/") or safe_name.lower().endswith((".txt", ".csv", ".md", ".json")):
+        preview = content[:2048].decode("utf-8", errors="ignore").strip()
+
+    metadata = {
+        "attachment_id": attachment_id,
+        "filename": safe_name,
+        "kind": kind,
+        "content_type": file.content_type or "application/octet-stream",
+        "size": len(content),
+        "stored_path": str(stored_path),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "preview": preview[:500],
+    }
+    _append_upload_metadata(metadata)
+    return {
+        "attachment_id": attachment_id,
+        "filename": safe_name,
+        "kind": kind,
+        "content_type": metadata["content_type"],
+        "size": len(content),
+        "summary": preview[:120] if preview else "附件已由后端保存，可随本次问题作为上下文引用。",
+    }
+
+
+@router.post("/api/ai/chat/sessions/export")
+def ai_export_conversation(
+    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    payload: dict[str, Any] = Body(...),
+    format: str = "docx",
+) -> Response:
+    normalized_format = format.lower().strip()
+    if normalized_format == "pdf":
+        raise HTTPException(status_code=501, detail="PDF 导出引擎尚未部署，请先使用 Word 导出。")
+    if normalized_format != "docx":
+        raise HTTPException(status_code=400, detail="仅支持 docx 或 pdf 导出格式。")
+
+    content = _build_conversation_docx(payload)
+    filename = f"assistant_conversation_{int(time.time())}.docx"
+    return Response(
+        content,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

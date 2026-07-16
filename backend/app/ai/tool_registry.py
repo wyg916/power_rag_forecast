@@ -5,7 +5,8 @@ from typing import Any, Callable
 
 import pandas as pd
 
-from ..data_access import data_status, jsonable, load_latest_forecast, model_status, price_column, query_dataframe, records, report_status, risk_probability_column
+from ..data_access import data_status, jsonable, model_status, price_column, query_dataframe, records, report_status, risk_probability_column
+from ..source_contract import attach_source_meta, resolve_forecast_source
 from ..stage1_services import (
     load_forecast,
     market_history,
@@ -18,9 +19,10 @@ from ..stage1_services import (
 from .knowledge_base import search_knowledge as search_knowledge_docs
 
 
-def _forecast_frame() -> tuple[dict[str, Any], pd.DataFrame, str | None]:
-    payload = load_latest_forecast()
-    df = pd.DataFrame(payload.get("records") or [])
+def _forecast_frame(run_id: str = "latest") -> tuple[dict[str, Any], pd.DataFrame, str | None]:
+    run, rows, meta = resolve_forecast_source(run_id)
+    payload = attach_source_meta({"available": bool(rows), "run_id": run.get("run_id"), "records": rows}, meta)
+    df = pd.DataFrame(rows)
     if "datetime" in df.columns:
         df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
     pcol = price_column(df) if not df.empty else None
@@ -30,7 +32,7 @@ def _forecast_frame() -> tuple[dict[str, Any], pd.DataFrame, str | None]:
 
 
 def _empty(name: str, message: str) -> dict[str, Any]:
-    return {"tool": name, "empty": True, "message": message}
+    return {"tool": name, "available": False, "empty": True, "message": message, "unavailable_reason": "tool_no_data"}
 
 
 def _hour_text(value: Any) -> str:
@@ -79,7 +81,7 @@ def _risk_reasons(row: pd.Series, price: float, p75: float, prob: float, load_q7
 
 
 def get_forecast_extremes(run_id: str = "latest", **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _forecast_frame()
+    payload, df, pcol = _forecast_frame(run_id)
     if df.empty or not pcol:
         return _empty("get_forecast_extremes", "当前没有可用预测结果或预测电价字段。")
     prices = pd.to_numeric(df[pcol], errors="coerce")
@@ -107,7 +109,7 @@ def get_forecast_extremes(run_id: str = "latest", **_: Any) -> dict[str, Any]:
 
 
 def get_high_risk_hours(run_id: str = "latest", limit: int = 6, **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _forecast_frame()
+    payload, df, pcol = _forecast_frame(run_id)
     if df.empty or not pcol:
         return _empty("get_high_risk_hours", "当前没有可用预测结果或预测电价字段。")
     prices = pd.to_numeric(df[pcol], errors="coerce")
@@ -169,7 +171,7 @@ def get_high_risk_hours(run_id: str = "latest", limit: int = 6, **_: Any) -> dic
 
 
 def get_hour_detail(run_id: str = "latest", hour: int | None = None, **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _forecast_frame()
+    payload, df, pcol = _forecast_frame(run_id)
     if df.empty or not pcol:
         return _empty("get_hour_detail", "当前没有可用预测结果或预测电价字段。")
     if hour is None:
@@ -236,7 +238,7 @@ def get_trading_advice(run_id: str = "latest", **_: Any) -> dict[str, Any]:
 
 
 def get_storage_advice(run_id: str = "latest", **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _forecast_frame()
+    payload, df, pcol = _forecast_frame(run_id)
     if df.empty or not pcol:
         return _empty("get_storage_advice", "当前没有可用预测结果或预测电价字段。")
     prices = pd.to_numeric(df[pcol], errors="coerce")

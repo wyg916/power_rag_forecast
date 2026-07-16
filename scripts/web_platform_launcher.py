@@ -15,6 +15,7 @@ from urllib.parse import quote_plus
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = ROOT / "frontend"
+FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 LOG_DIR = ROOT / "output" / "runtime_logs"
 BACKEND_URL = "http://127.0.0.1:8000/api/health"
 FRONTEND_URL = "http://127.0.0.1:5173"
@@ -58,12 +59,33 @@ def log(message: str) -> None:
 
 def python_executable() -> str:
     configured = os.environ.get("PYTHON_EXE", "").strip()
+    if configured:
+        if Path(configured).exists():
+            return configured
+        resolved = shutil.which(configured)
+        if resolved:
+            return resolved
+    return sys.executable or shutil.which("python") or "python"
+
+def npm_executable() -> str | None:
+    configured = os.environ.get("NPM_EXE", "").strip()
     if configured and Path(configured).exists():
         return configured
-    candidate = Path(r"C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe")
-    if candidate.exists():
-        return str(candidate)
-    return sys.executable or "python"
+    for candidate in [
+        shutil.which("npm.cmd"),
+        shutil.which("npm"),
+        os.environ.get("APPDATA", "") and str(Path(os.environ["APPDATA"]) / "npm" / "npm.cmd"),
+        os.environ.get("ProgramFiles", "") and str(Path(os.environ["ProgramFiles"]) / "nodejs" / "npm.cmd"),
+        os.environ.get("ProgramFiles(x86)", "") and str(Path(os.environ["ProgramFiles(x86)"]) / "nodejs" / "npm.cmd"),
+    ]:
+        if candidate and Path(candidate).exists():
+            return str(candidate)
+    node_home = os.environ.get("NODE_HOME", "").strip()
+    if node_home:
+        candidate = Path(node_home) / "npm.cmd"
+        if candidate.exists():
+            return str(candidate)
+    return None
 
 
 def port_open(port: int, timeout: float = 0.8) -> bool:
@@ -183,7 +205,7 @@ def start_backend(py: str, sync: bool, restart: bool = False) -> bool:
 def ensure_frontend_deps() -> bool:
     if (FRONTEND_DIR / "node_modules").exists():
         return True
-    npm = shutil.which("npm.cmd") or shutil.which("npm")
+    npm = npm_executable()
     if not npm:
         log("[ERROR] npm was not found in PATH.")
         return False
@@ -194,8 +216,33 @@ def ensure_frontend_deps() -> bool:
         return False
     return True
 
+def start_static_frontend(py: str) -> bool:
+    index_file = FRONTEND_DIST_DIR / "index.html"
+    if not index_file.exists():
+        log("[ERROR] npm was not found and frontend/dist/index.html does not exist.")
+        log("[TIP] Install Node.js 20+ and make npm available in PATH, or run npm build once to create frontend/dist.")
+        return False
+    log("[WARN] npm was not found. Falling back to built frontend/dist static server.")
+    popen_detached(
+        [
+            py,
+            "-X",
+            "utf8",
+            str(ROOT / "scripts" / "spa_static_server.py"),
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "5173",
+            "--directory",
+            str(FRONTEND_DIST_DIR),
+        ],
+        ROOT,
+        "web_frontend.log",
+    )
+    return wait_http(FRONTEND_URL, "Frontend static server", 30)
 
-def start_frontend(restart: bool = False) -> bool:
+
+def start_frontend(py: str, restart: bool = False) -> bool:
     if restart:
         stop_port(5173, "frontend")
     if http_ok(FRONTEND_URL):
@@ -204,11 +251,10 @@ def start_frontend(restart: bool = False) -> bool:
     if port_open(5173):
         log("[WARN] Port 5173 is open but frontend HTTP check failed. Check output/runtime_logs/web_frontend.log.")
         return False
-    if not ensure_frontend_deps():
-        return False
-    npm = shutil.which("npm.cmd") or shutil.which("npm")
+    npm = npm_executable()
     if not npm:
-        log("[ERROR] npm was not found in PATH.")
+        return start_static_frontend(py)
+    if not ensure_frontend_deps():
         return False
     popen_detached([npm, "run", "dev", "--", "--force"], FRONTEND_DIR, "web_frontend.log")
     return wait_http(FRONTEND_URL, "Frontend", 90)
@@ -255,7 +301,7 @@ def main() -> int:
     if not args.frontend_only:
         ok = start_backend(py, sync=not args.skip_sync, restart=args.restart) and ok
     if not args.backend_only:
-        ok = start_frontend(restart=args.restart) and ok
+        ok = start_frontend(py, restart=args.restart) and ok
 
     if ok:
         log(f"[DONE] Web platform ready: {FRONTEND_URL}")

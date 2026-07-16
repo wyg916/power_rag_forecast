@@ -4,7 +4,8 @@ from typing import Any
 
 import pandas as pd
 
-from ...data_access import jsonable, load_latest_forecast, price_column
+from ...data_access import jsonable, price_column
+from ...source_contract import attach_source_meta, resolve_forecast_source
 
 
 def _money(value: Any) -> str:
@@ -14,9 +15,10 @@ def _money(value: Any) -> str:
         return "-"
 
 
-def _forecast_df() -> tuple[dict[str, Any], pd.DataFrame, str | None]:
-    payload = load_latest_forecast()
-    df = pd.DataFrame(payload.get("records") or [])
+def _forecast_df(run_id: str = "latest") -> tuple[dict[str, Any], pd.DataFrame, str | None]:
+    run, rows, meta = resolve_forecast_source(run_id)
+    payload = attach_source_meta({"available": bool(rows), "run_id": run.get("run_id"), "records": rows}, meta)
+    df = pd.DataFrame(rows)
     if "datetime" in df.columns:
         df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
     pcol = price_column(df) if not df.empty else None
@@ -45,8 +47,8 @@ def _select_row(df: pd.DataFrame, target_time: str | None, mode: str, hour: int 
     return df.loc[prices.idxmin() if mode == "low" else prices.idxmax()]
 
 
-def get_forecast_metrics(**_: Any) -> dict[str, Any]:
-    payload, df, pcol = _forecast_df()
+def get_forecast_metrics(run_id: str = "latest", **_: Any) -> dict[str, Any]:
+    payload, df, pcol = _forecast_df(run_id)
     if df.empty or not pcol:
         return {"tool": "get_forecast_metrics", "available": False, "message": "当前系统未查询到可用预测数据。"}
     prices = pd.to_numeric(df["__price"], errors="coerce")
@@ -65,13 +67,14 @@ def get_forecast_metrics(**_: Any) -> dict[str, Any]:
             "spread": float(prices.max() - prices.min()),
             "p25": float(prices.quantile(0.25)),
             "p75": float(prices.quantile(0.75)),
-            "evidence": [{"source": "result_forward_24h_formal", "fields": ["datetime", pcol, "risk_level"]}],
+            "generated_at": (payload.get("meta") or {}).get("generated_at"),
+            "evidence": [{"table": "forecast_results", "run_id": payload.get("run_id"), "fields": ["forecast_time", pcol, "risk_level"]}],
         }
     )
 
 
-def explain_low_price_hour(target_time: str | None = None, hour: int | None = None, **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _forecast_df()
+def explain_low_price_hour(target_time: str | None = None, hour: int | None = None, run_id: str = "latest", **_: Any) -> dict[str, Any]:
+    payload, df, pcol = _forecast_df(run_id)
     if df.empty or not pcol:
         return {"tool": "explain_low_price_hour", "available": False, "message": "当前系统未查询到可用预测数据。"}
     prices = pd.to_numeric(df["__price"], errors="coerce")
@@ -101,13 +104,14 @@ def explain_low_price_hour(target_time: str | None = None, hour: int | None = No
             "is_peak_hour": bool(row.get("is_peak_hour")),
             "possible_reasons": reasons,
             "advice": "可作为低价采购或储能充电参考窗口，但仍需结合实时市场复核。",
-            "evidence": [{"source": "result_forward_24h_formal", "time": _time_text(row.get("datetime"))}],
+            "generated_at": (payload.get("meta") or {}).get("generated_at"),
+            "evidence": [{"table": "forecast_results", "run_id": payload.get("run_id"), "time": _time_text(row.get("datetime"))}],
         }
     )
 
 
-def explain_high_price_hour(target_time: str | None = None, hour: int | None = None, **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _forecast_df()
+def explain_high_price_hour(target_time: str | None = None, hour: int | None = None, run_id: str = "latest", **_: Any) -> dict[str, Any]:
+    payload, df, pcol = _forecast_df(run_id)
     if df.empty or not pcol:
         return {"tool": "explain_high_price_hour", "available": False, "message": "当前系统未查询到可用预测数据。"}
     prices = pd.to_numeric(df["__price"], errors="coerce")
@@ -141,6 +145,7 @@ def explain_high_price_hour(target_time: str | None = None, hour: int | None = N
             "spike_risk_prob": row.get("spike_risk_prob"),
             "possible_reasons": reasons or ["该时段预测价格处于相对高位，需要结合实时市场和负荷变化复核"],
             "advice": "建议复核售电敞口、负荷预测、实时市场变化和合同约束，不应直接自动执行交易。",
-            "evidence": [{"source": "result_forward_24h_formal", "time": _time_text(row.get("datetime"))}],
+            "generated_at": (payload.get("meta") or {}).get("generated_at"),
+            "evidence": [{"table": "forecast_results", "run_id": payload.get("run_id"), "time": _time_text(row.get("datetime"))}],
         }
     )

@@ -20,7 +20,11 @@ export interface LoginResponse {
 export const authApi = {
   async login(username: string, password: string): Promise<LoginResponse> {
     const payload = await api.authLogin({ username, password });
-    if (payload?.access_token) setStoredAccessToken(payload.access_token);
+    if (!payload?.access_token || !payload?.user) {
+      clearStoredAccessToken();
+      throw new Error('登录响应缺少访问令牌或用户信息');
+    }
+    setStoredAccessToken(payload.access_token);
     return payload;
   },
 

@@ -67,7 +67,7 @@ goto done
 
 :syncdb
 set "PYTHONUTF8=1"
-set "PYTHON_EXE=C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
+set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
 if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
 "%PYTHON_EXE%" -X utf8 "%~dp013_sync_core_data_to_db.py"
 goto done

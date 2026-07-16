@@ -245,11 +245,11 @@ export async function getForecastCenterData() {
   const activeModel = modelExplain?.active_model || models?.active || {};
   const peakVolatility = summary.avgPrice ? Number((Number(summary.peakValleySpread || 0) / Math.max(Number(summary.avgPrice), 1) * 100).toFixed(1)) : null;
   const metrics = [
-    { key: 'max', title: '最高价', value: fmt(summary.maxPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.maxHour)}`, trend: 8.35, tone: 'orange', source: 'api_forecast_24h' },
-    { key: 'min', title: '最低价', value: fmt(summary.minPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.minHour)}`, trend: -2.4, tone: 'green', source: 'api_forecast_24h' },
-    { key: 'avg', title: '均价', value: fmt(summary.avgPrice), unit: '元/kWh', note: '24小时预测均值', trend: 3.21, tone: 'blue', source: 'api_forecast_24h' },
-    { key: 'spread', title: '峰谷价差', value: fmt(summary.peakValleySpread), unit: '元/kWh', note: '峰谷波动空间', trend: 8.35, tone: 'red', source: 'api_forecast_24h' },
-    { key: 'confidence', title: '预测可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: '来自模型/风险评估', trend: 2.4, tone: 'green', source: confidence.source },
+    { key: 'max', title: '最高价', value: fmt(summary.maxPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.maxHour)}`, tone: 'orange', source: 'api_forecast_24h' },
+    { key: 'min', title: '最低价', value: fmt(summary.minPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.minHour)}`, tone: 'green', source: 'api_forecast_24h' },
+    { key: 'avg', title: '均价', value: fmt(summary.avgPrice), unit: '元/kWh', note: '24小时预测均值', tone: 'blue', source: 'api_forecast_24h' },
+    { key: 'spread', title: '峰谷价差', value: fmt(summary.peakValleySpread), unit: '元/kWh', note: '峰谷波动空间', tone: 'red', source: 'api_forecast_24h' },
+    { key: 'confidence', title: '预测可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: '来自模型/风险评估', tone: 'green', source: confidence.source },
   ];
 
   return withServiceState({

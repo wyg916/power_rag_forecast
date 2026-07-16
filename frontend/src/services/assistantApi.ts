@@ -1,56 +1,211 @@
+import { api, clearStoredAccessToken, downloadUrl, getStoredAccessToken } from '../api';
 import { assistantMock } from '../mock/assistantMock';
-import { api } from '../api';
-import { mockFallback, withServiceState } from './serviceState';
+import { errorMessage, withServiceState } from './serviceState';
+
+type StreamHandler = (event: string, payload: any) => void;
+
+function authHeaders(json = true) {
+  const token = getStoredAccessToken();
+  return {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
+async function readError(response: Response) {
+  const text = await response.text();
+  try {
+    const payload = JSON.parse(text);
+    return payload?.detail || payload?.message || text || `HTTP ${response.status}`;
+  } catch {
+    return text || `HTTP ${response.status}`;
+  }
+}
+
+function handleUnauthorized(response: Response) {
+  if (response.status === 401) {
+    clearStoredAccessToken();
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+  }
+}
+
+const emptyAssistantAnswer = {
+  question: '请选择常用问题或输入业务问题',
+  conclusion: '输入问题后，AI 助手会基于后端工具调用、RAG 证据和只读查询结果生成结构化回答。',
+  evidence: ['尚未发起问题，暂无数据依据。'],
+  reason: '当前处于待提问状态，不展示任何预测数值、交易结论或业务回填结果。',
+  suggestion: ['可从左侧常用问题开始，或直接输入电价预测、风险识别、策略建议、政策解读等问题。'],
+  warning: '未返回真实接口证据前，本页面不会生成或展示业务数值。'
+};
 
 export async function getAssistantData() {
   try {
     const sessions = await api.chatSessions();
     const rows = Array.isArray(sessions?.sessions) ? sessions.sessions : [];
-    return withServiceState({
-      ...assistantMock,
-      dataSource: rows.length ? 'postgresql.ai_chat_sessions' : 'mock_fallback',
-      conversations: rows.length
-        ? rows.map((item: any) => [
-            item.title || item.session_id || 'AI 会话',
-            String(item.updated_at || item.created_at || '').slice(5, 16)
-          ])
-        : assistantMock.conversations
-    }, {
-      empty: !rows.length,
-      mockFallback: !rows.length,
-      fallbackReason: !rows.length ? 'AI 会话接口未返回历史记录，助手侧边栏使用本地兜底会话。' : undefined
-    });
+    return withServiceState(
+      {
+        ...assistantMock,
+        dataSource: 'postgresql.ai_chat_sessions',
+        conversations: rows.map((item: any) => ({
+          session_id: item.session_id,
+          title: item.title || item.session_id || 'AI 会话',
+          created_at: item.created_at,
+          updated_at: item.updated_at
+        })),
+        answer: emptyAssistantAnswer,
+        docs: [],
+        modelRuns: []
+      },
+      {
+        empty: !rows.length,
+        mockFallback: false
+      }
+    );
   } catch (error) {
-    return mockFallback(assistantMock, error, 'AI 助手会话接口请求失败，已切换到本地兜底数据。');
+    return withServiceState(
+      {
+        ...assistantMock,
+        conversations: [],
+        answer: emptyAssistantAnswer,
+        docs: [],
+        modelRuns: []
+      },
+      {
+        empty: true,
+        mockFallback: false,
+        error: errorMessage(error),
+        fallbackReason: '会话历史接口暂时不可用，页面仅保留新问答入口。'
+      }
+    );
   }
 }
 
 export async function askAssistant(question: string, sessionId?: string, options: any = {}) {
-  try {
-    return await api.chat(question, sessionId, options);
-  } catch (error) {
-    return {
-      session_id: sessionId || 'offline_session',
-      answer: [
-        `结论：已收到问题“${question}”，当前后端 AI 工具链暂不可达，已进入离线降级回答。`,
-        '',
-        '数据依据：本地兜底数据源，仅用于保持页面交互闭环。',
-        '',
-        '原因解释：请求 AI 分析接口失败，前端保留自然回答展示，开发者模式下可继续排查。',
-        '',
-        '业务建议：恢复后端服务后重新提问，系统会自动切换为 PostgreSQL、知识库和工具链证据回答。',
-        '',
-        '风险提示：离线降级回答不能作为正式交易依据。'
-      ].join('\n'),
-      intent: 'mock_fallback',
-      confidence: 0.62,
-      evidence_summary: ['mock_fallback'],
-      warnings: ['离线降级回答不能作为正式交易依据。'],
-      data_used: { prediction: false, model: false, report: false, knowledge: false },
-      dataSource: 'mock_fallback',
-      error: error instanceof Error ? error.message : String(error),
-      mockFallback: true,
-      fallbackReason: 'AI 分析接口不可用，当前回答为离线降级结果。'
-    };
+  return api.chat(question, sessionId, options);
+}
+
+export async function askAssistantStream(
+  question: string,
+  sessionId: string | undefined,
+  options: any = {},
+  onEvent: StreamHandler,
+  signal?: AbortSignal
+) {
+  const response = await fetch(downloadUrl('/api/ai/chat/stream'), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ question, session_id: sessionId, ...options }),
+    signal
+  });
+  if (!response.ok || !response.body) {
+    handleUnauthorized(response);
+    throw new Error(await readError(response));
   }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+  let finalPayload: any;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split('\n\n');
+    buffer = frames.pop() || '';
+    for (const frame of frames) {
+      const lines = frame.split('\n');
+      const event = lines.find((line) => line.startsWith('event:'))?.slice(6).trim() || 'message';
+      const dataText = lines
+        .filter((line) => line.startsWith('data:'))
+        .map((line) => line.slice(5).trim())
+        .join('\n');
+      const payload = dataText ? JSON.parse(dataText) : {};
+      onEvent(event, payload);
+      if (event === 'error') throw new Error(payload?.message || '流式问答返回错误');
+      if (event === 'final') finalPayload = payload;
+    }
+  }
+
+  return finalPayload;
+}
+
+export async function uploadAssistantAttachment(file: File, kind = 'attachment') {
+  const body = new FormData();
+  body.append('file', file);
+  body.append('kind', kind);
+  const response = await fetch(downloadUrl('/api/ai/attachments'), {
+    method: 'POST',
+    headers: authHeaders(false),
+    body
+  });
+  if (!response.ok) {
+    handleUnauthorized(response);
+    throw new Error(await readError(response));
+  }
+  return response.json();
+}
+
+export async function exportAssistantConversation(format: 'docx' | 'pdf', payload: any) {
+  const response = await fetch(downloadUrl(`/api/ai/chat/sessions/export?format=${format}`), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    handleUnauthorized(response);
+    throw new Error(await readError(response));
+  }
+  const disposition = response.headers.get('content-disposition') || '';
+  const filename = disposition.match(/filename="?([^"]+)"?/i)?.[1] || `assistant_conversation.${format}`;
+  return { blob: await response.blob(), filename };
+}
+
+export async function getAssistantReferenceOptions(query = '') {
+  const settled = await Promise.allSettled([
+    api.forecast24h(),
+    api.strategyLatest(),
+    api.reportLatest(),
+    api.databaseTables(query),
+    api.knowledgeSearch(query || '电力交易', 5)
+  ]);
+  const options: Array<{ id: string; label: string; type: string; summary: string; payload?: any }> = [];
+
+  const [forecast, strategy, report, tables, knowledge] = settled;
+  if (forecast.status === 'fulfilled') {
+    options.push({ id: 'forecast_24h', label: '24小时预测结果', type: 'forecast', summary: '来自预测中心数据服务', payload: forecast.value });
+  }
+  if (strategy.status === 'fulfilled') {
+    options.push({ id: 'strategy_latest', label: '最新购电策略', type: 'strategy', summary: '来自策略中心数据服务', payload: strategy.value });
+  }
+  if (report.status === 'fulfilled') {
+    options.push({ id: 'report_latest', label: '最新分析报告', type: 'report', summary: '来自报告中心数据服务', payload: report.value });
+  }
+  if (tables.status === 'fulfilled') {
+    const rows = Array.isArray(tables.value?.tables) ? tables.value.tables : Array.isArray(tables.value?.data) ? tables.value.data : [];
+    rows.slice(0, 8).forEach((item: any, index: number) => {
+      const tableName = item.name || item.table_name || item.id || `table_${index + 1}`;
+      options.push({
+        id: `table_${tableName}`,
+        label: tableName,
+        type: 'database',
+        summary: item.description || item.comment || '来自数据中心表目录',
+        payload: item
+      });
+    });
+  }
+  if (knowledge.status === 'fulfilled') {
+    const rows = Array.isArray(knowledge.value?.results) ? knowledge.value.results : Array.isArray(knowledge.value?.items) ? knowledge.value.items : [];
+    rows.slice(0, 5).forEach((item: any, index: number) => {
+      options.push({
+        id: `knowledge_${item.id || item.title || index}`,
+        label: item.title || item.source || `知识引用 ${index + 1}`,
+        type: 'knowledge',
+        summary: item.summary || item.content || '来自知识库检索服务',
+        payload: item
+      });
+    });
+  }
+
+  return options;
 }

@@ -116,7 +116,12 @@ export function ForecastMetricCards({ metrics, series }: { metrics: any[]; serie
               <strong>{item.value}<em>{item.unit}</em></strong>
             </div>
           </div>
-          <p>{item.note || '--'} <span className={Number(item.trend) >= 0 ? 'trend-up' : 'trend-down'}>{Number(item.trend) >= 0 ? '↑' : '↓'} {Math.abs(Number(item.trend || 0)).toFixed(2)}%</span></p>
+          <p>
+            {item.note || '--'}
+            {Number.isFinite(Number(item.trend)) ? (
+              <span className={Number(item.trend) >= 0 ? 'trend-up' : 'trend-down'}>{Number(item.trend) >= 0 ? '↑' : '↓'} {Math.abs(Number(item.trend)).toFixed(2)}%</span>
+            ) : null}
+          </p>
           <MiniSparkline values={spark} tone={item.tone} />
         </div>
       ))}
@@ -129,34 +134,24 @@ export function ForecastChartCard({ data }: { data: any }) {
   const times = series.map((item: any) => item.time);
   const values = series.map((item: any) => item.value);
   const peak = series.reduce((best: any, item: any) => Number(item.value) > Number(best?.value ?? -Infinity) ? item : best, null);
-  const lowLabel = data?.lowWindowLabel;
-  const highLabel = data?.highWindowLabel;
   const option = {
-    color: [chartColors.green, '#BDEFE5', chartColors.red],
+    color: [chartColors.green, chartColors.red],
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A' } },
-    legend: { top: 0, left: 0, data: ['预测电价', '置信区间（95%）', '峰值点'] },
-    grid: { left: 48, right: 28, top: 54, bottom: 38 },
+    legend: { top: 0, left: 0, data: ['预测电价', '峰值点'] },
+    grid: { left: 48, right: 28, top: 54, bottom: 46 },
     xAxis: { type: 'category', data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085' } },
     yAxis: { type: 'value', name: '元/kWh', splitLine: { lineStyle: { color: '#EDF2F7' } }, axisLabel: { color: '#667085' } },
     series: [
-      { name: '置信区间（95%）', type: 'line', data: series.map((item: any) => item.upper), symbol: 'none', lineStyle: { opacity: 0 }, stack: 'confidence' },
-      { name: '置信区间（95%）', type: 'line', data: series.map((item: any) => Number(item.lower) - Number(item.upper)), symbol: 'none', lineStyle: { opacity: 0 }, areaStyle: { color: 'rgba(0,184,148,0.12)' }, stack: 'confidence' },
       {
         name: '预测电价',
         type: 'line',
         smooth: true,
+        showSymbol: true,
         symbolSize: 6,
         data: values,
+        z: 5,
         lineStyle: { width: 3, color: chartColors.green },
-        itemStyle: { color: chartColors.green },
-        markArea: {
-          silent: true,
-          data: [
-            [{ name: `低价窗口\n${lowLabel}`, xAxis: (data?.lowWindow || [])[0]?.time }, { xAxis: (data?.lowWindow || []).slice(-1)[0]?.time }],
-            [{ name: `高风险时段\n${highLabel}`, xAxis: (data?.highWindow || [])[0]?.time }, { xAxis: (data?.highWindow || []).slice(-1)[0]?.time }]
-          ].filter((item: any) => item[0].xAxis && item[1].xAxis),
-          itemStyle: { color: 'rgba(0,184,148,0.10)' }
-        },
+        itemStyle: { color: chartColors.green }
       },
       ...(peak ? [{
         name: '峰值点',
@@ -171,10 +166,10 @@ export function ForecastChartCard({ data }: { data: any }) {
   return (
     <div className="forecast-card forecast-chart-card">
       <div className="forecast-card-head">
-        <div><h2>24小时电价预测</h2><p>包含置信区间、低价窗口、高风险时段和峰值点标注。</p></div>
+        <div><h2>24小时电价预测</h2><p>展示真实预测电价序列与峰值点；低价窗口和高风险时段在右侧洞察中说明。</p></div>
         <Space><Tag>小时</Tag><span className="card-unit">单位：元/kWh</span></Space>
       </div>
-      {series.length ? <AppChart option={option} height={246} /> : <Empty description="暂无 24 小时预测曲线" />}
+      {series.length ? <AppChart option={option} height={300} /> : <Empty description="暂无 24 小时预测曲线" />}
     </div>
   );
 }
@@ -226,7 +221,7 @@ export function ForecastDetailTable({ rows, compact = false }: { rows: any[]; co
     { title: '置信度（%）', dataIndex: 'confidence', align: 'right' },
     { title: '操作', render: () => <Button type="link" size="small">小时解释</Button> }
   ];
-  return <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={compact ? false : { pageSize: 8, showSizeChanger: false }} scroll={{ y: compact ? 86 : 210, x: 780 }} />;
+  return <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={compact ? false : { pageSize: 8, showSizeChanger: false }} scroll={{ y: compact ? 116 : 210, x: 780 }} />;
 }
 
 export function ForecastSummaryCards({ data }: { data: any }) {
@@ -293,7 +288,7 @@ export function ComparisonChartCard({ data }: { data: any }) {
   const option = {
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A' } },
     legend: { top: 0, left: 0, data: ['最新预测', '上一批次/历史参考', '历史均值（近30天）'] },
-    grid: { left: 48, right: 28, top: 54, bottom: 38 },
+    grid: { left: 48, right: 28, top: 54, bottom: 46 },
     xAxis: { type: 'category', data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085' } },
     yAxis: { type: 'value', name: '元/kWh', splitLine: { lineStyle: { color: '#EDF2F7' } }, axisLabel: { color: '#667085' } },
     series: [
@@ -308,7 +303,7 @@ export function ComparisonChartCard({ data }: { data: any }) {
         <div><h2>历史对比趋势（元/kWh）</h2><p>最新预测、上一批次/历史参考与近30天历史均值对比。</p></div>
         <Space><Tag>近7天</Tag><Tag color="success">近30天</Tag></Space>
       </div>
-      <AppChart option={option} height={264} />
+      <AppChart option={option} height={300} />
     </div>
   );
 }

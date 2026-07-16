@@ -25,8 +25,9 @@ from sklearn.linear_model import LinearRegression
 # =========================
 # 路径配置
 # =========================
-DATA_DIR = r"E:\智能运营分析项目\output"
-RESULT_DIR = r"E:\智能运营分析项目\结果"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(PROJECT_ROOT, "output")
+RESULT_DIR = os.path.join(PROJECT_ROOT, "结果")
 
 MASTER_FILE = os.path.join(DATA_DIR, "master_table.xlsx")
 

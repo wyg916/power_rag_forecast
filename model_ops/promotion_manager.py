@@ -4,7 +4,8 @@ from typing import Any
 
 from sqlalchemy import text
 
-from database_utils import apply_database_migrations, create_database_engine, get_database_config
+from backend.app.services.model_fact_service import DEFAULT_MODEL_DOMAIN, DEFAULT_TARGET_NAME, ModelFactError, ModelFactService
+from database_utils import create_database_engine, get_database_config
 
 
 def promote_to_active(config: dict[str, Any], model_version: str, approved_by: str = "system", log=None) -> bool:
@@ -13,28 +14,15 @@ def promote_to_active(config: dict[str, Any], model_version: str, approved_by: s
             log("数据库未启用，跳过模型上线。")
         return False
 
-    apply_database_migrations(config, log=log)
+    actor = str(approved_by or "").strip()
+    if actor.lower() in {"", "system", "auto", "automatic"}:
+        raise ModelFactError("模型激活必须记录明确的人工批准人")
     engine = create_database_engine(config)
+    model_cfg = config.get("model_learning", {}) or {}
+    domain = str(model_cfg.get("domain") or DEFAULT_MODEL_DOMAIN).strip().lower()
+    target_name = str(model_cfg.get("target_name") or DEFAULT_TARGET_NAME).strip()
+    active = ModelFactService(engine).activate_model(model_version, domain, target_name)
     with engine.begin() as conn:
-        exists = conn.execute(
-            text("SELECT COUNT(*) FROM model_registry WHERE model_version = :model_version"),
-            {"model_version": model_version},
-        ).scalar()
-        if not exists:
-            raise ValueError(f"模型版本不存在：{model_version}")
-        conn.execute(text("UPDATE model_registry SET is_active = 0 WHERE is_active = 1"))
-        conn.execute(
-            text(
-                """
-                UPDATE model_registry
-                SET is_active = 1,
-                    status = 'active',
-                    activated_at = CURRENT_TIMESTAMP
-                WHERE model_version = :model_version
-                """
-            ),
-            {"model_version": model_version},
-        )
         conn.execute(
             text(
                 """
@@ -42,28 +30,23 @@ def promote_to_active(config: dict[str, Any], model_version: str, approved_by: s
                 VALUES (:actor, 'promote_model', 'model_registry', :target_id, :details, CURRENT_TIMESTAMP)
                 """
             ),
-            {"actor": approved_by, "target_id": model_version, "details": f"Promoted {model_version} to active"},
+            {
+                "actor": actor,
+                "target_id": model_version,
+                "details": f"Promoted {model_version} to active for {domain}/{target_name}",
+            },
         )
     if log:
-        log(f"模型已上线为 active：{model_version}")
-    return True
+        log(f"模型已上线为 active：{active.get('model_version')}")
+    return bool(active.get("is_active"))
 
 
 def get_latest_candidate_version(config: dict[str, Any]) -> str | None:
     if not get_database_config(config).enabled:
         return None
-    apply_database_migrations(config)
-    engine = create_database_engine(config)
-    with engine.connect() as conn:
-        row = conn.execute(
-            text(
-                """
-                SELECT model_version
-                FROM model_registry
-                WHERE status = 'candidate'
-                ORDER BY created_at DESC
-                LIMIT 1
-                """
-            )
-        ).mappings().fetchone()
-    return str(row["model_version"]) if row else None
+    model_cfg = config.get("model_learning", {}) or {}
+    domain = str(model_cfg.get("domain") or DEFAULT_MODEL_DOMAIN).strip().lower()
+    target_name = str(model_cfg.get("target_name") or DEFAULT_TARGET_NAME).strip()
+    rows = ModelFactService(create_database_engine(config)).list_models(domain, target_name)
+    candidate = next((row for row in rows if row.get("status") == "candidate"), None)
+    return str(candidate["model_version"]) if candidate else None

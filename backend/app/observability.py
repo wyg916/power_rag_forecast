@@ -48,7 +48,8 @@ def log_suppressed_exception(context: str, exc: BaseException, **metadata: Any) 
         "pid": os.getpid(),
     }
     _RECENT_EXCEPTIONS.append(event)
-    app_logger().warning("%s failed: %s", context, message, exc_info=True, extra={"metadata": safe_metadata})
+    # A raw traceback can repeat exception arguments containing credentials.
+    app_logger().warning("%s failed: %s", context, message, exc_info=False, extra={"metadata": safe_metadata})
     return message
 
 

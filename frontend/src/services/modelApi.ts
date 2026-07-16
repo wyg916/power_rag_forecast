@@ -1,69 +1,76 @@
 import { api } from '../api';
-import { modelMock } from '../mock/modelMock';
-import { mockFallback, withServiceState } from './serviceState';
 
-const fmt = (value: unknown, digits = 2) => {
-  const num = Number(value);
-  return Number.isFinite(num) ? num.toFixed(digits) : '--';
-};
+export interface ModelVersionRow {
+  model_version: string;
+  model_name?: string;
+  model_type?: string;
+  status?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  mae?: number;
+  rmse?: number;
+  mape?: number;
+  peak_error?: number;
+  sample_count?: number;
+}
 
-export async function getModelCenterData() {
-  try {
-    const partialErrors: string[] = [];
-    const [payload, errors] = await Promise.all([
-      api.models(),
-      api.modelErrors().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      })
-    ]);
-    const versions = Array.isArray(payload?.versions) ? payload.versions : [];
-    const active = payload?.active || versions.find((item: any) => item.is_active) || versions[0] || {};
-    const candidate = versions.find((item: any) => !item.is_active) || {};
-    const errorRows = Array.isArray(errors?.records) ? errors.records : payload?.errors || [];
-    return withServiceState({
-      ...modelMock,
-      dataSource: versions.length ? 'postgresql.model_registry' : 'mock_fallback',
-      metrics: [
-        { ...modelMock.metrics[0], value: active.model_version || active.model_name || modelMock.metrics[0].value, note: `启用时间：${active.created_at || active.updated_at || '--'}` },
-        { ...modelMock.metrics[1], value: candidate.model_version || candidate.model_name || modelMock.metrics[1].value, note: `更新时间：${candidate.created_at || candidate.updated_at || '--'}` },
-        { ...modelMock.metrics[2], value: fmt(active.test_mae ?? active.mae) },
-        { ...modelMock.metrics[3], value: fmt(active.test_rmse ?? active.rmse) },
-        { ...modelMock.metrics[4], value: fmt(active.peak_rmse ?? active.peak_error) },
-        { ...modelMock.metrics[5], value: String(active.created_at || active.updated_at || '--') }
-      ],
-      comparison: versions.length
-        ? versions.map((item: any) => [
-            item.model_version || '--',
-            item.model_name || item.model_type || 'price_forecast_model',
-            item.is_active ? 'Active' : item.status || 'Candidate',
-            fmt(item.test_mae ?? item.mae),
-            fmt(item.test_rmse ?? item.rmse),
-            fmt(item.peak_rmse ?? item.peak_error),
-            item.created_at || item.updated_at || '--'
-          ])
-        : modelMock.comparison,
-      errorTrend: errorRows.length
-        ? errorRows.slice(0, 30).reverse().map((item: any, index: number) => ({
-            time: String(item.forecast_date || item.metric_date || index),
-            value: Number(item.mae || 0),
-            actual: Number(item.max_abs_error || item.rmse || 0),
-            baseline: Number(item.peak_error || 0)
-          }))
-        : modelMock.errorTrend,
-      detail: {
-        ...modelMock.detail,
-        name: active.model_name || modelMock.detail.name,
-        type: active.model_type || modelMock.detail.type,
-        algorithm: active.algorithm || modelMock.detail.algorithm
-      }
-    }, {
-      empty: !versions.length && !errorRows.length,
-      mockFallback: !versions.length,
-      fallbackReason: !versions.length ? '模型指标接口没有返回模型版本，模型中心展示本地兜底模型。' : undefined,
-      partialErrors
-    });
-  } catch (error) {
-    return mockFallback(modelMock, error, '模型中心真实接口请求失败，已切换到本地兜底数据。');
-  }
+export interface ModelCenterOverview {
+  available: boolean;
+  seed_available?: boolean;
+  filters: Record<string, unknown>;
+  active: ModelVersionRow;
+  candidate: ModelVersionRow;
+  versions: ModelVersionRow[];
+  effect: Array<{ time: string; actual: number; active: number; candidate: number; diff: number; data_origin?: string }>;
+  error_trend: Array<{ date: string; mae: number; rmse: number; mape: number }>;
+  admission: {
+    rules: Array<{ label: string; passed: boolean; detail: string }>;
+    passed: boolean;
+    conclusion: string;
+  };
+  evaluation_summary: Array<{ metric: string; active: number; candidate: number; improvement: number }>;
+  training: Record<string, any>;
+  rollback: { default_version?: string; options: Array<{ model_version: string; label: string }> };
+  events: Array<Record<string, any>>;
+  data_lineage?: Record<string, unknown>;
+}
+
+export interface ModelVersionDetail {
+  available: boolean;
+  message?: string;
+  version: ModelVersionRow & { metrics?: Record<string, any>; artifact_path?: string };
+  latest_metric: Record<string, any>;
+  metrics_history: Array<Record<string, any>>;
+  events: Array<Record<string, any>>;
+  prediction_samples: Array<Record<string, any>>;
+  data_lineage?: Record<string, unknown>;
+}
+
+export async function getModelCenterData(params: Record<string, any> = {}) {
+  return api.modelCenterOverview(params) as Promise<ModelCenterOverview>;
+}
+
+export async function getModelVersionDetail(version: string) {
+  return api.modelCenterVersionDetail(version) as Promise<ModelVersionDetail>;
+}
+
+export async function startModelTraining(payload: Record<string, any>) {
+  return api.modelTrainingStart(payload);
+}
+
+export async function activateModel(version: string, reason: string) {
+  return api.modelActivate({ version, reason });
+}
+
+export async function rollbackModel(version: string, reason: string) {
+  return api.modelRollback({ version, reason });
+}
+
+export async function exportModelCenterReport() {
+  return api.modelCenterExport();
+}
+
+export async function getModelTrainingLogs(taskId: string) {
+  return api.taskLogs(taskId, 1, 80);
 }

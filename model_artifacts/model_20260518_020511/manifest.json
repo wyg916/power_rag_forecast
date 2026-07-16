@@ -1,0 +1,16 @@
+{
+  "model_version": "model_20260518_020511",
+  "artifact_dir": "E:\\智能运营分析项目\\model_artifacts\\model_20260518_020511",
+  "created_at": "2026-05-18T02:24:43",
+  "files": [
+    "base_model.joblib",
+    "peak_model.joblib",
+    "spike_classifier.joblib",
+    "feature_cols.json",
+    "training_config.json",
+    "metrics.json",
+    "thresholds.json",
+    "model_card.md",
+    "input_schema.json"
+  ]
+}

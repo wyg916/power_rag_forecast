@@ -12,7 +12,7 @@ def create_celery_app():
     if Celery is None:
         return None
     settings = get_settings()
-    app = Celery("power_trading_platform", broker=settings.redis_url, backend=settings.redis_url)
+    app = Celery("power_trading_platform", broker=settings.celery_broker_url, backend=settings.celery_result_backend)
     app.conf.update(
         task_serializer="json",
         result_serializer="json",

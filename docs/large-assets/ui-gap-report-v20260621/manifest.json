@@ -1,0 +1,17 @@
+﻿{
+    "original_path":  "docs/智能运营分析项目_UI优化参考图与当前功能差异分析说明文档_v20260621.docx",
+    "original_size":  23285909,
+    "original_sha256":  "26ef6e7811cdfca2bc0f3d1c84782017ecfafc8c4f435d51a434f2a26c6b1c68",
+    "parts":  [
+                  {
+                      "name":  "asset.part01.bin",
+                      "size":  12582912,
+                      "sha256":  "d2c225e117d55740c4813db43f05bbad556c0f5bb56f306640e84e68883188e4"
+                  },
+                  {
+                      "name":  "asset.part02.bin",
+                      "size":  10702997,
+                      "sha256":  "a024edd47a85488d71130d65991ddcb30d18ce7267bc3e34e473d7871922cff3"
+                  }
+              ]
+}

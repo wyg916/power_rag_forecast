@@ -4,12 +4,14 @@ from typing import Any
 
 import pandas as pd
 
-from ...data_access import jsonable, load_latest_forecast, price_column
+from ...data_access import jsonable, price_column
+from ...source_contract import attach_source_meta, resolve_forecast_source
 
 
-def _df() -> tuple[dict[str, Any], pd.DataFrame, str | None]:
-    payload = load_latest_forecast()
-    df = pd.DataFrame(payload.get("records") or [])
+def _df(run_id: str = "latest") -> tuple[dict[str, Any], pd.DataFrame, str | None]:
+    run, rows, meta = resolve_forecast_source(run_id)
+    payload = attach_source_meta({"available": bool(rows), "run_id": run.get("run_id"), "records": rows}, meta)
+    df = pd.DataFrame(rows)
     if "datetime" in df.columns:
         df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
     pcol = price_column(df) if not df.empty else None
@@ -33,7 +35,7 @@ def _window(row: pd.Series, reason: str) -> dict[str, Any]:
 
 
 def get_storage_discharge_windows(run_id: str = "latest", **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _df()
+    payload, df, pcol = _df(run_id)
     if df.empty or not pcol:
         return {"tool": "get_storage_discharge_windows", "available": False, "message": "当前系统未查询到可用预测数据。"}
     prices = pd.to_numeric(df["__price"], errors="coerce")
@@ -53,13 +55,14 @@ def get_storage_discharge_windows(run_id: str = "latest", **_: Any) -> dict[str,
             "p75": p75,
             "p25": p25,
             "strategy_note": "可作为低充高放参考，需要结合SOC、容量、效率和实时市场复核。",
-            "evidence": [{"source": "result_forward_24h_formal", "fields": ["datetime", pcol, "risk_level"]}],
+            "generated_at": (payload.get("meta") or {}).get("generated_at"),
+            "evidence": [{"table": "forecast_results", "run_id": payload.get("run_id"), "fields": ["forecast_time", pcol, "risk_level"]}],
         }
     )
 
 
 def get_storage_charge_windows(run_id: str = "latest", **_: Any) -> dict[str, Any]:
-    payload, df, pcol = _df()
+    payload, df, pcol = _df(run_id)
     if df.empty or not pcol:
         return {"tool": "get_storage_charge_windows", "available": False, "message": "当前系统未查询到可用预测数据。"}
     prices = pd.to_numeric(df["__price"], errors="coerce")
@@ -79,6 +82,7 @@ def get_storage_charge_windows(run_id: str = "latest", **_: Any) -> dict[str, An
             "p75": p75,
             "p25": p25,
             "strategy_note": "充电窗口应结合SOC、容量、效率和后续放电价差复核。",
-            "evidence": [{"source": "result_forward_24h_formal", "fields": ["datetime", pcol, "risk_level"]}],
+            "generated_at": (payload.get("meta") or {}).get("generated_at"),
+            "evidence": [{"table": "forecast_results", "run_id": payload.get("run_id"), "fields": ["forecast_time", pcol, "risk_level"]}],
         }
     )

@@ -8,7 +8,7 @@ cd /d "%~dp0"
 
 set "PYTHONUTF8=1"
 
-set "PYTHON_EXE=C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
+set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
 
 if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
 

@@ -1,102 +1,83 @@
-import { settingsMock } from '../mock/settingsMock';
 import { api } from '../api';
-import { mockFallback, withServiceState } from './serviceState';
+import { withServiceState } from './serviceState';
 
-const secretKeyPattern = /(key|secret|token|password|authorization)/i;
+type Loader<T> = () => Promise<T>;
 
-function sanitizeConfig(value: any, key = ''): any {
-  if (Array.isArray(value)) return value.map((item) => sanitizeConfig(item, key));
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).map(([itemKey, itemValue]) => [itemKey, sanitizeConfig(itemValue, itemKey)]));
-  }
-  if (secretKeyPattern.test(key) && value) return '******';
-  return value;
-}
-
-function statusRow(name: string, ok: boolean, summary: string, detail: any = {}) {
-  return {
-    key: name,
-    name,
-    ok,
-    status: ok ? '正常' : '需检查',
-    summary,
-    detail
-  };
-}
-
-export async function getSettingsData(): Promise<any> {
+async function optional<T>(label: string, loader: Loader<T>, errors: string[], fallback: T): Promise<T> {
   try {
-    const partialErrors: string[] = [];
-    const [configRaw, health, permissions, me, dbHealth, taskHealth, ragHealth, localModel] = await Promise.all([
-      api.settingsConfig(),
-      api.settingsHealth().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.permissions().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.securityMe().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.dbHealth().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.tasksHealth().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.knowledgeHealth().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.localModelStatus().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      })
-    ]);
-    const config = sanitizeConfig(configRaw || {});
-    const roles = permissions?.roles || {};
-    const taskOk = Boolean(taskHealth?.ok);
-    const ragOk = Boolean(ragHealth && !ragHealth.fallback_enabled);
-    const localModelOk = Boolean(localModel?.available || localModel?.ok);
-    const systemStatus = [
-      statusRow('认证', Boolean(me?.username), me?.username ? `${me.username} / ${me.role}` : '当前会话不可用', me),
-      statusRow('数据库', Boolean(dbHealth?.ok), dbHealth?.message || dbHealth?.active || '数据库状态未知', dbHealth),
-      statusRow('任务运行态', taskOk, `${taskHealth?.execution_mode || '--'}，running=${taskHealth?.running_task_count ?? 0}`, taskHealth),
-      statusRow('RAG / BGE', ragOk, ragOk ? `dim=${ragHealth?.embedding_dim || '--'}，fallback=false` : `fallback：${(ragHealth?.fallback_reasons || []).join('；') || '状态未知'}`, ragHealth),
-      statusRow('LLM', localModelOk, localModelOk ? `provider=${localModel?.provider || localModel?.model_provider || '--'}` : (localModel?.message || localModel?.reason || '本地模型或模型网关不可用'), sanitizeConfig(localModel || {})),
-      statusRow('系统健康', health?.service === 'ok', health?.timestamp || 'settings health 未返回时间戳', health)
-    ];
-    return withServiceState({
-      ...settingsMock,
-      dataSource: 'runtime_config',
-      config,
-      healthRaw: health,
-      dbHealth,
-      taskHealth,
-      ragHealth,
-      localModel,
-      systemStatus,
-      currentUser: me,
-      metrics: [
-        { ...settingsMock.metrics[0], value: me ? 1 : 0, note: me?.username || '当前会话' },
-        { ...settingsMock.metrics[1], value: Object.keys(roles).length || settingsMock.metrics[1].value },
-        { ...settingsMock.metrics[2], value: Object.keys(config || {}).length || settingsMock.metrics[2].value },
-        { ...settingsMock.metrics[3], value: systemStatus.filter((item) => item.ok).length, unit: `/${systemStatus.length}` }
-      ],
-      users: me ? [[me.username, me.username, me.role, me.auth_mode, '启用', '--']] : settingsMock.users,
-      permissions: Object.entries(roles).map(([role, values]: any) => [role, values.includes('dashboard:read') || values.includes('*'), values.includes('task:run') || values.includes('*'), values.includes('settings:write') || values.includes('*'), values.includes('*'), values.includes('audit:read') || values.includes('*')]) || settingsMock.permissions,
-      health: systemStatus.map((item) => [item.name, item.status, item.summary])
-    }, {
-      empty: !config,
+    return await loader();
+  } catch (error) {
+    errors.push(`${label}: ${error instanceof Error ? error.message : String(error)}`);
+    return fallback;
+  }
+}
+
+export async function getSettingsData(options: { interfaceKeyword?: string } = {}): Promise<any> {
+  const partialErrors: string[] = [];
+  const [
+    currentUser,
+    statusOverview,
+    statusSummary,
+    healthDetails,
+    runtimeConfig,
+    checkRecords,
+    taskQueueSnapshot,
+    usersOverview,
+    rolePermissions,
+    securityPolicy,
+    interfaceOverview,
+    interfaceConfigs,
+    interfaces,
+    interfaceTestLogs,
+    auditLogs
+  ] = await Promise.all([
+    optional('当前用户', api.securityMe, partialErrors, null),
+    optional('系统状态概览', api.settingsStatusOverview, partialErrors, {}),
+    optional('运行状态摘要', api.settingsStatusSummary, partialErrors, { items: [] }),
+    optional('系统健康明细', api.settingsHealthDetails, partialErrors, { items: [] }),
+    optional('系统运行参数', api.settingsRuntimeConfig, partialErrors, { values: {}, categories: {}, items: [] }),
+    optional('健康检查记录', () => api.settingsHealthCheckRecords(100), partialErrors, { items: [] }),
+    optional('任务队列快照', api.settingsTaskQueueSnapshot, partialErrors, {}),
+    optional('用户指标概览', api.settingsUsersOverview, partialErrors, {}),
+    optional('角色权限矩阵', api.settingsRolePermissions, partialErrors, { roles: [], permissions: [], matrix: [] }),
+    optional('密码与安全策略', api.settingsSecurityPolicy, partialErrors, { values: {}, items: [] }),
+    optional('接口指标概览', api.settingsInterfaceOverview, partialErrors, {}),
+    optional('接口配置卡片', () => api.settingsInterfaceConfigs({ keyword: options.interfaceKeyword, page_size: 100 }), partialErrors, { items: [], total: 0 }),
+    optional('接口总览', () => api.settingsInterfaces({ keyword: options.interfaceKeyword, page_size: 100 }), partialErrors, { items: [], total: 0 }),
+    optional('接口测试日志', () => api.settingsInterfaceTestLogs({ limit: 100 }), partialErrors, { items: [], total: 0 }),
+    optional('操作审计', () => api.settingsAuditLogs(100), partialErrors, { items: [], total: 0 })
+  ]);
+
+  const configValues = runtimeConfig?.values || {};
+  return withServiceState(
+    {
+      dataSource: 'backend_api',
+      currentUser,
+      statusOverview,
+      statusSummary: statusSummary?.items || [],
+      healthDetails: healthDetails?.items || [],
+      runtimeConfig,
+      healthRecords: checkRecords?.items || [],
+      taskQueueSnapshot,
+      usersOverview,
+      rolePermissions,
+      securityPolicy,
+      interfaceOverview,
+      interfaceConfigs: interfaceConfigs?.items || [],
+      interfaces: interfaces?.items || [],
+      interfaceTestLogs: interfaceTestLogs?.items || [],
+      auditLogs: auditLogs?.items || [],
+      config: {
+        ...(runtimeConfig?.categories || {}),
+        runtime: configValues,
+        values: configValues,
+        items: runtimeConfig?.items || []
+      }
+    },
+    {
+      empty: false,
       mockFallback: false,
       partialErrors
-    });
-  } catch (error) {
-    return mockFallback(settingsMock, error, '系统设置接口请求失败，已切换到本地兜底配置。');
-  }
+    }
+  );
 }

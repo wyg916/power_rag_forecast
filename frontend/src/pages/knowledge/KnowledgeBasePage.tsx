@@ -1,45 +1,156 @@
-import { DatabaseOutlined, FileTextOutlined, ReloadOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
-import { Alert, Button, Col, Descriptions, Input, Row, Space, Tag, message } from 'antd';
+import {
+  ApiOutlined,
+  CheckCircleOutlined,
+  CloudUploadOutlined,
+  CopyOutlined,
+  DatabaseOutlined,
+  DeploymentUnitOutlined,
+  DownloadOutlined,
+  FileDoneOutlined,
+  FileSearchOutlined,
+  FileTextOutlined,
+  PartitionOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  SearchOutlined,
+  SyncOutlined,
+  WarningOutlined
+} from '@ant-design/icons';
+import { Alert, Button, Empty, Input, Select, Space, Table, Tag, Upload, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { SectionCard } from '../../components/cards/SectionCard';
-import { TableCard } from '../../components/cards/TableCard';
-import { PageTabs } from '../../components/common/PageTabs';
-import { DataSourceTag, DataStateBanner, EmptyState } from '../../components/common/States';
-import { MetricGrid } from '../../components/layout/UnifiedPage';
-import { knowledgeMock } from '../../mock/knowledgeMock';
-import { getKnowledgeBaseData, searchKnowledge } from '../../services/knowledgeApi';
+import { getKnowledgeBaseData, searchKnowledge, type KnowledgeData } from '../../services/knowledgeApi';
 import type { PageProps } from '../../types/ui';
 
-const tabs = [
-  { key: 'knowledge-policy', label: '文档管理' },
-  { key: 'knowledge-index', label: '索引管理' },
-  { key: 'knowledge-rag', label: '知识检索' },
-  { key: 'knowledge-qa', label: 'QA 测试' }
-];
+type KnowledgeMetric = {
+  key: string;
+  title: string;
+  value: string;
+  unit?: string;
+  trend: string;
+  tone: 'success' | 'info' | 'warning' | 'danger';
+  icon: JSX.Element;
+};
 
-function ragStatusTag(status: string, fallback: boolean) {
-  if (status === 'normal' && !fallback) return <Tag color="success">正常</Tag>;
-  if (status === 'partial') return <Tag color="processing">部分完成</Tag>;
-  if (status === 'disabled' || status === 'not_configured') return <Tag color="default">未配置</Tag>;
-  return <Tag color="warning">降级</Tag>;
+type AnswerBlock = {
+  key: string;
+  title: string;
+  icon?: JSX.Element;
+  tone: 'success' | 'info' | 'warning' | 'purple';
+  content: string;
+};
+
+const dataSourceOptions = [{ value: 'postgresql_kb_documents', label: 'postgresql_kb_documents' }];
+
+const defaultKnowledgeData: KnowledgeData = {
+  dataSource: 'postgresql_kb_documents',
+  stats: {},
+  ragHealth: {},
+  documents: [],
+  totalDocuments: 0,
+  empty: false,
+  metrics: [
+    { key: 'documents', title: '文档总数', value: 0, unit: '份', trend: '数据库文档', tone: 'info' },
+    { key: 'indexed', title: '已索引', value: 0, unit: 'chunks', trend: '知识片段', tone: 'success' },
+    { key: 'pending', title: '待处理', value: 0, unit: '份', trend: '索引队列', tone: 'success' },
+    { key: 'qa', title: 'QA 通过率', value: 0, unit: '%', trend: '最近校验', tone: 'warning' }
+  ]
+};
+
+function formatNumber(value: any, fallback = '0') {
+  if (value === undefined || value === null || value === '') return fallback;
+  const normalized = String(value).replace(/,/g, '');
+  const numeric = Number(normalized);
+  if (Number.isFinite(numeric)) return numeric.toLocaleString('zh-CN');
+  return String(value);
 }
 
-export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
-  const [data, setData] = useState<any>(knowledgeMock);
+function formatPercent(value: any) {
+  const numeric = Number(String(value ?? '').replace('%', ''));
+  if (!Number.isFinite(numeric)) return '0.0%';
+  return `${numeric.toFixed(1)}%`;
+}
+
+function formatDate(value?: string) {
+  if (!value) return '-';
+  return String(value).replace('T', ' ').slice(0, 19);
+}
+
+function shortPath(value?: string) {
+  const raw = String(value || '').trim();
+  if (!raw) return '-';
+  if (raw.length <= 42) return raw;
+  return `${raw.slice(0, 18)}...${raw.slice(-18)}`;
+}
+
+function statusLabel(status?: string, fallback?: boolean) {
+  const value = String(status || '').toLowerCase();
+  if (fallback || value === 'fallback') return { text: '降级', color: 'warning' };
+  if (value === 'normal') return { text: '正常', color: 'success' };
+  if (value === 'partial') return { text: '部分完成', color: 'processing' };
+  if (value === 'disabled') return { text: '未启用', color: 'default' };
+  if (value === 'not_configured') return { text: '需配置', color: 'default' };
+  return { text: '运行中', color: 'processing' };
+}
+
+function documentStatusTag(value: string) {
+  if (value === '索引中' || value === 'partial') return <Tag color="processing">索引中</Tag>;
+  if (value === '待处理' || value === 'pending') return <Tag color="warning">待处理</Tag>;
+  return <Tag color="success">已索引</Tag>;
+}
+
+function normalizeSearchItems(payload: any) {
+  return Array.isArray(payload?.items) ? payload.items : [];
+}
+
+function normalizeAnswerBlocks(payload: any): AnswerBlock[] {
+  const blocks = Array.isArray(payload?.answer_blocks) ? payload.answer_blocks : [];
+  if (!blocks.length) {
+    return [
+      {
+        key: 'empty',
+        title: '结论',
+        tone: 'info',
+        content: '执行检索后，将根据后端返回的知识片段整理答案。'
+      }
+    ];
+  }
+  return blocks.map((item: any, index: number) => ({
+    key: String(item.key || `block-${index}`),
+    title: String(item.title || '分析'),
+    tone: item.tone || 'info',
+    content: String(item.content || '')
+  }));
+}
+
+function blockIcon(key: string) {
+  if (key === 'conclusion') return <CheckCircleOutlined />;
+  if (key === 'evidence') return <FileSearchOutlined />;
+  if (key === 'risk') return <WarningOutlined />;
+  return <SafetyCertificateOutlined />;
+}
+
+export function KnowledgeBasePage(_: PageProps) {
+  const [data, setData] = useState<KnowledgeData>(defaultKnowledgeData);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('分时电价 现货交易 风险');
+  const [error, setError] = useState('');
+  const [query, setQuery] = useState('分时电价、现货交易风险和购电建议是什么？');
+  const [topK, setTopK] = useState(5);
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<any[]>([]);
-  const [answer, setAnswer] = useState('');
+  const [answerBlocks, setAnswerBlocks] = useState<AnswerBlock[]>(normalizeAnswerBlocks(null));
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
 
   async function loadData() {
     setLoading(true);
+    setError('');
     try {
       setData(await getKnowledgeBaseData());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '知识库数据加载失败');
     } finally {
       setLoading(false);
     }
@@ -55,6 +166,8 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
       const res = await api.knowledgeIndexLocal();
       message.success(`知识库索引任务已提交：${res.task_id || res.indexed_documents || 'knowledge_import'}`);
       await loadData();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '重建索引失败');
     } finally {
       setLoading(false);
     }
@@ -66,158 +179,305 @@ export function KnowledgeBasePage({ activeSubKey, onSubNavigate }: PageProps) {
       const res = await api.knowledgeEmbeddingRefresh();
       message.success(`Embedding 刷新任务已提交：${res.task_id || 'embedding_refresh'}`);
       await loadData();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '刷新 Embedding 失败');
     } finally {
       setLoading(false);
     }
   }
 
   async function runSearch() {
+    const text = query.trim();
+    if (!text) {
+      message.warning('请输入检索问题');
+      return;
+    }
     setSearching(true);
     try {
-      const payload = await searchKnowledge(query, 5);
-      const items = payload.items || [];
+      const payload = await searchKnowledge(text, topK);
+      const items = normalizeSearchItems(payload);
       setResults(items);
-      setAnswer(items.length ? `检索到 ${items.length} 条证据，请优先查看相似度最高的片段。` : '未检索到可用证据。');
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '检索失败');
+      setAnswerBlocks(normalizeAnswerBlocks(payload));
+      if (!items.length) message.info('未检索到可用证据');
+      await loadData();
+    } catch (err) {
+      setResults([]);
+      setAnswerBlocks(normalizeAnswerBlocks(null));
+      message.error(err instanceof Error ? err.message : '检索失败');
     } finally {
       setSearching(false);
     }
   }
 
+  async function uploadDocument(file: File) {
+    setLoading(true);
+    try {
+      const res = await api.knowledgeUpload(file);
+      message.success(`文档已写入知识库：${res.doc_id || file.name}`);
+      await loadData();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '上传失败');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function batchValidate() {
+    setSearching(true);
+    try {
+      const res = await api.knowledgeBatchValidate({ top_k: topK });
+      message.success(`批量校验完成：${res.passed}/${res.total} 通过`);
+      await loadData();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '批量校验失败');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function exportResult() {
+    try {
+      const blob = await api.knowledgeExport();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `knowledge_export_${Date.now()}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '导出失败');
+    }
+  }
+
   const ragHealth = data.ragHealth || {};
+  const ragStatus = statusLabel(ragHealth.status, Boolean(ragHealth.fallback_enabled));
   const fallbackReasons = Array.isArray(ragHealth.fallback_reasons) ? ragHealth.fallback_reasons : [];
   const documentRows = useMemo(
     () =>
-      results.length
-        ? results.map((item) => [item.title, item.source_type || 'local_file', item.source, item.chunk_id, '已检索'])
-        : data.documents || [],
-    [data.documents, results]
+      (data.documents || []).map((row: any, index: number) => ({
+        key: row.doc_id || `${row.title}-${index}`,
+        name: row.title,
+        source: row.category || row.source_type || '-',
+        updatedAt: formatDate(row.updated_at || row.indexed_at),
+        chunks: row.chunk_count ?? 0,
+        status: row.status_label || row.status,
+        raw: row
+      })),
+    [data.documents]
   );
+  const docCount = data.stats.documents ?? ragHealth.kb_document_count ?? data.totalDocuments ?? 0;
+  const chunkCount = data.stats.chunks ?? ragHealth.kb_chunk_count ?? 0;
+  const embeddedCount = data.stats.embedded_chunks ?? ragHealth.embedded_chunk_count ?? 0;
+  const pendingCount = data.stats.pending_documents ?? 0;
+  const qaRate = data.stats.qa_pass_rate ?? 0;
+  const metricIcons: Record<string, JSX.Element> = {
+    documents: <FileTextOutlined />,
+    indexed: <DatabaseOutlined />,
+    pending: <FileDoneOutlined />,
+    qa: <SafetyCertificateOutlined />
+  };
+  const metrics: KnowledgeMetric[] = data.metrics.map((item) => ({
+    ...item,
+    value: item.key === 'qa' ? formatPercent(item.value) : formatNumber(item.value),
+    icon: metricIcons[item.key] || <DatabaseOutlined />
+  }));
+
+  const flowNodes = [
+    { title: '文档上传', value: `${formatNumber(docCount)} 份文档`, icon: <FileTextOutlined /> },
+    { title: '清洗切块', value: '已完成', icon: <PartitionOutlined /> },
+    { title: '向量化', value: `${formatNumber(embeddedCount)} chunks`, icon: <DeploymentUnitOutlined /> },
+    { title: '建索引', value: pendingCount > 0 ? '运行中' : '已完成', icon: <DatabaseOutlined /> },
+    { title: '检索验证', value: `QA ${formatPercent(qaRate)}`, icon: <SafetyCertificateOutlined /> }
+  ];
 
   return (
-    <div className="page-stack">
-      <PageTabs items={tabs} activeKey={activeSubKey} onChange={onSubNavigate} />
-      <DataStateBanner
-        scope="知识库"
-        loading={loading}
-        source={data.dataSource}
-        error={data.error}
-        empty={data.empty}
-        mockFallback={data.mockFallback}
-        fallbackReason={data.fallbackReason}
-        partialErrors={data.partialErrors}
-        onRetry={loadData}
-      />
+    <div className="knowledge-workbench-page">
+      <div className="knowledge-top-workspace">
+        <div className="knowledge-title-block">
+          <h1>知识库</h1>
+          <p>管理政策文档、RAG 检索、索引状态和 QA 测试</p>
+        </div>
 
-      <div className="knowledge-top-grid">
-        <MetricGrid items={data.metrics || []} icons={(data.metrics || []).map(() => <FileTextOutlined />)} loading={loading} minColumnWidth={180} />
-        <SectionCard title="RAG 运行状态" loading={loading} compact>
-          <div className="index-status">
-            {ragStatusTag(String(ragHealth.status || 'unknown'), Boolean(ragHealth.fallback_enabled))}
-            <p><DatabaseOutlined /> Provider：{ragHealth.embedding_provider || 'unknown'} / {ragHealth.rerank_provider || 'unknown'}</p>
-            <p>Embedding 维度：{ragHealth.embedding_dim || 0}；Chunks：{ragHealth.kb_chunk_count || 0}；已向量化：{ragHealth.embedded_chunk_count || 0}</p>
-            <p>Embedding 路径：{ragHealth.embedding_model_path || '未配置'}（{ragHealth.embedding_model_path_exists ? '存在' : '不存在'}）</p>
-            <p>Reranker 路径：{ragHealth.rerank_model_path || '未配置'}（{ragHealth.rerank_model_path_exists ? '存在' : '不存在'}）</p>
-            {fallbackReasons.length > 0 && <Alert type="warning" showIcon message="RAG 当前处于降级模式" description={fallbackReasons.join('；')} />}
-            <DataSourceTag source={data.dataSource} />
+        <SectionCard title="索引状态" className="knowledge-flow-card knowledge-flow-card-top" compact>
+          <div className="knowledge-flow">
+            {flowNodes.map((item, index) => (
+              <div className="knowledge-flow-node" key={item.title}>
+                <span>{item.icon}</span>
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.value}</p>
+                </div>
+                {index < flowNodes.length - 1 && <i />}
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+
+        <div className="knowledge-toolbar-card">
+          <div className="knowledge-source-control">
+            <span>数据源</span>
+            <Select value="postgresql_kb_documents" options={dataSourceOptions} size="small" />
+          </div>
+          <Upload
+            showUploadList={false}
+            beforeUpload={(file) => {
+              uploadDocument(file as File);
+              return false;
+            }}
+            accept=".txt,.md,.csv,.json"
+          >
+            <Button className="knowledge-upload-button" icon={<CloudUploadOutlined />}>上传文档</Button>
+          </Upload>
+          <Space className="knowledge-toolbar-actions" size={8} wrap>
+            <Button type="primary" loading={loading} icon={<SyncOutlined />} onClick={rebuildIndex}>重建索引</Button>
+            <Button type="primary" loading={loading} icon={<ReloadOutlined />} onClick={refreshEmbeddings}>刷新 Embedding</Button>
+            <Button loading={searching} icon={<SafetyCertificateOutlined />} onClick={batchValidate}>批量校验</Button>
+            <Button icon={<DownloadOutlined />} onClick={exportResult}>导出结果</Button>
+          </Space>
+        </div>
+      </div>
+
+      {error && <Alert type="error" showIcon message="知识库数据加载失败" description={error} action={<Button onClick={loadData}>重试</Button>} />}
+
+      <div className="knowledge-content-grid">
+        <div className="knowledge-kpi-grid">
+          {metrics.map((item) => (
+            <div className={`knowledge-kpi-card tone-${item.tone}`} key={item.key}>
+              <div>
+                <span>{item.title}</span>
+                <strong>{item.value}<small>{item.unit || ''}</small></strong>
+                <p>{item.trend}</p>
+              </div>
+              <div className="knowledge-kpi-icon">{item.icon}</div>
+            </div>
+          ))}
+        </div>
+        <SectionCard
+          title={
+            <Space size={8}>
+              <span>文档列表</span>
+              <small>共 {formatNumber(data.totalDocuments || docCount)} 份</small>
+            </Space>
+          }
+          className="knowledge-doc-card"
+          loading={loading}
+          extra={<Button type="link" size="small" onClick={loadData}>刷新</Button>}
+        >
+          <Table
+            size="small"
+            rowKey="key"
+            pagination={{ pageSize: 8, showSizeChanger: false, size: 'small' }}
+            dataSource={documentRows}
+            scroll={{ y: 220 }}
+            columns={[
+              { title: '文档名称', dataIndex: 'name', ellipsis: true },
+              { title: '来源', dataIndex: 'source', width: 96, render: (value) => <Tag>{value}</Tag> },
+              { title: '更新时间', dataIndex: 'updatedAt', width: 132 },
+              { title: 'Chunk', dataIndex: 'chunks', width: 82 },
+              { title: '状态', dataIndex: 'status', width: 92, render: documentStatusTag },
+              {
+                title: '操作',
+                width: 124,
+                render: (_, record: any) => (
+                  <Space size={4}>
+                    <Button type="link" size="small" onClick={() => { setDetailData(record.raw || record); setDetailOpen(true); }}>详情</Button>
+                    <Button type="link" size="small" onClick={rebuildIndex}>重新索引</Button>
+                  </Space>
+                )
+              }
+            ]}
+          />
+        </SectionCard>
+
+        <SectionCard title="索引与 RAG 状态" className="knowledge-rag-panel" loading={loading}>
+          <div className="knowledge-rag-content">
+            <div className="knowledge-rag-section">
+              <div className="knowledge-rag-title">
+                <strong>索引与向量化状态摘要</strong>
+                <Tag color={ragStatus.color as any}>{ragStatus.text}</Tag>
+              </div>
+              <dl>
+                <div><dt>索引总量</dt><dd>{formatNumber(chunkCount)} chunks</dd></div>
+                <div><dt>已向量化</dt><dd>{formatNumber(embeddedCount)} chunks</dd></div>
+                <div><dt>最近更新时间</dt><dd>{formatDate(ragHealth.last_embedding_refresh_at)}</dd></div>
+                <div><dt>索引状态</dt><dd><Tag color={pendingCount > 0 ? 'processing' : 'success'}>{pendingCount > 0 ? '运行中' : '已完成'}</Tag></dd></div>
+              </dl>
+            </div>
+            <div className="knowledge-rag-section">
+              <div className="knowledge-rag-title">
+                <strong>RAG 运行状态</strong>
+                <Tag color={ragStatus.color as any}>{ragStatus.text}</Tag>
+              </div>
+              <p>Provider：{ragHealth.embedding_provider || 'unknown'} / {ragHealth.rerank_provider || 'unknown'}</p>
+              <p>Embedding 维度：{ragHealth.embedding_dim || 0}；Chunks：{formatNumber(chunkCount)}；已向量化：{formatNumber(embeddedCount)}</p>
+              <p title={ragHealth.embedding_model_path}>Embedding 路径：{shortPath(ragHealth.embedding_model_path)}（{ragHealth.embedding_model_path_exists ? '存在' : '未找到'}）</p>
+              <p title={ragHealth.rerank_model_path}>Reranker 路径：{shortPath(ragHealth.rerank_model_path)}（{ragHealth.rerank_model_path_exists ? '存在' : '未找到'}）</p>
+              {fallbackReasons.length > 0 && (
+                <Alert type="warning" showIcon message="RAG 当前处于降级模式" description="部分本地模型或向量配置未满足完整运行条件，检索功能仍可使用。" />
+              )}
+            </div>
           </div>
         </SectionCard>
       </div>
 
-      {activeSubKey === 'knowledge-policy' && (
-        <TableCard
-          title="文档列表"
-          loading={loading}
-          minHeight={420}
-          extra={<Button onClick={loadData} icon={<ReloadOutlined />}>刷新</Button>}
-          dataSource={documentRows.map((row: any[], index: number) => ({ key: `${row[0]}-${index}`, row }))}
-          columns={[
-            { title: '文档名称', render: (_, record: any) => record.row[0] },
-            { title: '来源', render: (_, record: any) => <Tag>{record.row[1]}</Tag> },
-            { title: '路径/时间', render: (_, record: any) => record.row[2] },
-            { title: 'Chunk', render: (_, record: any) => record.row[3] },
-            { title: '状态', render: (_, record: any) => <Tag color="success">{record.row[4]}</Tag> },
-            {
-              title: '操作',
-              render: (_, record: any) => (
-                <Button type="link" size="small" onClick={() => { setDetailData({ name: record.row[0], type: record.row[1], source: record.row[2], chunk: record.row[3] }); setDetailOpen(true); }}>
-                  详情
-                </Button>
-              )
-            }
-          ]}
-        />
-      )}
-
-      {activeSubKey === 'knowledge-index' && (
-        <Row gutter={[16, 16]}>
-          <Col xs={24} lg={12}>
-            <SectionCard title="索引与向量刷新" loading={loading}>
-              <Space wrap>
-                <Button type="primary" icon={<SyncOutlined />} loading={loading} onClick={rebuildIndex}>重建本地索引</Button>
-                <Button icon={<ReloadOutlined />} loading={loading} onClick={refreshEmbeddings}>刷新 Embedding</Button>
+      <div className="knowledge-search-grid">
+        <SectionCard title="检索测试 / QA 测试区" className="knowledge-search-card">
+          <div className="knowledge-search-form">
+            <label>输入业务问题（支持多行）</label>
+            <Input.TextArea value={query} onChange={(event) => setQuery(event.target.value)} autoSize={{ minRows: 4, maxRows: 5 }} />
+            <div className="knowledge-search-actions">
+              <Space>
+                <span>Top K</span>
+                <Select value={topK} onChange={setTopK} options={[3, 5, 8, 10].map((value) => ({ value, label: String(value) }))} style={{ width: 86 }} />
               </Space>
-              <Descriptions column={1} size="small" style={{ marginTop: 16 }}>
-                <Descriptions.Item label="文档数">{ragHealth.kb_document_count || 0}</Descriptions.Item>
-                <Descriptions.Item label="Chunk 数">{ragHealth.kb_chunk_count || 0}</Descriptions.Item>
-                <Descriptions.Item label="已向量化">{ragHealth.embedded_chunk_count || 0}</Descriptions.Item>
-                <Descriptions.Item label="最近刷新">{ragHealth.last_embedding_refresh_at || '未知'}</Descriptions.Item>
-              </Descriptions>
-            </SectionCard>
-          </Col>
-          <Col xs={24} lg={12}>
-            <SectionCard title="模型挂载检查" loading={loading}>
-              <Descriptions column={1} size="small">
-                <Descriptions.Item label="Embedding provider">{ragHealth.embedding_provider || 'unknown'}</Descriptions.Item>
-                <Descriptions.Item label="Embedding path">{ragHealth.embedding_model_path || '未配置'}</Descriptions.Item>
-                <Descriptions.Item label="Embedding path exists">{String(Boolean(ragHealth.embedding_model_path_exists))}</Descriptions.Item>
-                <Descriptions.Item label="Rerank provider">{ragHealth.rerank_provider || 'unknown'}</Descriptions.Item>
-                <Descriptions.Item label="Rerank path">{ragHealth.rerank_model_path || '未配置'}</Descriptions.Item>
-                <Descriptions.Item label="Rerank path exists">{String(Boolean(ragHealth.rerank_model_path_exists))}</Descriptions.Item>
-              </Descriptions>
-            </SectionCard>
-          </Col>
-        </Row>
-      )}
+              <Button type="primary" loading={searching} icon={<SearchOutlined />} onClick={runSearch}>检索 / 测试</Button>
+            </div>
+          </div>
+        </SectionCard>
 
-      {(activeSubKey === 'knowledge-rag' || activeSubKey === 'knowledge-qa') && (
-        <Row gutter={[16, 16]} className="balanced-row">
-          <Col xs={24} lg={7} xl={6}>
-            <SectionCard title={activeSubKey === 'knowledge-qa' ? 'QA 测试' : '检索测试'}>
-              <Input.TextArea rows={6} value={query} onChange={(event) => setQuery(event.target.value)} />
-              <div className="search-config">
-                <span>Top K = 5</span>
-                <Button type="primary" loading={searching} icon={<SearchOutlined />} onClick={runSearch}>检索</Button>
-              </div>
-            </SectionCard>
-          </Col>
-          <Col xs={24} lg={10} xl={11}>
-            <TableCard
-              title="检索结果"
-              loading={searching}
-              dataSource={results.map((row, index) => ({ key: index, ...row }))}
-              locale={{ emptyText: <EmptyState description="请先执行检索" /> }}
-              pagination={false}
-              columns={[
-                { title: '文档', dataIndex: 'title' },
-                { title: '分数', dataIndex: 'score' },
-                { title: '片段', dataIndex: 'content', ellipsis: true },
-                { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailData(record); setDetailOpen(true); }}>查看</Button> }
-              ]}
-            />
-          </Col>
-          <Col xs={24} lg={7}>
-            <SectionCard title="AI 整理答案" extra={<Button type="link" onClick={() => navigator.clipboard?.writeText(answer)}>复制</Button>}>
-              <div className="rag-answer">
-                <p>{answer || '执行检索后生成整理答案。'}</p>
-                <strong>依据来源</strong>
-                <ol>{results.slice(0, 3).map((item) => <li key={item.chunk_id || item.title}>{item.title}</li>)}</ol>
-              </div>
-            </SectionCard>
-          </Col>
-        </Row>
-      )}
+        <SectionCard title={`检索结果（Top ${topK}）`} className="knowledge-result-card" loading={searching}>
+          <Table
+            size="small"
+            rowKey={(record: any) => record.chunk_id || record.id || `${record.title || 'result'}-${record.content || record.snippet || ''}`}
+            pagination={false}
+            dataSource={results}
+            scroll={{ y: 160 }}
+            locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="执行检索后显示结果" /> }}
+            columns={[
+              { title: '文档', dataIndex: 'title', width: 190, ellipsis: true },
+              {
+                title: '分数',
+                width: 76,
+                render: (_, record: any) => <strong className="knowledge-score">{Number(record.final_score ?? record.score ?? 0).toFixed(3)}</strong>
+              },
+              { title: '片段（命中高亮）', dataIndex: 'content', ellipsis: true },
+              {
+                title: '操作',
+                width: 92,
+                render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailData(record); setDetailOpen(true); }}>查看片段</Button>
+              }
+            ]}
+          />
+        </SectionCard>
+
+        <SectionCard
+          title={<Space size={8}>AI 整理答案 <Tag color="processing">后端生成</Tag></Space>}
+          className="knowledge-answer-card"
+          extra={<Button type="link" size="small" icon={<CopyOutlined />} onClick={() => navigator.clipboard?.writeText(answerBlocks.map((item) => `${item.title}：${item.content}`).join('\n'))}>复制</Button>}
+        >
+          <div className="knowledge-answer-blocks">
+            {answerBlocks.map((item) => (
+              <section className={`knowledge-answer-block tone-${item.tone}`} key={item.key}>
+                <span>{item.icon || blockIcon(item.key)}</span>
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.content}</p>
+                </div>
+              </section>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
 
       <DetailDrawer title="知识库详情" open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)} />
     </div>

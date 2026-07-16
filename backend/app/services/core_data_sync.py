@@ -16,7 +16,7 @@ from database_utils import (
 )
 
 from ..config import PROJECT_ROOT, project_config
-from ..data_access import artifact_inventory, database_engine, jsonable, load_latest_forecast, model_status, price_column
+from ..data_access import database_engine, jsonable, load_latest_forecast, price_column
 
 
 TARIFF_DATA_DIR = PROJECT_ROOT / "electricity_tariff_output" / "02_processed_data"
@@ -134,127 +134,28 @@ def _replace_table(engine, table_name: str, rows: list[dict[str, Any]], log=None
 
 
 def sync_forecast_facts(engine=None, log=None) -> dict[str, Any]:
-    engine = engine or _engine_or_none(log)
-    if engine is None:
-        return {"available": False, "message": "数据库未启用"}
-
-    payload = load_latest_forecast()
-    records = payload.get("records") or []
-    df = pd.DataFrame(records)
-    pcol = price_column(df) if not df.empty else None
-    forecast_times = pd.to_datetime(df["datetime"], errors="coerce") if "datetime" in df.columns else pd.Series(dtype="datetime64[ns]")
-    run_id = str(payload.get("run_id") or "latest")
-    run_row = {
-        "run_id": run_id,
-        "source_path": payload.get("source"),
-        "forecast_start": forecast_times.min().to_pydatetime() if not forecast_times.empty and pd.notna(forecast_times.min()) else None,
-        "forecast_end": forecast_times.max().to_pydatetime() if not forecast_times.empty and pd.notna(forecast_times.max()) else None,
-        "generated_at": _to_datetime(payload.get("generated_at")),
-        "row_count": len(df),
-        "status": "ready" if payload.get("available") else "missing",
-        "summary_json": _dumps(payload.get("summary") or {}),
+    _log(log, "旧 sync_forecast_facts 已禁用：预测事实必须由 T003 run_id 原子事务服务追加写入。")
+    return {
+        "available": False,
+        "blocked": True,
+        "deprecated": True,
+        "message": "禁止从 current/latest 或无身份文件删除重灌预测事实；请使用 ForecastTransactionService。",
+        "forecast_runs_written": 0,
+        "forecast_results_written": 0,
+        "source": "postgresql.forecast_runs",
     }
-    result_rows: list[dict[str, Any]] = []
-    if not df.empty:
-        for idx, row in df.iterrows():
-            raw = row.to_dict()
-            result_rows.append(
-                {
-                    "run_id": run_id,
-                    "forecast_datetime": _to_datetime(raw.get("datetime")),
-                    "predicted_price": _to_float(raw.get(pcol)) if pcol else None,
-                    "corrected_predicted_price": _to_float(raw.get("corrected_predicted_price")),
-                    "risk_level": raw.get("risk_level"),
-                    "spike_risk_prob": _to_float(raw.get("spike_risk_prob") or raw.get("尖峰风险概率")),
-                    "forecast_load": _to_float(raw.get("forecast_load") or raw.get("预测负荷")),
-                    "source_row": int(idx) + 1,
-                    "raw_json": _dumps(raw),
-                }
-            )
-
-    with engine.begin() as conn:
-        if engine.dialect.name == "postgresql":
-            conn.execute(text('DELETE FROM "forecast_runs" WHERE "run_id" = :run_id'), {"run_id": run_id})
-            _insert_rows(engine, conn, "forecast_runs", [run_row])
-            _insert_rows(engine, conn, "forecast_results", result_rows)
-        else:
-            conn.execute(
-                text(
-                    """
-                    INSERT INTO forecast_runs (
-                        run_id, source_path, forecast_start, forecast_end, generated_at,
-                        row_count, status, summary_json
-                    )
-                    VALUES (
-                        :run_id, :source_path, :forecast_start, :forecast_end, :generated_at,
-                        :row_count, :status, :summary_json
-                    )
-                    ON DUPLICATE KEY UPDATE
-                        source_path = VALUES(source_path),
-                        forecast_start = VALUES(forecast_start),
-                        forecast_end = VALUES(forecast_end),
-                        generated_at = VALUES(generated_at),
-                        row_count = VALUES(row_count),
-                        status = VALUES(status),
-                        summary_json = VALUES(summary_json)
-                    """
-                ),
-                run_row,
-            )
-            conn.execute(text("DELETE FROM `forecast_results` WHERE `run_id` = :run_id"), {"run_id": run_id})
-            _insert_rows(engine, conn, "forecast_results", result_rows)
-    _log(log, f"已同步预测事实：{run_id}，明细 {len(result_rows)} 行")
-    return {"available": True, "run_id": run_id, "forecast_results": len(result_rows)}
 
 
 def sync_model_facts(engine=None, log=None) -> dict[str, Any]:
-    engine = engine or _engine_or_none(log)
-    if engine is None:
-        return {"available": False, "message": "数据库未启用"}
-
-    status = model_status()
-    versions = status.get("versions") or []
-    if not versions:
-        versions = artifact_inventory()
-    version_rows: list[dict[str, Any]] = []
-    metric_rows: list[dict[str, Any]] = []
-    for index, item in enumerate(versions):
-        version = str(item.get("model_version") or item.get("version") or f"model_{index + 1}")
-        is_active = int(bool(item.get("is_active"))) if "is_active" in item else (1 if index == 0 else 0)
-        version_rows.append(
-            {
-                "model_version": version,
-                "model_name": item.get("base_model_name") or item.get("model_name") or "price_forecast_model",
-                "model_type": item.get("model_type") or "forecast",
-                "artifact_path": item.get("artifact_path"),
-                "status": item.get("status") or ("active" if is_active else "candidate"),
-                "is_active": is_active,
-                "metrics_json": _dumps(item),
-                "created_at": _to_datetime(item.get("created_at") or item.get("activated_at")),
-            }
-        )
-        metric_rows.append(
-            {
-                "model_version": version,
-                "metric_date": _to_date(item.get("created_at") or datetime.now()),
-                "mae": _to_float(item.get("test_mae") or item.get("mae")),
-                "rmse": _to_float(item.get("test_rmse") or item.get("rmse")),
-                "r2": _to_float(item.get("test_r2") or item.get("r2")),
-                "mape": _to_float(item.get("mape")),
-                "peak_error": _to_float(item.get("peak_rmse") or item.get("spike_rmse") or item.get("peak_error")),
-                "sample_count": int(item.get("sample_count") or 0) if str(item.get("sample_count") or "").isdigit() else None,
-                "metrics_json": _dumps(item),
-            }
-        )
-
-    with engine.begin() as conn:
-        dialect = engine.dialect.name
-        conn.execute(text(f"DELETE FROM {_quote_identifier('model_versions', dialect)}"))
-        conn.execute(text(f"DELETE FROM {_quote_identifier('model_metrics', dialect)}"))
-        _insert_rows(engine, conn, "model_versions", version_rows)
-        _insert_rows(engine, conn, "model_metrics", metric_rows)
-    _log(log, f"已同步模型事实：版本 {len(version_rows)} 条，指标 {len(metric_rows)} 条")
-    return {"available": True, "model_versions": len(version_rows), "model_metrics": len(metric_rows)}
+    _log(log, "model_versions 已冻结为 legacy 只读表；模型事实只能通过 model_registry Candidate 注册流程写入。")
+    return {
+        "available": False,
+        "blocked": True,
+        "message": "model_versions 为 legacy 只读表；请使用显式 model_registry Candidate 注册服务。",
+        "model_versions_written": 0,
+        "model_metrics_written": 0,
+        "source": "model_registry",
+    }
 
 
 def _pv_tariff_rows() -> list[dict[str, Any]]:

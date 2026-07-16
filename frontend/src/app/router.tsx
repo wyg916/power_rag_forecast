@@ -24,11 +24,8 @@ export const menuGroups: MenuGroup[] = [
     label: '数据中心',
     icon: <DatabaseOutlined />,
     children: [
-      { key: 'data-access', label: '数据接入' },
-      { key: 'data-quality', label: '数据质量' },
-      { key: 'data-catalog', label: '数据目录' },
-      { key: 'data-tables', label: '数据源表' },
-      { key: 'data-import', label: '导入导出' }
+      { key: 'data-overview', label: '数据总览' },
+      { key: 'data-quality', label: '数据质量 / 数据目录' }
     ]
   },
   {
@@ -38,9 +35,7 @@ export const menuGroups: MenuGroup[] = [
     children: [
       { key: 'forecast-24h', label: '24小时预测' },
       { key: 'forecast-history', label: '历史对比' },
-      { key: 'forecast-detail', label: '预测明细' },
-      { key: 'forecast-peak', label: '峰谷分析' },
-      { key: 'forecast-model', label: '模型评估' }
+      { key: 'forecast-model', label: '峰谷分析 / 模型评估' }
     ]
   },
   {
@@ -56,7 +51,7 @@ export const menuGroups: MenuGroup[] = [
   },
   {
     key: 'assistant',
-    label: 'AI助手',
+    label: 'AI 助手',
     icon: <RobotOutlined />,
     children: [
       { key: 'assistant-chat', label: '智能问答' },
@@ -114,11 +109,9 @@ export const menuGroups: MenuGroup[] = [
     label: '系统设置',
     icon: <SettingOutlined />,
     children: [
-      { key: 'settings-status', label: '系统状态' },
-      { key: 'settings-user', label: '用户权限' },
-      { key: 'settings-role', label: '角色配置' },
-      { key: 'settings-param', label: '参数配置' },
-      { key: 'settings-api', label: '接口配置' }
+      { key: 'settings-status', label: '系统状态总览' },
+      { key: 'settings-user', label: '用户与权限管理' },
+      { key: 'settings-api', label: '接口配置总览' }
     ]
   }
 ];
@@ -156,7 +149,7 @@ export const routeTitles: Record<RouteKey, { title: string; subtitle: string }> 
   data: { title: '数据中心', subtitle: '管理数据接入、质量、数据库表与导入导出记录' },
   forecast: { title: '预测中心', subtitle: '查看未来 24 小时电价预测、历史对比和峰谷分析' },
   strategy: { title: '策略中心', subtitle: '展示高价风险、低价窗口、储能策略与复核清单' },
-  assistant: { title: 'AI助手', subtitle: '基于工具调用、知识库和 Trace 的售电交易智能问答' },
+  assistant: { title: 'AI 助手', subtitle: '面向电力交易分析、查数问答、策略解释与风险研判' },
   report: { title: '报告中心', subtitle: '查看、审核与管理日报、周报和专题报告' },
   model: { title: '模型中心', subtitle: '管理预测模型生命周期、误差趋势和回滚操作' },
   knowledge: { title: '知识库', subtitle: '管理政策文档、RAG 检索、索引状态和 QA 测试' },
@@ -191,13 +184,29 @@ const childAliases: Partial<Record<RouteKey, Record<string, string>>> = {
     risk: 'dashboard-overview',
     shortcut: 'dashboard-overview'
   },
+  data: {
+    overview: 'data-overview',
+    access: 'data-overview',
+    'data-access': 'data-overview',
+    catalog: 'data-quality',
+    'data-catalog': 'data-quality',
+    quality: 'data-quality',
+    tables: 'data-quality',
+    'data-tables': 'data-quality',
+    import: 'data-overview',
+    'data-import': 'data-overview'
+  },
   forecast: {
     '24h': 'forecast-24h',
     '24h-forecast': 'forecast-24h',
     history: 'forecast-history',
-    detail: 'forecast-detail',
-    peak: 'forecast-peak',
-    model: 'forecast-model'
+    'forecast-history': 'forecast-history',
+    detail: 'forecast-24h',
+    'forecast-detail': 'forecast-24h',
+    peak: 'forecast-model',
+    'forecast-peak': 'forecast-model',
+    model: 'forecast-model',
+    'forecast-model': 'forecast-model'
   },
   strategy: {
     'high-risk': 'strategy-high',
@@ -238,8 +247,8 @@ const childAliases: Partial<Record<RouteKey, Record<string, string>>> = {
   settings: {
     status: 'settings-status',
     user: 'settings-user',
-    role: 'settings-role',
-    param: 'settings-param',
+    role: 'settings-user',
+    param: 'settings-status',
     api: 'settings-api'
   }
 };

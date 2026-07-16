@@ -60,8 +60,8 @@ export function sourceLabel(source?: string) {
   const value = source || 'unknown';
   const lower = value.toLowerCase();
   if (lower.includes('mock') || lower.includes('demo')) return `非生产数据：${value}`;
-  if (lower.includes('derived')) return `派生数据：${value}`;
-  if (lower.includes('postgres')) return `真实数据：${value}`;
+  if (lower.includes('derived')) return '计算指标';
+  if (lower.includes('postgres')) return '业务数据';
   if (lower.includes('file')) return `文件数据：${value}`;
   return `数据源：${value}`;
 }

@@ -5,17 +5,24 @@ setlocal
 pushd "%~dp0"
 
 set "PYTHONUTF8=1"
-set "PYTHON_EXE=C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
-if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
+set "TEMP=%~dp0.codex_tmp\phase4_runtime_tmp"
+set "TMP=%TEMP%"
+if not exist "%TEMP%" mkdir "%TEMP%"
+set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
+if not exist "%PYTHON_EXE%" (
+    echo [ERROR] Project virtual environment is missing: %PYTHON_EXE%
+    echo [ERROR] Refusing to fall back to a C-drive or global Python runtime.
+    popd
+    exit /b 2
+)
 
-echo [INFO] Starting Celery worker for async forecast/report/data-sync tasks.
-echo [INFO] Redis should be available at REDIS_URL or redis://localhost:6379/0.
-"%PYTHON_EXE%" -X utf8 -m celery -A backend.app.workers.celery_app.celery_app worker --pool=solo --loglevel=INFO
+echo [INFO] Starting isolated Celery health worker.
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" celery start
 
 set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" (
     echo [ERROR] Celery worker exited with code %EXIT_CODE%.
-    echo [TIP] Install requirements and start Redis, or the API will fall back to local task execution.
+    echo [TIP] Run run_redis_local.bat first and inspect output\runtime_logs\phase4.
 )
 
 if not "%NO_PAUSE%"=="1" pause

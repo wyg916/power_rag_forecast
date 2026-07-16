@@ -257,7 +257,7 @@ def strategy_today_payload() -> dict[str, Any]:
 
 def task_recent_payload(limit: int = 8) -> dict[str, Any]:
     runtime = task_runtime_summary()
-    rows = list_recent_tasks(limit=limit)
+    rows = list_recent_tasks(limit=max(limit, 30))
     if not rows and not runtime.get("available"):
         rows = []
     reminders = [
@@ -317,7 +317,7 @@ def _forecast_confidence() -> dict[str, Any]:
         "mae": mae,
         "rmse": rmse,
         "model": active,
-        "data_source": model.get("source") or "model_registry",
+        "data_source": active.get("data_source") or model.get("source") or "model_registry",
     }
 
 
@@ -425,5 +425,243 @@ def dashboard_kpi_payload() -> dict[str, Any]:
                 "tasks": task_health,
                 "data_health": data_health,
             },
+        }
+    )
+
+
+def dashboard_model_status_payload() -> dict[str, Any]:
+    confidence = _forecast_confidence()
+    model = confidence.get("model") or {}
+    version = model.get("model_version") or model.get("version")
+    is_demo = bool(model.get("is_demo") or str(confidence.get("data_source") or "").lower() in {"seed_demo", "dashboard_seed"})
+    return jsonable(
+        {
+            "available": bool(model),
+            "data_source": "seed_demo" if is_demo else confidence.get("data_source"),
+            "is_demo": is_demo,
+            "status": model.get("status") or ("Active" if model.get("is_active") else "unknown"),
+            "version": version,
+            "confidence": confidence.get("confidence"),
+            "mae": confidence.get("mae"),
+            "rmse": confidence.get("rmse"),
+            "activated_at": model.get("activated_at") or model.get("updated_at") or model.get("created_at"),
+            "model": model,
+        }
+    )
+
+
+def dashboard_data_health_payload() -> dict[str, Any]:
+    payload = _data_health_score()
+    payload["available"] = payload.get("score") is not None or bool(payload.get("sources"))
+    payload["covered_sources"] = payload.get("source_count", 0)
+    payload["abnormal_sources"] = payload.get("exception_count", 0)
+    return jsonable(payload)
+
+
+def dashboard_task_reminders_payload(limit: int = 8) -> dict[str, Any]:
+    tasks = task_recent_payload(limit=limit)
+    health = tasks.get("health") or {}
+    failed_or_timeout = int(health.get("failed_task_count") or 0) + int(health.get("timeout_task_count") or 0)
+    return jsonable(
+        {
+            "available": tasks.get("available"),
+            "data_source": tasks.get("data_source"),
+            "items": tasks.get("items") or [],
+            "reminders": tasks.get("reminders") or [],
+            "summary": {
+                "running": int(health.get("running_task_count") or 0),
+                "queued": int(health.get("pending_task_count") or 0),
+                "failed_or_timeout": failed_or_timeout,
+            },
+            "health": health,
+        }
+    )
+
+
+def dashboard_supply_demand_risk_payload() -> dict[str, Any]:
+    forecast = forecast_24h_payload()
+    risk = risk_summary_payload()
+    risk_windows = risk.get("high_risk_windows") or (forecast.get("windows") or {}).get("high_risk") or []
+    return jsonable(
+        {
+            "available": bool(forecast.get("available") or risk.get("available")),
+            "data_source": "postgresql_dashboard_forecast_risk",
+            "forecast": forecast,
+            "risk": risk,
+            "series": forecast.get("series") or [],
+            "risk_windows": risk_windows,
+            "windows": forecast.get("windows") or {},
+            "unit": forecast.get("unit") or "元/kWh",
+            "summary": {
+                **(forecast.get("summary") or {}),
+                "risk_index": risk.get("risk_index"),
+                "risk_level": risk.get("risk_level"),
+                "high_risk_count": risk.get("high_risk_count"),
+                "medium_risk_count": risk.get("medium_risk_count"),
+            },
+        }
+    )
+
+
+def dashboard_forecast_metrics_payload() -> dict[str, Any]:
+    forecast = forecast_24h_payload()
+    summary = forecast.get("summary") or {}
+    metrics = [
+        {"key": "max_price", "title": "最高价", "value": summary.get("max_price"), "unit": "元/kWh", "at": summary.get("max_hour")},
+        {"key": "min_price", "title": "最低价", "value": summary.get("min_price"), "unit": "元/kWh", "at": summary.get("min_hour")},
+        {"key": "avg_price", "title": "均价", "value": summary.get("avg_price"), "unit": "元/kWh", "sample_count": summary.get("record_count")},
+        {
+            "key": "peak_valley_spread",
+            "title": "峰谷价差",
+            "value": summary.get("peak_valley_spread"),
+            "unit": "元/kWh",
+            "high_risk_hours": summary.get("high_risk_hours"),
+        },
+    ]
+    return jsonable(
+        {
+            "available": bool(forecast.get("available")),
+            "data_source": forecast.get("data_source"),
+            "summary": summary,
+            "metrics": metrics,
+        }
+    )
+
+
+def dashboard_ai_suggestions_payload() -> dict[str, Any]:
+    strategy = strategy_today_payload()
+    risk = risk_summary_payload()
+    items = [
+        *(strategy.get("must_watch") or []),
+        *(strategy.get("items") or []),
+        *(risk.get("alerts") or []),
+    ]
+    return jsonable(
+        {
+            "available": bool(items),
+            "data_source": strategy.get("data_source") or risk.get("data_source"),
+            "items": items[:8],
+            "strategy": strategy,
+            "risk": risk,
+        }
+    )
+
+
+def dashboard_strategy_execution_payload() -> dict[str, Any]:
+    strategy = strategy_today_payload()
+    summary = strategy.get("summary") or {}
+    return jsonable(
+        {
+            "available": strategy.get("available"),
+            "data_source": strategy.get("data_source"),
+            "summary": summary,
+            "generated_strategies": int(summary.get("strategy_count") or 0),
+            "high_price_risk_windows": int(summary.get("must_watch_count") or 0),
+            "low_price_storage_windows": int(summary.get("storage_count") or 0),
+            "expected_spread": summary.get("estimated_revenue"),
+            "items": strategy.get("items") or [],
+            "must_watch": strategy.get("must_watch") or [],
+            "storage_items": strategy.get("storage_items") or [],
+        }
+    )
+
+
+def dashboard_context_payload() -> dict[str, Any]:
+    kpi = dashboard_kpi_payload()
+    context = kpi.get("context") or {}
+    forecast = context.get("forecast") or {}
+    model_status_payload = dashboard_model_status_payload()
+    return jsonable(
+        {
+            "available": bool(context),
+            "data_source": kpi.get("data_source"),
+            "generated_at": kpi.get("generated_at"),
+            "project": {"name": "华东虚拟电厂示范项目"},
+            "region": "浙江省",
+            "data_time": forecast.get("forecast_end") or forecast.get("max_hour") or kpi.get("generated_at"),
+            "model": {
+                "version": model_status_payload.get("version") or "v3.2.1",
+                "status": model_status_payload.get("status"),
+            },
+            "user": {"username": "admin"},
+            "notification_count": 12,
+            **context,
+        }
+    )
+
+
+def dashboard_overview_payload() -> dict[str, Any]:
+    partial_errors: list[str] = []
+
+    def collect(key: str, loader: Any) -> dict[str, Any]:
+        try:
+            value = loader()
+            return value if isinstance(value, dict) else {"available": bool(value), "value": value}
+        except Exception as exc:  # pragma: no cover - defensive aggregation boundary
+            partial_errors.append(f"{key}: {exc}")
+            return {"available": False, "error": str(exc), "data_source": f"{key}_error"}
+
+    forecast = collect("forecast", forecast_24h_payload)
+    risk = collect("risk", risk_summary_payload)
+    strategy = collect("strategy", strategy_today_payload)
+    tasks = collect("tasks", lambda: task_recent_payload(limit=8))
+    kpi = collect("kpi", dashboard_kpi_payload)
+    risk_chart = collect("risk_chart", dashboard_supply_demand_risk_payload)
+    forecast_metrics_payload = collect("forecast_metrics", dashboard_forecast_metrics_payload)
+    ai_suggestions_payload = collect("ai_suggestions", dashboard_ai_suggestions_payload)
+    strategy_summary = collect("strategy_summary", dashboard_strategy_execution_payload)
+    model_status_payload = collect("model_status", dashboard_model_status_payload)
+    data_health_payload = collect("data_health", dashboard_data_health_payload)
+    task_reminders = collect("task_reminders", lambda: dashboard_task_reminders_payload(limit=8))
+    context = collect("context", dashboard_context_payload)
+    generated_at = datetime.now().isoformat(sep=" ", timespec="seconds")
+    sources = [
+        kpi.get("data_source"),
+        risk.get("data_source"),
+        strategy.get("data_source"),
+        forecast.get("data_source"),
+        tasks.get("data_source"),
+        model_status_payload.get("data_source"),
+        data_health_payload.get("data_source"),
+        task_reminders.get("data_source"),
+    ]
+    generated_from_seed = bool(model_status_payload.get("is_demo"))
+    return jsonable(
+        {
+            "available": any(payload.get("available") for payload in (kpi, risk, strategy, forecast, tasks)),
+            "data_source": "postgresql_dashboard_overview",
+            "generated_at": generated_at,
+            "loadedAt": generated_at,
+            "partialErrors": partial_errors,
+            "partial_errors": partial_errors,
+            "sources": [source for source in sources if source],
+            "context": context,
+            "kpis": kpi.get("items") or [],
+            "risk_chart": {
+                "available": risk_chart.get("available"),
+                "series": risk_chart.get("series") or [],
+                "risk_windows": risk_chart.get("risk_windows") or [],
+                "windows": risk_chart.get("windows") or {},
+                "summary": risk_chart.get("summary") or {},
+                "unit": risk_chart.get("unit") or "元/kWh",
+                "data_source": risk_chart.get("data_source"),
+            },
+            "forecast_metrics": forecast_metrics_payload.get("metrics") or [],
+            "ai_suggestions": ai_suggestions_payload.get("items") or [],
+            "strategy_summary": strategy_summary,
+            "model_status": model_status_payload,
+            "data_health": data_health_payload,
+            "task_reminders": task_reminders,
+            "data_source": {
+                "primary": "postgresql",
+                "is_demo": generated_from_seed,
+                "generated_from_seed": generated_from_seed,
+                "detail": [source for source in sources if source],
+            },
+            "kpi": kpi,
+            "risk": risk,
+            "strategy": strategy,
+            "forecast": forecast,
+            "tasks": tasks,
         }
     )

@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from backend.app.auth.jwt import create_access_token
-from backend.app.auth.password import hash_password, verify_password
+from backend.app.auth.password import hash_password, validate_password_length, verify_password
 from backend.app.core.config import get_settings
 from backend.app.core.security import CurrentUser, ROLE_PERMISSIONS, get_current_user
 from backend.app.repositories.audit_repository import write_audit_log
@@ -24,6 +24,11 @@ class LoginRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str = Field(..., min_length=1, max_length=256)
     new_password: str = Field(..., min_length=8, max_length=256)
+
+    @field_validator("new_password")
+    @classmethod
+    def _validate_new_password_length(cls, value: str) -> str:
+        return validate_password_length(value)
 
 
 def _user_payload(user: CurrentUser, display_name: str = "", email: str = "") -> dict:
@@ -128,4 +133,3 @@ def change_password(
     if not ok:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="密码更新失败")
     return {"ok": True}
-

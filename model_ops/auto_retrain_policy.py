@@ -6,7 +6,8 @@ from typing import Any
 import pandas as pd
 from sqlalchemy import text
 
-from database_utils import apply_database_migrations, create_database_engine, get_database_config
+from backend.app.services.model_fact_service import DEFAULT_MODEL_DOMAIN, DEFAULT_TARGET_NAME, ModelFactService
+from database_utils import create_database_engine, get_database_config
 from model_ops.strategy_memory import get_recommended_strategy
 
 
@@ -25,7 +26,6 @@ def _empty(reason: str) -> RetrainPolicyDecision:
 def check_model_degradation(config: dict[str, Any], log=None) -> RetrainPolicyDecision:
     if not get_database_config(config).enabled:
         return _empty("数据库未启用，无法执行自动重训判断。")
-    apply_database_migrations(config, log=log)
     engine = create_database_engine(config)
     with engine.connect() as conn:
         perf = pd.read_sql(
@@ -39,17 +39,10 @@ def check_model_degradation(config: dict[str, Any], log=None) -> RetrainPolicyDe
             ),
             conn,
         )
-        active = conn.execute(
-            text(
-                """
-                SELECT model_version, created_at, activated_at, test_rmse, peak_rmse, spike_rmse
-                FROM model_registry
-                WHERE is_active = 1
-                ORDER BY activated_at DESC, created_at DESC
-                LIMIT 1
-                """
-            )
-        ).mappings().fetchone()
+    model_cfg = config.get("model_learning", {}) or {}
+    domain = str(model_cfg.get("domain") or DEFAULT_MODEL_DOMAIN).strip().lower()
+    target_name = str(model_cfg.get("target_name") or DEFAULT_TARGET_NAME).strip()
+    active = ModelFactService(engine).get_active_model(domain, target_name)
 
     if perf.empty:
         return _empty("暂无可用 model_performance_daily 误差样本，暂不重训。")

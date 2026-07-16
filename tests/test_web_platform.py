@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from backend.app import stage1_services
 from backend.app.main import app
 from backend.app.platform_services import generate_anomaly_explanations, generate_strategy_advice
 
@@ -89,6 +90,63 @@ def test_stage1_standard_interfaces_return_core_shape():
     prediction = client.get("/api/prediction/latest?market=广东&date=2099-01-01").json()
     assert prediction["market_matched"] is False
     assert prediction["messages"]
+
+
+def test_prediction_latest_empty_messages_contract(monkeypatch):
+    calls = []
+
+    def fake_latest():
+        calls.append("read")
+        return {
+            "available": False,
+            "records": [],
+            "message": "隔离测试库当前没有预测结果。",
+            "run_id": "empty-run",
+            "source": "isolated.forecast_results",
+            "source_type": "postgresql",
+        }
+
+    monkeypatch.setattr(stage1_services, "load_latest_forecast", fake_latest)
+    response = client.get("/api/prediction/latest?market=广东&date=2099-01-01")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["available"] is False
+    assert payload["market_matched"] is False
+    assert isinstance(payload["messages"], list) and payload["messages"]
+    assert "隔离测试库当前没有预测结果。" in payload["messages"]
+    assert payload["run_id"] == "empty-run"
+    assert payload["source_type"] == "postgresql"
+    assert calls == ["read"]
+
+
+def test_prediction_latest_data_messages_contract(monkeypatch):
+    calls = []
+
+    def fake_latest():
+        calls.append("read")
+        return {
+            "available": True,
+            "records": [
+                {"datetime": "2099-01-01T00:00:00", "predicted_price": 100.0},
+                {"datetime": "2099-01-01T01:00:00", "predicted_price": 120.0},
+            ],
+            "run_id": "data-run",
+            "source": "isolated.forecast_results",
+            "source_type": "postgresql",
+        }
+
+    monkeypatch.setattr(stage1_services, "load_latest_forecast", fake_latest)
+    monkeypatch.setattr(stage1_services, "_main_factors", lambda _df, _pcol: ["隔离测试因素"])
+    monkeypatch.setattr(stage1_services, "_model_confidence", lambda: 0.8)
+    response = client.get("/api/prediction/latest?market=DOM&date=2099-01-01")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["available"] is True
+    assert payload["messages"] == []
+    assert payload["run_id"] == "data-run"
+    assert payload["source_type"] == "postgresql"
+    assert len(payload["records"]) == 2
+    assert calls == ["read"]
 
 
 def test_model_gateway_health_and_chat_feedback():

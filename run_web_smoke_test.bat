@@ -7,7 +7,7 @@ set "PYTHONUTF8=1"
 set "LOCAL_LLM_SUMMARY_ENABLED=0"
 set "DIFY_ENABLED=0"
 set "LLM_AUTO_PULL=0"
-set "PYTHON_EXE=C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
+set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
 if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
 
 echo [INFO] v2.11.2 DB-STATE-V1: run Web platform smoke test.

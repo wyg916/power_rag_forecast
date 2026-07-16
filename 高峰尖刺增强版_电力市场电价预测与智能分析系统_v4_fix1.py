@@ -53,8 +53,9 @@ from sklearn.preprocessing import StandardScaler
 # =========================
 # 路径配置
 # =========================
-DATA_DIR = r"E:\智能运营分析项目\output"
-RESULT_DIR = r"E:\智能运营分析项目\结果-3"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(PROJECT_ROOT, "output")
+RESULT_DIR = os.path.join(PROJECT_ROOT, "结果-3")
 MASTER_FILE = os.path.join(DATA_DIR, "master_table.xlsx")
 FORECAST_LOAD_SELECTED_FILE = os.path.join(DATA_DIR, "forecast_load_selected.xlsx")
 
@@ -739,7 +740,6 @@ def generate_formal_forward_forecast(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     anchor_dt = history_df["datetime"].max()
     future_base_df = build_formal_forward_base_frame(history_df, anchor_dt, FORMAL_FORECAST_HOURS)
-    fill_defaults = model_df[feature_cols].median(numeric_only=True)
     running_df = history_df.copy()
     result_rows = []
     feature_rows = []
@@ -749,15 +749,21 @@ def generate_formal_forward_forecast(
         candidate_df = candidate_df.sort_values("datetime").reset_index(drop=True)
         candidate_features_df = run_full_feature_engineering(candidate_df)
         current_feature_row = candidate_features_df.iloc[-1].copy()
-        feature_input = pd.to_numeric(current_feature_row.reindex(feature_cols), errors="coerce")
-        missing_features = feature_input[feature_input.isna()].index.tolist()
-        if missing_features:
-            feature_input = feature_input.fillna(fill_defaults)
-        remaining_missing = feature_input[feature_input.isna()].index.tolist()
-        if remaining_missing:
-            feature_input = feature_input.fillna(0.0)
+        missing_columns = [name for name in feature_cols if name not in current_feature_row.index]
+        if missing_columns:
+            raise ValueError(f"MISSING_FEATURE: 未来特征缺失，禁止补 0：{missing_columns[:20]}")
+        raw_feature_input = current_feature_row.loc[feature_cols]
+        feature_input = pd.to_numeric(raw_feature_input, errors="coerce")
+        illegal_values = raw_feature_input[raw_feature_input.notna() & feature_input.isna()].index.tolist()
+        if illegal_values:
+            raise ValueError(f"ILLEGAL_STRING: 未来特征包含非法值：{illegal_values[:20]}")
+        null_features = feature_input[feature_input.isna()].index.tolist()
+        if null_features:
+            raise ValueError(f"NAN_FORBIDDEN: 未来特征包含空值，禁止默认填充：{null_features[:20]}")
+        if not np.isfinite(feature_input.to_numpy(dtype=float)).all():
+            raise ValueError("INF_FORBIDDEN: 未来特征包含 Inf 或 -Inf")
 
-        future_X = pd.DataFrame([feature_input.values], columns=feature_cols)
+        future_X = pd.DataFrame([feature_input.to_numpy(dtype="float64")], columns=feature_cols, dtype="float64")
         base_pred = float(artifacts["final_base_model"].predict(future_X)[0])
         peak_pred = float(artifacts["final_peak_model"].predict(future_X)[0])
         risk_prob = float(get_classifier_proba(artifacts["final_classifier"], future_X)[0])
