@@ -1,6 +1,5 @@
 import { MessageOutlined } from '@ant-design/icons';
 import { Button, Empty, Space, Tag } from 'antd';
-import { HomeSourceTag } from './HomeDataState';
 import { dateTimeText, formatCompact, formatNumber, statusClass } from './utils';
 
 interface HomeSideRailProps {
@@ -18,6 +17,16 @@ function itemText(item: any) {
   return item?.advice_text || item?.description || item?.message || item?.title || '接口未返回建议内容';
 }
 
+function businessNote(text?: string) {
+  return String(text || '')
+    .replace(/由真实预测电价峰谷价差派生/g, '由预测电价峰谷价差计算')
+    .replace(/真实数据[:：]?\s*/g, '')
+    .replace(/派生数据[:：]?\s*/g, '')
+    .replace(/数据来源[:：]?\s*/g, '')
+    .replace(/\bAPI\b/gi, '接口')
+    .trim();
+}
+
 export function HomeSideRail({ risk, strategy, tasks, onOpenTaskLog }: HomeSideRailProps) {
   const aiItems = [
     ...(strategy?.must_watch || []),
@@ -29,51 +38,53 @@ export function HomeSideRail({ risk, strategy, tasks, onOpenTaskLog }: HomeSideR
   const health = tasks?.health || {};
   const failedCount = Number(health.failed_task_count || 0) + Number(health.timeout_task_count || 0);
   const healthUnavailable = health.available === false || Boolean(health.error);
-  const healthErrorText = String(health.error || '暂无真实任务健康统计').slice(0, 90);
+  const healthErrorText = String(health.error || '暂无任务健康统计').slice(0, 90);
+  const estimatedRevenueNote = businessNote(summary.estimated_revenue_note);
   return (
     <aside className="home-side-rail">
-      <div className="home-side-top-stack">
-      <section className="home-card home-side-card home-ai-card">
-        <div className="home-card-head compact">
-          <div>
-            <h2><MessageOutlined /> AI 建议摘要</h2>
-            <p>来自策略与风险接口的可执行建议</p>
+      <div className="home-side-main-stack">
+        <section className="home-card home-side-card home-ai-card">
+          <div className="home-card-head compact">
+            <div>
+              <h2><MessageOutlined /> AI 建议摘要</h2>
+              <p>策略与风险建议</p>
+            </div>
           </div>
-          <HomeSourceTag source={strategy?.data_source || risk?.data_source} />
-        </div>
-        <div className="home-ai-list">
-          {aiItems.length ? aiItems.map((item: any, index: number) => (
-            <button key={`${item.target_hour || item.title || 'advice'}-${item.advice_type || item.level || index}-${index}`} type="button" onClick={() => go('/assistant/assistant-chat')}>
-              <span>{index + 1}</span>
-              <p>{itemText(item)}</p>
-            </button>
-          )) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 AI 策略建议" />}
-        </div>
-      </section>
+          <div className="home-ai-list">
+            {aiItems.length ? aiItems.map((item: any, index: number) => (
+              <button key={`${item.target_hour || item.title || 'advice'}-${item.advice_type || item.level || index}-${index}`} type="button" onClick={() => go('/assistant/assistant-chat')}>
+                <span>{index + 1}</span>
+                <p>{itemText(item)}</p>
+              </button>
+            )) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 AI 策略建议" />}
+          </div>
+        </section>
 
-      <section className="home-card home-side-card home-strategy-card">
-        <div className="home-card-head compact">
-          <div>
-            <h2>策略执行摘要</h2>
-            <p>策略生成、风险窗口与人工复核线索</p>
+        <section className="home-card home-side-card home-strategy-card">
+          <div className="home-card-head compact">
+            <div>
+              <h2>策略执行摘要</h2>
+              <p>生成、风险与复核线索</p>
+            </div>
+            <Button type="link" onClick={() => go('/strategy/strategy-high')}>更多</Button>
           </div>
-          <Button type="link" onClick={() => go('/strategy/strategy-high')}>更多</Button>
-        </div>
-        <div className="home-strategy-row">
-          <div><span>已生成策略</span><strong>{summary.strategy_count ?? 0}</strong></div>
-          <div><span>高价风险段</span><strong>{summary.must_watch_count ?? 0}</strong></div>
-          <div><span>低价/储能窗口</span><strong>{summary.storage_count ?? 0}</strong></div>
-          <div><span>预计价差</span><strong>{summary.estimated_revenue == null ? '--' : formatNumber(summary.estimated_revenue, 3)}</strong></div>
-        </div>
-        {summary.estimated_revenue_note ? <p className="home-derived-note">{summary.estimated_revenue_note}</p> : null}
-      </section>
+          <div className="home-strategy-scroll">
+            <div className="home-strategy-row">
+              <div><span>已生成策略</span><strong>{summary.strategy_count ?? 0}</strong></div>
+              <div><span>高价风险段</span><strong>{summary.must_watch_count ?? 0}</strong></div>
+              <div><span>低价/储能窗口</span><strong>{summary.storage_count ?? 0}</strong></div>
+              <div><span>预计价差</span><strong>{summary.estimated_revenue == null ? '--' : formatNumber(summary.estimated_revenue, 3)}</strong></div>
+            </div>
+            {estimatedRevenueNote ? <p className="home-derived-note">{estimatedRevenueNote}</p> : null}
+          </div>
+        </section>
       </div>
 
       <section className="home-card home-side-card home-task-card">
-        <div className="home-card-head compact">
+        <div className="home-card-head compact home-head-with-note">
           <div>
             <h2>任务提醒</h2>
-            <p>失败重试、运行中和待处理任务入口</p>
+            <p className="home-header-note">失败重试、运行中和待处理任务入口</p>
           </div>
           <Tag color={healthUnavailable ? 'warning' : failedCount ? 'error' : 'success'}>
             {healthUnavailable ? '待接入' : failedCount ? `异常 ${failedCount}` : '健康'}

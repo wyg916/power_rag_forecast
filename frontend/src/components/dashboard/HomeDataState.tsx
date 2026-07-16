@@ -24,7 +24,7 @@ export function HomeSourceTag({ source }: { source?: string }) {
 
 export function HomeDataState({ loading, errors, sources, onRetry }: HomeDataStateProps) {
   if (loading) {
-    return <Alert className="home-data-state" type="info" showIcon message="正在读取首页真实 API 数据" />;
+    return <Alert className="home-data-state" type="info" showIcon message="正在读取首页数据" />;
   }
   if (errors.length) {
     return (

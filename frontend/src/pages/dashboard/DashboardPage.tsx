@@ -86,9 +86,8 @@ export function DashboardPage(_: PageProps) {
         </Space>
       </div>
 
-      <HomeKpiStrip items={kpiItems} />
-
       <section className="home-dashboard-content">
+        <HomeKpiStrip items={kpiItems} />
         <div className="home-dashboard-left">
           <HomeForecastChart forecast={data?.forecast} risk={data?.risk} />
           <HomeAuxiliaryGrid forecast={data?.forecast} kpi={data?.kpi} />

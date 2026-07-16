@@ -5,10 +5,10 @@ export const themeTokens = {
   primaryDark: '#008F72',
   primaryHover: '#06C49F',
   primaryLight: '#E6F7F1',
-  pageBg: '#F5F7FB',
+  pageBg: '#F6F8FB',
   cardBg: '#FFFFFF',
   softBg: '#F8FAFC',
-  border: '#DFE6EF',
+  border: '#E1E7F0',
   title: '#111827',
   text: '#334155',
   secondary: '#64748B',
@@ -31,7 +31,7 @@ export const themeConfig: ThemeConfig = {
     colorTextSecondary: themeTokens.secondary,
     colorTextTertiary: themeTokens.muted,
     colorBorder: themeTokens.border,
-    colorBorderSecondary: '#EDF2F7',
+    colorBorderSecondary: '#E8EEF6',
     colorBgLayout: themeTokens.pageBg,
     colorBgContainer: themeTokens.cardBg,
     colorBgElevated: themeTokens.cardBg,
@@ -56,12 +56,12 @@ export const themeConfig: ThemeConfig = {
       itemSelectedBg: themeTokens.primaryLight,
       itemSelectedColor: themeTokens.primaryDark,
       itemHoverColor: themeTokens.primaryDark,
-      itemBorderRadius: 8,
-      itemHeight: 42,
+      itemBorderRadius: 10,
+      itemHeight: 44,
       subMenuItemBg: 'transparent'
     },
     Card: {
-      borderRadiusLG: 8,
+      borderRadiusLG: 12,
       paddingLG: 16
     },
     Button: {

@@ -4,6 +4,7 @@ import os
 import socket
 import subprocess
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,38 @@ from backend.app.services.task_runtime import queue_for_kind, task_policy, timeo
 from backend.app.repositories.knowledge_repository import backfill_missing_embeddings, refresh_stale_embeddings
 from backend.app.workers.celery_app import celery_app
 from backend.app.workers.task_commands import command_for_kind
+
+
+class TaskExecutionContext:
+    def __init__(self, *, task_id: str, run_id: str, kind: str, worker_id: str, celery_task_id: str = "") -> None:
+        self.task_id = task_id
+        self.run_id = run_id
+        self.kind = kind
+        self.worker_id = worker_id
+        self.celery_task_id = celery_task_id
+
+    def log(self, step: str, message: str, *, level: str = "info", progress: float | None = None, metadata: dict[str, Any] | None = None) -> None:
+        if progress is not None:
+            update_task_runtime_state(
+                self.task_id,
+                status="running",
+                message=message,
+                progress=progress,
+                worker_id=self.worker_id,
+                celery_task_id=self.celery_task_id,
+                metadata={"last_step": step},
+            )
+        append_task_log(
+            self.task_id,
+            level=level,
+            step=step,
+            message=message,
+            status="running",
+            run_id=self.run_id,
+            task_name=self.kind,
+            task_kind=self.kind,
+            metadata={"worker_id": self.worker_id, "celery_task_id": self.celery_task_id, **(metadata or {})},
+        )
 
 
 def _task_decorator(name: str):
@@ -237,6 +270,14 @@ def _run_python_task(
     handler,
 ) -> dict[str, Any]:
     started = datetime.now()
+    worker_id = socket.gethostname()
+    celery_task_id = ""
+    try:
+        from celery import current_task
+
+        celery_task_id = str(getattr(getattr(current_task, "request", None), "id", "") or "")
+    except Exception:
+        celery_task_id = ""
     policy = task_policy(kind)
     timeout_seconds = _task_timeout_seconds(kind, task_id)
     timeout_at_dt = timeout_at(started, timeout_seconds)
@@ -253,7 +294,8 @@ def _run_python_task(
             progress=10,
             message="running",
             payload=payload,
-            worker_id=socket.gethostname(),
+            worker_id=worker_id,
+            celery_task_id=celery_task_id,
             timeout_seconds=timeout_seconds,
             timeout_at_value=timeout_at_dt,
             max_retries=policy.max_retries,
@@ -263,6 +305,7 @@ def _run_python_task(
     )
     append_task_log(task_id, level="info", step="prepare", message=f"python task started: {kind}", status="running", run_id=run_id, task_name=kind, task_kind=kind, metadata={"timeout_seconds": timeout_seconds})
     started_counter = time.perf_counter()
+    context = TaskExecutionContext(task_id=task_id, run_id=run_id, kind=kind, worker_id=worker_id, celery_task_id=celery_task_id)
     try:
         if _cancel_requested(task_id):
             ended = datetime.now()
@@ -282,7 +325,8 @@ def _run_python_task(
                 progress=100,
                 message="cancelled",
                 payload=payload,
-                worker_id=socket.gethostname(),
+                worker_id=worker_id,
+                celery_task_id=celery_task_id,
                 timeout_seconds=timeout_seconds,
                 timeout_at_value=timeout_at_dt,
                 cancel_reason="cancel requested before execution",
@@ -291,8 +335,14 @@ def _run_python_task(
             save_task_record(final_record, status="cancelled", log_text="cancel requested before execution")
             append_task_log(task_id, level="warning", step="validate", message="cancel requested before execution", status="cancelled", run_id=run_id, task_name=kind, task_kind=kind)
             return final_record
-        append_task_log(task_id, level="info", step="execute", message="handler execution started", status="running", run_id=run_id, task_name=kind, task_kind=kind)
-        result = handler(payload or {})
+        context.log("execute", "handler execution started", progress=15, metadata={"timeout_seconds": timeout_seconds})
+        try:
+            import inspect
+
+            accepts_context = len(inspect.signature(handler).parameters) >= 2
+        except Exception:
+            accepts_context = False
+        result = handler(payload or {}, context) if accepts_context else handler(payload or {})
         ended = datetime.now()
         duration = round(time.perf_counter() - started_counter, 3)
         if _cancel_requested(task_id):
@@ -331,7 +381,8 @@ def _run_python_task(
             result_ref=str(result.get("result_ref") or result.get("report_path") or result.get("stats") or kind),
             payload=payload,
             metadata={"result": result},
-            worker_id=socket.gethostname(),
+            worker_id=worker_id,
+            celery_task_id=celery_task_id,
             timeout_seconds=timeout_seconds,
             timeout_at_value=timeout_at_dt,
             max_retries=policy.max_retries,
@@ -340,11 +391,12 @@ def _run_python_task(
         )
         log_lines.append(json_safe(result))
         save_task_record(final_record, status=status, log_text="\n".join(log_lines)[-4000:])
-        append_task_log(task_id, level="error" if status == "timeout" else "info", step="persist", message=f"task finished: {status}", status=status, run_id=run_id, task_name=kind, task_kind=kind, metadata={"duration_seconds": duration, "result_ref": final_record.get("result_ref")})
+        append_task_log(task_id, level="error" if status == "timeout" else "info", step="persist", message=f"task finished: {status}", status=status, run_id=run_id, task_name=kind, task_kind=kind, metadata={"duration_seconds": duration, "result_ref": final_record.get("result_ref"), "worker_id": worker_id})
         return final_record
     except Exception as exc:
         ended = datetime.now()
         error = str(exc)
+        error_detail = traceback.format_exc()[-4000:]
         log_suppressed_exception(f"celery.{kind}", exc, task_id=task_id, run_id=run_id)
         final_record = _record(
             task_id=task_id,
@@ -359,18 +411,19 @@ def _run_python_task(
             returncode=1,
             error_code=exc.__class__.__name__,
             error_message=error,
-            error_detail=repr(exc)[:1200],
+            error_detail=error_detail,
             progress=100,
             message="failed",
             payload=payload,
-            worker_id=socket.gethostname(),
+            worker_id=worker_id,
+            celery_task_id=celery_task_id,
             timeout_seconds=timeout_seconds,
             timeout_at_value=timeout_at_dt,
             max_retries=policy.max_retries,
         )
         log_lines.append(error)
         save_task_record(final_record, status="failed", log_text="\n".join(log_lines)[-4000:])
-        append_task_log(task_id, level="error", step="execute", message=error, status="failed", run_id=run_id, task_name=kind, task_kind=kind, metadata={"error_code": exc.__class__.__name__})
+        append_task_log(task_id, level="error", step="execute", message=error, status="failed", run_id=run_id, task_name=kind, task_kind=kind, metadata={"error_code": exc.__class__.__name__, "error_detail": error_detail, "worker_id": worker_id})
         return final_record
 
 
@@ -380,16 +433,24 @@ def json_safe(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, default=str)
 
 
-def _knowledge_import_handler(payload: dict[str, Any]) -> dict[str, Any]:
+def _knowledge_import_handler(payload: dict[str, Any], context: TaskExecutionContext | None = None) -> dict[str, Any]:
     limit_files = int(payload.get("limit_files") or 300)
+    if context:
+        context.log("index", "开始知识库本地索引", progress=35, metadata={"limit_files": limit_files})
     result = index_local_knowledge(limit_files=limit_files)
     result["result_ref"] = "kb_documents/kb_chunks"
     return result
 
 
-def _embedding_refresh_handler(payload: dict[str, Any]) -> dict[str, Any]:
+def _embedding_refresh_handler(payload: dict[str, Any], context: TaskExecutionContext | None = None) -> dict[str, Any]:
+    if context:
+        context.log("health", "检查 RAG 健康状态", progress=28)
     before_health = rag_health()
+    if context:
+        context.log("embedding", "补齐缺失向量", progress=48)
     backfill = backfill_missing_embeddings()
+    if context:
+        context.log("embedding", "刷新过期向量", progress=68)
     refresh = refresh_stale_embeddings()
     after_health = rag_health()
     warnings: list[str] = []
@@ -429,6 +490,27 @@ def report_generate_task(task_id: str, run_id: str, payload: dict[str, Any] | No
         result["result_ref"] = str(result.get("log_path") or "report_generate")
     save_task_record(result, status=str(result.get("status") or "success"))
     return result
+
+
+@_task_decorator("power_trading.run_price_predict_task")
+def run_price_predict_task(task_id: str, run_id: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    from backend.app.services.task_business_handlers import run_price_predict
+
+    return _run_python_task(task_id=task_id, run_id=run_id, kind="price_predict", payload=payload, handler=run_price_predict)
+
+
+@_task_decorator("power_trading.run_data_sync_task")
+def run_data_sync_task(task_id: str, run_id: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    from backend.app.services.task_business_handlers import run_data_sync
+
+    return _run_python_task(task_id=task_id, run_id=run_id, kind="data_sync", payload=payload, handler=run_data_sync)
+
+
+@_task_decorator("power_trading.run_report_daily_task")
+def run_report_daily_task(task_id: str, run_id: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    from backend.app.services.task_business_handlers import run_report_daily
+
+    return _run_python_task(task_id=task_id, run_id=run_id, kind="report_daily", payload=payload, handler=run_report_daily)
 
 
 @_task_decorator("power_trading.health_check_task")

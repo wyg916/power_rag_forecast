@@ -1,7 +1,6 @@
 import { CheckCircleOutlined, DatabaseOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { Empty, Progress, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { HomeSourceTag } from './HomeDataState';
 import { dateTimeText, formatNumber, formatPercent, timeText } from './utils';
 
 function predictionRows(forecast?: any) {
@@ -30,12 +29,11 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
   return (
     <section className="home-aux-grid">
       <div className="home-card home-table-card">
-        <div className="home-card-head compact">
+        <div className="home-card-head compact home-head-with-note">
           <div>
             <h2>关键预测指标趋势（24小时）</h2>
-            <p>全部指标来自 /api/forecast/24h 汇总，不使用模拟数据。</p>
+            <p className="home-header-note">最高、最低、均价与峰谷价差概览</p>
           </div>
-          <HomeSourceTag source={forecast?.data_source} />
         </div>
         <Table
           size="small"
@@ -47,10 +45,10 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
       </div>
 
       <div className="home-card home-model-card">
-        <div className="home-card-head compact">
+        <div className="home-card-head compact home-head-with-note">
           <div>
             <h2><ThunderboltOutlined /> 模型状态</h2>
-            <p>Active 模型与评估指标</p>
+            <p className="home-header-note">Active 模型与评估指标</p>
           </div>
           <Tag color={model?.model_version ? 'success' : 'warning'}>{model?.model_version ? 'Active' : '待接入'}</Tag>
         </div>
@@ -67,12 +65,11 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
       </div>
 
       <div className="home-card home-health-card">
-        <div className="home-card-head compact">
+        <div className="home-card-head compact home-head-with-note">
           <div>
             <h2><DatabaseOutlined /> 数据健康</h2>
-            <p>来源覆盖、异常源和缺失率</p>
+            <p className="home-header-note">覆盖、异常与健康得分概览</p>
           </div>
-          <HomeSourceTag source={dataHealth.data_source} />
         </div>
         {dataHealth.score == null ? (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据健康评分" />

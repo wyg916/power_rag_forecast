@@ -1,0 +1,33 @@
+{
+  "model_version": "model_20260526_184139",
+  "feature_version": "features_140db8af25f9",
+  "target_col": "da_price",
+  "datasets": [
+    {
+      "name": "train",
+      "rows": 15414,
+      "start_datetime": "2024-06-11T00:00:00",
+      "end_datetime": "2026-03-15T23:00:00"
+    },
+    {
+      "name": "validation",
+      "rows": 720,
+      "start_datetime": "2026-03-16T00:00:00",
+      "end_datetime": "2026-04-14T23:00:00"
+    },
+    {
+      "name": "test",
+      "rows": 720,
+      "start_datetime": "2026-04-15T00:00:00",
+      "end_datetime": "2026-05-14T23:00:00"
+    }
+  ],
+  "base_model_name": "LightGBM_Tuned",
+  "peak_model_name": "Peak_HistGB",
+  "classifier_name": "Spike_RF_Classifier",
+  "best_spike_threshold": 0.7,
+  "has_p90_model": true,
+  "extra_metadata": {
+    "engine": "v4_fix1_compat"
+  }
+}

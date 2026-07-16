@@ -17,8 +17,10 @@ def test_task_runtime_policies_cover_required_task_types():
     assert task_policy("embedding_refresh").queue_name == "embedding"
     assert task_policy("report_generate").max_retries == 2
     assert task_policy("data_sync").max_retries == 3
+    assert task_policy("price_predict").queue_name == "price_predict"
+    assert task_policy("report_daily").queue_name == "report_daily"
     assert task_policy("forecast_run").queue_name == "forecast"
-    assert normalize_task_kind("data_sync") == "sync_core_data"
+    assert normalize_task_kind("data_sync") == "data_sync"
     assert normalize_task_kind("forecast_run") == "fast_forecast"
     assert queue_for_kind("knowledge_import") == "rag"
 

@@ -9,9 +9,29 @@ from ....platform_services import generate_anomaly_explanations, generate_strate
 from ....repositories.audit_repository import write_audit_log
 from ....services.dashboard_home_service import strategy_today_payload
 from ....services.ui_platform_service import _read_runtime_settings, response, save_system_config
+from ....source_contract import SourceType, attach_source_meta, resolve_forecast_source, source_meta
 
 
 router = APIRouter()
+
+
+def _with_strategy_meta(payload: dict) -> dict:
+    _, _, base = resolve_forecast_source(payload.get("run_id") or "latest")
+    if base.get("source_type") in {"real", "historical"}:
+        base = {
+            **base,
+            "source_type": SourceType.DERIVED.value,
+            "domain": "strategy",
+            "evidence": list(base.get("evidence") or []) + [{"derivation": "strategy_read"}],
+        }
+    else:
+        base = source_meta(
+            SourceType.UNAVAILABLE,
+            "strategy",
+            run_id=base.get("run_id"),
+            unavailable_reason=base.get("unavailable_reason") or "forecast_unavailable",
+        )
+    return attach_source_meta(payload, base)
 
 
 @router.post("/api/strategy/generate")
@@ -21,12 +41,12 @@ def strategy_generate(_: Annotated[CurrentUser, Depends(require_permission("task
 
 @router.get("/api/strategy/latest")
 def strategy_latest() -> dict:
-    return generate_strategy_advice(persist=False)
+    return _with_strategy_meta(generate_strategy_advice(persist=False))
 
 
 @router.get("/api/strategy/today")
 def strategy_today() -> dict:
-    return strategy_today_payload()
+    return _with_strategy_meta(strategy_today_payload())
 
 
 @router.get("/api/strategy/config")
@@ -75,7 +95,7 @@ def strategy_review_save(
 
 @router.get("/api/strategy/{run_id}")
 def strategy_by_run(run_id: str) -> dict:
-    return generate_strategy_advice(run_id=run_id, persist=False)
+    return _with_strategy_meta(generate_strategy_advice(run_id=run_id, persist=False))
 
 
 @router.post("/api/anomaly/explain")
@@ -85,9 +105,9 @@ def anomaly_explain(_: Annotated[CurrentUser, Depends(require_permission("task:r
 
 @router.get("/api/anomaly/latest")
 def anomaly_latest() -> dict:
-    return generate_anomaly_explanations(persist=False)
+    return _with_strategy_meta(generate_anomaly_explanations(persist=False))
 
 
 @router.get("/api/anomaly/{run_id}")
 def anomaly_by_run(run_id: str) -> dict:
-    return generate_anomaly_explanations(run_id=run_id, persist=False)
+    return _with_strategy_meta(generate_anomaly_explanations(run_id=run_id, persist=False))

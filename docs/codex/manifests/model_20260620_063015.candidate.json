@@ -1,0 +1,28 @@
+{
+  "manifest_protocol": "t002.candidate-inference.v1",
+  "artifact_id": "artifact_f6689b533cb8fc94e18ac53a",
+  "model_version": "model_20260620_063015",
+  "feature_version": "features_140db8af25f9",
+  "schema_hash": "a855692756793862b1fcfd3c68c701d1ad231b32e6581797d74f4a8ab4199281",
+  "artifact_hash": "f6689b533cb8fc94e18ac53a399e9bac5a4f6fb4c4df354c701182fe23c70f59",
+  "feature_count": 170,
+  "candidate_status": "candidate",
+  "active": false,
+  "training_lightgbm_version": "unknown",
+  "validated_inference_lightgbm_version": "4.6.0",
+  "validated_inference_python_version": "3.11.9",
+  "validated_inference_scikit_learn_version": "1.6.0",
+  "fixed_input_rows": 24,
+  "fixed_input_hash": "6ec78fb88a86eb24ff8bc00fdba739bb4ce9ba3d85eb4adcb017adc2ca50223e",
+  "result_data_hash": "91a2f83e0e2a959319176e11a34dcc971f3b799d192792790fdf4ded164b3029",
+  "same_process_bitwise_identical": true,
+  "cross_process_bitwise_identical": true,
+  "prediction_threads": {
+    "random_forest": 1,
+    "lightgbm": 1
+  },
+  "database_write": false,
+  "formal_prediction": false,
+  "active_promotion": false,
+  "evidence_directory": "E:\\智能运营分析项目_备份\\phase3\\20260716_005534681_T002_2_RESULT"
+}

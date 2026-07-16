@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from sqlalchemy import text
 
 from backend.app.observability import log_suppressed_exception
-from backend.app.services.task_runtime import normalize_status, queue_for_kind, task_policy
+from backend.app.services.task_runtime import normalize_status, normalize_task_kind, queue_for_kind, task_policy
 
 from .base import dumps_json, jsonable, loads_json, mapping_dict, mapping_list, postgres_engine
+
+
+ACTIVE_STATUS_SQL = "'pending','queued','running','retrying','cancel_requested'"
+TERMINAL_RETRY_STATUSES = {"failed", "timeout", "cancelled"}
 
 
 def save_task_record(record: dict[str, Any], status: str | None = None, log_text: str | None = None) -> bool:
@@ -262,7 +267,418 @@ def list_recent_tasks(limit: int = 100) -> list[dict[str, Any]]:
     return records[:limit]
 
 
+def _task_row_to_payload(row: dict[str, Any]) -> dict[str, Any]:
+    row["payload"] = loads_json(row.pop("payload_json", None), default={})
+    row["metadata"] = loads_json(row.pop("metadata_json", None), default={})
+    row.setdefault("kind", row.get("task_kind") or row.get("task_type") or row.get("task_name"))
+    row.setdefault("duration_ms", int(float(row.get("duration_seconds") or 0) * 1000))
+    row.setdefault("worker_name", row.get("worker_id") or "")
+    row.setdefault("handling_suggestion", handling_suggestion_for(row))
+    return jsonable(row)
+
+
+def handling_suggestion_for(record: dict[str, Any]) -> str:
+    message = str(record.get("error_message") or record.get("message") or "").lower()
+    status = str(record.get("status") or "").lower()
+    if "connection" in message or "连接" in message:
+        return "检查数据库网络与连接配置"
+    if status == "timeout" or "timeout" in message or "超时" in message:
+        return "优化数据量或延长超时时间"
+    if "memory" in message or "内存" in message:
+        return "增加 worker 内存配置"
+    if "参数" in message or "param" in message:
+        return "检查任务参数后重试"
+    if "source" in message or "数据源" in message:
+        return "检查数据源接口状态"
+    if status in {"failed", "cancelled"}:
+        return "查看错误日志后重试"
+    return "当前状态无需处理"
+
+
+def create_pending_task_record(
+    *,
+    kind: str,
+    task_name: str = "",
+    payload: dict[str, Any] | None = None,
+    queue_name: str = "",
+    execution_mode: str = "db_pending",
+    created_by: str = "web_user",
+    retry_of: str = "",
+) -> dict[str, Any]:
+    normalized = normalize_task_kind(kind)
+    now = datetime.now().isoformat(sep=" ", timespec="seconds")
+    task_id = f"task_db_{datetime.now().strftime('%Y%m%d%H%M%S')}_{abs(hash((normalized, now))) % 100000:05d}"
+    retry_count = int((payload or {}).get("retry_count") or 0)
+    record = {
+        "task_id": task_id,
+        "run_id": datetime.now().strftime("%Y%m%d_%H%M%S"),
+        "kind": normalized,
+        "task_name": task_name or normalized,
+        "task_type": normalized,
+        "status": "pending",
+        "payload": payload or {},
+        "created_at": now,
+        "queued_at": now,
+        "progress": 0,
+        "message": "task accepted into PostgreSQL queue",
+        "created_by": created_by,
+        "retry_count": retry_count,
+        "max_retries": task_policy(normalized).max_retries,
+        "execution_mode": execution_mode,
+        "queue_name": queue_name or queue_for_kind(normalized),
+        "parent_task_id": retry_of,
+        "original_task_id": retry_of,
+    }
+    save_task_record(record, status="pending", log_text="task accepted into PostgreSQL queue")
+    append_task_log(
+        task_id,
+        level="info",
+        step="prepare",
+        message="task accepted into PostgreSQL queue",
+        status="pending",
+        run_id=str(record["run_id"]),
+        task_name=str(record["task_name"]),
+        task_kind=normalized,
+        metadata={"queue_name": record["queue_name"], "retry_of": retry_of},
+    )
+    return jsonable(record)
+
+
+def list_task_runs(
+    *,
+    task_type: str = "",
+    status: str = "",
+    queue_name: str = "",
+    keyword: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    page: int = 1,
+    page_size: int = 20,
+) -> dict[str, Any]:
+    engine = postgres_engine()
+    safe_page = max(1, int(page or 1))
+    safe_size = min(200, max(1, int(page_size or 20)))
+    if engine is None:
+        return {"list": [], "tasks": [], "total": 0, "page": safe_page, "page_size": safe_size}
+    clauses: list[str] = []
+    params: dict[str, Any] = {"limit": safe_size, "offset": (safe_page - 1) * safe_size}
+    if task_type and task_type != "all":
+        clauses.append("(task_kind = :task_type OR task_type = :task_type)")
+        params["task_type"] = normalize_task_kind(task_type)
+    if status and status != "all":
+        clauses.append("status = :status")
+        params["status"] = normalize_status(status)
+    if queue_name and queue_name != "all":
+        clauses.append("COALESCE(queue_name, 'default') = :queue_name")
+        params["queue_name"] = queue_name
+    if keyword:
+        clauses.append("(task_id ILIKE :keyword OR task_name ILIKE :keyword OR task_kind ILIKE :keyword)")
+        params["keyword"] = f"%{keyword}%"
+    if start_date:
+        clauses.append("COALESCE(created_at, started_at, queued_at) >= CAST(:start_date AS timestamp)")
+        params["start_date"] = start_date
+    if end_date:
+        clauses.append("COALESCE(created_at, started_at, queued_at) < CAST(:end_date AS timestamp) + INTERVAL '1 day'")
+        params["end_date"] = end_date
+    where_sql = "WHERE " + " AND ".join(clauses) if clauses else ""
+    try:
+        with engine.connect() as conn:
+            total = int(conn.execute(text(f"SELECT COUNT(*) FROM task_runs {where_sql}"), params).scalar() or 0)
+            rows = conn.execute(
+                text(
+                    f"""
+                    SELECT task_id, run_id, task_name, task_kind, task_kind AS kind,
+                           task_type, status, payload_json, created_at, queued_at,
+                           started_at, ended_at, finished_at, duration_seconds,
+                           error_code, error_message, error_detail, progress, message,
+                           created_by, retry_count, max_retries, result_ref, metadata_json,
+                           execution_mode, cancel_requested, cancel_reason, cancelled_at,
+                           timeout_seconds, timeout_at, parent_task_id, original_task_id,
+                           idempotency_key, payload_hash, dedupe_window_seconds,
+                           COALESCE(queue_name, 'default') AS queue_name,
+                           worker_id, worker_id AS worker_name, celery_task_id, updated_at
+                    FROM task_runs
+                    {where_sql}
+                    ORDER BY COALESCE(created_at, queued_at, started_at, updated_at) DESC, task_id DESC
+                    LIMIT :limit OFFSET :offset
+                    """
+                ),
+                params,
+            ).mappings().all()
+    except Exception as exc:
+        log_suppressed_exception("repositories.task.list_task_runs", exc)
+        return {"list": [], "tasks": [], "total": 0, "page": safe_page, "page_size": safe_size, "error": str(exc)[:200]}
+    items = [_task_row_to_payload(row) for row in mapping_list(rows)]
+    return {"list": items, "tasks": items, "total": total, "page": safe_page, "page_size": safe_size}
+
+
+def task_overview() -> dict[str, Any]:
+    engine = postgres_engine()
+    if engine is None:
+        return {
+            "task_total": 0,
+            "success_total": 0,
+            "running_total": 0,
+            "pending_total": 0,
+            "failed_total": 0,
+            "timeout_total": 0,
+            "queue_total": 0,
+            "success_rate": 0,
+            "day_over_day_change": {},
+        }
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text(
+                    f"""
+                    SELECT COUNT(*) AS task_total,
+                           COUNT(*) FILTER (WHERE status = 'success') AS success_total,
+                           COUNT(*) FILTER (WHERE status = 'running') AS running_total,
+                           COUNT(*) FILTER (WHERE status IN ('pending','queued','retrying','cancel_requested')) AS pending_total,
+                           COUNT(*) FILTER (WHERE status = 'failed') AS failed_total,
+                           COUNT(*) FILTER (WHERE status = 'timeout') AS timeout_total,
+                           COUNT(DISTINCT COALESCE(queue_name, 'default')) AS queue_total,
+                           COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) AS today_total,
+                           COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '1 day' AND created_at < CURRENT_DATE) AS yesterday_total
+                    FROM task_runs
+                    """
+                )
+            ).mappings().first()
+    except Exception as exc:
+        log_suppressed_exception("repositories.task.task_overview", exc)
+        return {"task_total": 0, "success_total": 0, "running_total": 0, "pending_total": 0, "failed_total": 0, "timeout_total": 0, "queue_total": 0, "success_rate": 0, "day_over_day_change": {}, "error": str(exc)[:200]}
+    data = mapping_dict(row)
+    total = int(data.get("task_total") or 0)
+    success = int(data.get("success_total") or 0)
+    today = int(data.pop("today_total", 0) or 0)
+    yesterday = int(data.pop("yesterday_total", 0) or 0)
+    change = 0.0 if yesterday == 0 else round((today - yesterday) * 100 / yesterday, 2)
+    data["success_rate"] = round(success * 100 / total, 2) if total else 0
+    data["day_over_day_change"] = {"task_total": change}
+    return jsonable(data)
+
+
+def recent_task_logs(*, limit: int = 20, task_id: str = "", queue_name: str = "", level: str = "") -> list[dict[str, Any]]:
+    engine = postgres_engine()
+    if engine is None:
+        return []
+    clauses: list[str] = []
+    params: dict[str, Any] = {"limit": min(200, max(1, int(limit or 20)))}
+    if task_id:
+        clauses.append("l.task_id = :task_id")
+        params["task_id"] = task_id
+    if queue_name and queue_name != "all":
+        clauses.append("COALESCE(r.queue_name, 'default') = :queue_name")
+        params["queue_name"] = queue_name
+    if level and level != "all":
+        clauses.append("COALESCE(l.level, 'info') = :level")
+        params["level"] = level
+    where_sql = "WHERE " + " AND ".join(clauses) if clauses else ""
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    f"""
+                    SELECT l.id, l.task_id, l.run_id,
+                           COALESCE(l.task_name, r.task_name, r.task_kind) AS task_name,
+                           COALESCE(l.task_kind, r.task_kind) AS task_kind,
+                           COALESCE(r.queue_name, 'default') AS queue_name,
+                           COALESCE(l.worker_id, r.worker_id) AS worker_id,
+                           COALESCE(l.celery_task_id, r.celery_task_id) AS celery_task_id,
+                           COALESCE(l.level, 'info') AS level,
+                           COALESCE(l.step, 'summary') AS step,
+                           COALESCE(l.message, l.log_text, l.error_message, '') AS message,
+                           l.created_at, l.updated_at
+                    FROM task_logs l
+                    LEFT JOIN task_runs r ON r.task_id = l.task_id
+                    {where_sql}
+                    ORDER BY COALESCE(l.created_at, l.updated_at) DESC, l.id DESC
+                    LIMIT :limit
+                    """
+                ),
+                params,
+            ).mappings().all()
+    except Exception as exc:
+        log_suppressed_exception("repositories.task.recent_task_logs", exc)
+        return []
+    return jsonable(mapping_list(rows))
+
+
+def retry_task_candidates(limit: int = 20) -> list[dict[str, Any]]:
+    engine = postgres_engine()
+    if engine is None:
+        return []
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT task_id, run_id, task_name, task_kind, task_kind AS kind,
+                           task_type, status, payload_json, created_at, queued_at,
+                           started_at, ended_at, finished_at, duration_seconds,
+                           error_code, error_message, error_detail, progress, message,
+                           created_by, retry_count, max_retries, result_ref, metadata_json,
+                           execution_mode, cancel_requested, cancel_reason, cancelled_at,
+                           timeout_seconds, timeout_at, parent_task_id, original_task_id,
+                           COALESCE(queue_name, 'default') AS queue_name,
+                           worker_id, worker_id AS worker_name, celery_task_id, updated_at
+                    FROM task_runs
+                    WHERE status IN ('failed', 'timeout', 'cancelled')
+                      AND COALESCE(retry_count, 0) < COALESCE(max_retries, 0)
+                    ORDER BY COALESCE(ended_at, finished_at, updated_at, created_at) DESC
+                    LIMIT :limit
+                    """
+                ),
+                {"limit": min(200, max(1, int(limit or 20)))},
+            ).mappings().all()
+    except Exception as exc:
+        log_suppressed_exception("repositories.task.retry_task_candidates", exc)
+        return []
+    items = []
+    for row in mapping_list(rows):
+        item = _task_row_to_payload(row)
+        item["failed_at"] = item.get("ended_at") or item.get("finished_at") or item.get("updated_at")
+        item["reason"] = item.get("error_message") or item.get("message") or item.get("status")
+        item["handling_suggestion"] = handling_suggestion_for(item)
+        item["action_enabled"] = True
+        items.append(item)
+    return items
+
+
+def queue_overview() -> list[dict[str, Any]]:
+    engine = postgres_engine()
+    if engine is None:
+        return []
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT COALESCE(queue_name, 'default') AS queue_name,
+                           COUNT(*) AS total,
+                           COUNT(*) FILTER (WHERE status = 'success') AS success_count,
+                           COUNT(*) FILTER (WHERE status = 'running') AS running_count,
+                           COUNT(*) FILTER (WHERE status IN ('pending','queued','retrying','cancel_requested')) AS pending_count,
+                           COUNT(*) FILTER (WHERE status = 'failed') AS failed_count,
+                           COUNT(*) FILTER (WHERE status = 'timeout') AS timeout_count
+                    FROM task_runs
+                    GROUP BY COALESCE(queue_name, 'default')
+                    ORDER BY total DESC, queue_name
+                    """
+                )
+            ).mappings().all()
+    except Exception as exc:
+        log_suppressed_exception("repositories.task.queue_overview", exc)
+        return []
+    data = []
+    grand_total = sum(int(row.get("total") or 0) for row in mapping_list(rows)) or 1
+    for row in mapping_list(rows):
+        total = int(row.get("total") or 0)
+        success = int(row.get("success_count") or 0)
+        item = dict(row)
+        item["success_rate"] = round(success * 100 / total, 2) if total else 0
+        item["percent"] = round(total * 100 / grand_total, 2) if grand_total else 0
+        item["running"] = item.get("running_count", 0)
+        item["pending"] = item.get("pending_count", 0)
+        item["failed"] = item.get("failed_count", 0)
+        data.append(item)
+    return jsonable(data)
+
+
+def task_trend(days: int = 7) -> list[dict[str, Any]]:
+    engine = postgres_engine()
+    safe_days = min(90, max(1, int(days or 7)))
+    if engine is None:
+        return []
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    WITH days AS (
+                        SELECT generate_series(
+                            CURRENT_DATE - ((:days - 1) * INTERVAL '1 day'),
+                            CURRENT_DATE,
+                            INTERVAL '1 day'
+                        )::date AS day
+                    ),
+                    stats AS (
+                        SELECT COALESCE(created_at, started_at, queued_at)::date AS day,
+                               COUNT(*) FILTER (WHERE status = 'success') AS success_count,
+                               COUNT(*) FILTER (WHERE status = 'failed') AS failed_count,
+                               COUNT(*) FILTER (WHERE status = 'running') AS running_count,
+                               COUNT(*) FILTER (WHERE status IN ('pending','queued','retrying','cancel_requested')) AS pending_count,
+                               COUNT(*) FILTER (WHERE status = 'timeout') AS timeout_count
+                        FROM task_runs
+                        WHERE COALESCE(created_at, started_at, queued_at) >= CURRENT_DATE - ((:days - 1) * INTERVAL '1 day')
+                        GROUP BY COALESCE(created_at, started_at, queued_at)::date
+                    )
+                    SELECT days.day AS date,
+                           COALESCE(stats.success_count, 0) AS success_count,
+                           COALESCE(stats.failed_count, 0) AS failed_count,
+                           COALESCE(stats.running_count, 0) AS running_count,
+                           COALESCE(stats.pending_count, 0) AS pending_count,
+                           COALESCE(stats.timeout_count, 0) AS timeout_count
+                    FROM days
+                    LEFT JOIN stats ON stats.day = days.day
+                    ORDER BY days.day
+                    """
+                ),
+                {"days": safe_days},
+            ).mappings().all()
+    except Exception as exc:
+        log_suppressed_exception("repositories.task.task_trend", exc, days=safe_days)
+        return []
+    data = []
+    for row in mapping_list(rows):
+        item = dict(row)
+        item["date"] = str(item.get("date") or "")
+        item["success"] = item.get("success_count", 0)
+        item["failed"] = item.get("failed_count", 0)
+        item["running"] = item.get("running_count", 0)
+        data.append(item)
+    return jsonable(data)
+
+
 def get_task_record(task_id: str) -> dict[str, Any] | None:
+    engine = postgres_engine()
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                row = conn.execute(
+                    text(
+                        """
+                        SELECT task_id, run_id, task_name, task_kind, task_kind AS kind,
+                               task_type, status, payload_json, created_at, queued_at,
+                               started_at, ended_at, finished_at, duration_seconds,
+                               error_code, error_message, error_detail, progress, message,
+                               created_by, retry_count, max_retries, result_ref, metadata_json,
+                               execution_mode, cancel_requested, cancel_reason, cancelled_at,
+                               timeout_seconds, timeout_at, parent_task_id, original_task_id,
+                               idempotency_key, payload_hash, dedupe_window_seconds,
+                               COALESCE(queue_name, 'default') AS queue_name,
+                               worker_id, worker_id AS worker_name, celery_task_id, updated_at
+                        FROM task_runs
+                        WHERE task_id = :task_id
+                        LIMIT 1
+                        """
+                    ),
+                    {"task_id": task_id},
+                ).mappings().first()
+            if row:
+                item = _task_row_to_payload(mapping_dict(row))
+                metadata = item.get("metadata") or {}
+                item["result_json"] = metadata.get("result") if isinstance(metadata, dict) else None
+                item["payload_json"] = item.get("payload") or {}
+                item["error_json"] = {
+                    "error_code": item.get("error_code") or "",
+                    "error_message": item.get("error_message") or "",
+                    "error_detail": item.get("error_detail") or "",
+                    "handling_suggestion": item.get("handling_suggestion") or handling_suggestion_for(item),
+                }
+                return item
+        except Exception as exc:
+            log_suppressed_exception("repositories.task.get_task_record", exc, task_id=task_id)
     for record in list_recent_tasks(limit=200):
         if record.get("task_id") == task_id:
             return record
@@ -283,6 +699,9 @@ def update_task_runtime_state(
     result_ref: str | None = None,
     metadata: dict[str, Any] | None = None,
     timeout_seconds: int | None = None,
+    progress: float | None = None,
+    worker_id: str = "",
+    celery_task_id: str = "",
     finish: bool = False,
 ) -> bool:
     current = get_task_record(task_id) or {}
@@ -292,6 +711,8 @@ def update_task_runtime_state(
     record["task_name"] = current.get("task_name") or record["kind"]
     record["status"] = status
     record["message"] = message or current.get("message") or status
+    if progress is not None:
+        record["progress"] = progress
     record["error_code"] = error_code if error_code else current.get("error_code") or ""
     record["error_message"] = error_message if error_message else current.get("error_message") or ""
     record["error_detail"] = error_detail if error_detail else current.get("error_detail") or ""
@@ -303,6 +724,10 @@ def update_task_runtime_state(
         record["retry_count"] = retry_count
     if timeout_seconds is not None:
         record["timeout_seconds"] = timeout_seconds
+    if worker_id:
+        record["worker_id"] = worker_id
+    if celery_task_id:
+        record["celery_task_id"] = celery_task_id
     if result_ref is not None:
         record["result_ref"] = result_ref
     if metadata is not None:

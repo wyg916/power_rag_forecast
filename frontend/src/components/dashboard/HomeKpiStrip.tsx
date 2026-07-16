@@ -46,7 +46,6 @@ export function HomeKpiStrip({ items = [] }: { items?: any[] }) {
               <strong>{displayValue(item)}</strong>
               {item.unit && item.key !== 'strategy_revenue' ? <span>{item.unit}</span> : null}
             </div>
-            <p>{item.trend_label || item.data_source || '真实接口数据'}</p>
           </article>
         );
       })}

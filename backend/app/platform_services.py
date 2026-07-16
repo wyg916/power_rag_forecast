@@ -35,23 +35,47 @@ def _insert_rows(table_name: str, rows: list[dict[str, Any]]) -> None:
         return
 
 
-def _forecast_frame() -> tuple[str, pd.DataFrame]:
-    payload = load_latest_forecast()
-    df = pd.DataFrame(payload.get("records") or [])
+def _forecast_frame(run_id: str = "latest") -> tuple[dict[str, Any], pd.DataFrame]:
+    from .source_contract import attach_source_meta, resolve_forecast_source
+
+    run, rows, meta = resolve_forecast_source(run_id)
+    payload = attach_source_meta(
+        {
+            "available": bool(rows),
+            "run_id": run.get("run_id"),
+            "records": rows,
+        },
+        meta,
+    )
+    df = pd.DataFrame(rows)
     if "datetime" in df.columns:
         df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
-    return str(payload.get("run_id") or "latest"), df
+    return payload, df
 
 
 def generate_strategy_advice(run_id: str = "latest", persist: bool = True) -> dict[str, Any]:
-    resolved_run_id, df = _forecast_frame()
-    run_id = resolved_run_id if run_id == "latest" else run_id
+    from .source_contract import SourceType, attach_source_meta, source_meta
+
+    forecast, df = _forecast_frame(run_id)
+    run_id = str(forecast.get("run_id") or run_id)
     if df.empty:
-        return {"run_id": run_id, "items": [], "message": "当前数据不足，无法生成策略建议。"}
+        return attach_source_meta(
+            {"run_id": forecast.get("run_id"), "available": False, "items": [], "message": "当前数据不足，无法生成策略建议。"},
+            source_meta(
+                SourceType.UNAVAILABLE,
+                "strategy",
+                run_id=forecast.get("run_id"),
+                unavailable_reason=(forecast.get("meta") or {}).get("unavailable_reason") or "forecast_unavailable",
+                evidence=list((forecast.get("meta") or {}).get("evidence") or []),
+            ),
+        )
 
     pcol = price_column(df)
     if not pcol:
-        return {"run_id": run_id, "items": [], "message": "预测结果缺少电价字段。"}
+        return attach_source_meta(
+            {"run_id": run_id, "available": False, "items": [], "message": "预测结果缺少电价字段。"},
+            source_meta(SourceType.UNAVAILABLE, "strategy", run_id=run_id, unavailable_reason="price_field_missing"),
+        )
     prices = pd.to_numeric(df[pcol], errors="coerce")
     p25 = float(prices.quantile(0.25))
     p75 = float(prices.quantile(0.75))
@@ -155,14 +179,44 @@ def generate_strategy_advice(run_id: str = "latest", persist: bool = True) -> di
             db_rows.append(row)
         _insert_rows("strategy_advice", db_rows)
         _write_local_json("strategy_advice_latest.json", {"run_id": run_id, "items": unique})
-    return {"run_id": run_id, "items": jsonable(unique), "thresholds": {"p25": p25, "p75": p75, "spread": spread}}
+    base_meta = forecast.get("meta") or {}
+    return attach_source_meta(
+        {
+            "run_id": run_id,
+            "available": bool(unique),
+            "items": jsonable(unique),
+            "thresholds": {"p25": p25, "p75": p75, "spread": spread},
+        },
+        source_meta(
+            SourceType.DERIVED,
+            "strategy",
+            run_id=run_id,
+            generated_at=base_meta.get("generated_at"),
+            model_version=base_meta.get("model_version"),
+            feature_version=base_meta.get("feature_version"),
+            schema_hash=base_meta.get("schema_hash"),
+            is_stale=bool(base_meta.get("is_stale")),
+            stale_reason=base_meta.get("stale_reason"),
+            evidence=list(base_meta.get("evidence") or []) + [{"derivation": "strategy_advice", "persisted": persist}],
+        ),
+    )
 
 
 def generate_anomaly_explanations(run_id: str = "latest", persist: bool = True) -> dict[str, Any]:
-    resolved_run_id, df = _forecast_frame()
-    run_id = resolved_run_id if run_id == "latest" else run_id
+    from .source_contract import SourceType, attach_source_meta, source_meta
+
+    forecast, df = _forecast_frame(run_id)
+    run_id = str(forecast.get("run_id") or run_id)
     if df.empty:
-        return {"run_id": run_id, "items": [], "message": "当前数据不足，无法生成异常解释。"}
+        return attach_source_meta(
+            {"run_id": forecast.get("run_id"), "available": False, "items": [], "message": "当前数据不足，无法生成异常解释。"},
+            source_meta(
+                SourceType.UNAVAILABLE,
+                "strategy",
+                run_id=forecast.get("run_id"),
+                unavailable_reason=(forecast.get("meta") or {}).get("unavailable_reason") or "forecast_unavailable",
+            ),
+        )
     pcol = price_column(df)
     if not pcol:
         return {"run_id": run_id, "items": [], "message": "预测结果缺少电价字段。"}
@@ -220,7 +274,22 @@ def generate_anomaly_explanations(run_id: str = "latest", persist: bool = True) 
             db_rows.append(row)
         _insert_rows("anomaly_explanations", db_rows)
         _write_local_json("anomaly_explanations_latest.json", {"run_id": run_id, "items": items})
-    return {"run_id": run_id, "items": jsonable(items)}
+    base_meta = forecast.get("meta") or {}
+    return attach_source_meta(
+        {"run_id": run_id, "available": bool(items), "items": jsonable(items)},
+        source_meta(
+            SourceType.DERIVED,
+            "strategy",
+            run_id=run_id,
+            generated_at=base_meta.get("generated_at"),
+            model_version=base_meta.get("model_version"),
+            feature_version=base_meta.get("feature_version"),
+            schema_hash=base_meta.get("schema_hash"),
+            is_stale=bool(base_meta.get("is_stale")),
+            stale_reason=base_meta.get("stale_reason"),
+            evidence=list(base_meta.get("evidence") or []) + [{"derivation": "anomaly_explanation", "persisted": persist}],
+        ),
+    )
 
 
 def answer_chat(
@@ -525,18 +594,51 @@ def get_chat_session(session_id: str) -> dict[str, Any]:
     return {"session_id": session_id, "messages": records(messages)}
 
 
+def _report_review_columns() -> set[str]:
+    engine = database_engine()
+    if engine is None:
+        return set()
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_name = 'report_reviews'
+                    """
+                )
+            ).mappings().all()
+        return {str(row.get("column_name")) for row in rows}
+    except Exception:
+        return set()
+
+
 def save_report_review(report_id: str, status: str, reviewer: str, comment: str) -> dict[str, Any]:
     report = report_status(report_id)
+    columns = _report_review_columns()
+    now = datetime.now().isoformat(sep=" ", timespec="seconds")
     row = {
         "report_id": report_id,
-        "run_id": report.get("run_id") or report_id,
-        "status": status,
         "reviewer": reviewer,
-        "review_comment": comment,
-        "version": 1,
-        "created_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
-        "updated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
+        "created_at": now,
     }
+    if "run_id" in columns:
+        row["run_id"] = report.get("run_id") or report_id
+    if "status" in columns:
+        row["status"] = status
+    if "action" in columns:
+        row["action"] = status
+    if "review_comment" in columns:
+        row["review_comment"] = comment
+    if "comment" in columns:
+        row["comment"] = comment
+    if "version" in columns:
+        row["version"] = 1
+    if "updated_at" in columns:
+        row["updated_at"] = now
+    if "metadata_json" in columns:
+        row["metadata_json"] = {"source": "ui_report_review"}
     _insert_rows("report_reviews", [row])
     local_path = project_paths().current_dir / "web_report_reviews.json"
     current = []
@@ -551,10 +653,29 @@ def save_report_review(report_id: str, status: str, reviewer: str, comment: str)
 
 
 def list_report_reviews(report_id: str) -> list[dict[str, Any]]:
-    df = query_dataframe(
-        "SELECT report_id, run_id, status, reviewer, review_comment, version, created_at, updated_at FROM report_reviews WHERE report_id = :report_id ORDER BY updated_at DESC",
-        {"report_id": report_id},
-    )
+    columns = _report_review_columns()
+    if columns:
+        run_id_expr = "run_id" if "run_id" in columns else "NULL AS run_id"
+        status_expr = "status" if "status" in columns else ("action AS status" if "action" in columns else "NULL AS status")
+        comment_expr = "review_comment" if "review_comment" in columns else ("comment AS review_comment" if "comment" in columns else "NULL AS review_comment")
+        version_expr = "version" if "version" in columns else "NULL AS version"
+        updated_expr = "updated_at" if "updated_at" in columns else "created_at AS updated_at"
+        order_expr = "updated_at" if "updated_at" in columns else "created_at"
+        df = query_dataframe(
+            f"""
+            SELECT report_id, {run_id_expr}, {status_expr}, reviewer,
+                   {comment_expr}, {version_expr}, created_at, {updated_expr}
+            FROM report_reviews
+            WHERE report_id = :report_id
+            ORDER BY {order_expr} DESC
+            """,
+            {"report_id": report_id},
+        )
+    else:
+        df = query_dataframe(
+            "SELECT report_id, run_id, status, reviewer, review_comment, version, created_at, updated_at FROM report_reviews WHERE report_id = :report_id ORDER BY updated_at DESC",
+            {"report_id": report_id},
+        )
     if not df.empty:
         return records(df)
     local = project_paths().current_dir / "web_report_reviews.json"

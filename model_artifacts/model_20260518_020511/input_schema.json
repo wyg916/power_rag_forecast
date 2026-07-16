@@ -1,0 +1,607 @@
+{
+  "target_col": "da_price",
+  "feature_version": "features_0eac6d42fec0",
+  "feature_count": 150,
+  "features": [
+    {
+      "name": "hour",
+      "dtype": "numeric"
+    },
+    {
+      "name": "day_of_week",
+      "dtype": "numeric"
+    },
+    {
+      "name": "month",
+      "dtype": "numeric"
+    },
+    {
+      "name": "day",
+      "dtype": "numeric"
+    },
+    {
+      "name": "year",
+      "dtype": "numeric"
+    },
+    {
+      "name": "day_of_year",
+      "dtype": "numeric"
+    },
+    {
+      "name": "week_of_year",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_weekend",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_month_start",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_month_end",
+      "dtype": "numeric"
+    },
+    {
+      "name": "hour_sin",
+      "dtype": "numeric"
+    },
+    {
+      "name": "hour_cos",
+      "dtype": "numeric"
+    },
+    {
+      "name": "dow_sin",
+      "dtype": "numeric"
+    },
+    {
+      "name": "dow_cos",
+      "dtype": "numeric"
+    },
+    {
+      "name": "month_sin",
+      "dtype": "numeric"
+    },
+    {
+      "name": "month_cos",
+      "dtype": "numeric"
+    },
+    {
+      "name": "doy_sin",
+      "dtype": "numeric"
+    },
+    {
+      "name": "doy_cos",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_issue_lead_hours",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_peak_hour",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_valley_hour",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_morning_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_evening_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "is_transition_hour",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_change_1h_safe",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_change_24h_safe",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_vs_hist24_ratio",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_change_1h_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_change_24h_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_hist_hour_mean",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_hist_hour_std",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_hist_dow_mean",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_hist_month_mean",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_hist_weekend_mean",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_2",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_3",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_6",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_12",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_18",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_25",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_72",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_96",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_169",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_hist_change_1h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_hist_change_24h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_hist_ratio_1h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_hist_ratio_24h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_spread_rt_minus_da_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_spread_rt_minus_da_lag_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_spread_rt_minus_da_lag_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_hist_gap_vs_yesterday_same_hour",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_hist_change_1h_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "price_gap_yesterday_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_lag_1_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_mean_6_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_hist_hour_mean_x_peak",
+      "dtype": "numeric"
+    },
+    {
+      "name": "recent_price_tightness",
+      "dtype": "numeric"
+    },
+    {
+      "name": "hourly_pressure_proxy",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_lag_2",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_lag_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_lag_25",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_lag_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_lag_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_lag_2",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_lag_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_lag_25",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_lag_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_lag_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_hist_change_1h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_hist_change_24h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_lag_2",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_lag_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_lag_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_lag_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "wind_speed_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "wind_speed_lag_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "wind_speed_lag_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "precipitation_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "precipitation_lag_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "precipitation_lag_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_lag_1_sq",
+      "dtype": "numeric"
+    },
+    {
+      "name": "cooling_degree_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "heating_degree_lag_1",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temp_hist_change_1h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temp_hist_change_24h",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_mean_6",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_std_6",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_median_6",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_mean_12",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_std_12",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_median_12",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_min_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_max_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_median_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_mean_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_std_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_median_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_std_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_min_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_max_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_roll_median_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_roll_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_roll_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_roll_median_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_roll_mean_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_roll_std_48",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_roll_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_roll_std_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_roll_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_roll_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_roll_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_roll_std_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_roll_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_roll_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_roll_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_roll_std_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "wind_speed_roll_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "wind_speed_roll_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "precipitation_roll_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "precipitation_roll_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_ewm_mean_6",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_ewm_std_6",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_ewm_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_ewm_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_ewm_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "da_price_ewm_std_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_ewm_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_ewm_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_ewm_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "forecast_load_ewm_std_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_ewm_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_ewm_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_ewm_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "actual_load_ewm_std_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_ewm_mean_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_ewm_std_24",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_ewm_mean_168",
+      "dtype": "numeric"
+    },
+    {
+      "name": "temperature_ewm_std_168",
+      "dtype": "numeric"
+    }
+  ]
+}

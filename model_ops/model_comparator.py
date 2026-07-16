@@ -6,7 +6,8 @@ from typing import Any
 import pandas as pd
 from sqlalchemy import text
 
-from database_utils import apply_database_migrations, create_database_engine, get_database_config, now_text
+from backend.app.services.model_fact_service import DEFAULT_MODEL_DOMAIN, DEFAULT_TARGET_NAME, ModelFactService
+from database_utils import create_database_engine, get_database_config, now_text
 
 
 @dataclass
@@ -37,37 +38,21 @@ def compare_latest_candidate(config: dict[str, Any], log=None) -> ComparisonDeci
     if not get_database_config(config).enabled:
         return ComparisonDecision("database_disabled", "数据库未启用，无法执行模型对比。", False)
 
-    apply_database_migrations(config, log=log)
     engine = create_database_engine(config)
-    with engine.begin() as conn:
-        candidate = conn.execute(
-            text(
-                """
-                SELECT model_version, test_rmse, peak_rmse, spike_rmse
-                FROM model_registry
-                WHERE status = 'candidate'
-                ORDER BY created_at DESC
-                LIMIT 1
-                """
-            )
-        ).mappings().fetchone()
-        active = conn.execute(
-            text(
-                """
-                SELECT model_version, test_rmse, peak_rmse, spike_rmse
-                FROM model_registry
-                WHERE is_active = 1
-                ORDER BY activated_at DESC, created_at DESC
-                LIMIT 1
-                """
-            )
-        ).mappings().fetchone()
-        if not candidate or not active:
-            return ComparisonDecision("insufficient_models", "缺少 candidate 或 active 模型，无法自动对比。", False)
+    model_cfg = config.get("model_learning", {}) or {}
+    domain = str(model_cfg.get("domain") or DEFAULT_MODEL_DOMAIN).strip().lower()
+    target_name = str(model_cfg.get("target_name") or DEFAULT_TARGET_NAME).strip()
+    facts = ModelFactService(engine)
+    models = facts.list_models(domain, target_name)
+    candidate = next((item for item in models if item.get("status") == "candidate"), None)
+    active = facts.get_active_model(domain, target_name)
+    if not candidate or not active:
+        return ComparisonDecision("insufficient_models", "缺少 candidate 或 active 模型，无法自动对比。", False)
 
-        decision = compare_candidate_to_active(dict(candidate), dict(active))
-        decision.candidate_model_version = str(candidate["model_version"])
-        decision.active_model_version = str(active["model_version"])
+    decision = compare_candidate_to_active(candidate, active)
+    decision.candidate_model_version = str(candidate["model_version"])
+    decision.active_model_version = str(active["model_version"])
+    with engine.begin() as conn:
         conn.execute(
             text(
                 """

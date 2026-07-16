@@ -136,56 +136,40 @@ def risk_probability_column(df: pd.DataFrame) -> str | None:
 
 def load_latest_forecast() -> dict[str, Any]:
     try:
-        from .repositories.forecast_repository import load_latest_forecast_from_postgres
+        from .source_contract import attach_source_meta, resolve_forecast_source
 
-        postgres_payload = load_latest_forecast_from_postgres()
-        if postgres_payload and postgres_payload.get("available"):
-            return postgres_payload
+        run, rows, meta = resolve_forecast_source("latest")
+        if rows:
+            return attach_source_meta(
+                {
+                    "run_id": run.get("run_id"),
+                    "source": "postgresql.forecast_runs",
+                    "available": True,
+                    "generated_at": meta.get("generated_at"),
+                    "price_column": "predicted_price",
+                    "risk_probability_column": "spike_risk_prob",
+                    "summary": forecast_summary(pd.DataFrame(rows), "predicted_price"),
+                    "records": rows,
+                    "model_version": run.get("model_version"),
+                    "feature_version": run.get("feature_version"),
+                    "artifact_id": run.get("artifact_id"),
+                    "result_hash": run.get("result_hash"),
+                },
+                meta,
+            )
     except Exception as exc:
         log_suppressed_exception("data_access.load_latest_forecast.postgres", exc)
 
-    paths = project_paths()
-    path = paths.result_table_dir / FORECAST_FILE
-    df = read_excel_safe(path)
-    if df.empty:
-        return {
-            "run_id": "latest",
-            "source": str(path),
-            "available": False,
-            "message": "未找到可用的未来 24 小时正式预测结果。",
-            "summary": {},
-            "records": [],
-        }
+    from .source_contract import unavailable_payload
 
-    if "datetime" in df.columns:
-        df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
-    pcol = price_column(df)
-    if pcol:
-        df["__price"] = pd.to_numeric(df[pcol], errors="coerce")
-    else:
-        df["__price"] = pd.NA
-    prob_col = risk_probability_column(df)
-    if prob_col:
-        df["__risk_prob"] = pd.to_numeric(df[prob_col], errors="coerce").fillna(0)
-    else:
-        df["__risk_prob"] = 0.0
-    if "risk_level" not in df.columns:
-        df["risk_level"] = df["__risk_prob"].map(lambda v: "high" if v >= 0.5 else ("medium" if v >= 0.2 else "low"))
-
-    summary = forecast_summary(df, pcol)
-    summary_path = paths.current_dir / "ai_input_summary.json"
-    ai_summary = read_json_safe(summary_path)
-    run_id = str(ai_summary.get("run_id") or df.get("run_id", pd.Series(["latest"])).iloc[0] if not df.empty else "latest")
-    return {
-        "run_id": run_id,
-        "source": str(path),
-        "available": True,
-        "generated_at": datetime.fromtimestamp(path.stat().st_mtime).isoformat(sep=" "),
-        "price_column": pcol,
-        "risk_probability_column": prob_col,
-        "summary": summary,
-        "records": records(df.drop(columns=[c for c in ["__price", "__risk_prob"] if c in df.columns])),
-    }
+    payload = unavailable_payload(
+        "electricity_day_ahead_price",
+        "no_successful_run",
+        message="暂无满足 24 行完整性要求的成功预测批次。",
+        evidence=[{"table": "forecast_runs", "selection": "latest_success"}],
+    )
+    payload.update({"source": "postgresql.forecast_runs", "summary": {}, "records": []})
+    return payload
 
 
 def forecast_summary(df: pd.DataFrame, pcol: str | None = None) -> dict[str, Any]:
@@ -233,6 +217,7 @@ def latest_business_summary() -> list[dict[str, Any]]:
 
 def data_status() -> dict[str, Any]:
     paths = project_paths()
+    settings = get_settings()
     sources = [
         ("日前价格", paths.data_dir / "da_price_raw.xlsx", "raw_da_price", "datetime", "da_price"),
         ("实时价格", paths.data_dir / "rt_price_raw.xlsx", "raw_rt_price", "datetime", "rt_price"),
@@ -244,7 +229,7 @@ def data_status() -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     for name, path, table_name, dt_col, value_col in sources:
         status = database_table_status(table_name, dt_col, value_col)
-        if not status.get("available"):
+        if not status.get("available") and settings.database_allow_legacy_fallback:
             status = excel_status_quick(path, dt_col, value_col)
         if not status.get("available"):
             source_info = DATA_SOURCE_CATALOG.get(name, {})
@@ -568,49 +553,25 @@ def database_table_rows(table_name: str, search: str | None = None, limit: int =
     }
 
 
-def model_status() -> dict[str, Any]:
+def model_status(domain: str = "price", target_name: str = "da_price") -> dict[str, Any]:
     try:
         from .repositories.model_repository import model_status_from_postgres
 
-        postgres_payload = model_status_from_postgres()
-        if postgres_payload:
+        postgres_payload = model_status_from_postgres(domain=domain, target_name=target_name)
+        if postgres_payload is not None:
             return postgres_payload
     except Exception as exc:
         log_suppressed_exception("data_access.model_status.postgres", exc)
-
-    active = query_dataframe(
-        """
-        SELECT *
-        FROM model_registry
-        WHERE is_active = 1
-        ORDER BY activated_at DESC, created_at DESC
-        LIMIT 1
-        """
-    )
-    registry = query_dataframe(
-        """
-        SELECT model_version, status, is_active, test_mae, test_rmse, peak_rmse, spike_rmse, feature_version, created_at, activated_at, artifact_path
-        FROM model_registry
-        ORDER BY created_at DESC
-        LIMIT 20
-        """
-    )
-    errors = query_dataframe(
-        """
-        SELECT model_version, COUNT(*) AS sample_count, AVG(abs_error) AS mae, MAX(created_at) AS latest_record
-        FROM prediction_tracking
-        WHERE actual_price IS NOT NULL
-        GROUP BY model_version
-        ORDER BY latest_record DESC
-        LIMIT 20
-        """
-    )
-    active_record = active.iloc[0].to_dict() if not active.empty else {}
     return {
-        "active": jsonable(active_record),
-        "versions": records(registry),
-        "errors": records(errors),
-        "source": "database" if not registry.empty or active_record else "local",
+        "active": {},
+        "versions": [],
+        "errors": [],
+        "available": False,
+        "empty_state": "model_registry 不可用或当前没有可查询模型",
+        "domain": domain,
+        "target_name": target_name,
+        "source": "model_registry",
+        "source_type": "unavailable",
     }
 
 
@@ -624,20 +585,18 @@ def report_status(report_id: str = "latest") -> dict[str, Any]:
     except Exception as exc:
         log_suppressed_exception("data_access.report_status.postgres", exc, report_id=report_id)
 
-    paths = project_paths()
-    report_path = paths.current_dir / "电价智能分析综合报告.docx"
-    structured = read_json_safe(paths.current_dir / "ai_report_structured.json")
-    ai_summary = read_json_safe(paths.current_dir / "ai_input_summary.json")
-    rid = str(ai_summary.get("run_id") or report_id or "latest")
     return {
-        "report_id": rid if report_id == "latest" else report_id,
-        "run_id": rid,
-        "available": report_path.exists(),
-        "report_path": str(report_path),
-        "generated_at": datetime.fromtimestamp(report_path.stat().st_mtime).isoformat(sep=" ") if report_path.exists() else None,
-        "fallback_used": bool(structured.get("fallback_used", False)),
-        "summary": structured,
-        "source": str(paths.current_dir),
+        "report_id": None if report_id == "latest" else report_id,
+        "run_id": None,
+        "available": False,
+        "report_path": "",
+        "generated_at": None,
+        "fallback_used": False,
+        "summary": {},
+        "source": "postgresql.report_runs",
+        "source_type": "unavailable",
+        "unavailable_reason": "report_not_found",
+        "message": "当前没有可查询的数据库报告记录；不会回退 current/latest 文件。",
     }
 
 

@@ -1,101 +1,86 @@
-import { dataMock } from '../mock/dataMock';
 import { api } from '../api';
-import { mockFallback, withServiceState } from './serviceState';
+import { errorMessage, withServiceState } from './serviceState';
+
+function average(values: unknown[]) {
+  const valid = values.map(Number).filter(Number.isFinite);
+  return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : null;
+}
 
 export async function getDataCenterData() {
-  try {
-    const partialErrors: string[] = [];
-    const [status, quality, tables, importExport, catalog, freshness] = await Promise.all([
-      api.dataStatus(),
-      api.dataQuality().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.databaseTables().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.importExportRecords().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.dataCatalog(true).catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      }),
-      api.dataFreshness().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
-      })
-    ]);
-    const sources = Array.isArray(status?.sources) ? status.sources : [];
-    const qualityItems = Array.isArray(quality?.items) ? quality.items : [];
-    const tableRows = Array.isArray(tables?.tables) ? tables.tables : [];
-    const records = Array.isArray(importExport?.records) ? importExport.records : [];
-    const catalogRows = Array.isArray(catalog?.datasets) ? catalog.datasets : [];
-    const freshnessItems = Array.isArray(freshness?.items) ? freshness.items : [];
-    const missingRate = Number(quality?.summary?.avg_missing_rate || 0);
-    const passRate = Number(quality?.summary?.avg_check_pass_rate || 100);
-    const exceptionCount = Number(quality?.summary?.exception_count || 0);
-    const freshnessProblems = freshnessItems.filter((item: any) => item.status !== 'ok').length;
-    return withServiceState({
-      ...dataMock,
-      dataSource: tables?.available ? 'postgresql' : 'file_fallback',
-      metrics: [
-        { ...dataMock.metrics[0], value: catalogRows.length || sources.length || tableRows.length, note: '来自 P1 数据目录' },
-        { ...dataMock.metrics[1], value: records.length, note: `异常 ${exceptionCount}` },
-        { ...dataMock.metrics[2], value: exceptionCount || freshnessProblems },
-        { ...dataMock.metrics[3], value: passRate.toFixed(2), unit: '%' }
-      ],
-      flow: sources.length
-        ? sources.map((item: any) => [
-            item.name || '--',
-            item.source || item.internal_file || 'file_fallback',
-            String(item.latest_time || item.updated_at || '--').slice(11, 19) || '--',
-            item.status || '--'
-          ])
-        : dataMock.flow,
-      qualityCharts: [
-        { title: '缺失率', value: `${missingRate.toFixed(2)}%`, data: qualityItems.map((item: any) => Number(item.missing_rate || 0)).slice(0, 10) },
-        { title: '重复率', value: '0.00%', data: qualityItems.map(() => 0).slice(0, 10) },
-        { title: '数据新鲜度', value: `${Math.round(qualityItems.reduce((sum: number, item: any) => sum + Number(item.freshness_score || 0), 0) / Math.max(qualityItems.length, 1))}%`, data: qualityItems.map((item: any) => Number(item.freshness_score || 0)).slice(0, 10) },
-        { title: '校验通过率', value: `${passRate.toFixed(2)}%`, data: qualityItems.map((item: any) => Number(item.check_pass_rate || 0)).slice(0, 10) }
-      ],
-      qualityItems,
-      exceptions: quality?.exceptions || [],
-      tables: tableRows.length
-        ? tableRows.map((row: any) => [
-            row.table_name,
-            row.sample_columns || '--',
-            tables.available ? 'postgresql' : 'file_fallback',
-            row.primary_key || '--',
-            row.rows ?? '--',
-            row.columns ?? '--'
-          ])
-        : dataMock.tables,
-      rawTables: tableRows,
-      catalog: catalogRows,
-      freshnessItems,
-      catalogVersion: catalog?.catalog_version || freshness?.catalog_version || '',
-      imports: records.length
-        ? records.map((row: any) => [
-            row.type || '--',
-            row.name || row.record_id || '--',
-            row.status || '--',
-            row.rows || '--',
-            row.started_at || '--',
-            row.duration_seconds || '--',
-            row.error_message || ''
-          ])
-        : dataMock.imports,
-      rawImportExportRecords: records
-    }, {
-      empty: !sources.length && !tableRows.length && !records.length && !catalogRows.length,
-      mockFallback: !sources.length && !tableRows.length && !catalogRows.length,
-      fallbackReason: !sources.length && !tableRows.length && !catalogRows.length ? '数据状态、数据目录和数据库表接口未返回真实记录，数据中心展示本地兜底结构。' : undefined,
-      partialErrors
-    });
-  } catch (error) {
-    return mockFallback(dataMock, error, '数据中心真实接口请求失败，已切换到本地兜底数据。');
-  }
+  const partialErrors: string[] = [];
+  const safe = async <T>(label: string, loader: () => Promise<T>): Promise<T | null> => {
+    try {
+      return await loader();
+    } catch (error) {
+      partialErrors.push(`${label}: ${errorMessage(error)}`);
+      return null;
+    }
+  };
+
+  const [status, quality, tables, importExport, catalog, freshness] = await Promise.all([
+    safe('dataStatus', api.dataStatus),
+    safe('dataQuality', api.dataQuality),
+    safe('databaseTables', api.databaseTables),
+    safe('importExportRecords', api.importExportRecords),
+    safe('dataCatalog', () => api.dataCatalog(true)),
+    safe('dataFreshness', api.dataFreshness)
+  ]);
+
+  const sources = Array.isArray(status?.sources) ? status.sources : [];
+  const qualityItems = Array.isArray(quality?.items) ? quality.items : [];
+  const exceptions = Array.isArray(quality?.exceptions) ? quality.exceptions : [];
+  const tableRows = Array.isArray(tables?.tables) ? tables.tables : [];
+  const records = Array.isArray(importExport?.records) ? importExport.records : [];
+  const catalogRows = Array.isArray(catalog?.datasets) ? catalog.datasets : [];
+  const freshnessItems = Array.isArray(freshness?.items) ? freshness.items : [];
+  const freshnessProblems = freshnessItems.filter((item: any) => item.status !== 'ok');
+  const totalRows = freshnessItems.reduce((sum: number, item: any) => sum + Number(item.row_count || 0), 0);
+  const missingRate = Number(quality?.summary?.avg_missing_rate || 0);
+  const duplicateRate = average(qualityItems.map((item: any) => item.duplicate_rate)) ?? 0;
+  const passRate = Number(quality?.summary?.avg_check_pass_rate || 0);
+  const freshnessScore = average(qualityItems.map((item: any) => item.freshness_score));
+  const exceptionCount = Number(quality?.summary?.exception_count ?? exceptions.length);
+
+  const imports = records.map((row: any, index: number) => ({
+    key: row.record_id || row.task_id || String(index),
+    type: row.type || row.task_kind || '--',
+    name: row.name || row.task_name || row.record_id || '--',
+    status: row.status || '--',
+    rows: Number(row.rows || row.row_count || 0),
+    startedAt: row.started_at || row.created_at || '--',
+    duration: row.duration_seconds == null ? '--' : `${row.duration_seconds}s`,
+    error: row.error_message || ''
+  }));
+
+  return withServiceState({
+    available: Boolean(sources.length || catalogRows.length || tableRows.length),
+    dataSource: tables?.available ? 'postgresql' : 'api_data',
+    sources,
+    qualityItems,
+    exceptions,
+    tables: tableRows,
+    catalog: catalogRows,
+    freshnessItems,
+    freshnessProblems,
+    imports,
+    catalogVersion: catalog?.catalog_version || freshness?.catalog_version || '',
+    checkedAt: freshness?.checked_at || '',
+    summary: {
+      sourceCount: Number(quality?.summary?.source_count || sources.length),
+      catalogCount: catalogRows.length,
+      tableCount: tableRows.length,
+      syncCount: imports.length,
+      exceptionCount,
+      missingRate,
+      duplicateRate,
+      passRate,
+      freshnessScore,
+      freshnessProblemCount: freshnessProblems.length,
+      totalRows
+    }
+  }, {
+    empty: !sources.length && !catalogRows.length && !tableRows.length,
+    mockFallback: false,
+    partialErrors
+  });
 }

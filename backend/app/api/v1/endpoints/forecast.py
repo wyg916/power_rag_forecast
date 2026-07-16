@@ -6,10 +6,23 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ....core.security import CurrentUser, require_permission
 from ....data_access import dashboard_summary, load_latest_forecast
+from ....repositories.forecast_repository import (
+    get_forecast_run,
+    latest_successful_run,
+    list_forecast_runs,
+    load_forecast_results,
+)
 from ....repositories.audit_repository import write_audit_log
 from ....services.dashboard_home_service import dashboard_kpi_payload, forecast_24h_payload, risk_summary_payload
 from ....workers.dispatcher import enqueue_task
 from ....schemas import ForecastRunRequest
+from ....source_contract import (
+    SourceType,
+    attach_source_meta,
+    forecast_context_payload,
+    resolve_forecast_source,
+    source_meta,
+)
 from ....stage1_services import (
     load_forecast,
     market_history,
@@ -26,19 +39,30 @@ from ....task_manager import task_manager
 router = APIRouter()
 
 
+def _with_latest_meta(payload: dict, *, derived: bool = False) -> dict:
+    _, _, meta = resolve_forecast_source("latest")
+    if derived and meta.get("source_type") in {"real", "historical"}:
+        meta = {
+            **meta,
+            "source_type": SourceType.DERIVED.value,
+            "evidence": list(meta.get("evidence") or []) + [{"derivation": "api_projection"}],
+        }
+    return attach_source_meta(payload, meta)
+
+
 @router.get("/api/dashboard/summary")
 def dashboard() -> dict:
-    return dashboard_summary()
+    return _with_latest_meta(dashboard_summary(), derived=True)
 
 
 @router.get("/api/dashboard/kpi")
 def dashboard_kpi() -> dict:
-    return dashboard_kpi_payload()
+    return _with_latest_meta(dashboard_kpi_payload(), derived=True)
 
 
 @router.get("/api/risk/summary")
 def risk_summary() -> dict:
-    return risk_summary_payload()
+    return _with_latest_meta(risk_summary_payload(), derived=True)
 
 
 @router.post("/api/forecast/run")
@@ -69,9 +93,71 @@ def latest_forecast() -> dict:
     return load_latest_forecast()
 
 
+@router.get("/api/forecast/runs")
+def forecast_runs(status: str | None = None, limit: int = 50) -> dict:
+    items = list_forecast_runs(status=status, limit=limit)
+    meta = source_meta(
+        SourceType.HISTORICAL if items else SourceType.UNAVAILABLE,
+        "electricity_day_ahead_price",
+        generated_at=items[0].get("finished_at") or items[0].get("created_at") if items else None,
+        evidence=[{"table": "forecast_runs", "record_count": len(items)}],
+        unavailable_reason=None if items else "no_forecast_runs",
+    )
+    return attach_source_meta({"available": bool(items), "items": items}, meta)
+
+
+@router.get("/api/forecast/runs/latest-success")
+def forecast_latest_success() -> dict:
+    context = forecast_context_payload("latest")
+    if not context.get("available"):
+        context["message"] = "暂无成功且恰好包含 24 行结果的预测批次。"
+        return context
+    run = latest_successful_run()
+    return attach_source_meta({"available": True, "run": run}, context["meta"])
+
+
+@router.get("/api/forecast/runs/{run_id}")
+def forecast_run_detail(run_id: str) -> dict:
+    run, _, meta = resolve_forecast_source(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="预测批次不存在")
+    return attach_source_meta({"available": meta.get("source_type") != "unavailable", "run": run}, meta)
+
+
+@router.get("/api/forecast/runs/{run_id}/results")
+def forecast_run_results(run_id: str) -> dict:
+    run, rows, meta = resolve_forecast_source(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="预测批次不存在")
+    return attach_source_meta(
+        {
+            "available": bool(rows),
+            "run_id": run_id,
+            "status": run.get("status"),
+            "record_count": len(rows),
+            "model_version": run.get("model_version"),
+            "feature_version": run.get("feature_version"),
+            "generated_at": run.get("finished_at") or run.get("created_at"),
+            "records": rows,
+        },
+        meta,
+    )
+
+
+@router.get("/api/source/context")
+def source_context(
+    domain: str = "electricity_day_ahead_price",
+    run_id: str = "latest",
+) -> dict:
+    try:
+        return forecast_context_payload(run_id, domain=domain)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="不支持的数据域；不会自动猜测或跨域回退。") from exc
+
+
 @router.get("/api/forecast/24h")
 def forecast_24h() -> dict:
-    return forecast_24h_payload()
+    return _with_latest_meta(forecast_24h_payload(), derived=True)
 
 
 @router.get("/api/prediction/latest")
@@ -116,10 +202,26 @@ def stage1_risk_level(market: str | None = None, date: str | None = None) -> dic
 
 @router.get("/api/forecast/{run_id}")
 def forecast_by_run(run_id: str) -> dict:
-    payload = load_latest_forecast()
-    if run_id != "latest" and run_id != payload.get("run_id"):
-        payload["message"] = "当前本地文件只保留最新预测明细；历史 run_id 请从数据库或归档目录查询。"
-    return payload
+    if run_id == "latest":
+        return load_latest_forecast()
+    run, rows, meta = resolve_forecast_source(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="预测批次不存在")
+    return attach_source_meta(
+        {
+            "run_id": run_id,
+            "status": run.get("status"),
+            "available": bool(rows),
+            "source": "postgresql.forecast_runs",
+            "generated_at": run.get("finished_at") or run.get("created_at"),
+            "model_version": run.get("model_version"),
+            "feature_version": run.get("feature_version"),
+            "result_hash": run.get("result_hash"),
+            "summary": {},
+            "records": rows,
+        },
+        meta,
+    )
 
 
 @router.get("/api/forecast/{run_id}/hour/{hour}")
@@ -135,4 +237,7 @@ def forecast_hour(run_id: str, hour: str) -> dict:
             matched.append(row)
     if not matched:
         raise HTTPException(status_code=404, detail="未找到该小时预测数据")
-    return {"run_id": payload.get("run_id"), "hour": hour, "records": matched}
+    return attach_source_meta(
+        {"run_id": payload.get("run_id"), "hour": hour, "records": matched},
+        payload.get("meta") or source_meta(SourceType.UNAVAILABLE, "electricity_day_ahead_price", unavailable_reason="meta_missing"),
+    )

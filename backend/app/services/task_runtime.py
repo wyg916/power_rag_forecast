@@ -37,11 +37,17 @@ TASK_POLICIES: dict[str, TaskRuntimePolicy] = {
     "retrain_model": TaskRuntimePolicy(timeout_seconds=3600, max_retries=1, queue_name="forecast", dedupe_window_seconds=3600),
     "model_auto_optimize": TaskRuntimePolicy(timeout_seconds=3600, max_retries=1, queue_name="forecast", dedupe_window_seconds=3600),
     "health_check": TaskRuntimePolicy(timeout_seconds=300, max_retries=1, queue_name="default", dedupe_window_seconds=300),
+    "data_clean": TaskRuntimePolicy(timeout_seconds=1800, max_retries=3, queue_name="data_clean", dedupe_window_seconds=1800),
+    "price_predict": TaskRuntimePolicy(timeout_seconds=1800, max_retries=2, queue_name="price_predict", dedupe_window_seconds=900),
+    "load_predict": TaskRuntimePolicy(timeout_seconds=1800, max_retries=2, queue_name="load_predict", dedupe_window_seconds=900),
+    "strategy_gen": TaskRuntimePolicy(timeout_seconds=1200, max_retries=2, queue_name="strategy_gen", dedupe_window_seconds=900),
+    "report_daily": TaskRuntimePolicy(timeout_seconds=900, max_retries=2, queue_name="report_daily", dedupe_window_seconds=1200),
+    "monitor_rt": TaskRuntimePolicy(timeout_seconds=600, max_retries=3, queue_name="monitor_rt", dedupe_window_seconds=300),
+    "model_train": TaskRuntimePolicy(timeout_seconds=3600, max_retries=1, queue_name="model_train", dedupe_window_seconds=3600),
 }
 
 
 TASK_KIND_ALIASES = {
-    "data_sync": "sync_core_data",
     "forecast_run": "fast_forecast",
 }
 
@@ -57,6 +63,8 @@ def normalize_status(status: str | None) -> str:
         return "success"
     if value in {"error", "exception"}:
         return "failed"
+    if value == "canceled":
+        return "cancelled"
     if value in {"cancelling", "cancel_requested"}:
         return "cancel_requested"
     return value if value in TASK_STATUSES else value or "pending"

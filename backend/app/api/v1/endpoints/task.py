@@ -6,13 +6,28 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
-from ....repositories.task_repository import append_task_log, get_task_record, list_recent_tasks, list_task_log_entries, task_log_text, update_task_runtime_state
+from ....repositories.task_repository import (
+    append_task_log,
+    create_pending_task_record,
+    get_task_record,
+    list_recent_tasks,
+    list_task_log_entries,
+    list_task_runs,
+    queue_overview,
+    recent_task_logs,
+    retry_task_candidates,
+    task_log_text,
+    task_overview,
+    task_trend,
+    update_task_runtime_state,
+)
 from ....schedule_service import create_scheduled_task, delete_scheduled_task, list_scheduled_tasks
 from ....schemas import ScheduledTaskCreateRequest, TaskCreateRequest, TaskRunRequest
 from ....services.dashboard_home_service import task_recent_payload
 from ....services.task_runtime import normalize_task_kind, task_policy
 from ....task_manager import task_manager
-from ....workers.dispatcher import enqueue_task, task_runtime_health
+from ....workers.dispatcher import BUSINESS_TASK_KINDS, enqueue_task, task_runtime_health
+from ....workers.task_commands import command_for_kind
 
 
 router = APIRouter()
@@ -72,8 +87,56 @@ def task_create(
     return result
 
 
+@router.get("/api/tasks/overview")
+def task_center_overview() -> dict:
+    return task_overview()
+
+
+@router.get("/api/tasks/runs")
+def task_runs(
+    task_type: str = Query(default=""),
+    status: str = Query(default=""),
+    queue_name: str = Query(default=""),
+    keyword: str = Query(default=""),
+    start_date: str = Query(default=""),
+    end_date: str = Query(default=""),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=200),
+) -> dict:
+    return list_task_runs(
+        task_type=task_type,
+        status=status,
+        queue_name=queue_name,
+        keyword=keyword,
+        start_date=start_date,
+        end_date=end_date,
+        page=page,
+        page_size=page_size,
+    )
+
+
 @router.get("/api/tasks")
-def task_list() -> dict:
+def task_list(
+    task_type: str = Query(default=""),
+    status: str = Query(default=""),
+    queue_name: str = Query(default=""),
+    keyword: str = Query(default=""),
+    start_date: str = Query(default=""),
+    end_date: str = Query(default=""),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=100, ge=1, le=200),
+) -> dict:
+    if any([task_type, status, queue_name, keyword, start_date, end_date]) or page != 1 or page_size != 100:
+        return list_task_runs(
+            task_type=task_type,
+            status=status,
+            queue_name=queue_name,
+            keyword=keyword,
+            start_date=start_date,
+            end_date=end_date,
+            page=page,
+            page_size=page_size,
+        )
     memory_rows = task_manager.list()
     merged = {row.get("task_id"): row for row in list_recent_tasks(limit=100)}
     for row in memory_rows:
@@ -86,6 +149,83 @@ def task_list() -> dict:
 @router.get("/api/tasks/health")
 def task_health() -> dict:
     return task_runtime_health()
+
+
+@router.get("/api/tasks/logs/recent")
+def task_logs_recent(
+    limit: int = Query(default=20, ge=1, le=200),
+    task_id: str = Query(default=""),
+    queue_name: str = Query(default=""),
+    level: str = Query(default=""),
+) -> dict:
+    return {"items": recent_task_logs(limit=limit, task_id=task_id, queue_name=queue_name, level=level)}
+
+
+@router.get("/api/tasks/retry/recent")
+def task_retry_recent(limit: int = Query(default=20, ge=1, le=200)) -> dict:
+    return {"items": retry_task_candidates(limit=limit)}
+
+
+@router.get("/api/tasks/queues/overview")
+def task_queues_overview() -> dict:
+    return {"items": queue_overview()}
+
+
+@router.get("/api/tasks/trend")
+def task_trend_api(days: int = Query(default=7, ge=1, le=90)) -> dict:
+    return {"items": task_trend(days=days)}
+
+
+@router.post("/api/tasks/start")
+def task_start(
+    payload: dict,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("task:run"))],
+) -> dict:
+    kind = normalize_task_kind(str(payload.get("task_type") or payload.get("task_kind") or payload.get("kind") or "health_check"))
+    task_payload = dict(payload.get("payload") or {})
+    task_payload.setdefault("created_by", getattr(user, "username", "web_user"))
+    dispatch_error = ""
+    can_dispatch = kind in {"knowledge_import", "embedding_refresh", "report_generate", "sync_core_data"} | BUSINESS_TASK_KINDS
+    if not can_dispatch:
+        try:
+            command_for_kind(kind)
+            can_dispatch = True
+        except Exception as exc:
+            dispatch_error = str(exc)
+    if can_dispatch:
+        try:
+            result = enqueue_task(kind, task_payload)
+        except Exception as exc:
+            dispatch_error = str(exc)
+            result = create_pending_task_record(
+                kind=kind,
+                task_name=str(payload.get("task_name") or kind),
+                payload=task_payload,
+                queue_name=str(payload.get("queue_name") or ""),
+                execution_mode="db_pending",
+                created_by=getattr(user, "username", "web_user"),
+            )
+    else:
+        result = create_pending_task_record(
+            kind=kind,
+            task_name=str(payload.get("task_name") or kind),
+            payload=task_payload,
+            queue_name=str(payload.get("queue_name") or ""),
+            execution_mode="db_pending",
+            created_by=getattr(user, "username", "web_user"),
+        )
+    if dispatch_error:
+        result["dispatch_fallback_reason"] = dispatch_error[:300]
+    write_audit_log(
+        action="task.start",
+        user=user,
+        resource_type="task",
+        resource_id=str(result.get("task_id") or kind),
+        ip_address=request.client.host if request.client else "",
+        metadata={"kind": kind, "task": result},
+    )
+    return result
 
 
 @router.get("/api/task/recent")
@@ -224,7 +364,19 @@ def task_retry(
     payload["original_task_id"] = record.get("original_task_id") or task_id
     payload["retry_count"] = retry_count + 1
     payload["force_new"] = True
-    result = _enqueue_or_503(kind, payload)
+    try:
+        result = enqueue_task(kind, payload)
+    except Exception as exc:
+        result = create_pending_task_record(
+            kind=kind,
+            task_name=str(record.get("task_name") or kind),
+            payload=payload,
+            queue_name=str(record.get("queue_name") or ""),
+            execution_mode="db_pending_retry",
+            created_by=getattr(user, "username", "web_user"),
+            retry_of=task_id,
+        )
+        result["dispatch_fallback_reason"] = str(exc)[:300]
     append_task_log(
         task_id,
         level="info",

@@ -1,0 +1,10 @@
+{
+  "best_alpha": 0.0,
+  "best_peak_floor": 0.0,
+  "spike_thresholds": {
+    "global_q90": 89.8076978,
+    "global_q95": 123.13001499999989,
+    "peak_q80": 72.1056484,
+    "morning_q80": 58.2814634
+  }
+}

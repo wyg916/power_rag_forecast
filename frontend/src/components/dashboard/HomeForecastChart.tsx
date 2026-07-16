@@ -1,7 +1,6 @@
-import { Empty, Space, Tag } from 'antd';
+import { Empty, Tag } from 'antd';
 import { AppChart } from '../charts/AppChart';
 import { baseGrid, chartColors } from '../charts/chartTheme';
-import { HomeSourceTag } from './HomeDataState';
 import { formatNumber } from './utils';
 
 function rangeFromItems(series: any[], items: any[]) {
@@ -24,7 +23,7 @@ export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: a
             <p>接口未返回可绘制的 24 小时预测数据。</p>
           </div>
         </div>
-        <Empty description="暂无真实预测数据" />
+        <Empty description="暂无预测数据" />
       </div>
     );
   }
@@ -39,7 +38,7 @@ export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: a
     ...baseGrid(),
     legend: {
       top: 2,
-      left: 0,
+      left: '56%',
       itemWidth: 18,
       data: ['预测电价', '预测负荷', '尖峰风险概率', '置信区间']
     },
@@ -115,10 +114,9 @@ export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: a
             高风险 {risk?.high_risk_count || 0} 个窗口，峰谷价差 {formatNumber(summary.peak_valley_spread, 3)} 元/kWh。
           </p>
         </div>
-        <Space wrap>
+        <div className="home-chart-meta">
           <Tag color="success">单位：元/kWh</Tag>
-          <HomeSourceTag source={forecast?.data_source} />
-        </Space>
+        </div>
       </div>
       <AppChart option={option} height="100%" />
     </div>

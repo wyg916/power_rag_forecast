@@ -1,8 +1,5 @@
 import { api } from '../api';
-import { taskMock } from '../mock/taskMock';
-import { mockFallback, withServiceState } from './serviceState';
-
-const activeStatuses = new Set(['pending', 'queued', 'running', 'retrying', 'cancel_requested']);
+import { errorMessage, withServiceState } from './serviceState';
 
 export function statusText(status: unknown) {
   const value = String(status || '').toLowerCase();
@@ -25,62 +22,103 @@ export function durationText(value: unknown) {
   return `${Math.floor(seconds / 60)}m${Math.round(seconds % 60)}s`;
 }
 
-export async function getTaskCenterData() {
+function percentNote(value: unknown) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric) || numeric === 0) return '较昨日 0%';
+  return `较昨日 ${numeric > 0 ? '+' : ''}${numeric.toFixed(1)}%`;
+}
+
+export async function getTaskCenterData(params: Record<string, any> = {}) {
   try {
     const partialErrors: string[] = [];
-    const [tasksPayload, healthPayload, schedulesPayload] = await Promise.all([
-      api.tasks(),
+    const safeParams = {
+      ...params,
+      page: params.page || 1,
+      page_size: params.page_size || 100
+    };
+    const [overview, runsPayload, healthPayload, logsPayload, retryPayload, queuePayload, trendPayload, schedulesPayload] = await Promise.all([
+      api.taskOverview(),
+      api.taskRuns(safeParams),
       api.tasksHealth().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
+        partialErrors.push(errorMessage(error));
+        return {};
+      }),
+      api.taskRecentLogs({ limit: 30, queue_name: params.queue_name || '' }).catch((error) => {
+        partialErrors.push(errorMessage(error));
+        return { items: [] };
+      }),
+      api.taskRetryRecent(30).catch((error) => {
+        partialErrors.push(errorMessage(error));
+        return { items: [] };
+      }),
+      api.taskQueueOverview().catch((error) => {
+        partialErrors.push(errorMessage(error));
+        return { items: [] };
+      }),
+      api.taskTrend(7).catch((error) => {
+        partialErrors.push(errorMessage(error));
+        return { items: [] };
       }),
       api.scheduledTasks().catch((error) => {
-        partialErrors.push(error instanceof Error ? error.message : String(error));
-        return null;
+        partialErrors.push(errorMessage(error));
+        return { tasks: [] };
       })
     ]);
-    const tasks = Array.isArray(tasksPayload?.tasks) ? tasksPayload.tasks : [];
-    const health = healthPayload || {};
-    const schedules = Array.isArray(schedulesPayload?.tasks) ? schedulesPayload.tasks : [];
-    const success = tasks.filter((item: any) => item.status === 'success').length;
-    const running = tasks.filter((item: any) => activeStatuses.has(String(item.status))).length;
-    const failed = tasks.filter((item: any) => ['failed', 'timeout'].includes(String(item.status))).length;
-    const retryRows = tasks
-      .filter((item: any) => ['failed', 'timeout', 'cancelled'].includes(String(item.status)))
-      .map((item: any) => ({
-        key: item.task_id,
-        task_id: item.task_id,
-        task_name: item.task_name || item.kind || '系统任务',
-        status: item.status,
-        failed_at: item.ended_at || item.finished_at || item.started_at || '--',
-        error_message: item.error_message || item.message || '任务未成功完成',
-        retry_count: item.retry_count ?? 0,
-        max_retries: item.max_retries ?? 0
-      }));
+
+    const tasks = Array.isArray(runsPayload?.list) ? runsPayload.list : Array.isArray(runsPayload?.tasks) ? runsPayload.tasks : [];
+    const retryRows = Array.isArray(retryPayload?.items) ? retryPayload.items : [];
+    const queueRows = Array.isArray(queuePayload?.items) ? queuePayload.items : [];
+    const recentLogs = Array.isArray(logsPayload?.items) ? logsPayload.items : [];
+    const trendRows = Array.isArray(trendPayload?.items) ? trendPayload.items : [];
+    const successRate = Number(overview?.success_rate || 0);
+    const change = overview?.day_over_day_change || {};
+
     return withServiceState(
       {
-        ...taskMock,
+        overview,
         tasks,
-        health,
-        schedules,
+        total: Number(runsPayload?.total || tasks.length),
+        health: healthPayload || {},
+        schedules: Array.isArray(schedulesPayload?.tasks) ? schedulesPayload.tasks : [],
         retryQueue: retryRows,
+        recentLogs,
+        queueRows,
+        trendRows,
         metrics: [
-          { title: '任务总数', value: tasks.length, status: 'info' },
-          { title: '成功任务', value: success, note: tasks.length ? `成功率 ${((success / tasks.length) * 100).toFixed(1)}%` : '暂无运行记录', status: 'success' },
-          { title: '运行/排队', value: running, status: 'running' },
-          { title: '失败/超时', value: failed, status: failed ? 'danger' : 'success' },
-          { title: '队列数', value: Array.isArray(health.queue_summary) ? health.queue_summary.length : 0, status: 'info' }
+          { title: '任务总数', value: Number(overview?.task_total || 0).toLocaleString(), note: percentNote(change.task_total), status: 'info' },
+          { title: '成功任务', value: Number(overview?.success_total || 0).toLocaleString(), note: `成功率 ${successRate.toFixed(2)}%`, status: 'success' },
+          { title: '运行中 / 排队', value: `${Number(overview?.running_total || 0)} / ${Number(overview?.pending_total || 0)}`, note: '来自任务运行表', status: 'running' },
+          { title: '失败 / 超时', value: `${Number(overview?.failed_total || 0)} / ${Number(overview?.timeout_total || 0)}`, note: '来自任务运行表', status: Number(overview?.failed_total || 0) || Number(overview?.timeout_total || 0) ? 'danger' : 'success' },
+          { title: '队列数', value: Number(overview?.queue_total || queueRows.length || 0).toLocaleString(), note: '来自队列聚合', status: 'info' }
         ],
         dataSource: 'postgresql.task_runs'
       },
       {
         empty: !tasks.length,
         mockFallback: false,
-        fallbackReason: !tasks.length ? '任务中心接口可用，但当前没有任务记录。' : undefined,
         partialErrors
       }
     );
   } catch (error) {
-    return mockFallback(taskMock, error, '任务中心真实接口请求失败，已切换到本地兜底数据。');
+    return withServiceState(
+      {
+        overview: {},
+        tasks: [],
+        total: 0,
+        health: {},
+        schedules: [],
+        retryQueue: [],
+        recentLogs: [],
+        queueRows: [],
+        trendRows: [],
+        metrics: [],
+        dataSource: 'api_error'
+      },
+      {
+        empty: true,
+        mockFallback: false,
+        error: errorMessage(error)
+      }
+    );
   }
 }

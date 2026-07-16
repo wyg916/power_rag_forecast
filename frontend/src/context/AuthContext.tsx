@@ -19,7 +19,8 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const authRequired = String(import.meta.env.VITE_AUTH_REQUIRED ?? '1') !== '0';
+const defaultAuthRequired = import.meta.env.PROD ? '1' : '0';
+const authRequired = String(import.meta.env.VITE_AUTH_REQUIRED ?? defaultAuthRequired) !== '0';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(Boolean(getStoredAccessToken()));
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       clearStoredAccessToken();
       setUser(null);
+      setLoginRequested(authRequired);
     } finally {
       setLoading(false);
     }
@@ -49,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handler = () => {
       clearStoredAccessToken();
       setUser(null);
+      setLoginRequested(authRequired);
     };
     window.addEventListener('auth:unauthorized', handler);
     return () => window.removeEventListener('auth:unauthorized', handler);

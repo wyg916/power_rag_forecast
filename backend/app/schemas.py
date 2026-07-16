@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from backend.app.auth.password import validate_password_length
 
 
 class TaskRunRequest(BaseModel):
@@ -19,6 +21,13 @@ class TaskRunRequest(BaseModel):
         "embedding_refresh",
         "report_generate",
         "data_sync",
+        "data_clean",
+        "price_predict",
+        "load_predict",
+        "strategy_gen",
+        "report_daily",
+        "monitor_rt",
+        "model_train",
         "forecast_run",
     ] = "today_analysis"
     payload: dict | None = None
@@ -139,6 +148,11 @@ class UserCreateRequest(BaseModel):
     role: Literal["admin", "analyst", "viewer", "developer", "operator"] = "viewer"
     is_active: bool = True
 
+    @field_validator("password")
+    @classmethod
+    def _validate_password_length(cls, value: str) -> str:
+        return validate_password_length(value)
+
 
 class UserUpdateRequest(BaseModel):
     email: str | None = Field(default=None, max_length=255)
@@ -149,3 +163,8 @@ class UserUpdateRequest(BaseModel):
 
 class UserResetPasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=256)
+
+    @field_validator("new_password")
+    @classmethod
+    def _validate_new_password_length(cls, value: str) -> str:
+        return validate_password_length(value)

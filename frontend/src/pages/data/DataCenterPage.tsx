@@ -1,437 +1,162 @@
-import { ApiOutlined, DatabaseOutlined, EyeOutlined, SafetyCertificateOutlined, SyncOutlined, WarningOutlined } from '@ant-design/icons';
-import { Alert, Button, Col, DatePicker, Input, Row, Select, Space, Table, Tag, Upload, message } from 'antd';
-import { useEffect, useState } from 'react';
+import { DownloadOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { Button, message } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
-import { SectionCard } from '../../components/cards/SectionCard';
-import { TableCard } from '../../components/cards/TableCard';
-import { Sparkline } from '../../components/charts/Sparkline';
-import { FilterBar } from '../../components/common/FilterBar';
-import { PageTabs } from '../../components/common/PageTabs';
-import { DataSourceTag, DataStateBanner, EmptyState } from '../../components/common/States';
-import { MetricGrid, ResponsiveGrid } from '../../components/layout/UnifiedPage';
-import { dataMock } from '../../mock/dataMock';
+import {
+  CatalogPanel,
+  DataContextBar,
+  DataFlowPanel,
+  DataHealthOverview,
+  DataOverviewMetrics,
+  DataPageHeader,
+  ExceptionTable,
+  OverviewSideRail,
+  QualityMetrics,
+  QualityMonitor,
+  SourceStatusBar,
+  SyncRecordsTable
+} from '../../components/data/DataCenterDesign';
+import { DataStateBanner } from '../../components/common/States';
 import { getDataCenterData } from '../../services/dataApi';
 import type { PageProps } from '../../types/ui';
 
-const icons = [<DatabaseOutlined />, <SyncOutlined />, <WarningOutlined />, <SafetyCertificateOutlined />];
-
-const tabs = [
-  { key: 'data-access', label: '数据接入' },
-  { key: 'data-quality', label: '数据质量' },
-  { key: 'data-catalog', label: '数据目录' },
-  { key: 'data-tables', label: '数据库表' },
-  { key: 'data-import', label: '导入导出' }
-];
-
-const corePredictionTables = ['raw_market', 'raw_load', 'raw_weather', 'forecast_results', 'raw_renewable'];
+function exportCsv(filename: string, rows: any[]) {
+  if (!rows.length) {
+    message.info('当前没有可导出的记录');
+    return;
+  }
+  const keys = Object.keys(rows[0]);
+  const csv = [keys, ...rows.map((row) => keys.map((key) => row[key]))]
+    .map((line) => line.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}_${Date.now()}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
-  const [data, setData] = useState<any>(dataMock);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [tableSearch, setTableSearch] = useState('');
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailTitle, setDetailTitle] = useState('详情');
-  const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
-  const [tablePreview, setTablePreview] = useState<any[]>([]);
-  const [sqlText, setSqlText] = useState('SELECT datetime, temperature FROM raw_weather ORDER BY datetime DESC');
-  const [sqlLoading, setSqlLoading] = useState(false);
-  const [sqlResult, setSqlResult] = useState<any | null>(null);
-  const [sqlError, setSqlError] = useState('');
+  const [search, setSearch] = useState('');
+  const [selectedCatalog, setSelectedCatalog] = useState<any>(null);
+  const [detail, setDetail] = useState<any>(null);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      setData(await getDataCenterData());
+      const result = await getDataCenterData();
+      setData(result);
+      setSelectedCatalog((current: any) => current || result.catalog?.[0] || null);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  async function syncCoreData(kind: 'core' | 'refresh' = 'core') {
+  const qualityMode = activeSubKey === 'data-quality';
+  const filteredCatalog = useMemo(() => {
+    const rows = data?.catalog || [];
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return rows;
+    return rows.filter((row: any) => [row.table_name, row.display_name, row.business_domain, row.source_system].some((value) => String(value || '').toLowerCase().includes(keyword)));
+  }, [data, search]);
+
+  const filteredImports = useMemo(() => {
+    const rows = data?.imports || [];
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return rows;
+    return rows.filter((row: any) => [row.name, row.type, row.status].some((value) => String(value || '').toLowerCase().includes(keyword)));
+  }, [data, search]);
+
+  async function syncData() {
     setSyncing(true);
     try {
-      const result = kind === 'core' ? await api.syncCoreData() : await api.dataRefresh();
-      message.success(result.task_id ? `任务已创建：${result.task_id}` : '数据同步任务已提交');
+      const result = await api.dataRefresh();
+      message.success(result.task_id ? `同步任务已创建：${result.task_id}` : '同步任务已提交');
       await loadData();
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '数据同步失败');
+      message.error(error instanceof Error ? error.message : '同步任务提交失败');
     } finally {
       setSyncing(false);
     }
   }
 
-  async function viewTable(tableName: string) {
-    setDetailTitle(`表预览：${tableName}`);
-    setDetailData({ table_name: tableName, loading: true });
-    setTablePreview([]);
-    setDetailOpen(true);
-    try {
-      const payload = await api.databaseTableRows(tableName, { limit: 20 });
-      setDetailData({
-        table_name: tableName,
-        total: payload.total,
-        columns: (payload.columns || []).map((item: any) => `${item.name}:${item.type}`).join(', '),
-        data_source: 'postgresql'
-      });
-      setTablePreview(payload.records || []);
-    } catch (error) {
-      setDetailData({ table_name: tableName, error: error instanceof Error ? error.message : '读取失败' });
-    }
-  }
-
-  function exportTable(tableName: string) {
-    window.open(api.exportTableUrl(tableName), '_blank');
-  }
-
-  async function runReadOnlySql() {
-    setSqlLoading(true);
-    setSqlError('');
-    try {
-      const result = await api.readOnlySql({ sql: sqlText, limit: 20 });
-      setSqlResult(result);
-      if (result.safe === false) message.warning('SQL 未执行：已被只读安全规则拦截');
-      else if (!result.available) message.info(result.not_found_reason || '查询未返回数据');
-    } catch (error) {
-      const messageText = error instanceof Error ? error.message : '只读 SQL 查询失败';
-      setSqlError(messageText);
-      setSqlResult(null);
-      message.error(messageText);
-    } finally {
-      setSqlLoading(false);
-    }
-  }
-
-  function showCatalogFields(row: any) {
-    setDetailTitle(`字段映射：${row.table_name}`);
-    setDetailData({
-      table_name: row.table_name,
-      display_name: row.display_name,
-      business_domain: row.business_domain,
-      time_field: row.time_field,
-      source_system: row.source_system,
-      fields: (row.fields || []).map((field: any) => `${field.field_name}：${field.business_name || '-'}，${field.meaning || '-'}`).join('\n')
-    });
-    setTablePreview([]);
-    setDetailOpen(true);
-  }
-
-  const filteredTables = (data.tables || []).filter((row: any[]) => !tableSearch || String(row[0]).toLowerCase().includes(tableSearch.toLowerCase()));
-  const catalogRows = (data.catalog || []).filter(
-    (row: any) => !tableSearch || String(row.table_name || '').toLowerCase().includes(tableSearch.toLowerCase()) || String(row.display_name || '').includes(tableSearch)
+  const actions = qualityMode ? (
+    <>
+      <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
+      <Button icon={<DownloadOutlined />} onClick={() => exportCsv('data_quality', data?.qualityItems || [])}>导出报告</Button>
+      <Button type="primary" loading={syncing} icon={<SyncOutlined />} onClick={syncData}>质量巡检</Button>
+    </>
+  ) : (
+    <>
+      <Button icon={<ReloadOutlined />} onClick={loadData}>刷新总览</Button>
+      <Button type="primary" loading={syncing} icon={<SyncOutlined />} onClick={syncData}>手动同步</Button>
+      <Button icon={<DownloadOutlined />} onClick={() => exportCsv('data_overview', data?.freshnessItems || [])}>导出概览</Button>
+    </>
   );
-  const freshnessByTable = Object.fromEntries((data.freshnessItems || []).map((row: any) => [row.table_name, row]));
-  const catalogByTable = Object.fromEntries((data.catalog || []).map((row: any) => [row.table_name, row]));
-  const coreCards = corePredictionTables.map((tableName) => {
-    const freshness = freshnessByTable[tableName] || {};
-    const catalog = catalogByTable[tableName] || {};
-    const rowCount = Number(freshness.row_count || 0);
-    const exists = catalog.runtime?.exists !== false && freshness.available !== false;
-    return {
-      tableName,
-      displayName: catalog.display_name || tableName,
-      rowCount,
-      status: exists && rowCount > 0 ? 'ok' : exists ? 'empty' : 'missing',
-      timeRange: freshness.min_datetime && freshness.max_datetime ? `${freshness.min_datetime} ~ ${freshness.max_datetime}` : '--',
-      reason: freshness.not_found_reason || (exists ? '已登记，等待数据刷新' : '未建表或未纳入运行态')
-    };
-  });
-  const freshnessProblems = (data.freshnessItems || []).filter((item: any) => String(item.status || '').toLowerCase() !== 'ok');
-  const failedImports = (data.imports || []).filter((row: any[]) => String(row[2] || '').includes('失败') || String(row[2] || '').toLowerCase().includes('fail'));
-  const healthScore = data.metrics?.[3]?.value ? `${data.metrics[3].value}${data.metrics[3].unit || ''}` : '--';
+
+  const stateVisible = loading || data?.empty || Boolean(data?.partialErrors?.length);
+  const exceptions = [...(data?.exceptions || []), ...(data?.freshnessProblems || [])];
 
   return (
-    <div className="page-stack">
-      <PageTabs items={tabs} activeKey={activeSubKey} onChange={onSubNavigate} />
-      <FilterBar
-        actions={
-          <>
-            <Button loading={syncing} onClick={() => syncCoreData('core')}>核心数据入库</Button>
-            <Button type="primary" loading={syncing} onClick={() => syncCoreData('refresh')}>手动同步</Button>
-            <Button onClick={loadData}>刷新总览</Button>
-          </>
-        }
-      >
-        <Space size={16} wrap>
-          <span>数据域</span>
-          <Select value="all" style={{ width: 120 }} options={[{ value: 'all', label: '全部' }, { value: 'forecast', label: '预测核心' }]} />
-          <span>时间范围</span>
-          <DatePicker />
-          <span>数据源状态</span>
-          <Select value="all" style={{ width: 120 }} options={[{ value: 'all', label: '全部' }, { value: 'ok', label: '正常' }, { value: 'warning', label: '关注' }]} />
-          <DataSourceTag source={data.mockFallback ? 'mock_fallback' : data.dataSource || 'derived_data_center'} />
-        </Space>
-      </FilterBar>
-      <DataStateBanner
-        scope="数据中心"
-        loading={loading}
-        source={data.dataSource}
-        error={data.error}
-        empty={data.empty}
-        mockFallback={data.mockFallback}
-        fallbackReason={data.fallbackReason}
-        partialErrors={data.partialErrors}
-        onRetry={loadData}
+    <div className={`data-design-page ${qualityMode ? 'quality-catalog-page' : 'data-overview-page'}`}>
+      <DataPageHeader
+        title={qualityMode ? '数据质量与数据目录' : '数据中心 / 数据总览'}
+        subtitle={qualityMode ? '缺失率、重复率、新鲜度、校验通过率与数据目录可追溯管理。' : '数据接入、质量监控、目录管理、同步记录的一体化入口。'}
+        controls={!qualityMode ? <DataContextBar qualityMode={false} search={search} onSearch={setSearch} actions={actions} /> : null}
       />
-      <MetricGrid items={data.metrics || []} icons={icons} loading={loading} minColumnWidth={190} />
+      {qualityMode ? <DataContextBar qualityMode search={search} onSearch={setSearch} actions={actions} /> : null}
+      {stateVisible ? (
+        <DataStateBanner
+          scope="数据中心"
+          loading={loading}
+          empty={data?.empty}
+          partialErrors={data?.partialErrors}
+          mockFallback={false}
+          onRetry={loadData}
+        />
+      ) : null}
 
-      {activeSubKey === 'data-access' && (
+      {!qualityMode ? (
         <>
-          <div className="data-overview-layout">
-            <SectionCard
-              className="data-flow-overview"
-              title="数据接入流程"
-              loading={loading}
-              extra={<Space><DataSourceTag source={data.dataSource} /><Button type="link" onClick={() => onSubNavigate('data-catalog')}>查看目录详情</Button></Space>}
-            >
-              <div className="data-flow">
-                {(data.flow || []).map((item: any[], index: number) => (
-                  <div className="flow-node" key={item[0]}>
-                    <div className="flow-icon"><ApiOutlined /></div>
-                    <strong>{item[0]}</strong>
-                    <Tag color={String(item[3]).includes('异常') ? 'error' : 'success'}>{item[3]}</Tag>
-                    <p>{item[1]}</p>
-                    <small>刷新时间：{item[2]}</small>
-                    {index < (data.flow || []).length - 1 && <span className="flow-arrow">→</span>}
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-            <div className="data-overview-side">
-              <SectionCard title="数据健康摘要" compact loading={loading} extra={<DataSourceTag source={data.dataSource || 'derived_data_center'} />}>
-                <div className="data-health-summary">
-                  <div className="data-health-score">
-                    <strong>{healthScore}</strong>
-                    <span>整体完整率 / 校验通过率</span>
-                  </div>
-                  <div className="health-kv-grid">
-                    <div><span>异常表</span><strong>{data.metrics?.[2]?.value ?? 0}</strong></div>
-                    <div><span>新鲜度异常</span><strong>{freshnessProblems.length}</strong></div>
-                    <div><span>同步失败</span><strong>{failedImports.length}</strong></div>
-                    <div><span>目录表</span><strong>{catalogRows.length || data.metrics?.[0]?.value || 0}</strong></div>
-                  </div>
-                </div>
-              </SectionCard>
-              <SectionCard title="快速操作" compact loading={loading}>
-                <div className="quick-action-grid">
-                  <Button onClick={() => onSubNavigate('data-catalog')}>查看目录</Button>
-                  <Button onClick={() => onSubNavigate('data-quality')}>质量巡检</Button>
-                  <Button onClick={() => onSubNavigate('data-import')}>导入导出</Button>
-                  <Button onClick={() => onSubNavigate('data-tables')}>数据表</Button>
-                </div>
-              </SectionCard>
-              <SectionCard title="最近告警 / 异常提醒" compact loading={loading} extra={<Button type="link" onClick={() => onSubNavigate('data-quality')}>更多</Button>}>
-                <div className="data-alert-list">
-                  {[...freshnessProblems.slice(0, 3), ...failedImports.slice(0, 2)].length ? (
-                    <>
-                      {freshnessProblems.slice(0, 3).map((item: any) => (
-                        <div key={item.table_name || item.status}>
-                          <Tag color="warning">新鲜度</Tag>
-                          <span>{item.table_name || '--'}：{item.not_found_reason || item.status || '需检查'}</span>
-                        </div>
-                      ))}
-                      {failedImports.slice(0, 2).map((row: any[], index: number) => (
-                        <div key={`${row[1]}-${index}`}>
-                          <Tag color="error">同步失败</Tag>
-                          <span>{row[1]}：{row[6] || row[2]}</span>
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <EmptyState description="暂无异常提醒" />
-                  )}
-                </div>
-              </SectionCard>
+          <DataOverviewMetrics data={data} loading={loading} />
+          <div className="data-overview-main">
+            <div className="data-overview-left">
+              <DataFlowPanel data={data} onCatalog={() => onSubNavigate('data-quality')} />
+              <SyncRecordsTable rows={filteredImports} onDetail={setDetail} />
+            </div>
+            <div className="data-overview-right">
+              <DataHealthOverview data={data} />
+              <OverviewSideRail data={data} onNavigate={onSubNavigate} />
             </div>
           </div>
-          <TableCard
-              title="同步与导入记录"
-              loading={loading}
-              dataSource={(data.imports || []).map((row: any[], index: number) => ({ key: index, row }))}
-              columns={[
-                { title: '类型', render: (_, record: any) => record.row[0] },
-                { title: '任务/文件', render: (_, record: any) => record.row[1] },
-                { title: '状态', render: (_, record: any) => <Tag color={String(record.row[2]).includes('fail') || String(record.row[2]).includes('失败') ? 'error' : 'success'}>{record.row[2]}</Tag> },
-                { title: '开始时间', render: (_, record: any) => record.row[4] },
-                { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailTitle('同步详情'); setDetailData({ record: record.row }); setDetailOpen(true); }}>详情</Button> }
-              ]}
-            />
+        </>
+      ) : (
+        <>
+          <QualityMetrics data={data} loading={loading} />
+          <div className="data-quality-main">
+            <div className="data-quality-left">
+              <QualityMonitor data={data} />
+              <div className="data-exception-card">
+                <div className="data-card-heading"><h2>异常明细表</h2><span>{exceptions.length} 条</span></div>
+                <ExceptionTable rows={exceptions} />
+              </div>
+            </div>
+            <CatalogPanel rows={filteredCatalog} selected={selectedCatalog} onSelect={setSelectedCatalog} />
+          </div>
+          <SourceStatusBar rows={data?.freshnessItems || []} />
         </>
       )}
 
-      {activeSubKey === 'data-quality' && (
-        <Row gutter={[16, 16]} className="balanced-row">
-          <Col xs={24} xl={10}>
-            <SectionCard title="数据质量概览" loading={loading}>
-              <div className="quality-grid">
-                {(data.qualityCharts || []).map((item: any) => (
-                  <div className="quality-card" key={item.title}>
-                    <div><strong>{item.title}</strong><span>{item.value}</span></div>
-                    <Sparkline data={item.data || []} color={item.title.includes('重复') ? '#3B82F6' : item.title.includes('校验') ? '#7C3AED' : '#00B894'} />
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          </Col>
-          <Col xs={24} xl={14}>
-            <TableCard
-              title="异常明细"
-              loading={loading}
-              dataSource={(data.exceptions || []).map((row: any, index: number) => ({ key: index, ...row }))}
-              columns={[
-                { title: '数据源', dataIndex: 'source_name' },
-                { title: '状态', dataIndex: 'status', render: (text) => <Tag color={String(text).includes('异常') ? 'error' : 'success'}>{text}</Tag> },
-                { title: '缺失率', dataIndex: 'missing_rate', render: (text) => `${text}%` },
-                { title: '新鲜度', dataIndex: 'freshness_score', render: (text) => `${text}` },
-                { title: '最近时间', dataIndex: 'latest_time' },
-                { title: '说明', dataIndex: 'message' }
-              ]}
-            />
-          </Col>
-        </Row>
-      )}
-
-      {activeSubKey === 'data-catalog' && (
-        <Row gutter={[16, 16]} className="balanced-row">
-          <Col xs={24}>
-            <ResponsiveGrid minColumnWidth={220}>
-              {coreCards.map((item) => (
-                <SectionCard
-                  key={item.tableName}
-                  compact
-                  title={item.tableName}
-                  extra={<Tag color={item.status === 'ok' ? 'success' : item.status === 'empty' ? 'warning' : 'error'}>{item.status === 'ok' ? '可用' : item.status === 'empty' ? '空表' : '缺失'}</Tag>}
-                >
-                  <div className="operation-card">
-                    <strong>{item.displayName}</strong>
-                    <p>记录数：{item.rowCount || 0}</p>
-                    <p>时间范围：{item.timeRange}</p>
-                    {item.status !== 'ok' && <p>{item.reason}</p>}
-                  </div>
-                </SectionCard>
-              ))}
-            </ResponsiveGrid>
-          </Col>
-          <Col xs={24} xl={15}>
-            <TableCard
-              title="P1 数据目录与字段映射"
-              loading={loading}
-              extra={<Space><Tag>{data.catalogVersion || 'catalog'}</Tag><Input.Search allowClear placeholder="搜索表名/中文名" onSearch={setTableSearch} /><Button onClick={loadData}>刷新</Button></Space>}
-              dataSource={catalogRows.map((row: any) => ({ key: row.table_name, ...row }))}
-              columns={[
-                { title: '表名', dataIndex: 'table_name' },
-                { title: '中文名', dataIndex: 'display_name' },
-                { title: '业务域', dataIndex: 'business_domain' },
-                { title: '粒度', dataIndex: 'grain' },
-                { title: '时间字段', dataIndex: 'time_field' },
-                { title: '来源', dataIndex: 'source_system' },
-                { title: '状态', render: (_, record: any) => <Tag color={record.runtime?.exists === false ? 'warning' : 'success'}>{record.runtime?.exists === false ? '未建表' : '已登记'}</Tag> },
-                { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => showCatalogFields(record)}>字段</Button> }
-              ]}
-            />
-          </Col>
-          <Col xs={24} xl={9}>
-            <SectionCard title="只读 SQL 查数" loading={loading} extra={<Button loading={sqlLoading} type="primary" onClick={runReadOnlySql}>执行</Button>}>
-              <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                <Alert
-                  showIcon
-                  type="info"
-                  message="只读查询入口"
-                  description="仅允许 P1 数据目录白名单表的单条 SELECT；敏感表、系统 schema、写操作、多语句和危险函数会被后端拦截，最大返回行数会被限制。"
-                />
-                <Input.TextArea rows={5} value={sqlText} onChange={(event) => setSqlText(event.target.value)} />
-                {sqlError ? <Alert showIcon type="error" message="查询失败" description={sqlError} /> : null}
-                {sqlResult ? (
-                  <Alert
-                    showIcon
-                    type={sqlResult.safe === false ? 'warning' : sqlResult.available ? 'success' : 'info'}
-                    message={sqlResult.query_summary || '只读查询结果'}
-                    description={sqlResult.not_found_reason || `返回 ${sqlResult.row_count || 0} 条，表：${(sqlResult.tables || []).join(', ') || '-'}`}
-                  />
-                ) : null}
-                {sqlResult?.records?.length ? (
-                  <Table
-                    size="small"
-                    pagination={{ pageSize: 3 }}
-                    scroll={{ x: 'max-content' }}
-                    dataSource={sqlResult.records.map((row: any, index: number) => ({ key: index, ...row }))}
-                    columns={(sqlResult.columns || Object.keys(sqlResult.records[0] || {})).map((key: string) => ({ title: key, dataIndex: key, ellipsis: true }))}
-                  />
-                ) : null}
-              </Space>
-            </SectionCard>
-          </Col>
-          <Col xs={24}>
-            <TableCard
-              title="数据新鲜度"
-              loading={loading}
-              dataSource={(data.freshnessItems || []).map((row: any) => ({ key: row.table_name, ...row }))}
-              columns={[
-                { title: '表名', dataIndex: 'table_name' },
-                { title: '状态', dataIndex: 'status', render: (text) => <Tag color={text === 'ok' ? 'success' : 'warning'}>{text}</Tag> },
-                { title: '时间字段', dataIndex: 'datetime_field' },
-                { title: '起始时间', dataIndex: 'min_datetime' },
-                { title: '最新时间', dataIndex: 'max_datetime' },
-                { title: '记录数', dataIndex: 'row_count', align: 'right' },
-                { title: '查不到原因', dataIndex: 'not_found_reason' }
-              ]}
-            />
-          </Col>
-        </Row>
-      )}
-
-      {activeSubKey === 'data-tables' && (
-        <TableCard
-          title="PostgreSQL 表浏览"
-          loading={loading}
-          extra={<Space><Input.Search allowClear placeholder="搜索表名" onSearch={setTableSearch} /><Button onClick={loadData}>刷新表列表</Button></Space>}
-          dataSource={filteredTables.map((row: any[]) => ({ key: row[0], row }))}
-          columns={[
-            { title: '表名', render: (_, record: any) => record.row[0] },
-            { title: '字段样例/说明', render: (_, record: any) => record.row[1] },
-            { title: '数据来源', render: (_, record: any) => <DataSourceTag source={record.row[2]} /> },
-            { title: '主键', render: (_, record: any) => record.row[3] },
-            { title: '记录数', align: 'right', render: (_, record: any) => record.row[4] },
-            { title: '字段数', align: 'right', render: (_, record: any) => record.row[5] },
-            { title: '操作', render: (_, record: any) => <Space><Button type="link" size="small" icon={<EyeOutlined />} onClick={() => viewTable(record.row[0])}>预览</Button><Button type="link" size="small" onClick={() => exportTable(record.row[0])}>导出</Button></Space> }
-          ]}
-        />
-      )}
-
-      {activeSubKey === 'data-import' && (
-        <TableCard
-          title="导入导出记录"
-          loading={loading}
-          extra={<Space><Upload beforeUpload={() => { message.success('文件已登记，请点击“创建入库任务”执行同步'); return false; }}><Button>上传文件</Button></Upload><Button onClick={() => syncCoreData('core')}>创建入库任务</Button></Space>}
-          dataSource={(data.imports || []).map((row: any[], index: number) => ({ key: index, row }))}
-          columns={[
-            { title: '任务类型', render: (_, record: any) => record.row[0] },
-            { title: '文件/数据源', render: (_, record: any) => record.row[1] },
-            { title: '状态', render: (_, record: any) => <Tag color={String(record.row[2]).includes('失败') ? 'error' : 'success'}>{record.row[2]}</Tag> },
-            { title: '记录数', align: 'right', render: (_, record: any) => record.row[3] },
-            { title: '开始时间', render: (_, record: any) => record.row[4] },
-            { title: '耗时', render: (_, record: any) => record.row[5] },
-            { title: '操作', render: (_, record: any) => <Button type="link" size="small" onClick={() => { setDetailTitle('导入导出详情'); setDetailData({ record: record.row, failure_reason: record.row[6] || '' }); setDetailOpen(true); }}>查看</Button> }
-          ]}
-        />
-      )}
-
-      <DetailDrawer title={detailTitle} open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)}>
-        {tablePreview.length ? (
-          <Table
-            size="small"
-            pagination={{ pageSize: 5 }}
-            scroll={{ x: 'max-content' }}
-            dataSource={tablePreview.map((row, index) => ({ key: index, ...row }))}
-            columns={Object.keys(tablePreview[0] || {}).map((key) => ({ title: key, dataIndex: key, ellipsis: true }))}
-          />
-        ) : detailTitle.includes('表预览') ? <EmptyState description="暂无预览数据" /> : null}
-      </DetailDrawer>
+      <DetailDrawer title="同步任务详情" open={Boolean(detail)} data={detail} onClose={() => setDetail(null)} />
     </div>
   );
 }

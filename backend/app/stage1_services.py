@@ -177,18 +177,34 @@ def prediction_latest(market: str | None = None, date: str | None = None) -> dic
     rows = payload.get("records") or []
     df = pd.DataFrame(rows)
     if df.empty:
+        empty_message = str(payload.get("message") or "当前系统未查询到可用预测结果。")
         return {
             "available": False,
             "market": actual_market,
             "requested_market": market,
             "market_matched": market_matched,
-            "message": market_message or "当前系统未查询到可用预测结果。",
+            "message": market_message or empty_message,
+            "messages": [item for item in (market_message, empty_message) if item],
+            "run_id": payload.get("run_id"),
+            "source": payload.get("source"),
+            "source_type": payload.get("source_type"),
         }
     if "datetime" in df.columns:
         df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
     pcol = price_column(df)
     if not pcol:
-        return {"available": False, "market": actual_market, "message": "当前预测结果缺少可识别的电价字段。"}
+        missing_price_message = "当前预测结果缺少可识别的电价字段。"
+        return {
+            "available": False,
+            "market": actual_market,
+            "requested_market": market,
+            "market_matched": market_matched,
+            "message": missing_price_message,
+            "messages": [item for item in (market_message, missing_price_message) if item],
+            "run_id": payload.get("run_id"),
+            "source": payload.get("source"),
+            "source_type": payload.get("source_type"),
+        }
 
     requested_date = _date_text(date)
     date_matched = True
@@ -229,7 +245,9 @@ def prediction_latest(market: str | None = None, date: str | None = None) -> dic
         "price_column": pcol,
         "records": records(matched_df),
         "messages": [m for m in [market_message, date_message] if m],
+        "run_id": payload.get("run_id"),
         "source": payload.get("source"),
+        "source_type": payload.get("source_type"),
     }
     return jsonable(result)
 

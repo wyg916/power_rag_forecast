@@ -11,30 +11,45 @@ from ....repositories.audit_repository import write_audit_log
 from ....schemas import ReadOnlySqlRequest
 from ....services.data_trust_service import execute_read_only_sql, get_data_catalog, get_data_freshness_report, get_field_mappings
 from ....services.ui_platform_service import data_quality_report, export_table_to_csv, import_export_records, response
+from ....source_contract import SourceType, attach_source_meta, source_meta
 from ....workers.dispatcher import enqueue_task
 
 
 router = APIRouter()
 
 
+def _with_data_meta(payload: dict, *, evidence: str) -> dict:
+    available = bool(payload.get("available", payload.get("sources") or payload.get("tables") or payload.get("datasets") or payload.get("records")))
+    return attach_source_meta(
+        payload,
+        source_meta(
+            SourceType.DERIVED if available else SourceType.UNAVAILABLE,
+            "data_quality",
+            generated_at=payload.get("generated_at") or payload.get("updated_at"),
+            evidence=[{"source": evidence, "read_only": True}],
+            unavailable_reason=None if available else "data_source_empty",
+        ),
+    )
+
+
 @router.get("/api/data/status")
 def get_data_status() -> dict:
-    return data_status()
+    return _with_data_meta(data_status(), evidence="postgresql core data tables")
 
 
 @router.get("/api/data/catalog")
 def get_catalog(search: str | None = None, include_runtime: bool = False) -> dict:
-    return get_data_catalog(search=search, include_runtime=include_runtime)
+    return _with_data_meta(get_data_catalog(search=search, include_runtime=include_runtime), evidence="data catalog")
 
 
 @router.get("/api/data/fields")
 def get_fields(table: str | None = None, search: str | None = None) -> dict:
-    return get_field_mappings(table=table, search=search)
+    return _with_data_meta(get_field_mappings(table=table, search=search), evidence="field mappings")
 
 
 @router.get("/api/data/freshness")
 def get_freshness(tables: list[str] | None = Query(default=None)) -> dict:
-    return get_data_freshness_report(tables=tables)
+    return _with_data_meta(get_data_freshness_report(tables=tables), evidence="postgresql freshness queries")
 
 
 @router.post("/api/data/sql/query")
@@ -47,22 +62,25 @@ def query_read_only_sql(
 
 @router.get("/api/data/tables")
 def get_database_tables(search: str | None = None) -> dict:
-    return database_tables(search=search)
+    return _with_data_meta(database_tables(search=search), evidence="information_schema")
 
 
 @router.get("/api/data/tables/{table_name}/rows")
 def get_database_table_rows(table_name: str, search: str | None = None, limit: int = 100, offset: int = 0) -> dict:
-    return database_table_rows(table_name=table_name, search=search, limit=limit, offset=offset)
+    return _with_data_meta(
+        database_table_rows(table_name=table_name, search=search, limit=limit, offset=offset),
+        evidence=f"postgresql.{table_name}",
+    )
 
 
 @router.get("/api/data/quality")
 def get_data_quality() -> dict:
-    return response(data_quality_report(), data_source="postgresql_or_file")
+    return _with_data_meta(response(data_quality_report(), data_source="postgresql"), evidence="postgresql quality aggregates")
 
 
 @router.get("/api/data/import-export-records")
 def get_import_export_records() -> dict:
-    return response(import_export_records(), data_source="postgresql.task_runs")
+    return _with_data_meta(response(import_export_records(), data_source="postgresql.task_runs"), evidence="postgresql.task_runs")
 
 
 @router.get("/api/data/tables/{table_name}/export")

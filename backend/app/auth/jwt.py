@@ -28,6 +28,13 @@ def _sign(message: str, secret: str) -> str:
     return _b64encode(digest)
 
 
+def _configured_secret() -> str:
+    secret = get_settings().jwt_secret_key.strip()
+    if not secret:
+        raise JWTError("JWT_SECRET_KEY is not configured")
+    return secret
+
+
 def create_access_token(
     *,
     subject: str,
@@ -57,7 +64,7 @@ def create_access_token(
             _b64encode(json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")),
         ]
     )
-    return f"{signing_input}.{_sign(signing_input, settings.jwt_secret_key)}"
+    return f"{signing_input}.{_sign(signing_input, _configured_secret())}"
 
 
 def decode_access_token(token: str) -> dict[str, Any]:
@@ -65,7 +72,7 @@ def decode_access_token(token: str) -> dict[str, Any]:
     try:
         header_b64, payload_b64, signature = str(token or "").split(".", 2)
         signing_input = f"{header_b64}.{payload_b64}"
-        expected = _sign(signing_input, settings.jwt_secret_key)
+        expected = _sign(signing_input, _configured_secret())
         if not hmac.compare_digest(signature, expected):
             raise JWTError("Invalid JWT signature")
         header = json.loads(_b64decode(header_b64).decode("utf-8"))

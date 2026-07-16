@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ...source_contract import normalize_tool_result
 from ...ai.tool_registry import get_high_risk_hours, get_model_error_summary
 from ...services.data_trust_service import query_business_data
 from .data_freshness_tools import get_data_freshness
@@ -45,4 +46,5 @@ TOOLS = {
 
 
 def execute_tool(name: str, **kwargs: Any) -> dict[str, Any]:
-    return TOOLS[name](**kwargs)
+    output = TOOLS[name](**kwargs)
+    return normalize_tool_result(name, output, requested_run_id=kwargs.get("run_id"))

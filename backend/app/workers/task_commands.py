@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sys
 
@@ -9,7 +9,7 @@ def command_for_kind(kind: str) -> list[str]:
     py = sys.executable
     mapping = {
         "today_analysis": [py, "-X", "utf8", str(PROJECT_ROOT / "main_daily_run.py"), "--refresh-data", "--fast-forecast"],
-        "refresh_data": [py, "-X", "utf8", str(PROJECT_ROOT / "fetch_power_market_data.py")],
+        "refresh_data": [py, "-X", "utf8", str(PROJECT_ROOT / "scripts" / "import_stage1_raw_data_to_postgres.py"), "--replace"],
         "sync_core_data": [py, "-X", "utf8", str(PROJECT_ROOT / "13_sync_core_data_to_db.py")],
         "fast_forecast": [py, "-X", "utf8", str(PROJECT_ROOT / "main_daily_run.py"), "--fast-forecast"],
         "report_only": [py, "-X", "utf8", str(PROJECT_ROOT / "main_daily_run.py"), "--skip-prediction"],

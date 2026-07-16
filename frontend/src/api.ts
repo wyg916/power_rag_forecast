@@ -14,18 +14,28 @@ export function clearStoredAccessToken() {
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
 }
 
+export function sanitizeErrorMessage(value: unknown) {
+  const raw = typeof value === 'string' ? value : JSON.stringify(value);
+  return String(raw || '')
+    .replace(/(Bearer)\s+[A-Za-z0-9._~+/=-]{8,}/gi, '$1 ******')
+    .replace(/\beyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\b/g, '[JWT REDACTED]')
+    .replace(/sk-[A-Za-z0-9_-]{12,}/g, 'sk-******')
+    .replace(/(postgresql(?:\+\w+)?:\/\/[^:\s/@]+:)([^@\s]+)(@)/gi, '$1******$3')
+    .replace(/\b(password|passwd|pwd|access[_-]?token|refresh[_-]?token|jwt[_-]?secret(?:[_-]?key)?|api[_-]?key|database[_-]?url)\b(\s*[:=]\s*)([^\s,;]+)/gi, '$1$2******');
+}
+
 function responseErrorMessage(status: number, text: string) {
   if (!text) return `HTTP ${status}`;
   try {
     const payload = JSON.parse(text);
     const detail = payload?.detail || payload?.message || payload?.error;
-    if (Array.isArray(detail)) return `[${status}] ${detail.map((item) => item.msg || JSON.stringify(item)).join('; ')}`;
-    if (detail && typeof detail === 'object') return `[${status}] ${JSON.stringify(detail)}`;
-    if (detail) return `[${status}] ${detail}`;
+    if (Array.isArray(detail)) return `[${status}] ${sanitizeErrorMessage(detail.map((item) => item.msg || JSON.stringify(item)).join('; '))}`;
+    if (detail && typeof detail === 'object') return `[${status}] ${sanitizeErrorMessage(detail)}`;
+    if (detail) return `[${status}] ${sanitizeErrorMessage(detail)}`;
   } catch {
     // keep raw text below
   }
-  return `[${status}] ${text}`;
+  return `[${status}] ${sanitizeErrorMessage(text)}`;
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -36,8 +46,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...(options?.headers || {})
   };
   const response = await fetch(`${API_BASE}${path}`, {
-    headers,
-    ...options
+    ...options,
+    headers
   });
   if (!response.ok) {
     const text = await response.text();
@@ -48,6 +58,44 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(responseErrorMessage(response.status, text));
   }
   return response.json() as Promise<T>;
+}
+
+async function requestForm<T>(path: string, formData: FormData): Promise<T> {
+  const token = getStoredAccessToken();
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: formData
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    if (response.status === 401) {
+      clearStoredAccessToken();
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    }
+    throw new Error(responseErrorMessage(response.status, text));
+  }
+  return response.json() as Promise<T>;
+}
+
+async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
+  const token = getStoredAccessToken();
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...(options || {}),
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options?.headers || {})
+    }
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    if (response.status === 401) {
+      clearStoredAccessToken();
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    }
+    throw new Error(responseErrorMessage(response.status, text));
+  }
+  return response.blob();
 }
 
 export function unwrapApi<T = any>(payload: any): T {
@@ -89,6 +137,16 @@ export const api = {
   disableUser: (userId: string) =>
     request<any>(`/api/users/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   dashboard: () => request<any>('/api/dashboard/summary'),
+  dashboardOverview: () => request<any>('/api/dashboard/overview'),
+  dashboardContext: () => request<any>('/api/dashboard/context'),
+  dashboardKpis: () => request<any>('/api/dashboard/kpis'),
+  dashboardSupplyDemandRisk24h: () => request<any>('/api/dashboard/supply-demand-risk-24h'),
+  dashboardForecastMetrics: () => request<any>('/api/dashboard/forecast-metrics'),
+  dashboardAiSuggestions: () => request<any>('/api/dashboard/ai-suggestions'),
+  dashboardStrategyExecutionSummary: () => request<any>('/api/dashboard/strategy-execution-summary'),
+  dashboardModelStatus: () => request<any>('/api/dashboard/model-status'),
+  dashboardDataHealth: () => request<any>('/api/dashboard/data-health'),
+  dashboardTaskReminders: (limit = 8) => request<any>(`/api/dashboard/task-reminders?limit=${limit}`),
   dashboardKpi: () => request<any>('/api/dashboard/kpi'),
   riskSummary: () => request<any>('/api/risk/summary'),
   dbHealth: () => request<any>('/api/db/health'),
@@ -129,6 +187,10 @@ export const api = {
     return request<any>(`/api/data/tables/${encodeURIComponent(tableName)}/rows?${params}`);
   },
   forecastLatest: () => request<any>('/api/forecast/latest'),
+  sourceContext: (domain = 'electricity_day_ahead_price', runId = 'latest') => {
+    const params = new URLSearchParams({ domain, run_id: runId });
+    return request<any>(`/api/source/context?${params}`);
+  },
   forecast24h: () => request<any>('/api/forecast/24h'),
   runForecast: (mode = 'refresh_fast_forecast') =>
     request<any>('/api/forecast/run', { method: 'POST', body: JSON.stringify({ mode }) }),
@@ -182,9 +244,19 @@ export const api = {
     return request<any>(`/api/risk/level${params.toString() ? `?${params}` : ''}`);
   },
   reportLatest: () => request<any>('/api/reports/latest'),
+  reports: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/reports${search.toString() ? `?${search}` : ''}`);
+  },
+  reportSummary: () => request<any>('/api/reports/summary'),
   reportDetail: (reportId: string) => request<any>(`/api/reports/${encodeURIComponent(reportId)}`),
   reportDownloadUrl: (reportId: string) => downloadUrl(`/api/reports/${encodeURIComponent(reportId)}/download`),
   generateReport: () => request<any>('/api/reports/generate', { method: 'POST', body: JSON.stringify({ run_id: 'latest' }) }),
+  regenerateReport: (reportId: string) =>
+    request<any>(`/api/reports/${encodeURIComponent(reportId)}/regenerate`, { method: 'POST', body: JSON.stringify({}) }),
   approveReport: (reportId: string, payload: any) =>
     request<any>(`/api/reports/${encodeURIComponent(reportId)}/approve`, { method: 'POST', body: JSON.stringify(payload) }),
   rejectReport: (reportId: string, payload: any) =>
@@ -195,16 +267,44 @@ export const api = {
   models: () => request<any>('/api/models/metrics'),
   modelErrors: () => request<any>('/api/models/errors'),
   retrainSuggestion: () => request<any>('/api/models/retrain-suggestion'),
+  modelCenterOverview: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/models/center/overview${search.toString() ? `?${search}` : ''}`);
+  },
+  modelCenterVersionDetail: (version: string) => request<any>(`/api/models/center/versions/${encodeURIComponent(version)}`),
+  modelTrainingStart: (payload: any = {}) => request<any>('/api/models/center/training/start', { method: 'POST', body: JSON.stringify(payload) }),
+  modelActivate: (payload: any) => request<any>('/api/models/center/activate', { method: 'POST', body: JSON.stringify(payload) }),
+  modelRollback: (payload: any) => request<any>('/api/models/center/rollback', { method: 'POST', body: JSON.stringify(payload) }),
+  modelCenterExport: () => requestBlob('/api/models/center/export'),
   modelBacktestSummary: () => request<any>('/api/models/backtest/summary'),
   modelFeatureSchema: () => request<any>('/api/models/feature-schema'),
   modelLeakageCheck: () => request<any>('/api/models/leakage-check'),
   localModelStatus: () => request<any>('/api/ai/local-model/status'),
   knowledgeStats: () => request<any>('/api/knowledge/stats'),
   knowledgeHealth: () => request<any>('/api/knowledge/health'),
+  knowledgeDocuments: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/knowledge/documents${search.toString() ? `?${search}` : ''}`);
+  },
   knowledgeSearch: (q: string, topK = 5) => {
     const params = new URLSearchParams({ q, top_k: String(topK) });
     return request<any>(`/api/knowledge/search?${params}`);
   },
+  knowledgeSearchPost: (payload: any) => request<any>('/api/knowledge/search', { method: 'POST', body: JSON.stringify(payload) }),
+  knowledgeQaTest: (payload: any) => request<any>('/api/knowledge/qa-test', { method: 'POST', body: JSON.stringify(payload) }),
+  knowledgeBatchValidate: (payload: any = {}) => request<any>('/api/knowledge/batch-validate', { method: 'POST', body: JSON.stringify(payload) }),
+  knowledgeUpload: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return requestForm<any>('/api/knowledge/upload', form);
+  },
+  knowledgeExport: () => requestBlob('/api/knowledge/export'),
   knowledgeIndexLocal: () => request<any>('/api/knowledge/index-local', { method: 'POST', body: '{}' }),
   knowledgeEmbeddingRefresh: () => request<any>('/api/knowledge/embedding-refresh', { method: 'POST', body: '{}' }),
   securityMe: () => request<any>('/api/security/me'),
@@ -217,6 +317,97 @@ export const api = {
   settingsConfig: () => request<any>('/api/settings/config').then(unwrapApi),
   saveSettingsConfig: (payload: any) => request<any>('/api/settings/config', { method: 'POST', body: JSON.stringify(payload) }).then(unwrapApi),
   settingsHealth: () => request<any>('/api/settings/health').then(unwrapApi),
+  settingsStatusOverview: () => request<any>('/api/settings/status/overview'),
+  settingsStatusSummary: () => request<any>('/api/settings/status/summary'),
+  settingsHealthDetails: () => request<any>('/api/settings/status/health-details'),
+  settingsRuntimeConfig: () => request<any>('/api/settings/runtime-config'),
+  updateSettingsRuntimeConfig: (payload: any) => request<any>('/api/settings/runtime-config', { method: 'PUT', body: JSON.stringify(payload) }),
+  settingsHealthCheckRecords: (limit = 100) => request<any>(`/api/settings/status/check-records?limit=${limit}`),
+  settingsTaskQueueSnapshot: () => request<any>('/api/settings/status/task-queue-snapshot'),
+  settingsUsersOverview: () => request<any>('/api/settings/users/overview'),
+  settingsUsers: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/settings/users${search.toString() ? `?${search}` : ''}`);
+  },
+  createSettingsUser: (payload: any) => request<any>('/api/settings/users', { method: 'POST', body: JSON.stringify(payload) }),
+  updateSettingsUser: (userId: string, payload: any) =>
+    request<any>(`/api/settings/users/${encodeURIComponent(userId)}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  disableSettingsUser: (userId: string) =>
+    request<any>(`/api/settings/users/${encodeURIComponent(userId)}/disable`, { method: 'POST', body: '{}' }),
+  enableSettingsUser: (userId: string) =>
+    request<any>(`/api/settings/users/${encodeURIComponent(userId)}/enable`, { method: 'POST', body: '{}' }),
+  resetSettingsUserPassword: (userId: string, newPassword: string) =>
+    request<any>(`/api/settings/users/${encodeURIComponent(userId)}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ new_password: newPassword })
+    }),
+  assignSettingsUserRole: (userId: string, role: string) =>
+    request<any>(`/api/settings/users/${encodeURIComponent(userId)}/assign-role`, {
+      method: 'POST',
+      body: JSON.stringify({ role })
+    }),
+  deleteSettingsUser: (userId: string) =>
+    request<any>(`/api/settings/users/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
+  settingsRolePermissions: () => request<any>('/api/settings/roles/permissions'),
+  updateSettingsRolePermissions: (payload: any) =>
+    request<any>('/api/settings/roles/permissions', { method: 'PUT', body: JSON.stringify(payload) }),
+  settingsSecurityPolicy: () => request<any>('/api/settings/security-policy'),
+  updateSettingsSecurityPolicy: (payload: any) =>
+    request<any>('/api/settings/security-policy', { method: 'PUT', body: JSON.stringify(payload) }),
+  settingsAuditLogs: (limit = 100, action?: string) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (action) params.set('action', action);
+    return request<any>(`/api/settings/audit-logs?${params}`);
+  },
+  settingsInterfaceOverview: () => request<any>('/api/settings/interfaces/overview'),
+  settingsInterfaceConfigs: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/settings/interfaces/configs${search.toString() ? `?${search}` : ''}`);
+  },
+  updateSettingsInterfaceConfig: (interfaceId: string, payload: any) =>
+    request<any>(`/api/settings/interfaces/${encodeURIComponent(interfaceId)}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  testSettingsInterface: (interfaceId: string) =>
+    request<any>(`/api/settings/interfaces/${encodeURIComponent(interfaceId)}/test`, { method: 'POST', body: '{}' }),
+  testAllSettingsInterfaces: () => request<any>('/api/settings/interfaces/test-all', { method: 'POST', body: '{}' }),
+  settingsInterfaces: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/settings/interfaces${search.toString() ? `?${search}` : ''}`);
+  },
+  settingsInterfaceTestLogs: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/settings/interfaces/test-logs${search.toString() ? `?${search}` : ''}`);
+  },
+  taskOverview: () => request<any>('/api/tasks/overview'),
+  taskRuns: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/tasks/runs${search.toString() ? `?${search}` : ''}`);
+  },
+  taskRecentLogs: (params: Record<string, any> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+    });
+    return request<any>(`/api/tasks/logs/recent${search.toString() ? `?${search}` : ''}`);
+  },
+  taskRetryRecent: (limit = 20) => request<any>(`/api/tasks/retry/recent?limit=${limit}`),
+  taskQueueOverview: () => request<any>('/api/tasks/queues/overview'),
+  taskTrend: (days = 7) => request<any>(`/api/tasks/trend?days=${days}`),
+  taskStart: (payload: any) => request<any>('/api/tasks/start', { method: 'POST', body: JSON.stringify(payload) }),
   runTask: (kind: string, payload: any = {}) => request<any>('/api/tasks/run', { method: 'POST', body: JSON.stringify({ kind, payload }) }),
   createTask: (kind: string, payload: any = {}) => request<any>('/api/tasks', { method: 'POST', body: JSON.stringify({ kind, payload }) }),
   tasks: () => request<any>('/api/tasks'),

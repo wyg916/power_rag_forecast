@@ -28,11 +28,6 @@ const historyTabs = [
   { key: 'forecast-history', label: '历史对比' }
 ];
 
-const modelTabs = [
-  { key: 'forecast-peak', label: '峰谷分析' },
-  { key: 'forecast-model', label: '模型评估' }
-];
-
 function csvExport(filename: string, rows: any[]) {
   const keys = Object.keys(rows[0] || {});
   if (!keys.length) {
@@ -125,9 +120,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   const tabs = view === 'history'
     ? <PageTabs items={historyTabs} activeKey={activeSubKey} onChange={onSubNavigate} />
-    : view === 'model'
-      ? <PageTabs items={modelTabs} activeKey={activeSubKey === 'forecast-peak' ? 'forecast-peak' : 'forecast-model'} onChange={onSubNavigate} />
-      : null;
+    : null;
 
   const metricItems = useMemo(() => {
     const base = data?.metrics || [];
@@ -176,7 +169,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const shouldShowStateBanner = loading || data?.empty || Boolean(data?.partialErrors?.length) || data?.mockFallback;
 
   return (
-    <div className="forecast-design-page">
+    <div className={`forecast-design-page forecast-view-${view}`}>
       <ForecastPageHeader
         title={title}
         subtitle={subtitle}
