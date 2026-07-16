@@ -85,7 +85,7 @@ paths:
   archive_dir: 自动化输出/archive
   dispatch_dir: 自动化输出/dispatch
   log_dir: 自动化输出/logs
-  final_output_root_dir: E:/智能运营分析项目/全流程预测结果数据存放
+  final_output_root_dir: 全流程预测结果数据存放
 
 dispatch:
   enable_local_archive: true

@@ -5,17 +5,40 @@
 *.pyc
 __pycache__/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 docx_render_check_*/
 .playwright-cli/
 .playwright-mcp/
+.codex_tmp/
+.codex_envs/
+wheelhouse/
+browser_cache/
+.browser_cache/
+docs/codex/evidence/
+docs/phase2/
+tests/productization/output/
+student_python_project/
+student_python_project_v2/
 ~$*.docx
 *.lnk
+/备-AGENTS.md
+*.tmp
+*.bak
+*.secret
+*.secrets
+secrets/
+.secrets/
 
 # Runtime logs and transient process files
 *.log
 *.out.log
 *.err.log
 *.pid
+celerybeat-schedule*
+celery*.state
 
 # Python / virtualenv artifacts
 .venv/
@@ -29,13 +52,33 @@ dist/
 node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
+/.vite/
+
+# Root-level UI/runtime verification outputs
+/*.png
+/*-snapshot.md
+/*-console.txt
+/*-layout-check.json
 
 # Large local model/data artifacts
 *.zip
 cloud_model_data_package_*/
 bge-large-zh-v1.5/
 bge-reranker-v2-m3/
-model_artifacts/
+model_artifacts/*
+!model_artifacts/*/
+model_artifacts/*/*
+!model_artifacts/*/manifest.json
+!model_artifacts/*/feature_cols.json
+!model_artifacts/*/input_schema.json
+!model_artifacts/*/metrics.json
+!model_artifacts/*/model_card.md
+!model_artifacts/*/thresholds.json
+!model_artifacts/*/training_config.json
+*.db
+*.sqlite
+*.sqlite3
 
 # Local generated runtime outputs
 /output/
@@ -52,3 +95,7 @@ knowledge_pipeline/converted/
 knowledge_pipeline/markdown/
 knowledge_pipeline/raw/
 knowledge_pipeline/output/
+
+# Docker/local runtime transient state
+.docker-state/
+docker-data/

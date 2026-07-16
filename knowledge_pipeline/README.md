@@ -39,25 +39,25 @@ C:\Program Files (x86)\LibreOffice\program\soffice.exe
 Dry-run 只扫描文件和格式分布：
 
 ```bash
-python knowledge_pipeline/knowledge_batch_processor.py --input "E:\智能运营分析项目\知识库" --output "E:\智能运营分析项目\knowledge_pipeline" --dry-run
+python knowledge_pipeline/knowledge_batch_processor.py --input "知识库" --output "knowledge_pipeline" --dry-run
 ```
 
 小批量测试：
 
 ```bash
-python knowledge_pipeline/knowledge_batch_processor.py --input "E:\智能运营分析项目\知识库" --output "E:\智能运营分析项目\knowledge_pipeline" --max-files 10 --verbose
+python knowledge_pipeline/knowledge_batch_processor.py --input "知识库" --output "knowledge_pipeline" --max-files 10 --verbose
 ```
 
 完整处理：
 
 ```bash
-python knowledge_pipeline/knowledge_batch_processor.py --input "E:\智能运营分析项目\知识库" --output "E:\智能运营分析项目\knowledge_pipeline"
+python knowledge_pipeline/knowledge_batch_processor.py --input "知识库" --output "knowledge_pipeline"
 ```
 
 断点续跑：
 
 ```bash
-python knowledge_pipeline/knowledge_batch_processor.py --input "E:\智能运营分析项目\知识库" --output "E:\智能运营分析项目\knowledge_pipeline" --resume
+python knowledge_pipeline/knowledge_batch_processor.py --input "知识库" --output "knowledge_pipeline" --resume
 ```
 
 ## 输出文件
@@ -81,7 +81,7 @@ python knowledge_pipeline/knowledge_batch_processor.py --input "E:\智能运营�
 {
   "chunk_id": "knowledge_000001",
   "source_file": "原始文件.pdf",
-  "source_path": "E:/智能运营分析项目/知识库/原始文件.pdf",
+  "source_path": "知识库/原始文件.pdf",
   "file_type": "pdf",
   "category": "电力现货交易",
   "title": "原始文件",

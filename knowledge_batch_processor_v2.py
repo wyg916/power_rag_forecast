@@ -10,10 +10,10 @@ knowledge_batch_processor.py
     并切分为可用于 RAG / AI 助手检索的 chunks.jsonl。
 
 默认输入：
-    E:\智能运营分析项目\知识库
+    <项目根目录>\知识库
 
 默认输出：
-    E:\智能运营分析项目\knowledge_pipeline
+    <项目根目录>\knowledge_pipeline
 
 支持格式：
     pdf, docx, doc, xlsx, xls, wps, et, html, htm, txt, md
@@ -22,7 +22,7 @@ knowledge_batch_processor.py
 运行示例：
     python knowledge_batch_processor.py
 
-    python knowledge_batch_processor.py --input "E:\智能运营分析项目\知识库" --output "E:\智能运营分析项目\knowledge_pipeline"
+    python knowledge_batch_processor.py --input "知识库" --output "knowledge_pipeline"
 
     python knowledge_batch_processor.py --dry-run
 
@@ -56,8 +56,9 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
 
-DEFAULT_INPUT_DIR = r"E:\智能运营分析项目\知识库"
-DEFAULT_OUTPUT_DIR = r"E:\智能运营分析项目\knowledge_pipeline"
+PROJECT_ROOT = Path(__file__).resolve().parent
+DEFAULT_INPUT_DIR = str(PROJECT_ROOT / "知识库")
+DEFAULT_OUTPUT_DIR = str(PROJECT_ROOT / "knowledge_pipeline")
 
 SUPPORTED_EXTS = {
     ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".wps", ".et",

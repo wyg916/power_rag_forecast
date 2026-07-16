@@ -11,7 +11,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 
-ROOT = Path(r"E:\智能运营分析项目")
+ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "《智能运营分析项目》项目全面分析说明文档_v20260610.docx"
 
 

@@ -1,8 +1,8 @@
 # Forecast 24h UI Design QA
 
-- Source visual truth: `C:\Users\ADMINI~1\AppData\Local\Temp\codex-clipboard-a4fb7bed-f8f8-42dd-984c-0be7e1af368f.png`
-- Implementation screenshot: `E:\智能运营分析项目\forecast-24h-one-screen-clean.png`
-- Combined comparison: `E:\智能运营分析项目\forecast-24h-before-after-qa.png`
+- Source visual truth: local temporary reference image (not committed)
+- Implementation screenshot: `forecast-24h-one-screen-clean.png`
+- Combined comparison: `forecast-24h-before-after-qa.png`
 - Viewport: desktop 1915 x 995 capture, browser CSS viewport 2127 x 1105 under system scaling
 - State: forecast center / 24-hour forecast, authenticated, API data loaded
 
@@ -50,17 +50,17 @@ final result: passed
 # Strategy Center UI Design QA
 
 - Source visual truth:
-  - `E:\智能运营分析项目\20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 总览主页面.png`
-  - `E:\智能运营分析项目\20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 低价窗口-储能策略页面.png`
-  - `E:\智能运营分析项目\20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 人工复核页面.png`
+  - `20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 总览主页面.png`
+  - `20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 低价窗口-储能策略页面.png`
+  - `20260621-项目-每个板块页面的截图\20260621-UI界面优化参考样式图\策略中心 - 人工复核页面.png`
 - Implementation screenshots:
-  - `E:\智能运营分析项目\strategy-overview-1672x941.png`
-  - `E:\智能运营分析项目\strategy-storage-1672x941.png`
-  - `E:\智能运营分析项目\strategy-review-1672x941.png`
+  - `strategy-overview-1672x941.png`
+  - `strategy-storage-1672x941.png`
+  - `strategy-review-1672x941.png`
 - Combined comparisons:
-  - `E:\智能运营分析项目\strategy-overview-before-after-qa.png`
-  - `E:\智能运营分析项目\strategy-storage-before-after-qa.png`
-  - `E:\智能运营分析项目\strategy-review-before-after-qa.png`
+  - `strategy-overview-before-after-qa.png`
+  - `strategy-storage-before-after-qa.png`
+  - `strategy-review-before-after-qa.png`
 - Viewport: desktop 1672 x 941.
 - State: strategy overview, storage strategy, and manual review pages with API data loaded.
 

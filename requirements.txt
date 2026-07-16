@@ -1,4 +1,4 @@
-pandas>=2.1,<3.0
+﻿pandas>=2.1,<3.0
 numpy>=1.26,<3.0
 matplotlib>=3.8,<4.0
 scikit-learn>=1.4,<2.0
@@ -21,7 +21,10 @@ PySide6-Fluent-Widgets>=1.5,<2.0
 fastapi>=0.111,<1.0
 uvicorn[standard]>=0.30,<1.0
 pydantic>=2.7,<3.0
-passlib[bcrypt]>=1.7,<2.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-multipart>=0.0.20,<1.0
+pytest>=8.0,<9.0
 
 # Optional model backends. The code skips these candidates if unavailable.
 xgboost>=2.0,<3.0

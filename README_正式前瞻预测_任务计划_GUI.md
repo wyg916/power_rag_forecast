@@ -10,9 +10,9 @@
 
 运行预测引擎或全流程后，正式版文件会输出到：
 
-- `E:\智能运营分析项目\结果-3\结果表\18_未来24小时预测结果_正式版.xlsx`
-- `E:\智能运营分析项目\结果-3\结果表\18_未来24小时预测输入特征_正式版.xlsx`
-- `E:\智能运营分析项目\结果-3\图表\21_未来24小时日前电价预测图_正式版.png`
+- `<项目根目录>\结果-3\结果表\18_未来24小时预测结果_正式版.xlsx`
+- `<项目根目录>\结果-3\结果表\18_未来24小时预测输入特征_正式版.xlsx`
+- `<项目根目录>\结果-3\图表\21_未来24小时日前电价预测图_正式版.png`
 
 说明：
 
@@ -26,12 +26,12 @@
 
 直接双击：
 
-- `E:\智能运营分析项目\启动智能运营分析GUI.bat`
+- `<项目根目录>\启动智能运营分析GUI.bat`
 
 或者命令行运行：
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python gui_launcher.py
 ```
 
@@ -56,7 +56,7 @@ GUI 主要按钮说明：
 
 直接双击：
 
-- `E:\智能运营分析项目\create_windows_task.bat`
+- `<项目根目录>\create_windows_task.bat`
 
 它会按默认参数创建一个每日任务：
 
@@ -67,7 +67,7 @@ GUI 主要按钮说明：
 ### 方式 B：PowerShell 自定义
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 powershell -ExecutionPolicy Bypass -File .\create_windows_task.ps1 -TaskName "PowerMarketDailyAutomation" -RunTime "06:30" -Mode "refresh_data"
 ```
 
@@ -89,7 +89,7 @@ powershell -ExecutionPolicy Bypass -File .\create_windows_task.ps1 -TaskName "Po
 3. 安装依赖：
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python -m pip install -r requirements.txt
 ```
 
@@ -98,29 +98,29 @@ python -m pip install -r requirements.txt
 ### 全流程
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python main_daily_run.py
 ```
 
 ### 先刷新数据再全流程
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python main_daily_run.py --refresh-data
 ```
 
 ### 跳过预测，只生成 AI 日报
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python main_daily_run.py --skip-prediction
 ```
 
 ### 批处理入口
 
-- `E:\智能运营分析项目\run_daily_pipeline.bat`
-- `E:\智能运营分析项目\run_daily_pipeline_refresh_data.bat`
-- `E:\智能运营分析项目\run_daily_pipeline_skip_prediction.bat`
+- `<项目根目录>\run_daily_pipeline.bat`
+- `<项目根目录>\run_daily_pipeline_refresh_data.bat`
+- `<项目根目录>\run_daily_pipeline_skip_prediction.bat`
 
 ## 6. 建议的日常使用方式
 
@@ -136,16 +136,16 @@ python main_daily_run.py --skip-prediction
 1. 用 GUI 或 `create_windows_task.ps1` 创建 `refresh_data` 模式任务
 2. 设定为每天 06:30 自动执行
 3. 查看输出目录：
-   `E:\智能运营分析项目\自动化输出\current`
+   `<项目根目录>\自动化输出\current`
 4. 查看结果目录：
-   `E:\智能运营分析项目\结果-3`
+   `<项目根目录>\结果-3`
 
 ## 7. 常见说明
 
 - 如果正式版天气预报接口暂时不可用，系统会自动切换到历史同小时天气代理，不会中断流程
 - 如果未来负荷预测文件缺少个别小时，系统会自动用历史同小时代理补齐
 - 任务计划脚本使用 `/F` 强制覆盖同名任务，不会弹确认框
-- GUI 和批处理都优先使用本机当前 Python 绝对路径：`C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe`
+- GUI 和批处理优先使用项目 `.venv\Scripts\python.exe`，不存在时使用 `PATH` 中的 `python`。
 
 ## 8. 阶段二工程化更新
 
@@ -196,14 +196,14 @@ python -c "from automation_common import load_config; from database_utils import
 启动方式：
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python -m ui.app
 ```
 
 快速自检新版 UI：
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python -m ui.app --smoke-test
 ```
 

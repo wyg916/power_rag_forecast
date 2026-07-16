@@ -3,7 +3,9 @@ setlocal
 pushd "%~dp0"
 
 set "PYTHONUTF8=1"
-set "PYTHON_EXE=C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe"
+if defined NODE_HOME if exist "%NODE_HOME%\node.exe" set "PATH=%NODE_HOME%;%PATH%"
+if defined NODE_HOME if exist "%NODE_HOME%\npm.cmd" set "NPM_EXE=%NODE_HOME%\npm.cmd"
+set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
 if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
 
 echo [INFO] v2.11.2 DB-STATE-V1: restart Web platform with latest source.

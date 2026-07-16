@@ -5,7 +5,7 @@
 启动：
 
 ```powershell
-cd E:\智能运营分析项目
+cd <项目根目录>
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 

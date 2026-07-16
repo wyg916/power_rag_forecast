@@ -102,11 +102,12 @@ def parse_hf_cache_models() -> list[dict]:
     if os.environ.get("ENABLE_HF_CACHE_SCAN", "0") != "1":
         return []
 
-    candidate_roots = [
-        Path("F:/MediaPipe Pose_ChineseCLIP_Qwen2-VL/models/hf_cache"),
-        Path("F:/MediaPipe Pose_ChineseCLIP_Qwen2-VL/hf_cache"),
-        Path.home() / ".cache" / "huggingface" / "hub",
+    configured_roots = [
+        Path(value)
+        for value in os.environ.get("HF_CACHE_ROOTS", "").split(os.pathsep)
+        if value.strip()
     ]
+    candidate_roots = [*configured_roots, Path.home() / ".cache" / "huggingface" / "hub"]
 
     seen: dict[str, dict] = {}
     for root in candidate_roots:
@@ -188,7 +189,7 @@ def main() -> None:
             "cpu": cpu_name,
             "memory_gb": memory_gb,
             "gpu": gpu_info,
-            "disk_free_gb": round(shutil.disk_usage(paths.root_dir.drive or "E:/").free / (1024**3), 2),
+            "disk_free_gb": round(shutil.disk_usage(paths.root_dir).free / (1024**3), 2),
         },
         "local_services": {
             "ollama_installed": shutil.which("ollama") is not None,
