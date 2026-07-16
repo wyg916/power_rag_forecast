@@ -99,3 +99,6 @@ knowledge_pipeline/output/
 # Docker/local runtime transient state
 .docker-state/
 docker-data/
+
+# Reconstruct locally from docs/large-assets/ui-gap-report-v20260621/
+/docs/智能运营分析项目_UI优化参考图与当前功能差异分析说明文档_v20260621.docx
