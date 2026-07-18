@@ -58,7 +58,10 @@ def build_context_pack(
                     "chunk_id": item.get("chunk_id"),
                     "doc_id": item.get("doc_id"),
                     "title": item.get("title"),
+                    "section": item.get("section_title"),
                     "source": item.get("source"),
+                    "domain": item.get("domain"),
+                    "source_type": item.get("evidence_source_type"),
                     "content": item.get("content"),
                     "keyword_score": item.get("keyword_score", 0.0),
                     "vector_score": item.get("vector_score", 0.0),
@@ -69,6 +72,7 @@ def build_context_pack(
             ],
             limit=1200,
         ),
+        "knowledge_citations": _clip((rag_result or {}).get("citations") or [], limit=1200),
         "knowledge_retrieval": _clip((rag_result or {}).get("retrieval") or {}, limit=800),
         "missing_data": missing_data,
         "rules": {

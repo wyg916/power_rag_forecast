@@ -12,6 +12,8 @@ from sqlalchemy import text
 from .base import dumps_json, jsonable, loads_json, mapping_list, postgres_engine
 from backend.app.services.embedding_service import embed_batch_with_metadata, embed_text_with_metadata, get_embedding_provider
 
+KNOWLEDGE_STATUSES = frozenset({"draft", "active", "superseded", "archived", "invalid"})
+
 
 def tokenize(text_value: str) -> list[str]:
     compact = re.sub(r"\s+", "", (text_value or "").lower())
@@ -24,13 +26,19 @@ def tokenize(text_value: str) -> list[str]:
     return list(dict.fromkeys(expanded))[:80]
 
 
-def document_id(source_path: str, content: str) -> str:
-    digest = hashlib.sha1(f"{source_path}\n{content}".encode("utf-8", errors="ignore")).hexdigest()
+def document_id(source_path: str, content: str, document_version: str = "1") -> str:
+    digest = hashlib.sha1(
+        f"{source_path}\n{document_version}\n{checksum(content)}".encode("utf-8", errors="ignore")
+    ).hexdigest()
     return "kb_" + digest[:20]
 
 
 def checksum(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
+
+
+def chunk_id(doc_id: str, content: str) -> str:
+    return f"{doc_id}_{checksum(content)[:16]}"
 
 
 def split_chunks(content: str, chunk_size: int = 900) -> list[str]:
@@ -54,9 +62,29 @@ def split_chunks(content: str, chunk_size: int = 900) -> list[str]:
         if len(chunk) <= chunk_size * 1.4:
             output.append(chunk)
             continue
-        for index in range(0, len(chunk), chunk_size):
-            output.append(chunk[index : index + chunk_size])
-    return output[:200]
+        sentences = [
+            item.strip()
+            for item in re.split(r"(?<=[。！？.!?；;])\s*", chunk)
+            if item.strip()
+        ]
+        sentence_chunk = ""
+        for sentence in sentences or [chunk]:
+            if len(sentence_chunk) + len(sentence) <= chunk_size:
+                sentence_chunk = f"{sentence_chunk}{sentence}".strip()
+            else:
+                if sentence_chunk:
+                    output.append(sentence_chunk)
+                sentence_chunk = sentence
+        if sentence_chunk:
+            output.append(sentence_chunk)
+    unique: list[str] = []
+    seen: set[str] = set()
+    for item in output:
+        content_hash = checksum(item)
+        if content_hash not in seen:
+            seen.add(content_hash)
+            unique.append(item)
+    return unique[:200]
 
 
 SEED_KNOWLEDGE_DOCUMENTS: list[dict[str, Any]] = [
@@ -142,6 +170,72 @@ def _chunk_metadata(metadata: dict[str, Any] | None, embedding_meta: dict[str, A
     return value
 
 
+def _estimated_token_count(value: str) -> int:
+    chinese = len(re.findall(r"[\u4e00-\u9fff]", value or ""))
+    words = len(re.findall(r"[A-Za-z0-9_]+", value or ""))
+    return max(1, chinese + words)
+
+
+def _document_metadata(
+    *,
+    title: str,
+    source_type: str,
+    source_path: str,
+    content: str,
+    metadata: dict[str, Any] | None,
+) -> dict[str, Any]:
+    value = dict(metadata or {})
+    generated_at = str(value.get("generated_at") or datetime.now().isoformat(timespec="seconds"))
+    status = str(value.get("status") or "active").strip().lower()
+    if status not in KNOWLEDGE_STATUSES:
+        status = "invalid"
+    value.update(
+        {
+            "document_version": str(value.get("document_version") or f"sha256:{checksum(content)[:12]}"),
+            "title": title,
+            "domain": str(value.get("domain") or ""),
+            "source_type": str(value.get("evidence_source_type") or "real"),
+            "evidence_source_type": str(value.get("evidence_source_type") or "real"),
+            "source_name": str(value.get("source_name") or title),
+            "source_uri": str(value.get("source_uri") or ""),
+            "source_path": source_path,
+            "effective_at": value.get("effective_at"),
+            "expires_at": value.get("expires_at"),
+            "generated_at": generated_at,
+            "content_hash": checksum(content),
+            "language": str(value.get("language") or "zh-CN"),
+            "status": status,
+            "tags": list(value.get("tags") or []),
+            "evidence_level": str(value.get("evidence_level") or "documented"),
+            "storage_source_type": source_type,
+        }
+    )
+    return value
+
+
+def _normalized_chunk_metadata(
+    *,
+    document_metadata: dict[str, Any],
+    chunk: str,
+    chunk_index: int,
+    embedding_meta: dict[str, Any] | None,
+) -> dict[str, Any]:
+    value = _chunk_metadata(document_metadata, embedding_meta)
+    value.update(
+        {
+            "chunk_index": chunk_index,
+            "section_title": str(value.get("section_title") or value.get("title") or ""),
+            "content_hash": checksum(chunk),
+            "token_count": _estimated_token_count(chunk),
+            "domain": str(value.get("domain") or ""),
+            "source_type": str(value.get("evidence_source_type") or "real"),
+            "embedding_status": "ready" if embedding_meta and embedding_meta.get("dim") else "pending",
+            "embedding_version": str((embedding_meta or {}).get("version") or ""),
+        }
+    )
+    return value
+
+
 def upsert_document(
     *,
     title: str,
@@ -149,16 +243,52 @@ def upsert_document(
     source_path: str,
     content: str,
     metadata: dict[str, Any] | None = None,
+    generate_embeddings: bool = False,
 ) -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "message": "PostgreSQL 不可用"}
-    doc_id = document_id(source_path, content)
+    document_metadata = _document_metadata(
+        title=title,
+        source_type=source_type,
+        source_path=source_path,
+        content=content,
+        metadata=metadata,
+    )
+    doc_id = document_id(source_path, content, str(document_metadata["document_version"]))
+    document_metadata["document_id"] = doc_id
     chunks = split_chunks(content)
-    embedding_results = embed_batch_with_metadata([f"{title}\n{chunk}" for chunk in chunks])
+    embedding_results = (
+        embed_batch_with_metadata([f"{title}\n{chunk}" for chunk in chunks])
+        if generate_embeddings
+        else [{"embedding": [], "metadata": {}} for _ in chunks]
+    )
+    if generate_embeddings and (
+        len(embedding_results) != len(chunks)
+        or any(not (item.get("embedding") or []) for item in embedding_results)
+    ):
+        return {
+            "available": False,
+            "message": "Embedding generation failed; document was not written.",
+            "doc_id": doc_id,
+            "embedding_failed": True,
+        }
     now = datetime.now()
     try:
         with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    UPDATE kb_documents
+                    SET metadata_json = jsonb_set(metadata_json, '{status}', '"superseded"'::jsonb, true),
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE source_path = :source_path
+                      AND doc_id <> :doc_id
+                      AND COALESCE(metadata_json->>'status', 'active') = 'active'
+                    """
+                ),
+                {"source_path": source_path, "doc_id": doc_id},
+            )
             conn.execute(
                 text(
                     """
@@ -186,15 +316,19 @@ def upsert_document(
                     "source_type": source_type,
                     "source_path": source_path,
                     "checksum": checksum(content),
-                    "metadata_json": dumps_json(metadata or {}),
+                    "metadata_json": dumps_json(document_metadata),
                     "indexed_at": now,
                 },
             )
-            conn.execute(text("DELETE FROM kb_chunks WHERE doc_id = :doc_id"), {"doc_id": doc_id})
             for index, chunk in enumerate(chunks):
                 embedding_result = embedding_results[index] if index < len(embedding_results) else {"embedding": [], "metadata": {}}
                 embedding = embedding_result.get("embedding") or []
-                metadata_with_embedding = _chunk_metadata(metadata, embedding_result.get("metadata") or {})
+                metadata_with_embedding = _normalized_chunk_metadata(
+                    document_metadata=document_metadata,
+                    chunk=chunk,
+                    chunk_index=index,
+                    embedding_meta=embedding_result.get("metadata") or {},
+                )
                 conn.execute(
                     text(
                         """
@@ -207,10 +341,16 @@ def upsert_document(
                             CAST(:keywords_json AS jsonb), CAST(:embedding_json AS jsonb),
                             CAST(:metadata_json AS jsonb)
                         )
+                        ON CONFLICT (chunk_id) DO UPDATE SET
+                            content = EXCLUDED.content,
+                            keywords_json = EXCLUDED.keywords_json,
+                            embedding_json = EXCLUDED.embedding_json,
+                            metadata_json = EXCLUDED.metadata_json,
+                            updated_at = CURRENT_TIMESTAMP
                         """
                     ),
                     {
-                        "chunk_id": f"{doc_id}_{index:04d}",
+                        "chunk_id": chunk_id(doc_id, chunk),
                         "doc_id": doc_id,
                         "chunk_index": index,
                         "content": chunk,
@@ -224,7 +364,59 @@ def upsert_document(
         return {"available": False, "message": str(exc), "doc_id": doc_id}
 
 
-def search_keyword_chunks(query: str, top_k: int = 20) -> list[dict[str, Any]]:
+def _retrieval_filter_sql(
+    *,
+    domain: str = "",
+    source_types: list[str] | None = None,
+    include_historical: bool = False,
+    include_demo: bool = False,
+) -> tuple[str, dict[str, Any]]:
+    clauses = [
+        "COALESCE(d.metadata_json->>'status', 'active') = 'active'",
+        "COALESCE(c.metadata_json->>'status', '') = 'active'",
+        "COALESCE(d.metadata_json->>'domain', '') <> ''",
+        "COALESCE(c.metadata_json->>'domain', '') = COALESCE(d.metadata_json->>'domain', '')",
+        "COALESCE(c.metadata_json->>'source_type', '') = COALESCE(d.metadata_json->>'evidence_source_type', 'real')",
+    ]
+    params: dict[str, Any] = {}
+    allowed_types = [str(item).strip() for item in source_types or [] if str(item).strip()]
+    if allowed_types:
+        placeholders = []
+        for index, source_type in enumerate(allowed_types):
+            key = f"source_filter_{index}"
+            params[key] = source_type
+            placeholders.append(f":{key}")
+        clauses.append(
+            "COALESCE(d.metadata_json->>'evidence_source_type', 'real') "
+            f"IN ({', '.join(placeholders)})"
+        )
+    else:
+        excluded = ["fallback"]
+        if not include_historical:
+            excluded.append("historical")
+        if not include_demo:
+            excluded.append("demo")
+        for index, source_type in enumerate(excluded):
+            key = f"excluded_source_{index}"
+            params[key] = source_type
+            clauses.append(
+                f"COALESCE(d.metadata_json->>'evidence_source_type', 'real') <> :{key}"
+            )
+    if domain.strip():
+        params["domain_filter"] = domain.strip()
+        clauses.append("d.metadata_json->>'domain' = :domain_filter")
+    return " AND ".join(clauses), params
+
+
+def search_keyword_chunks(
+    query: str,
+    top_k: int = 20,
+    *,
+    domain: str = "",
+    source_types: list[str] | None = None,
+    include_historical: bool = False,
+    include_demo: bool = False,
+) -> list[dict[str, Any]]:
     engine = postgres_engine()
     if engine is None:
         return []
@@ -233,6 +425,13 @@ def search_keyword_chunks(query: str, top_k: int = 20) -> list[dict[str, Any]]:
         return []
     params = {f"token_{idx}": f"%{token}%" for idx, token in enumerate(tokens[:8])}
     predicates = " OR ".join([f"c.content ILIKE :token_{idx} OR d.title ILIKE :token_{idx}" for idx in range(len(params))])
+    filter_sql, filter_params = _retrieval_filter_sql(
+        domain=domain,
+        source_types=source_types,
+        include_historical=include_historical,
+        include_demo=include_demo,
+    )
+    params.update(filter_params)
     try:
         with engine.connect() as conn:
             rows = conn.execute(
@@ -244,6 +443,7 @@ def search_keyword_chunks(query: str, top_k: int = 20) -> list[dict[str, Any]]:
                     FROM kb_chunks c
                     JOIN kb_documents d ON d.doc_id = c.doc_id
                     WHERE COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                      AND {filter_sql}
                       AND ({predicates})
                     LIMIT 200
                     """
@@ -258,6 +458,7 @@ def search_keyword_chunks(query: str, top_k: int = 20) -> list[dict[str, Any]]:
         keywords = loads_json(row.get("keywords_json"), default=[])
         keyword_set = set(str(item) for item in keywords) if isinstance(keywords, list) else set()
         content = str(row.get("content") or "")
+        metadata = loads_json(row.get("metadata_json"), default={})
         score = len(q_tokens & keyword_set) + sum(content.lower().count(token.lower()) for token in tokens[:8])
         if score <= 0:
             continue
@@ -266,8 +467,11 @@ def search_keyword_chunks(query: str, top_k: int = 20) -> list[dict[str, Any]]:
                 {
                     "chunk_id": row.get("chunk_id"),
                     "doc_id": row.get("doc_id"),
+                    "document_id": row.get("doc_id"),
                     "title": row.get("title"),
                     "source": row.get("source_path"),
+                    "source_path": row.get("source_path"),
+                    "source_uri": metadata.get("source_uri") if isinstance(metadata, dict) else "",
                     "source_type": row.get("source_type"),
                     "chunk_index": row.get("chunk_index"),
                     "content": content[:700],
@@ -276,7 +480,13 @@ def search_keyword_chunks(query: str, top_k: int = 20) -> list[dict[str, Any]]:
                     "rerank_score": 0.0,
                     "final_score": float(score),
                     "score": score,
-                    "metadata": loads_json(row.get("metadata_json"), default={}),
+                    "section_title": metadata.get("section_title") if isinstance(metadata, dict) else "",
+                    "domain": metadata.get("domain") if isinstance(metadata, dict) else "",
+                    "evidence_source_type": metadata.get("source_type") if isinstance(metadata, dict) else "real",
+                    "status": metadata.get("status") if isinstance(metadata, dict) else "active",
+                    "effective_at": metadata.get("effective_at") if isinstance(metadata, dict) else None,
+                    "evidence_level": metadata.get("evidence_level") if isinstance(metadata, dict) else "",
+                    "metadata": metadata,
                 }
             )
         )
@@ -284,15 +494,28 @@ def search_keyword_chunks(query: str, top_k: int = 20) -> list[dict[str, Any]]:
     return scored[: max(1, min(int(top_k or 20), 100))]
 
 
-def list_embedded_chunks(limit: int = 2000) -> list[dict[str, Any]]:
+def list_embedded_chunks(
+    limit: int = 2000,
+    *,
+    domain: str = "",
+    source_types: list[str] | None = None,
+    include_historical: bool = False,
+    include_demo: bool = False,
+) -> list[dict[str, Any]]:
     engine = postgres_engine()
     if engine is None:
         return []
+    filter_sql, filter_params = _retrieval_filter_sql(
+        domain=domain,
+        source_types=source_types,
+        include_historical=include_historical,
+        include_demo=include_demo,
+    )
     try:
         with engine.connect() as conn:
             rows = conn.execute(
                 text(
-                    """
+                    f"""
                     SELECT c.chunk_id, c.doc_id, c.chunk_index, c.content,
                            c.keywords_json, c.embedding_json, c.metadata_json,
                            d.title, d.source_type, d.source_path
@@ -300,11 +523,15 @@ def list_embedded_chunks(limit: int = 2000) -> list[dict[str, Any]]:
                     JOIN kb_documents d ON d.doc_id = c.doc_id
                     WHERE c.embedding_json IS NOT NULL
                       AND COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                      AND {filter_sql}
                     ORDER BY d.updated_at DESC NULLS LAST, c.created_at DESC
                     LIMIT :limit
                     """
                 ),
-                {"limit": max(1, min(int(limit or 2000), 10000))},
+                {
+                    "limit": max(1, min(int(limit or 2000), 10000)),
+                    **filter_params,
+                },
             ).mappings().all()
     except Exception:
         return []
@@ -320,8 +547,11 @@ def list_embedded_chunks(limit: int = 2000) -> list[dict[str, Any]]:
                 {
                     "chunk_id": row.get("chunk_id"),
                     "doc_id": row.get("doc_id"),
+                    "document_id": row.get("doc_id"),
                     "title": row.get("title"),
                     "source": row.get("source_path"),
+                    "source_path": row.get("source_path"),
+                    "source_uri": metadata.get("source_uri") if isinstance(metadata, dict) else "",
                     "source_type": row.get("source_type"),
                     "chunk_index": row.get("chunk_index"),
                     "content": str(row.get("content") or "")[:900],
@@ -331,11 +561,119 @@ def list_embedded_chunks(limit: int = 2000) -> list[dict[str, Any]]:
                     "vector_score": 0.0,
                     "rerank_score": 0.0,
                     "final_score": 0.0,
+                    "section_title": metadata.get("section_title") if isinstance(metadata, dict) else "",
+                    "domain": metadata.get("domain") if isinstance(metadata, dict) else "",
+                    "evidence_source_type": metadata.get("source_type") if isinstance(metadata, dict) else "real",
+                    "status": metadata.get("status") if isinstance(metadata, dict) else "active",
+                    "effective_at": metadata.get("effective_at") if isinstance(metadata, dict) else None,
+                    "evidence_level": metadata.get("evidence_level") if isinstance(metadata, dict) else "",
                     "metadata": metadata,
                 }
             )
         )
     return items
+
+
+def get_vector_index_rows(limit: int = 50000) -> list[dict[str, Any]]:
+    """Return only active, retrieval-eligible, ready embeddings for an explicit index build."""
+    engine = postgres_engine()
+    if engine is None:
+        return []
+    filter_sql, filter_params = _retrieval_filter_sql(include_historical=True, include_demo=True)
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                f"""
+                SELECT c.chunk_id, c.embedding_json, c.metadata_json
+                FROM kb_chunks c
+                JOIN kb_documents d ON d.doc_id = c.doc_id
+                WHERE c.embedding_json IS NOT NULL
+                  AND COALESCE(c.metadata_json->>'embedding_status', '') = 'ready'
+                  AND COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                  AND {filter_sql}
+                ORDER BY c.chunk_id
+                LIMIT :limit
+                """
+            ),
+            {"limit": max(1, min(int(limit or 50000), 100000)), **filter_params},
+        ).mappings().all()
+    output: list[dict[str, Any]] = []
+    for row in mapping_list(rows):
+        metadata = loads_json(row.get("metadata_json"), default={})
+        output.append(
+            {
+                "chunk_id": str(row.get("chunk_id") or ""),
+                "embedding": loads_json(row.get("embedding_json"), default=[]),
+                "metadata": metadata if isinstance(metadata, dict) else {},
+            }
+        )
+    return output
+
+
+def get_chunks_by_ids(
+    chunk_ids: list[str],
+    *,
+    domain: str = "",
+    source_types: list[str] | None = None,
+    include_historical: bool = False,
+    include_demo: bool = False,
+) -> list[dict[str, Any]]:
+    engine = postgres_engine()
+    ordered_ids = [str(item) for item in chunk_ids if str(item)]
+    if engine is None or not ordered_ids:
+        return []
+    filter_sql, params = _retrieval_filter_sql(
+        domain=domain,
+        source_types=source_types,
+        include_historical=include_historical,
+        include_demo=include_demo,
+    )
+    id_params = {f"vector_chunk_{index}": value for index, value in enumerate(ordered_ids)}
+    placeholders = ", ".join(f":{key}" for key in id_params)
+    params.update(id_params)
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                f"""
+                SELECT c.chunk_id, c.doc_id, c.chunk_index, c.content, c.metadata_json,
+                       d.title, d.source_type, d.source_path
+                FROM kb_chunks c
+                JOIN kb_documents d ON d.doc_id = c.doc_id
+                WHERE c.chunk_id IN ({placeholders})
+                  AND COALESCE(c.metadata_json->>'embedding_status', '') = 'ready'
+                  AND COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                  AND {filter_sql}
+                """
+            ),
+            params,
+        ).mappings().all()
+    by_id: dict[str, dict[str, Any]] = {}
+    for row in mapping_list(rows):
+        metadata = loads_json(row.get("metadata_json"), default={})
+        metadata = metadata if isinstance(metadata, dict) else {}
+        chunk_id_value = str(row.get("chunk_id") or "")
+        by_id[chunk_id_value] = jsonable(
+            {
+                "chunk_id": chunk_id_value,
+                "doc_id": row.get("doc_id"),
+                "document_id": row.get("doc_id"),
+                "title": row.get("title"),
+                "source": row.get("source_path"),
+                "source_path": row.get("source_path"),
+                "source_uri": metadata.get("source_uri", ""),
+                "source_type": row.get("source_type"),
+                "chunk_index": row.get("chunk_index"),
+                "content": str(row.get("content") or "")[:900],
+                "section_title": metadata.get("section_title", ""),
+                "domain": metadata.get("domain", ""),
+                "evidence_source_type": metadata.get("source_type", "real"),
+                "status": metadata.get("status", "active"),
+                "effective_at": metadata.get("effective_at"),
+                "evidence_level": metadata.get("evidence_level", ""),
+                "metadata": metadata,
+            }
+        )
+    return [by_id[item] for item in ordered_ids if item in by_id]
 
 
 def backfill_missing_embeddings(limit: int = 5000) -> dict[str, Any]:
@@ -543,7 +881,13 @@ def ensure_seed_knowledge(*, explicit: bool = False) -> dict[str, Any]:
                 "category": item.get("category"),
                 "business_domain": "power_trading_knowledge",
                 "seed_version": "20260630",
+                "domain": "demo_knowledge",
+                "evidence_source_type": "demo",
+                "source_name": str(item["title"]),
+                "status": "active",
+                "evidence_level": "demo_seed",
             },
+            generate_embeddings=True,
         )
         if result.get("available"):
             inserted += 1
@@ -559,7 +903,6 @@ def _doc_status(chunk_count: int, embedded_count: int) -> str:
 
 
 def list_knowledge_documents(page: int = 1, page_size: int = 20, search: str = "") -> dict[str, Any]:
-    ensure_seed_knowledge()
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "items": [], "total": 0, "page": page, "page_size": page_size}
@@ -618,9 +961,23 @@ def list_knowledge_documents(page: int = 1, page_size: int = 20, search: str = "
         items.append(
             {
                 "doc_id": row.get("doc_id"),
+                "document_id": row.get("doc_id"),
                 "title": row.get("title"),
                 "source_type": row.get("source_type"),
                 "source_path": row.get("source_path"),
+                "document_version": metadata.get("document_version") if isinstance(metadata, dict) else "",
+                "domain": metadata.get("domain") if isinstance(metadata, dict) else "",
+                "evidence_source_type": metadata.get("evidence_source_type") if isinstance(metadata, dict) else "real",
+                "source_name": metadata.get("source_name") if isinstance(metadata, dict) else "",
+                "source_uri": metadata.get("source_uri") if isinstance(metadata, dict) else "",
+                "effective_at": metadata.get("effective_at") if isinstance(metadata, dict) else None,
+                "expires_at": metadata.get("expires_at") if isinstance(metadata, dict) else None,
+                "generated_at": metadata.get("generated_at") if isinstance(metadata, dict) else None,
+                "content_hash": metadata.get("content_hash") if isinstance(metadata, dict) else "",
+                "language": metadata.get("language") if isinstance(metadata, dict) else "",
+                "knowledge_status": metadata.get("status") if isinstance(metadata, dict) else "active",
+                "tags": metadata.get("tags") if isinstance(metadata, dict) else [],
+                "evidence_level": metadata.get("evidence_level") if isinstance(metadata, dict) else "",
                 "category": metadata.get("category") if isinstance(metadata, dict) else "",
                 "updated_at": row.get("updated_at"),
                 "indexed_at": row.get("indexed_at"),
@@ -633,8 +990,138 @@ def list_knowledge_documents(page: int = 1, page_size: int = 20, search: str = "
     return {"available": True, "items": jsonable(items), "total": total, "page": safe_page, "page_size": safe_page_size}
 
 
+def get_knowledge_document(doc_id: str) -> dict[str, Any]:
+    engine = postgres_engine()
+    if engine is None:
+        return {"available": False, "document": None}
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text(
+                    """
+                    SELECT d.doc_id, d.title, d.source_type, d.source_path, d.checksum,
+                           d.metadata_json, d.indexed_at, d.created_at, d.updated_at,
+                           COUNT(c.chunk_id) AS chunk_count
+                    FROM kb_documents d
+                    LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id
+                    WHERE d.doc_id = :doc_id
+                    GROUP BY d.doc_id, d.title, d.source_type, d.source_path, d.checksum,
+                             d.metadata_json, d.indexed_at, d.created_at, d.updated_at
+                    """
+                ),
+                {"doc_id": doc_id},
+            ).mappings().first()
+    except Exception as exc:
+        return {"available": False, "document": None, "error": str(exc)[:300]}
+    if not row:
+        return {"available": False, "document": None, "reason": "not_found"}
+    value = dict(row)
+    metadata = loads_json(value.pop("metadata_json", None), default={})
+    value["document_id"] = value.get("doc_id")
+    return {"available": True, "document": jsonable({**value, **(metadata if isinstance(metadata, dict) else {})})}
+
+
+def list_knowledge_chunks(doc_id: str, page: int = 1, page_size: int = 50) -> dict[str, Any]:
+    engine = postgres_engine()
+    if engine is None:
+        return {"available": False, "items": [], "total": 0}
+    safe_page = max(1, int(page or 1))
+    safe_page_size = max(1, min(int(page_size or 50), 100))
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT c.chunk_id, c.doc_id, c.chunk_index, c.content,
+                           c.metadata_json, c.created_at, c.updated_at,
+                           COUNT(*) OVER() AS total_count
+                    FROM kb_chunks c
+                    WHERE c.doc_id = :doc_id
+                    ORDER BY c.chunk_index
+                    LIMIT :limit OFFSET :offset
+                    """
+                ),
+                {
+                    "doc_id": doc_id,
+                    "limit": safe_page_size,
+                    "offset": (safe_page - 1) * safe_page_size,
+                },
+            ).mappings().all()
+    except Exception as exc:
+        return {"available": False, "items": [], "total": 0, "error": str(exc)[:300]}
+    items = []
+    total = 0
+    for row in mapping_list(rows):
+        metadata = loads_json(row.get("metadata_json"), default={})
+        total = int(row.get("total_count") or total or 0)
+        items.append(
+            jsonable(
+                {
+                    "chunk_id": row.get("chunk_id"),
+                    "document_id": row.get("doc_id"),
+                    "chunk_index": row.get("chunk_index"),
+                    "section_title": metadata.get("section_title") if isinstance(metadata, dict) else "",
+                    "content": row.get("content"),
+                    "content_hash": metadata.get("content_hash") if isinstance(metadata, dict) else "",
+                    "token_count": metadata.get("token_count") if isinstance(metadata, dict) else 0,
+                    "domain": metadata.get("domain") if isinstance(metadata, dict) else "",
+                    "source_type": metadata.get("source_type") if isinstance(metadata, dict) else "real",
+                    "embedding_status": metadata.get("embedding_status") if isinstance(metadata, dict) else "pending",
+                    "embedding_version": metadata.get("embedding_version") if isinstance(metadata, dict) else "",
+                    "metadata": metadata,
+                    "created_at": row.get("created_at"),
+                    "updated_at": row.get("updated_at"),
+                }
+            )
+        )
+    return {"available": True, "items": items, "total": total, "page": safe_page, "page_size": safe_page_size}
+
+
+def get_knowledge_citation(chunk_id: str) -> dict[str, Any]:
+    engine = postgres_engine()
+    if engine is None:
+        return {"available": False, "citation": None}
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(
+                text(
+                    """
+                    SELECT c.chunk_id, c.doc_id, c.chunk_index, c.content, c.metadata_json,
+                           d.title, d.source_path, d.metadata_json AS document_metadata
+                    FROM kb_chunks c
+                    JOIN kb_documents d ON d.doc_id = c.doc_id
+                    WHERE c.chunk_id = :chunk_id
+                    """
+                ),
+                {"chunk_id": chunk_id},
+            ).mappings().first()
+    except Exception as exc:
+        return {"available": False, "citation": None, "error": str(exc)[:300]}
+    if not row:
+        return {"available": False, "citation": None, "reason": "not_found"}
+    chunk_metadata = loads_json(row.get("metadata_json"), default={})
+    document_metadata = loads_json(row.get("document_metadata"), default={})
+    content = str(row.get("content") or "")
+    return {
+        "available": True,
+        "citation": jsonable(
+            {
+                "document_id": row.get("doc_id"),
+                "chunk_id": row.get("chunk_id"),
+                "title": row.get("title"),
+                "section": chunk_metadata.get("section_title") if isinstance(chunk_metadata, dict) else "",
+                "source": row.get("source_path"),
+                "domain": chunk_metadata.get("domain") if isinstance(chunk_metadata, dict) else "",
+                "source_type": chunk_metadata.get("source_type") if isinstance(chunk_metadata, dict) else "real",
+                "evidence_level": document_metadata.get("evidence_level") if isinstance(document_metadata, dict) else "",
+                "quote": content,
+                "content_hash": chunk_metadata.get("content_hash") if isinstance(chunk_metadata, dict) else checksum(content),
+            }
+        ),
+    }
+
+
 def knowledge_stats() -> dict[str, Any]:
-    ensure_seed_knowledge()
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "documents": 0, "chunks": 0, "embedded_chunks": 0, "pending_documents": 0, "qa_pass_rate": 0.0}
@@ -775,49 +1262,81 @@ def record_search_result(query: str, top_k: int, result: dict[str, Any]) -> dict
 
 def build_qa_answer(question: str, search_result: dict[str, Any]) -> dict[str, Any]:
     items = list(search_result.get("items") or [])
-    top = items[0] if items else {}
-    titles = list(dict.fromkeys(str(item.get("title") or "").strip() for item in items if item.get("title")))[:5]
+    citations: list[dict[str, Any]] = []
+    for item in items[:8]:
+        content = str(item.get("content") or "").strip()
+        if not content or not item.get("chunk_id") or not item.get("doc_id"):
+            continue
+        quote = content[:240]
+        if quote not in content:
+            continue
+        citations.append(
+            {
+                "document_id": item.get("doc_id"),
+                "chunk_id": item.get("chunk_id"),
+                "title": item.get("title"),
+                "section": item.get("section_title") or "",
+                "source": item.get("source"),
+                "score": float(item.get("final_score") or item.get("score") or 0.0),
+                "quote": quote,
+            }
+        )
+    top = items[0] if items and citations else {}
     high_score = float(top.get("final_score") or top.get("score") or 0.0) if top else 0.0
-    passed = bool(items and high_score > 0)
-    if not items:
+    source_types = list(
+        dict.fromkeys(
+            str(item.get("evidence_source_type") or "real")
+            for item in items
+            if item.get("evidence_source_type")
+        )
+    )
+    domains = list(dict.fromkeys(str(item.get("domain") or "") for item in items if item.get("domain")))
+    domain_conflict = bool(items) and (len(domains) != 1 or any(not item.get("domain") for item in items))
+    if not citations or domain_conflict:
+        answer = "当前知识库没有达到相关度门槛且可核验的证据，无法据此回答该问题。"
         blocks = [
-            {"key": "conclusion", "title": "结论", "tone": "warning", "content": "本次检索未命中可用知识片段，建议补充文档或重建索引后再次测试。"},
-            {"key": "evidence", "title": "依据", "tone": "info", "content": "当前知识库未返回与问题直接相关的片段。"},
-            {"key": "action", "title": "建议动作", "tone": "success", "content": "可先上传政策、规则或交易说明文档，再执行索引刷新。"},
+            {"key": "conclusion", "title": "结论", "tone": "warning", "content": answer},
+            {"key": "evidence", "title": "依据", "tone": "info", "content": "未返回真实可追踪 citation。"},
         ]
-    else:
-        snippet = str(top.get("content") or "").strip().replace("\n", " ")
-        if len(snippet) > 180:
-            snippet = f"{snippet[:180]}..."
-        top_title = str(top.get("title") or (titles[0] if titles else "最高分文档"))
-        blocks = [
-            {
-                "key": "conclusion",
-                "title": "结论",
-                "tone": "success",
-                "content": f"本次检索命中 {len(items)} 条知识片段，优先参考《{top_title}》。",
-            },
-            {
-                "key": "evidence",
-                "title": "依据",
-                "tone": "info",
-                "content": "；".join(titles) or "已返回知识片段，但文档标题为空。",
-            },
-            {
-                "key": "summary",
-                "title": "答案摘要",
-                "tone": "purple",
-                "content": snippet or "命中文档未返回片段正文。",
-            },
-            {
-                "key": "risk",
-                "title": "风险提示",
-                "tone": "warning",
-                "content": "售电交易建议仍需结合实时市场、合同约束、负荷预测和人工复核，检索答案仅作为业务分析依据。",
-            },
-        ]
-    answer = "\n".join(f"{block['title']}：{block['content']}" for block in blocks)
-    return {"answer": answer, "answer_blocks": blocks, "passed": passed, "confidence": round(min(99.0, max(60.0, high_score * 100)), 2) if items else 0.0}
+        return {
+            "available": False,
+            "answer": answer,
+            "answer_blocks": blocks,
+            "source_type": "unavailable",
+            "domain": domains[0] if len(domains) == 1 else "",
+            "run_id": None,
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "confidence": "none",
+            "citations": [],
+            "evidence": [],
+            "passed": False,
+        }
+    top_content = str(top.get("content") or "").strip()
+    answer = top_content[:500]
+    blocks = [
+        {"key": "conclusion", "title": "知识解释", "tone": "success", "content": answer},
+        {
+            "key": "evidence",
+            "title": "引用依据",
+            "tone": "info",
+            "content": "；".join(str(item.get("title") or item.get("source") or "") for item in citations[:3]),
+        },
+    ]
+    confidence = "high" if high_score >= 0.65 else "medium" if high_score >= 0.4 else "low"
+    source_type = source_types[0] if len(source_types) == 1 else "derived"
+    return {
+        "available": True,
+        "answer": answer,
+        "answer_blocks": blocks,
+        "source_type": source_type,
+        "domain": domains[0] if len(domains) == 1 else "",
+        "run_id": None,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "confidence": confidence,
+        "citations": citations,
+        "evidence": citations,
+        "passed": True,
+    }
 
 
 def record_qa_test(question: str, top_k: int, search_result: dict[str, Any], answer_payload: dict[str, Any], latency_ms: float) -> dict[str, Any]:
@@ -866,7 +1385,18 @@ def record_qa_test(question: str, top_k: int, search_result: dict[str, Any], ans
     return {"available": True, "test_id": test_id}
 
 
-def run_qa_from_search(question: str, top_k: int, search_result: dict[str, Any], started_at: float) -> dict[str, Any]:
+def run_qa_from_search(
+    question: str,
+    top_k: int,
+    search_result: dict[str, Any],
+    started_at: float,
+    *,
+    record: bool = False,
+) -> dict[str, Any]:
     answer_payload = build_qa_answer(question, search_result)
-    record = record_qa_test(question, top_k, search_result, answer_payload, (time.perf_counter() - started_at) * 1000)
-    return {**search_result, **answer_payload, "qa_test": record}
+    record_payload = (
+        record_qa_test(question, top_k, search_result, answer_payload, (time.perf_counter() - started_at) * 1000)
+        if record
+        else {"available": False, "recorded": False, "reason": "read_only"}
+    )
+    return {**search_result, **answer_payload, "qa_test": record_payload}

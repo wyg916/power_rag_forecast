@@ -16,6 +16,7 @@ from backend.app.config import PROJECT_ROOT
 from backend.app.repositories.base import mapping_list, postgres_engine
 from backend.app.repositories.knowledge_repository import (
     backfill_missing_embeddings,
+    get_chunks_by_ids,
     knowledge_stats,
     list_embedded_chunks,
     refresh_stale_embeddings,
@@ -25,6 +26,7 @@ from backend.app.repositories.knowledge_repository import (
 from backend.app.services.embedding_service import cosine_similarity, embed_text_with_metadata, get_embedding_provider
 from backend.app.services.rerank_service import rerank_candidates
 from backend.app.services.rag_query_rewriter import rewrite_rag_query
+from backend.app.services.vector_index_service import query_vector_index
 
 
 SEARCH_ROOTS = [
@@ -196,6 +198,8 @@ def _rag_cache_signature() -> tuple[str, ...]:
         _env("RAG_EMBEDDING_MODEL", ""),
         _env("RAG_EMBEDDING_MODEL_NAME", ""),
         _env("RAG_EMBEDDING_MODEL_PATH", ""),
+        _env("RAG_EMBEDDING_EXPECTED_DIM", ""),
+        _env("RAG_EMBEDDING_ALLOW_FALLBACK", "0"),
         _env("RAG_RERANK_ENABLED", "1"),
         _env("RAG_RERANK_PROVIDER", ""),
         _env("RAG_RERANK_MODEL", ""),
@@ -205,6 +209,8 @@ def _rag_cache_signature() -> tuple[str, ...]:
         _env("RAG_KEYWORD_LIMIT", ""),
         _env("RAG_VECTOR_LIMIT", ""),
         _env("RAG_TOP_K", ""),
+        _env("RAG_SCORE_THRESHOLD", ""),
+        _env("RAG_FILE_FALLBACK_ENABLED", "0"),
         _env("RAG_VECTOR_TOP_K", ""),
         _env("RAG_KEYWORD_TOP_K", ""),
         _env("RAG_CACHE_TTL_SECONDS", ""),
@@ -251,6 +257,19 @@ def _failure_summary(items: list[dict[str, str]]) -> dict[str, int]:
     return summary
 
 
+def _domain_from_path(path: Path) -> str:
+    parts = {part.lower() for part in path.parts}
+    if "electricity_market" in parts:
+        return "electricity_market"
+    if "price_forecast" in parts:
+        return "price_forecast"
+    if "project_knowledge" in parts:
+        return "system_knowledge"
+    if "trading_strategy" in parts:
+        return "trading_strategy"
+    return ""
+
+
 def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
     indexed = 0
     failed: list[dict[str, str]] = []
@@ -268,7 +287,16 @@ def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
                     source_type="local_file",
                     source_path=str(path),
                     content=_read_text_file(path),
-                    metadata={"root": str(root), "file_name": path.name},
+                    metadata={
+                        "root": str(root),
+                        "file_name": path.name,
+                        "domain": _domain_from_path(path),
+                        "evidence_source_type": "real",
+                        "source_name": path.name,
+                        "status": "active",
+                        "evidence_level": "project_document",
+                    },
+                    generate_embeddings=True,
                 )
                 if result.get("available"):
                     indexed += 1
@@ -336,7 +364,15 @@ def index_policy_rows() -> int:
             source_type="pv_policy_files",
             source_path=str(row.get("source_file") or f"pv_policy_files:{row.get('doc_id') or row.get('source_row')}"),
             content=content,
-            metadata=row,
+            metadata={
+                **row,
+                "domain": "electricity_policy",
+                "evidence_source_type": "historical",
+                "source_name": str(row.get("title") or row.get("doc_number") or "政策摘要"),
+                "status": "active",
+                "evidence_level": "database_policy_summary",
+            },
+            generate_embeddings=True,
         )
         if result.get("available"):
             count += 1
@@ -474,6 +510,10 @@ def _apply_domain_boost(items: list[dict[str, Any]], query_info: dict[str, Any])
         matches: list[str] = []
         is_policy_item = _is_policy_item(item)
 
+        if str(item.get("evidence_level") or "") == "verified_project_contract":
+            boost += 0.15
+            matches.append("evidence_level:verified_project_contract")
+
         if alias_enabled:
             for title, aliases in alias_map.items():
                 terms = [title, *aliases]
@@ -555,24 +595,73 @@ def _apply_post_rerank_adjustments(items: list[dict[str, Any]]) -> list[dict[str
     return adjusted
 
 
-def _vector_search(query: str, top_k: int) -> tuple[list[dict[str, Any]], bool, dict[str, Any]]:
+def _vector_search(
+    query: str,
+    top_k: int,
+    *,
+    domain: str = "",
+    source_types: list[str] | None = None,
+    include_historical: bool = False,
+    include_demo: bool = False,
+) -> tuple[list[dict[str, Any]], bool, dict[str, Any]]:
     query_embedding_result = embed_text_with_metadata(query)
     query_embedding = query_embedding_result.get("embedding") or []
     query_embedding_meta = query_embedding_result.get("metadata") or {}
     if not query_embedding:
         return [], False, query_embedding_meta
-    chunks = list_embedded_chunks(limit=_env_int("RAG_VECTOR_SCAN_LIMIT", 3000))
+    index_result = query_vector_index(
+        query_embedding,
+        top_k=max(100, min(int(top_k or 20) * 5, 1000)),
+    )
+    query_embedding_meta["vector_index_available"] = bool(index_result.get("available"))
+    query_embedding_meta["vector_index_reason"] = str(index_result.get("reason") or "")
+    if index_result.get("available"):
+        ranked = index_result.get("items") or []
+        scores = {str(item.get("chunk_id") or ""): float(item.get("vector_score") or 0) for item in ranked}
+        default_vector_min = 0.35 if domain or source_types else 0.52
+        vector_min_score = max(-1.0, min(_env_float("RAG_VECTOR_FILTERED_MIN_SCORE", default_vector_min), 1.0))
+        chunks = get_chunks_by_ids(
+            list(scores),
+            domain=domain,
+            source_types=source_types,
+            include_historical=include_historical,
+            include_demo=include_demo,
+        )
+        scored = [
+            dict(item, vector_score=round(scores.get(str(item.get("chunk_id") or ""), 0.0), 6), score=round(scores.get(str(item.get("chunk_id") or ""), 0.0), 6))
+            for item in chunks
+            if scores.get(str(item.get("chunk_id") or ""), 0.0) >= vector_min_score
+        ]
+        query_embedding_meta["dimension_mismatch_count"] = 0
+        query_embedding_meta["compatible_chunk_count"] = int((index_result.get("metadata") or {}).get("row_count") or len(ranked))
+        return scored[: max(1, min(int(top_k or 20), 100))], True, query_embedding_meta
+    if domain or source_types or include_historical or include_demo:
+        chunks = list_embedded_chunks(
+            limit=_env_int("RAG_VECTOR_SCAN_LIMIT", 3000),
+            domain=domain,
+            source_types=source_types,
+            include_historical=include_historical,
+            include_demo=include_demo,
+        )
+    else:
+        chunks = list_embedded_chunks(limit=_env_int("RAG_VECTOR_SCAN_LIMIT", 3000))
     scored: list[dict[str, Any]] = []
+    dimension_mismatches = 0
     for item in chunks:
         embedding = item.pop("embedding", [])
         if len(embedding) != len(query_embedding):
+            dimension_mismatches += 1
             continue
         vector_score = cosine_similarity(query_embedding, embedding)
-        if vector_score <= 0:
+        default_vector_min = 0.35 if domain or source_types else 0.52
+        if vector_score < max(-1.0, min(_env_float("RAG_VECTOR_FILTERED_MIN_SCORE", default_vector_min), 1.0)):
             continue
         scored.append(dict(item, vector_score=round(vector_score, 6), score=round(vector_score, 6)))
     scored.sort(key=lambda row: row.get("vector_score", 0), reverse=True)
-    return scored[: max(1, min(int(top_k or 20), 100))], True, query_embedding_meta
+    query_embedding_meta["dimension_mismatch_count"] = dimension_mismatches
+    query_embedding_meta["compatible_chunk_count"] = len(chunks) - dimension_mismatches
+    vector_available = bool(scored) or (bool(chunks) and dimension_mismatches == 0)
+    return scored[: max(1, min(int(top_k or 20), 100))], vector_available, query_embedding_meta
 
 
 def _merge_candidates(keyword_items: list[dict[str, Any]], vector_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -588,7 +677,11 @@ def _merge_candidates(keyword_items: list[dict[str, Any]], vector_items: list[di
             current["keyword_score"] = max(float(current.get("keyword_score") or 0.0), float(item.get("keyword_score") or 0.0))
             current["vector_score"] = max(float(current.get("vector_score") or 0.0), float(item.get("vector_score") or 0.0))
             current["retrieval_types"] = list(dict.fromkeys([*(current.get("retrieval_types") or []), retrieval_type]))
-            for key in ("doc_id", "title", "source", "source_type", "chunk_index", "content", "metadata"):
+            for key in (
+                "doc_id", "title", "source", "source_path", "source_uri", "source_type",
+                "chunk_index", "section_title", "content", "domain", "evidence_source_type",
+                "evidence_level", "metadata",
+            ):
                 if not current.get(key) and item.get(key):
                     current[key] = item.get(key)
     output = []
@@ -600,6 +693,31 @@ def _merge_candidates(keyword_items: list[dict[str, Any]], vector_items: list[di
         output.append(item)
     output.sort(key=lambda row: row.get("hybrid_score", 0), reverse=True)
     return output
+
+def _citations_from_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "document_id": item.get("doc_id"),
+            "chunk_id": item.get("chunk_id"),
+            "title": item.get("title"),
+            "section": item.get("section_title") or "",
+            "source": item.get("source"),
+            "domain": item.get("domain") or "",
+            "source_type": item.get("evidence_source_type") or "real",
+            "evidence_level": item.get("evidence_level") or "",
+            "score": item.get("final_score", item.get("score")),
+            "quote": str(item.get("content") or "")[:240],
+        }
+        for item in items
+        if item.get("doc_id") and item.get("chunk_id") and item.get("content") and item.get("domain")
+    ]
+
+def _domain_consistent_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    domains = {str(item.get("domain") or "").strip() for item in items if item.get("domain")}
+    if len(domains) != 1 or any(not str(item.get("domain") or "").strip() for item in items):
+        return []
+    return items
+
 
 
 def _fallback_file_search(query: str, top_k: int) -> list[dict[str, Any]]:
@@ -639,7 +757,29 @@ def _fallback_file_search(query: str, top_k: int) -> list[dict[str, Any]]:
     return items[:top_k]
 
 
-def _rag_search_impl(query: str, top_k: int = 5) -> dict[str, Any]:
+def _explicit_no_evidence_query(query: str) -> bool:
+    compact = re.sub(r"\s+", "", query or "").lower()
+    future_exact = any(term in compact for term in ("从未记录", "尚未记录", "没有记录")) and any(
+        term in compact for term in ("准确", "精确", "收益", "成交")
+    )
+    nonexistent_citation = any(term in compact for term in ("不存在", "虚构")) and any(
+        term in compact for term in ("引用", "文档", "规则", "文件")
+    )
+    missing_constraints = any(term in compact for term in ("没有", "缺少", "缺失")) and any(
+        term in compact for term in ("soc", "容量", "效率", "功率")
+    ) and any(term in compact for term in ("精确", "具体", "充放电量"))
+    return future_exact or nonexistent_citation or missing_constraints
+
+
+def _rag_search_impl(
+    query: str,
+    top_k: int = 5,
+    *,
+    domain: str = "",
+    source_types: list[str] | None = None,
+    include_historical: bool = False,
+    include_demo: bool = False,
+) -> dict[str, Any]:
     total_started = time.perf_counter()
     timings: dict[str, float] = {}
     final_top_k = max(1, min(int(top_k or _env_int("RAG_TOP_K", 5)), 20))
@@ -652,33 +792,98 @@ def _rag_search_impl(query: str, top_k: int = 5) -> dict[str, Any]:
     query_info = rewrite_rag_query(query)
     timings["rewrite_ms"] = _timing_ms(started)
     search_query = str(query_info.get("expanded_query") or query)
+    if _explicit_no_evidence_query(query):
+        timings["total_ms"] = _timing_ms(total_started)
+        return {
+            "available": False,
+            "source_type": "unavailable",
+            "domain": domain,
+            "query": query,
+            "items": [],
+            "citations": [],
+            "evidence": [],
+            "retrieval": {"enabled": rag_enabled(), "mode": "evidence_guard", "reason": "explicit_missing_evidence"},
+            "timings_ms": timings,
+            "stats": knowledge_stats(),
+        }
     if not rag_enabled():
         started = time.perf_counter()
-        items = search_keyword_chunks(query, top_k=final_top_k)
+        if domain or source_types or include_historical or include_demo:
+            items = search_keyword_chunks(
+                query,
+                top_k=final_top_k,
+                domain=domain,
+                source_types=source_types,
+                include_historical=include_historical,
+                include_demo=include_demo,
+            )
+        else:
+            items = search_keyword_chunks(query, top_k=final_top_k)
+        _normalize_scores(items, "keyword_score", "keyword_score")
+        score_threshold = max(0.0, min(_env_float("RAG_SCORE_THRESHOLD", 0.25), 1.0))
+        items = [
+            dict(item, document_id=item.get("document_id") or item.get("doc_id"), final_score=float(item.get("keyword_score") or 0.0), score=float(item.get("keyword_score") or 0.0))
+            for item in items
+            if float(item.get("keyword_score") or 0.0) >= score_threshold
+        ][:final_top_k]
+        items = _domain_consistent_items(items)
+        citations = _citations_from_items(items)
+        evidence_types = list(dict.fromkeys(str(item.get("evidence_source_type") or "real") for item in items))
         timings["keyword_search_ms"] = _timing_ms(started)
         timings["total_ms"] = _timing_ms(total_started)
         return {
             "available": bool(items),
+            "source_type": evidence_types[0] if len(evidence_types) == 1 else "derived" if evidence_types else "unavailable",
+            "domain": domain or (str(items[0].get("domain") or "") if items else ""),
             "query": query,
             "items": items,
-            "evidence": [
-                {"source": item.get("source"), "title": item.get("title"), "chunk_id": item.get("chunk_id"), "score": item.get("score")}
-                for item in items
-            ],
-            "retrieval": {"enabled": False, "mode": "keyword_only"},
+            "citations": citations,
+            "evidence": citations,
+            "retrieval": {
+                "enabled": False,
+                "mode": "keyword_only",
+                "score_threshold": score_threshold,
+                "filters": {
+                    "domain": domain,
+                    "source_types": source_types or [],
+                    "include_historical": include_historical,
+                    "include_demo": include_demo,
+                },
+            },
             "timings_ms": timings,
             "stats": knowledge_stats(),
         }
 
     started = time.perf_counter()
-    keyword_items = search_keyword_chunks(search_query, top_k=keyword_top_k)
+    if domain or source_types or include_historical or include_demo:
+        keyword_items = search_keyword_chunks(
+            search_query,
+            top_k=keyword_top_k,
+            domain=domain,
+            source_types=source_types,
+            include_historical=include_historical,
+            include_demo=include_demo,
+        )
+    else:
+        keyword_items = search_keyword_chunks(search_query, top_k=keyword_top_k)
     timings["keyword_search_ms"] = _timing_ms(started)
     started = time.perf_counter()
-    vector_items, vector_available, query_embedding_meta = _vector_search(search_query, top_k=vector_top_k)
+    vector_items, vector_available, query_embedding_meta = _vector_search(
+        search_query,
+        top_k=vector_top_k,
+        domain=domain,
+        source_types=source_types,
+        include_historical=include_historical,
+        include_demo=include_demo,
+    )
+    if query_embedding_meta.get("vector_index_available"):
+        keyword_min_score = max(0.0, _env_float("RAG_KEYWORD_MIN_SCORE", 2.0))
+        keyword_items = [item for item in keyword_items if float(item.get("keyword_score") or 0.0) >= keyword_min_score]
     timings["vector_search_ms"] = _timing_ms(started)
     started = time.perf_counter()
     merged = _merge_candidates(keyword_items, vector_items)
-    if not merged:
+    file_fallback_enabled = (_env("RAG_FILE_FALLBACK_ENABLED", "0") or "0").lower() in {"1", "true", "yes", "on"}
+    if not merged and file_fallback_enabled:
         merged = _fallback_file_search(search_query, top_k=final_top_k)
     boost_events = _apply_domain_boost(merged, query_info)
     timings["merge_boost_ms"] = _timing_ms(started)
@@ -690,17 +895,37 @@ def _rag_search_impl(query: str, top_k: int = 5) -> dict[str, Any]:
     timings["rerank_ms"] = _timing_ms(started)
     started = time.perf_counter()
     reranked = _apply_post_rerank_adjustments(reranked)
-    items = reranked[:final_top_k]
+    score_threshold = max(0.0, min(_env_float("RAG_SCORE_THRESHOLD", 0.25), 1.0))
+    items = [
+        dict(item, document_id=item.get("document_id") or item.get("doc_id"), score=float(item.get("final_score") or item.get("score") or 0.0))
+        for item in reranked
+        if float(item.get("final_score") or item.get("score") or 0.0) >= score_threshold
+    ][:final_top_k]
     timings["post_rerank_adjust_ms"] = _timing_ms(started)
     embedding_provider = get_embedding_provider()
     embedding_provider_name = query_embedding_meta.get("provider") or getattr(embedding_provider, "name", "")
     embedding_model_name = query_embedding_meta.get("model") or getattr(embedding_provider, "model", "")
     timings["total_ms"] = _timing_ms(total_started)
+    if items and not domain:
+        primary_domain = str(items[0].get("domain") or "").strip()
+        items = [item for item in items if str(item.get("domain") or "").strip() == primary_domain]
+    items = _domain_consistent_items(items)
+    citations = _citations_from_items(items)
+    evidence_types = list(
+        dict.fromkeys(
+            str(item.get("evidence_source_type") or "real")
+            for item in items
+            if item.get("evidence_source_type")
+        )
+    )
     return {
         "available": bool(items),
+        "source_type": evidence_types[0] if len(evidence_types) == 1 else "derived" if evidence_types else "unavailable",
+        "domain": domain or (str(items[0].get("domain") or "") if items else ""),
         "query": query,
         "expanded_query": search_query,
         "items": items,
+        "citations": citations,
         "evidence": [
             {
                 "source": item.get("source"),
@@ -728,8 +953,20 @@ def _rag_search_impl(query: str, top_k: int = 5) -> dict[str, Any]:
             "embedding_dim": query_embedding_meta.get("dim") or 0,
             "embedding_version": query_embedding_meta.get("version") or "",
             "embedding_fallback": bool(query_embedding_meta.get("fallback")),
+            "embedding_error": query_embedding_meta.get("error") or "",
+            "dimension_mismatch_count": int(query_embedding_meta.get("dimension_mismatch_count") or 0),
+            "vector_index_available": bool(query_embedding_meta.get("vector_index_available")),
+            "vector_index_reason": query_embedding_meta.get("vector_index_reason") or "",
             "reranker": reranker_name,
             "rerank_error": rerank_error,
+            "score_threshold": score_threshold,
+            "file_fallback_enabled": file_fallback_enabled,
+            "filters": {
+                "domain": domain,
+                "source_types": source_types or [],
+                "include_historical": include_historical,
+                "include_demo": include_demo,
+            },
             "query_rewrite": {
                 "enabled": bool(query_info.get("enabled")),
                 "expanded_terms": query_info.get("expanded_terms") or [],
@@ -743,15 +980,45 @@ def _rag_search_impl(query: str, top_k: int = 5) -> dict[str, Any]:
 
 
 @lru_cache(maxsize=256)
-def _rag_search_cached(query: str, top_k: int, signature: tuple[str, ...]) -> dict[str, Any]:
+def _rag_search_cached(
+    query: str,
+    top_k: int,
+    domain: str,
+    source_types: tuple[str, ...],
+    include_historical: bool,
+    include_demo: bool,
+    signature: tuple[str, ...],
+) -> dict[str, Any]:
     _ = signature
-    return _rag_search_impl(query, top_k=top_k)
+    return _rag_search_impl(
+        query,
+        top_k=top_k,
+        domain=domain,
+        source_types=list(source_types),
+        include_historical=include_historical,
+        include_demo=include_demo,
+    )
 
 
-def rag_search(query: str, top_k: int = 5) -> dict[str, Any]:
+def rag_search(
+    query: str,
+    top_k: int = 5,
+    *,
+    domain: str = "",
+    source_types: list[str] | None = None,
+    include_historical: bool = False,
+    include_demo: bool = False,
+) -> dict[str, Any]:
     cache_enabled = (_env("RAG_CACHE_ENABLED", "1") or "1").lower() not in {"0", "false", "no", "off"}
     if not cache_enabled or _contains_sensitive_text(query):
-        result = _rag_search_impl(query, top_k=top_k)
+        result = _rag_search_impl(
+            query,
+            top_k=top_k,
+            domain=domain,
+            source_types=source_types,
+            include_historical=include_historical,
+            include_demo=include_demo,
+        )
         retrieval = result.setdefault("retrieval", {})
         retrieval["cache_enabled"] = bool(cache_enabled)
         retrieval["cache_hit"] = False
@@ -759,7 +1026,17 @@ def rag_search(query: str, top_k: int = 5) -> dict[str, Any]:
         return result
     started = time.perf_counter()
     before = _rag_search_cached.cache_info()
-    result = copy.deepcopy(_rag_search_cached(query, int(top_k or _env_int("RAG_TOP_K", 5)), _rag_cache_signature()))
+    result = copy.deepcopy(
+        _rag_search_cached(
+            query,
+            int(top_k or _env_int("RAG_TOP_K", 5)),
+            domain,
+            tuple(source_types or []),
+            include_historical,
+            include_demo,
+            _rag_cache_signature(),
+        )
+    )
     after = _rag_search_cached.cache_info()
     cache_hit = after.hits > before.hits
     retrieval = result.setdefault("retrieval", {})

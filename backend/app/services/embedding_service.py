@@ -17,6 +17,21 @@ def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = (_env(name, "1" if default else "0") or "").lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def _expected_dimensions() -> int:
+    value = _env("RAG_EMBEDDING_EXPECTED_DIM", "")
+    if not value:
+        return 0
+    try:
+        return max(0, int(value))
+    except Exception:
+        return 0
+
+
 def _tokenize(text: str) -> list[str]:
     compact = re.sub(r"\s+", "", (text or "").lower())
     tokens = [item for item in re.findall(r"[\u4e00-\u9fa5A-Za-z0-9]{2,}", compact) if item]
@@ -205,46 +220,92 @@ def _provider_metadata(provider: EmbeddingProvider, vector: list[float], *, fall
     return metadata
 
 
+def _validate_vector(provider: EmbeddingProvider, vector: list[float]) -> tuple[list[float], str]:
+    if not vector:
+        return [], "empty_embedding"
+    expected = _expected_dimensions()
+    if expected and len(vector) != expected:
+        return [], f"embedding_dimension_mismatch:{len(vector)}!={expected}"
+    return vector, ""
+
+
 def embed_text_with_metadata(text: str) -> dict[str, Any]:
     provider = get_embedding_provider()
     try:
-        vector = provider.embed(text)
+        vector, error = _validate_vector(provider, provider.embed(text))
         if vector:
             return {"embedding": vector, "metadata": _provider_metadata(provider, vector)}
     except Exception as exc:
+        error = exc.__class__.__name__
+    if not _env_bool("RAG_EMBEDDING_ALLOW_FALLBACK", False):
+        return {"embedding": [], "metadata": _provider_metadata(provider, [], error=error)}
+    try:
         fallback = _fallback_provider()
-        try:
-            vector = fallback.embed(text)
-            return {
-                "embedding": vector,
-                "metadata": _provider_metadata(fallback, vector, fallback=True, error=exc.__class__.__name__),
-            }
-        except Exception:
-            return {"embedding": [], "metadata": _provider_metadata(fallback, [], fallback=True, error=exc.__class__.__name__)}
-    fallback = _fallback_provider()
-    vector = fallback.embed(text)
-    return {"embedding": vector, "metadata": _provider_metadata(fallback, vector, fallback=True, error="empty_embedding")}
+        vector, validation_error = _validate_vector(fallback, fallback.embed(text))
+        return {
+            "embedding": vector,
+            "metadata": _provider_metadata(
+                fallback,
+                vector,
+                fallback=True,
+                error=validation_error or error,
+            ),
+        }
+    except Exception as exc:
+        return {"embedding": [], "metadata": _provider_metadata(provider, [], error=exc.__class__.__name__)}
 
 
 def embed_batch_with_metadata(texts: list[str]) -> list[dict[str, Any]]:
     provider = get_embedding_provider()
     try:
         vectors = provider.embed_batch(texts)
-        if vectors and any(vectors):
-            return [{"embedding": vector, "metadata": _provider_metadata(provider, vector)} for vector in vectors]
+        results = []
+        for vector in vectors:
+            valid_vector, validation_error = _validate_vector(provider, vector)
+            results.append(
+                {
+                    "embedding": valid_vector,
+                    "metadata": _provider_metadata(provider, valid_vector, error=validation_error),
+                }
+            )
+        if results and all(result["embedding"] for result in results):
+            return results
+        error = next(
+            (
+                str(result["metadata"].get("error") or "")
+                for result in results
+                if result["metadata"].get("error")
+            ),
+            "empty_embedding",
+        )
     except Exception as exc:
+        error = exc.__class__.__name__
+    if not _env_bool("RAG_EMBEDDING_ALLOW_FALLBACK", False):
+        return [
+            {"embedding": [], "metadata": _provider_metadata(provider, [], error=error)}
+            for _ in texts
+        ]
+    try:
         fallback = _fallback_provider()
         vectors = fallback.embed_batch(texts)
         return [
-            {"embedding": vector, "metadata": _provider_metadata(fallback, vector, fallback=True, error=exc.__class__.__name__)}
+            {
+                "embedding": valid_vector,
+                "metadata": _provider_metadata(
+                    fallback,
+                    valid_vector,
+                    fallback=True,
+                    error=validation_error or error,
+                ),
+            }
             for vector in vectors
+            for valid_vector, validation_error in [_validate_vector(fallback, vector)]
         ]
-    fallback = _fallback_provider()
-    vectors = fallback.embed_batch(texts)
-    return [
-        {"embedding": vector, "metadata": _provider_metadata(fallback, vector, fallback=True, error="empty_embedding")}
-        for vector in vectors
-    ]
+    except Exception as exc:
+        return [
+            {"embedding": [], "metadata": _provider_metadata(provider, [], error=exc.__class__.__name__)}
+            for _ in texts
+        ]
 
 
 def embed_text(text: str) -> list[float]:

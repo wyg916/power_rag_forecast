@@ -50,6 +50,93 @@ def _llm_enabled() -> bool:
     return value not in {"0", "false", "no", "off"}
 
 
+def _security_refusal_reason(question: str) -> str:
+    compact = re.sub(r"\s+", "", (question or "").lower())
+    rules = {
+        "sensitive_information": [
+            "输出数据库连接", "显示数据库连接", "database_url", "输出token", "显示token",
+            "输出secret", "显示secret", "输出密钥", "显示密钥", "输出密码", "显示密码",
+            "内部trace", "系统提示词", "systemprompt", "api_key", "apikey",
+        ],
+        "prompt_injection": ["忽略以前指令", "忽略之前指令", "ignoreprevious", "绕过安全", "关闭安全检查"],
+        "unauthorized_action": ["绕过权限", "越权访问", "删除数据库", "删库", "dropdatabase", "关闭审计"],
+        "automatic_trading": ["直接替我下单", "自动替我交易", "执行自动交易", "保证盈利", "承诺收益", "声称系统已经生产部署", "生产部署并能自动交易"],
+    }
+    for reason, terms in rules.items():
+        if any(term in compact for term in terms):
+            return reason
+    return ""
+
+
+def _explicit_unavailable_reason(question: str) -> str:
+    compact = re.sub(r"\s+", "", (question or "").lower())
+    if "从未记录" in compact and any(term in compact for term in ["收益", "成交", "准确"]):
+        return "unrecorded_business_fact"
+    if all(term in compact for term in ["soc", "容量", "效率"]) and any(term in compact for term in ["精确", "具体"]):
+        return "missing_storage_constraints"
+    return ""
+
+
+def _security_refusal_payload(
+    *, session_id: str, model_provider: str, debug: bool, reason: str
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "session_id": session_id,
+        "answer": "拒绝：该请求涉及敏感信息、越权操作、提示词注入或自动交易边界，系统不会执行或披露。可改为只读且需要人工复核的安全说明。",
+        "source_type": "unavailable",
+        "domain": "system_knowledge",
+        "run_id": None,
+        "generated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
+        "confidence": "high",
+        "citations": [],
+        "evidence": [],
+        "answer_style": "professional_brief",
+        "model_provider_used": "deterministic",
+        "model_provider_requested": model_provider,
+        "model_fallback": False,
+        "llm_used": False,
+        "warnings": [],
+        "refused": True,
+        "security_reason": reason,
+    }
+    if debug:
+        payload.update(
+            {
+                "intent": "security_refusal",
+                "tool_calls": [],
+                "tools": [],
+                "rag": {"available": False, "items": [], "retrieval": {"enabled": False, "reason": "security_refusal"}},
+                "trace_id": "",
+                "workflow": ["input_normalizer", "security_boundary"],
+            }
+        )
+    return jsonable(payload)
+
+
+def _unavailable_payload(*, session_id: str, model_provider: str, debug: bool, reason: str) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "session_id": session_id,
+        "answer": "unavailable：缺少可信证据或关键业务约束，不能编造实时数值、收益或精确充放电量。",
+        "source_type": "unavailable",
+        "domain": "system_knowledge",
+        "run_id": None,
+        "generated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
+        "confidence": "none",
+        "citations": [],
+        "evidence": [],
+        "answer_style": "professional_brief",
+        "model_provider_used": "deterministic",
+        "model_provider_requested": model_provider,
+        "model_fallback": False,
+        "llm_used": False,
+        "warnings": [],
+        "unavailable_reason": reason,
+    }
+    if debug:
+        payload.update({"intent": "explicit_unavailable", "tool_calls": [], "tools": [], "rag": {"available": False, "items": [], "retrieval": {"enabled": False, "reason": reason}}, "trace_id": "", "workflow": ["input_normalizer", "unavailable_boundary"]})
+    return jsonable(payload)
+
+
 RAG_INTENTS = {
     "forecast_max_price",
     "forecast_min_price",
@@ -264,7 +351,37 @@ def _matched_terms(question: str, terms: list[str]) -> list[str]:
 
 def _contains_any_compact(question: str, terms: list[str]) -> bool:
     q = _compact_match_text(question)
-    return any(_compact_match_text(term) in q for term in terms if _compact_match_text(term))
+    for term in terms:
+        compact_term = _compact_match_text(term)
+        if not compact_term:
+            continue
+        if compact_term.isascii() and compact_term.isalnum():
+            if re.search(rf"(?<![a-z0-9]){re.escape(compact_term)}(?![a-z0-9])", q):
+                return True
+        elif compact_term in q:
+            return True
+    return False
+
+
+def _rag_domain_hint(question: str) -> str:
+    compact = _compact_match_text(question)
+    if any(term in compact for term in ["source_type", "historical", "unavailable", "fallback", "seed", "demo", "generated_at", "effective_at", "过期文档", "知识文档", "系统功能", "开发者模式"]):
+        return "system_knowledge"
+    if any(term in compact for term in ["这个系统", "预测中心", "策略中心", "知识库中心", "ai助手", "工具调用", "citation", "run_id", "可追溯", "系统边界", "没有预测数据", "查询接口", "candidate", "active", "事实源"]):
+        return "system_knowledge"
+    if any(term in compact for term in ["pjm", "lmp", "dom", "日前市场", "实时市场", "节点电价", "负电价"]):
+        return "electricity_market"
+    if any(term in compact for term in ["报告中心", "报告"]):
+        return "report"
+    if any(term in compact for term in ["交易", "采购", "储能", "报价", "敞口", "售电公司"]):
+        return "trading_strategy"
+    if any(term in compact for term in ["新能源", "出力", "光伏", "风电"]):
+        return "renewable_policy"
+    if any(term in compact for term in ["数据质量", "数据新鲜度", "数据不新鲜", "缺失数据"]):
+        return "data_quality"
+    if any(term in compact for term in ["模型", "预测", "mae", "rmse", "尖峰", "风险", "电价", "价格", "价差", "高价", "低价", "异常", "负荷", "天气"]):
+        return "price_forecast"
+    return ""
 
 
 def _weekday_label(value: datetime) -> str:
@@ -518,21 +635,15 @@ def _should_skip_llm_for_daily_chat(intent: str, task_type: str, question: str) 
 
 
 def _rag_evidence(rag_result: dict[str, Any]) -> list[dict[str, Any]]:
-    evidence: list[dict[str, Any]] = []
-    for item in (rag_result or {}).get("items", [])[:8]:
-        evidence.append(
-            {
-                "source": item.get("source"),
-                "title": item.get("title"),
-                "chunk_id": item.get("chunk_id"),
-                "score": item.get("final_score", item.get("score")),
-                "keyword_score": item.get("keyword_score", 0.0),
-                "vector_score": item.get("vector_score", 0.0),
-                "rerank_score": item.get("rerank_score", 0.0),
-                "tool": "rag_hybrid_search",
-            }
-        )
-    return evidence
+    return [
+        {
+            **citation,
+            "source_type": rag_result.get("source_type") or "unavailable",
+            "domain": rag_result.get("domain") or "",
+            "tool": "rag_hybrid_search",
+        }
+        for citation in (rag_result or {}).get("citations", [])[:8]
+    ]
 
 
 def _safe_money(value: Any) -> str:
@@ -584,6 +695,8 @@ def _tool_args(name: str, decision: IntentDecision, run_id: str, question: str) 
     }:
         args["question"] = question
         args["keyword"] = decision.entities.get("keyword") or question
+        if name == "search_business_knowledge":
+            args["domain"] = _rag_domain_hint(question)
     return args
 
 
@@ -852,7 +965,7 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
     if intent == "forecast_risk_hours":
         items = first.get("items") or []
         rows = [f"{idx}. {item.get('hour')}，风险 {item.get('risk_level')}，预测价 {item.get('predicted_price')} USD/MWh" for idx, item in enumerate(items[:6], 1)]
-        return "结论：当前重点风险时段如下。\n\n" + ("\n".join(rows) if rows else "暂无明确高风险时段。") + "\n\n建议：这些时段应优先复核售电敞口和实时市场变化。"
+        return "结论：当前电价可能偏高的重点风险时段如下。\n\n" + ("\n".join(rows) if rows else "暂无明确高风险时段。") + "\n\n建议：这些小时应优先复核售电敞口和实时市场变化；预测结果不能直接作为交易指令。"
     if intent == "trading_risk_summary":
         storage = _first(results, "get_storage_discharge_windows")
         risk = _first(results, "get_high_risk_hours")
@@ -947,11 +1060,11 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
         )
     if intent == "knowledge_search":
         items = first.get("items") or []
-        rows = [f"{idx}. {item.get('title') or '-'}：{str(item.get('snippet') or '')[:120]}" for idx, item in enumerate(items[:5], 1)]
+        rows = [f"{idx}. {item.get('title') or '-'}：{str(item.get('snippet') or '')[:900]}" for idx, item in enumerate(items[:3], 1)]
         return (
             "结论：已完成知识库检索。\n\n"
             "数据依据：\n" + ("\n".join(rows) if rows else "未检索到高相关文档。")
-            + "\n\n原因解释：系统按关键词在业务知识库和电价政策知识库中做轻量检索。\n\n业务建议：将检索结果作为 AI 回答依据，并在正式引用前打开原文复核。\n\n风险提示：轻量关键词检索不是向量召回的最终版本，后续应接入 RAG 索引服务。"
+            + "\n\n原因解释：系统通过当前混合检索链路返回可追溯知识片段。\n\n业务建议：将检索结果作为 AI 回答依据，并在正式引用前打开原文复核。\n\n风险提示：回答必须受 citation 和 source_type 约束；证据不足时返回 unavailable。"
         )
     if intent == "general_query":
         if _storage_boundary_note(decision.normalized_question):
@@ -1026,6 +1139,7 @@ def answer_chat_accurate(
     answer_style: str = "analysis",
     model_provider: str = "auto",
     debug: bool = False,
+    persist: bool = True,
 ) -> dict[str, Any]:
     total_started = time.perf_counter()
     timings_ms: dict[str, float] = {}
@@ -1033,6 +1147,22 @@ def answer_chat_accurate(
     clean_question = normalize_question(question)
     timings_ms["input_normalizer_ms"] = _timing_ms(stage_started)
     session_id = session_id or "chat_" + uuid.uuid4().hex[:12]
+    security_reason = _security_refusal_reason(clean_question)
+    if security_reason:
+        return _security_refusal_payload(
+            session_id=session_id,
+            model_provider=model_provider,
+            debug=debug,
+            reason=security_reason,
+        )
+    unavailable_reason = _explicit_unavailable_reason(clean_question)
+    if unavailable_reason:
+        return _unavailable_payload(
+            session_id=session_id,
+            model_provider=model_provider,
+            debug=debug,
+            reason=unavailable_reason,
+        )
     trace = TraceManager(clean_question)
     trace.step("input_normalizer", normalized_question=clean_question)
     stage_started = time.perf_counter()
@@ -1088,7 +1218,11 @@ def answer_chat_accurate(
     if use_rag:
         try:
             stage_started = time.perf_counter()
-            rag_result = rag_search(clean_question, top_k=_rag_top_k())
+            rag_result = rag_search(
+                clean_question,
+                top_k=_rag_top_k(),
+                domain=_rag_domain_hint(clean_question) if decision.intent == "knowledge_search" else "",
+            )
             timings_ms["rag_total_ms"] = _timing_ms(stage_started)
             evidence.extend(_rag_evidence(rag_result))
             trace.step(
@@ -1106,6 +1240,15 @@ def answer_chat_accurate(
     else:
         timings_ms["rag_total_ms"] = 0.0
         trace.step("rag_retriever", enabled=False, **rag_trigger_info)
+    rag_required_unavailable = bool(
+        use_rag
+        and not rag_result.get("items")
+        and decision.intent in {"knowledge_search", "general_query"}
+        and not _storage_boundary_note(clean_question)
+    )
+    if rag_required_unavailable:
+        answer = "当前知识库没有达到相关度门槛且可核验的证据，无法据此回答该问题。"
+        draft_answer = answer
     stage_started = time.perf_counter()
     context_pack = build_context_pack(
         question=clean_question,
@@ -1124,13 +1267,19 @@ def answer_chat_accurate(
     if use_rag and llm_task_type == "daily_chat":
         llm_task_type = "business_answer"
     skip_daily_llm = _should_skip_llm_for_daily_chat(decision.intent, llm_task_type, clean_question)
-    if not _should_use_llm(decision.intent) or skip_daily_llm:
+    if rag_required_unavailable or not _should_use_llm(decision.intent) or skip_daily_llm:
         model_status = {"provider": "deterministic", "model": "tool_answer", "fallback": False}
         trace.step(
             "llm_router",
             success=True,
             provider="deterministic",
-            reason="daily_chat_fast_path" if skip_daily_llm else "deterministic_intent",
+            reason=(
+                "rag_evidence_unavailable"
+                if rag_required_unavailable
+                else "daily_chat_fast_path"
+                if skip_daily_llm
+                else "deterministic_intent"
+            ),
         )
         timings_ms["llm_generate_ms"] = 0.0
     elif _llm_enabled():
@@ -1181,28 +1330,29 @@ def answer_chat_accurate(
         {"tool_name": item.name, "input": item.input, "success": item.success, "output": item.output, "error_message": item.error_message}
         for item in tool_results
     ]
-    save_ai_trace_record(
-        session_id=session_id,
-        question=clean_question,
-        intent=decision.intent,
-        answer=answer,
-        tools=tool_calls,
-        evidence=evidence,
-        guard_result={"result": guard_result},
-        trace_payload=trace_payload,
-    )
-    save_conversation_state(_state_from_answer(session_id, decision, answer, tool_results, run_id))
-    save_chat_exchange(
-        session_id=session_id,
-        question=clean_question,
-        answer=answer,
-        intent=decision.intent,
-        evidence=evidence,
-        tool_calls=tool_calls,
-        user_role=user_role,
-        scenario=scenario,
-        trace_id=trace.trace_id,
-    )
+    if persist:
+        save_ai_trace_record(
+            session_id=session_id,
+            question=clean_question,
+            intent=decision.intent,
+            answer=answer,
+            tools=tool_calls,
+            evidence=evidence,
+            guard_result={"result": guard_result},
+            trace_payload=trace_payload,
+        )
+        save_conversation_state(_state_from_answer(session_id, decision, answer, tool_results, run_id))
+        save_chat_exchange(
+            session_id=session_id,
+            question=clean_question,
+            answer=answer,
+            intent=decision.intent,
+            evidence=evidence,
+            tool_calls=tool_calls,
+            user_role=user_role,
+            scenario=scenario,
+            trace_id=trace.trace_id,
+        )
     focus_periods = [
         item.get("time") or item.get("hour")
         for item in (
@@ -1216,9 +1366,54 @@ def answer_chat_accurate(
     data_used = _data_used(tool_results)
     if rag_result.get("items"):
         data_used["knowledge"] = True
+    rag_citations = list(rag_result.get("citations") or [])
+    top_rag_score = max(
+        [float(item.get("score") or 0.0) for item in rag_citations],
+        default=0.0,
+    )
+    rag_confidence = (
+        "high"
+        if top_rag_score >= 0.65
+        else "medium"
+        if top_rag_score >= 0.4
+        else "low"
+        if rag_citations
+        else "none"
+    )
+    actual_run_id = run_id if run_id and run_id != "latest" else None
+    tool_source_types: list[str] = []
+    response_domain = str(rag_result.get("domain") or "")
+    model_version = ""
+    feature_version = ""
+    for result in tool_results:
+        output = result.output or {}
+        meta = output.get("meta") if isinstance(output.get("meta"), dict) else {}
+        if not actual_run_id:
+            actual_run_id = str(output.get("run_id") or meta.get("run_id") or "") or None
+        source_value = str(output.get("source_type") or meta.get("source_type") or "")
+        if source_value:
+            tool_source_types.append(source_value)
+        if not response_domain:
+            response_domain = str(output.get("domain") or meta.get("domain") or "")
+        model_version = model_version or str(output.get("model_version") or meta.get("model_version") or "")
+        feature_version = feature_version or str(output.get("feature_version") or meta.get("feature_version") or "")
+    response_source_type = str(
+        rag_result.get("source_type") or (tool_source_types[0] if tool_source_types else "unavailable")
+    )
+    if rag_citations and any(item.get("tool") != "rag_hybrid_search" for item in evidence):
+        response_source_type = "derived"
     public_payload: dict[str, Any] = {
         "session_id": session_id,
         "answer": answer,
+        "source_type": response_source_type,
+        "domain": response_domain,
+        "run_id": actual_run_id,
+        "model_version": model_version or None,
+        "feature_version": feature_version or None,
+        "generated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
+        "confidence": rag_confidence,
+        "citations": rag_citations,
+        "evidence": evidence,
         "answer_style": normalize_answer_style(answer_style),
         "model_provider_used": model_status.get("provider") or "",
         "model_provider_requested": model_provider,

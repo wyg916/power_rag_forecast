@@ -15,6 +15,8 @@ from fastapi.responses import Response, StreamingResponse
 from ....core.redaction import mask_secret_fields
 from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
+from ....repositories.knowledge_repository import build_qa_answer
+from ....services.rag_service import rag_search
 from ....platform_services import answer_chat, generate_ai_insights, get_chat_session, list_chat_sessions
 from ....schemas import AgentAnalyzeRequest, AnswerFeedbackRequest, ChatFeedbackRequest, ChatRequest
 from backend.app.ai_assistant.service import answer_chat_accurate
@@ -96,6 +98,33 @@ def _answer_chat_from_payload(payload: ChatRequest, debug_allowed: bool) -> dict
         model_provider=payload.model_provider,
         debug=debug_allowed,
     )
+
+
+@router.post("/api/ai/rag-answer")
+def ai_rag_answer_read_only(
+    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    payload: dict[str, Any] = Body(default_factory=dict),
+) -> dict:
+    question = str(payload.get("question") or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="问题不能为空")
+    top_k = max(1, min(int(payload.get("top_k") or 5), 20))
+    source_types = payload.get("source_types") or []
+    if isinstance(source_types, str):
+        source_types = [item.strip() for item in source_types.split(",") if item.strip()]
+    result = rag_search(
+        question,
+        top_k=top_k,
+        domain=str(payload.get("domain") or "").strip(),
+        source_types=[str(item).strip() for item in source_types if str(item).strip()],
+        include_historical=bool(payload.get("include_historical", False)),
+        include_demo=bool(payload.get("include_demo", False)),
+    )
+    return {
+        **build_qa_answer(question, result),
+        "retrieval": result.get("retrieval") or {},
+        "read_only": True,
+    }
 
 
 @router.post("/api/ai/chat")

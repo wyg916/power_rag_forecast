@@ -15,7 +15,10 @@ from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
 from ....repositories.knowledge_repository import (
     ensure_seed_knowledge,
+    get_knowledge_citation,
+    get_knowledge_document,
     knowledge_stats,
+    list_knowledge_chunks,
     list_knowledge_documents,
     record_search_result,
     run_qa_from_search,
@@ -43,11 +46,36 @@ def _safe_filename(filename: str | None) -> str:
     return safe or "knowledge_document"
 
 
-def _search_payload(payload: dict[str, Any] | None) -> tuple[str, int]:
+def _search_payload(payload: dict[str, Any] | None) -> tuple[str, int, dict[str, Any]]:
     data = payload or {}
     query = str(data.get("q") or data.get("query") or data.get("question") or "").strip()
     top_k = int(data.get("top_k") or data.get("topK") or 5)
-    return query[:500], max(1, min(top_k, 20))
+    source_types = data.get("source_types") or data.get("sourceTypes") or []
+    if isinstance(source_types, str):
+        source_types = [item.strip() for item in source_types.split(",") if item.strip()]
+    return (
+        query[:500],
+        max(1, min(top_k, 20)),
+        {
+            "domain": str(data.get("domain") or "").strip(),
+            "source_types": [str(item).strip() for item in source_types if str(item).strip()],
+            "include_historical": bool(data.get("include_historical", False)),
+            "include_demo": bool(data.get("include_demo", False)),
+        },
+    )
+
+def _run_search(query: str, top_k: int, options: dict[str, Any] | None = None) -> dict:
+    normalized = options or {}
+    if not any(
+        (
+            normalized.get("domain"),
+            normalized.get("source_types"),
+            normalized.get("include_historical"),
+            normalized.get("include_demo"),
+        )
+    ):
+        return rag_search(query, top_k=top_k)
+    return rag_search(query, top_k=top_k, **normalized)
 
 
 @router.get("/api/knowledge/stats")
@@ -67,6 +95,32 @@ def get_knowledge_documents(
     return list_knowledge_documents(page=page, page_size=page_size, search=search)
 
 
+@router.get("/api/knowledge/documents/{doc_id}")
+def get_knowledge_document_detail(
+    doc_id: str,
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+) -> dict:
+    return get_knowledge_document(doc_id)
+
+
+@router.get("/api/knowledge/documents/{doc_id}/chunks")
+def get_knowledge_document_chunks(
+    doc_id: str,
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=100),
+) -> dict:
+    return list_knowledge_chunks(doc_id, page=page, page_size=page_size)
+
+
+@router.get("/api/knowledge/citations/{chunk_id}")
+def get_knowledge_citation_detail(
+    chunk_id: str,
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+) -> dict:
+    return get_knowledge_citation(chunk_id)
+
+
 @router.get("/api/knowledge/health")
 def get_rag_health(
     _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
@@ -79,9 +133,21 @@ def search_knowledge(
     _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     q: str = Query(default="", max_length=500),
     top_k: int = Query(default=5, ge=1, le=20),
+    domain: str = Query(default="", max_length=64),
+    source_type: list[str] | None = Query(default=None),
+    include_historical: bool = Query(default=False),
+    include_demo: bool = Query(default=False),
 ) -> dict:
-    ensure_seed_knowledge()
-    return rag_search(q, top_k=top_k)
+    return _run_search(
+        q,
+        top_k,
+        {
+            "domain": domain,
+            "source_types": source_type or [],
+            "include_historical": include_historical,
+            "include_demo": include_demo,
+        },
+    )
 
 
 @router.post("/api/knowledge/search")
@@ -89,11 +155,8 @@ def search_knowledge_post(
     _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
-    query, top_k = _search_payload(payload)
-    ensure_seed_knowledge()
-    result = rag_search(query, top_k=top_k)
-    result["search_record"] = record_search_result(query, top_k, result)
-    return result
+    query, top_k, options = _search_payload(payload)
+    return _run_search(query, top_k, options)
 
 
 @router.post("/api/knowledge/qa-test")
@@ -101,13 +164,11 @@ def qa_test_knowledge(
     _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
-    query, top_k = _search_payload(payload)
+    query, top_k, options = _search_payload(payload)
     if not query:
         raise HTTPException(status_code=400, detail="问题不能为空")
-    ensure_seed_knowledge()
     started = time.perf_counter()
-    result = rag_search(query, top_k=top_k)
-    result["search_record"] = record_search_result(query, top_k, result)
+    result = _run_search(query, top_k, options)
     return run_qa_from_search(query, top_k, result, started)
 
 
@@ -119,12 +180,10 @@ def batch_validate_knowledge(
     questions = payload.get("questions") if isinstance(payload, dict) else None
     values = [str(item).strip() for item in questions or DEFAULT_BATCH_QUESTIONS if str(item).strip()]
     top_k = max(1, min(int((payload or {}).get("top_k") or 5), 20))
-    ensure_seed_knowledge()
     items: list[dict[str, Any]] = []
     for question in values[:20]:
         started = time.perf_counter()
         result = rag_search(question, top_k=top_k)
-        result["search_record"] = record_search_result(question, top_k, result)
         qa = run_qa_from_search(question, top_k, result, started)
         items.append(
             {
@@ -145,6 +204,8 @@ async def upload_knowledge_document(
     user: Annotated[CurrentUser, Depends(require_permission("knowledge:write"))],
     file: UploadFile = File(...),
     source_type: str = Form("uploaded_document"),
+    domain: str = Form("uploaded_knowledge"),
+    evidence_source_type: str = Form("real"),
 ) -> dict:
     content = await file.read()
     if len(content) > KNOWLEDGE_UPLOAD_LIMIT_BYTES:
@@ -162,7 +223,17 @@ async def upload_knowledge_document(
         source_type=source_type or "uploaded_document",
         source_path=source_path,
         content=text_content,
-        metadata={"data_origin": "uploaded", "filename": safe_name, "content_type": file.content_type or "text/plain"},
+        metadata={
+            "data_origin": "uploaded",
+            "filename": safe_name,
+            "content_type": file.content_type or "text/plain",
+            "domain": domain,
+            "evidence_source_type": evidence_source_type,
+            "source_name": safe_name,
+            "status": "active",
+            "evidence_level": "uploaded_document",
+        },
+        generate_embeddings=True,
     )
     write_audit_log(
         action="knowledge.upload",

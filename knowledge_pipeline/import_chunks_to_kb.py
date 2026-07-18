@@ -4,6 +4,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import re
 import sys
 import time
@@ -28,6 +29,21 @@ SOURCE_TYPE = "knowledge_pipeline_jsonl"
 EXPECTED_EMBEDDING_DIM = 1024
 DEFAULT_INPUT = ROOT / "knowledge_pipeline" / "output" / "chunks.jsonl"
 DEFAULT_OUTPUT_DIR = ROOT / "knowledge_pipeline" / "output"
+DEFAULT_TARGET_CHUNKS = 240
+DEFAULT_MIN_CHARS = 120
+DEFAULT_MAX_CHARS = 1600
+
+CATEGORY_DOMAIN_MAP = {
+    "新能源政策": "renewable_policy",
+    "绿证交易": "green_certificate",
+    "电力现货交易": "electricity_market",
+    "模型与预测方法": "price_forecast",
+    "电力市场规则": "electricity_market",
+    "交易策略": "trading_strategy",
+    "项目申报与建设": "project_policy",
+    "电价政策": "electricity_policy",
+    "其他": "general_knowledge",
+}
 
 
 def now_text() -> str:
@@ -51,16 +67,12 @@ def safe_print(value: Any) -> None:
         print(text_value.encode(encoding, errors="replace").decode(encoding, errors="replace"))
 
 
-def make_doc_id(source_path: str) -> str:
-    return "kpdoc_" + sha1_text(source_path)[:20]
+def make_doc_id(source_path: str, document_version: str) -> str:
+    return "kpdoc_" + sha1_text(f"{source_path}\n{document_version}")[:20]
 
 
-def make_chunk_id(original_chunk_id: str, source_path: str, chunk_index: int) -> str:
-    normalized = re.sub(r"[^A-Za-z0-9_:-]+", "_", original_chunk_id or "").strip("_")
-    candidate = f"kp_{normalized}" if normalized else ""
-    if candidate and len(candidate) <= 96:
-        return candidate
-    return f"kp_{sha1_text(source_path)[:16]}_{int(chunk_index or 0):04d}"
+def make_chunk_id(document_id: str, content_hash: str) -> str:
+    return f"{document_id}_{content_hash[:16]}"
 
 
 def load_jsonl(path: Path, limit: int = 0) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -101,16 +113,90 @@ def load_jsonl(path: Path, limit: int = 0) -> tuple[list[dict[str, Any]], list[d
                 )
                 continue
             item["_line_no"] = line_no
-            item["_doc_id"] = make_doc_id(str(item.get("source_path") or ""))
-            item["_db_chunk_id"] = make_chunk_id(
-                str(item.get("chunk_id") or ""),
-                str(item.get("source_path") or ""),
-                int(item.get("chunk_index") or 0),
-            )
             rows.append(item)
             if limit and len(rows) >= limit:
                 break
     return rows, failures
+
+
+def assign_document_identities(rows: list[dict[str, Any]]) -> None:
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        grouped[str(row.get("source_path") or "")].append(row)
+    for source_path, items in grouped.items():
+        joined = "\n".join(
+            str(item.get("text") or "")
+            for item in sorted(items, key=lambda value: int(value.get("chunk_index") or 0))
+        )
+        document_version = f"sha256:{sha256_text(joined)[:12]}"
+        doc_id = make_doc_id(source_path, document_version)
+        for item in items:
+            item["_doc_id"] = doc_id
+            item["_document_version"] = document_version
+            content_hash = str(item.get("text_hash") or sha256_text(str(item.get("text") or "")))
+            item["_db_chunk_id"] = make_chunk_id(doc_id, content_hash)
+
+
+def evidence_source_type(row: dict[str, Any]) -> str:
+    title = str(row.get("title") or row.get("source_file") or "")
+    if title.startswith("AI-项目进展与分析"):
+        return "derived"
+    explicit_years = [int(value) for value in re.findall(r"(?<!\d)(20\d{2})年", title)]
+    if explicit_years and max(explicit_years) < datetime.now().year:
+        return "historical"
+    return "real"
+
+
+def select_curated_rows(
+    rows: list[dict[str, Any]],
+    *,
+    target_chunks: int,
+    min_chars: int,
+    max_chars: int,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    accepted: list[dict[str, Any]] = []
+    seen_hashes: set[str] = set()
+    stats = {
+        "input": len(rows),
+        "too_short": 0,
+        "too_long": 0,
+        "duplicate_content": 0,
+        "missing_identity": 0,
+    }
+    for row in rows:
+        text_value = str(row.get("text") or "").strip()
+        if len(text_value) < min_chars:
+            stats["too_short"] += 1
+            continue
+        if len(text_value) > max_chars:
+            stats["too_long"] += 1
+            continue
+        content_hash = str(row.get("text_hash") or sha256_text(text_value))
+        if content_hash in seen_hashes:
+            stats["duplicate_content"] += 1
+            continue
+        if not row.get("source_path") or not row.get("title") or not row.get("category"):
+            stats["missing_identity"] += 1
+            continue
+        seen_hashes.add(content_hash)
+        accepted.append(row)
+    buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in accepted:
+        buckets[str(row.get("category") or "其他")].append(row)
+    selected: list[dict[str, Any]] = []
+    categories = sorted(buckets)
+    while categories and len(selected) < max(0, target_chunks):
+        next_categories: list[str] = []
+        for category in categories:
+            bucket = buckets[category]
+            if bucket and len(selected) < target_chunks:
+                selected.append(bucket.pop(0))
+            if bucket:
+                next_categories.append(category)
+        categories = next_categories
+    stats["eligible"] = len(accepted)
+    stats["selected"] = len(selected)
+    return selected, stats
 
 
 def get_db_counts() -> dict[str, int | bool | str]:
@@ -180,20 +266,46 @@ def build_document_metadata(rows: list[dict[str, Any]], input_path: Path, import
                 if keyword not in keywords:
                     keywords.append(keyword)
         joined = "\n".join(str(item.get("text") or "") for item in sorted(items, key=lambda row: int(row.get("chunk_index") or 0)))
+        category = str(first.get("category") or "其他")
+        domain = CATEGORY_DOMAIN_MAP.get(category, "general_knowledge")
+        title = str(first.get("title") or first.get("source_file") or doc_id)[:255]
+        evidence_type = evidence_source_type(first)
+        temporal_scope = {
+            "derived": "project_derived",
+            "historical": "historical_as_published",
+            "real": "document_as_published",
+        }[evidence_type]
         docs[doc_id] = {
             "doc_id": doc_id,
-            "title": str(first.get("title") or first.get("source_file") or doc_id)[:255],
+            "title": title,
             "source_type": SOURCE_TYPE,
             "source_path": str(first.get("source_path") or ""),
             "checksum": sha256_text(joined),
             "metadata": {
+                "document_id": doc_id,
+                "document_version": str(first.get("_document_version") or f"sha256:{sha256_text(joined)[:12]}"),
+                "title": title,
+                "domain": domain,
+                "evidence_source_type": evidence_type,
+                "source_name": str(first.get("source_file") or title),
+                "source_uri": "",
+                "effective_at": None,
+                "expires_at": None,
+                "generated_at": now_text(),
+                "content_hash": sha256_text(joined),
+                "language": "zh-CN",
+                "status": "active",
+                "tags": categories,
+                "evidence_level": "project_internal_document" if evidence_type == "derived" else "public_document",
+                "data_origin": "project_internal" if evidence_type == "derived" else "imported_public_document",
+                "temporal_scope": temporal_scope,
                 "import_source": SOURCE_TYPE,
                 "import_batch": import_batch,
                 "input_path": str(input_path),
                 "source_file": first.get("source_file") or "",
                 "source_path": first.get("source_path") or "",
                 "file_type": first.get("file_type") or "",
-                "category": first.get("category") or "其他",
+                "category": category,
                 "categories": categories,
                 "title": first.get("title") or "",
                 "chunk_count": len(items),
@@ -222,7 +334,56 @@ def validate_embedding_result(row: dict[str, Any], embedding_result: dict[str, A
         return False, vector, metadata, f"unexpected_dim:{len(vector)}"
     if int(metadata.get("dim") or 0) != EXPECTED_EMBEDDING_DIM:
         return False, vector, metadata, f"unexpected_metadata_dim:{metadata.get('dim')}"
+    if not all(isinstance(value, (int, float)) and math.isfinite(float(value)) for value in vector):
+        return False, vector, metadata, "non_finite_embedding"
     return True, vector, metadata, ""
+
+
+def pending_active_chunk_ids() -> set[str]:
+    engine = postgres_engine()
+    if engine is None:
+        return set()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT c.chunk_id
+                FROM kb_chunks c
+                JOIN kb_documents d ON d.doc_id = c.doc_id
+                WHERE COALESCE(d.metadata_json->>'status', 'active') = 'active'
+                  AND COALESCE(c.metadata_json->>'status', '') = 'active'
+                  AND COALESCE(c.metadata_json->>'embedding_status', 'pending') = 'pending'
+                """
+            )
+        ).scalars().all()
+    return {str(item) for item in rows}
+
+
+def mark_embedding_failures(failures: list[dict[str, Any]]) -> int:
+    chunk_ids = sorted({str(item.get("db_chunk_id") or "") for item in failures if item.get("db_chunk_id")})
+    if not chunk_ids:
+        return 0
+    engine = postgres_engine()
+    if engine is None:
+        return 0
+    updated = 0
+    with engine.begin() as conn:
+        for chunk_id_value in chunk_ids:
+            result = conn.execute(
+                text(
+                    """
+                    UPDATE kb_chunks
+                    SET metadata_json = jsonb_set(metadata_json, '{embedding_status}', '"failed"'::jsonb, true),
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE chunk_id = :chunk_id
+                      AND COALESCE(metadata_json->>'status', '') = 'active'
+                      AND COALESCE(metadata_json->>'embedding_status', 'pending') = 'pending'
+                    """
+                ),
+                {"chunk_id": chunk_id_value},
+            )
+            updated += max(0, int(result.rowcount or 0))
+    return updated
 
 
 def build_chunk_record(
@@ -235,6 +396,7 @@ def build_chunk_record(
     keywords = row.get("keywords")
     if not isinstance(keywords, list) or not keywords:
         keywords = tokenize(f"{row.get('title') or ''} {row.get('text') or ''}")
+    embedding_ready = bool(embedding and int(embedding_meta.get("dim") or 0) > 0)
     metadata = {
         "import_source": SOURCE_TYPE,
         "import_batch": import_batch,
@@ -245,14 +407,22 @@ def build_chunk_record(
         "source_path": row.get("source_path") or "",
         "file_type": row.get("file_type") or "",
         "category": row.get("category") or "其他",
+        "domain": CATEGORY_DOMAIN_MAP.get(str(row.get("category") or "其他"), "general_knowledge"),
+        "source_type": evidence_source_type(row),
         "title": row.get("title") or "",
+        "section_title": row.get("title") or "",
         "chunk_index": int(row.get("chunk_index") or 0),
         "chunk_total": int(row.get("chunk_total") or 0),
         "keywords": keywords,
         "text_hash": row.get("text_hash") or sha256_text(str(row.get("text") or "")),
+        "content_hash": row.get("text_hash") or sha256_text(str(row.get("text") or "")),
+        "token_count": len(re.findall(r"[\u4e00-\u9fff]|[A-Za-z0-9_]+", str(row.get("text") or ""))),
+        "embedding_status": "ready" if embedding_ready else "pending",
+        "embedding_version": str(embedding_meta.get("version") or "") if embedding_ready else "",
+        "status": "active",
         "created_at": row.get("created_at") or "",
         "line_no": row.get("_line_no") or 0,
-        "embedding": embedding_meta,
+        "embedding": embedding_meta if embedding_ready else {},
     }
     return {
         "chunk_id": row["_db_chunk_id"],
@@ -260,7 +430,7 @@ def build_chunk_record(
         "chunk_index": int(row.get("chunk_index") or 0),
         "content": str(row.get("text") or ""),
         "keywords": keywords,
-        "embedding": embedding,
+        "embedding": embedding if embedding_ready else None,
         "metadata": metadata,
     }
 
@@ -404,15 +574,28 @@ def upsert_records(
         skipped = len(before_ids & existing)
         records = [record for record in records if record["chunk_id"] not in existing]
     docs_to_insert = {doc_id: docs[doc_id] for doc_id in {record["doc_id"] for record in records} if doc_id in docs}
-    if mode == "replace" and not records:
-        return 0, 0, skipped
+    if mode != "append":
+        raise RuntimeError("Destructive replace mode is disabled; use append/resume with versioned identities.")
+    inserted_docs = 0
+    inserted_chunks = 0
     with engine.begin() as conn:
-        if mode == "replace":
-            conn.execute(text("DELETE FROM kb_documents WHERE source_type = :source_type"), {"source_type": SOURCE_TYPE})
         for doc in docs_to_insert.values():
             metadata = dict(doc["metadata"])
             metadata["import_batch"] = import_batch
             conn.execute(
+                text(
+                    """
+                    UPDATE kb_documents
+                    SET metadata_json = jsonb_set(metadata_json, '{status}', '"superseded"'::jsonb, true),
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE source_path = :source_path
+                      AND doc_id <> :doc_id
+                      AND COALESCE(metadata_json->>'status', 'active') = 'active'
+                    """
+                ),
+                {"source_path": doc["source_path"], "doc_id": doc["doc_id"]},
+            )
+            result = conn.execute(
                 text(
                     """
                     INSERT INTO kb_documents (
@@ -421,16 +604,9 @@ def upsert_records(
                     )
                     VALUES (
                         :doc_id, :title, :source_type, :source_path, :checksum,
-                        CAST(:metadata_json AS jsonb), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                        CAST(:metadata_json AS jsonb), NULL, CURRENT_TIMESTAMP
                     )
-                    ON CONFLICT (doc_id) DO UPDATE SET
-                        title = EXCLUDED.title,
-                        source_type = EXCLUDED.source_type,
-                        source_path = EXCLUDED.source_path,
-                        checksum = EXCLUDED.checksum,
-                        metadata_json = EXCLUDED.metadata_json,
-                        indexed_at = EXCLUDED.indexed_at,
-                        updated_at = CURRENT_TIMESTAMP
+                    ON CONFLICT (doc_id) DO NOTHING
                     """
                 ),
                 {
@@ -442,8 +618,9 @@ def upsert_records(
                     "metadata_json": dumps_json(metadata),
                 },
             )
+            inserted_docs += max(0, int(result.rowcount or 0))
         for record in records:
-            conn.execute(
+            result = conn.execute(
                 text(
                     """
                     INSERT INTO kb_chunks (
@@ -455,14 +632,12 @@ def upsert_records(
                         CAST(:keywords_json AS jsonb), CAST(:embedding_json AS jsonb),
                         CAST(:metadata_json AS jsonb), CURRENT_TIMESTAMP
                     )
-                    ON CONFLICT (chunk_id) DO UPDATE SET
-                        doc_id = EXCLUDED.doc_id,
-                        chunk_index = EXCLUDED.chunk_index,
-                        content = EXCLUDED.content,
-                        keywords_json = EXCLUDED.keywords_json,
-                        embedding_json = EXCLUDED.embedding_json,
+                    ON CONFLICT (chunk_id) DO UPDATE
+                    SET embedding_json = EXCLUDED.embedding_json,
                         metadata_json = EXCLUDED.metadata_json,
                         updated_at = CURRENT_TIMESTAMP
+                    WHERE COALESCE(kb_chunks.metadata_json->>'embedding_status', 'pending') = 'pending'
+                      AND COALESCE(EXCLUDED.metadata_json->>'embedding_status', '') = 'ready'
                     """
                 ),
                 {
@@ -475,7 +650,8 @@ def upsert_records(
                     "metadata_json": dumps_json(record["metadata"]),
                 },
             )
-    return len(docs_to_insert), len(records), skipped
+            inserted_chunks += max(0, int(result.rowcount or 0))
+    return inserted_docs, inserted_chunks, skipped + len(records) - inserted_chunks
 
 
 def clear_rag_cache() -> dict[str, Any]:
@@ -499,12 +675,23 @@ def run_import(args: argparse.Namespace) -> dict[str, Any]:
     input_path = args.input.resolve()
     output_dir = args.output.resolve()
     import_batch = f"kp_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{sha1_text(str(input_path))[:8]}"
-    rows, validation_failures = load_jsonl(input_path, limit=max(0, int(args.limit or 0)))
+    raw_rows, validation_failures = load_jsonl(input_path, limit=0)
+    assign_document_identities(raw_rows)
+    target_chunks = max(1, int(args.target_chunks or DEFAULT_TARGET_CHUNKS))
+    rows, curation_stats = select_curated_rows(
+        raw_rows,
+        target_chunks=target_chunks,
+        min_chars=max(1, int(args.min_chars or DEFAULT_MIN_CHARS)),
+        max_chars=max(1, int(args.max_chars or DEFAULT_MAX_CHARS)),
+    )
+    if args.limit:
+        rows = rows[: max(0, int(args.limit))]
     category_distribution = Counter(str(row.get("category") or "其他") for row in rows)
     db_chunk_ids = [row["_db_chunk_id"] for row in rows]
     duplicate_db_chunk_ids = [chunk_id for chunk_id, count in Counter(db_chunk_ids).items() if count > 1]
     before_counts = get_db_counts()
-    provider = get_embedding_provider()
+    embedding_mode = str(getattr(args, "embedding_mode", "pending") or "pending")
+    provider = get_embedding_provider() if embedding_mode == "ready" else None
     report: dict[str, Any] = {
         "input_path": str(input_path),
         "output_dir": str(output_dir),
@@ -516,6 +703,9 @@ def run_import(args: argparse.Namespace) -> dict[str, Any]:
         "import_batch": import_batch,
         "source_type": SOURCE_TYPE,
         "input_chunks": len(rows),
+        "raw_input_chunks": len(raw_rows),
+        "target_chunks": target_chunks,
+        "curation_stats": curation_stats,
         "validation_failures": len(validation_failures),
         "duplicate_db_chunk_ids": duplicate_db_chunk_ids,
         "before_counts": before_counts,
@@ -525,7 +715,8 @@ def run_import(args: argparse.Namespace) -> dict[str, Any]:
         "skipped_chunks": 0,
         "embedding_success": 0,
         "embedding_failed": 0,
-        "embedding_dim": EXPECTED_EMBEDDING_DIM,
+        "embedding_mode": embedding_mode,
+        "embedding_dim": EXPECTED_EMBEDDING_DIM if embedding_mode == "ready" else 0,
         "embedding_dim_distribution": {},
         "embedding_provider": getattr(provider, "name", ""),
         "embedding_model": getattr(provider, "model", ""),
@@ -565,15 +756,28 @@ def run_import(args: argparse.Namespace) -> dict[str, Any]:
         return report
 
     docs = build_document_metadata(rows, input_path, import_batch)
-    success_records, embedding_failures, dim_counter = embed_rows(
-        rows,
-        batch_size=max(1, int(args.batch_size or 32)),
-        import_batch=import_batch,
-        input_path=input_path,
-        verbose=bool(args.verbose),
-    )
+    if embedding_mode == "ready":
+        pending_ids = pending_active_chunk_ids()
+        rows = [row for row in rows if row["_db_chunk_id"] in pending_ids]
+        unique_by_hash: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            unique_by_hash.setdefault(str(row.get("text_hash") or ""), row)
+        rows = list(unique_by_hash.values())
+        success_records, embedding_failures, dim_counter = embed_rows(
+            rows,
+            batch_size=max(1, int(args.batch_size or 32)),
+            import_batch=import_batch,
+            input_path=input_path,
+            verbose=bool(args.verbose),
+        )
+    else:
+        success_records = [build_chunk_record(row, [], {}, import_batch, input_path) for row in rows]
+        embedding_failures = []
+        dim_counter = Counter()
     failures.extend(embedding_failures)
-    report["embedding_success"] = len(success_records)
+    report["embedding_failed_marked"] = mark_embedding_failures(embedding_failures) if embedding_mode == "ready" else 0
+    report["prepared_records"] = len(success_records)
+    report["embedding_success"] = len(success_records) if embedding_mode == "ready" else 0
     report["embedding_failed"] = len(embedding_failures)
     report["embedding_dim_distribution"] = {str(key): value for key, value in sorted(dim_counter.items())}
     if not success_records:
@@ -594,7 +798,7 @@ def run_import(args: argparse.Namespace) -> dict[str, Any]:
     report["skipped_chunks"] = skipped
     report["after_counts"] = get_db_counts()
     report["cache_clear"] = clear_rag_cache()
-    report["can_run_smoke_test"] = imported_chunks > 0 and report["embedding_failed"] == 0
+    report["can_run_smoke_test"] = embedding_mode == "ready" and imported_chunks > 0 and report["embedding_failed"] == 0
     report["duration_seconds"] = round(time.time() - start_time, 3)
     write_reports(output_dir, report, failures)
     return report
@@ -604,10 +808,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="导入 knowledge_pipeline/output/chunks.jsonl 到现有 PostgreSQL RAG 知识库。")
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="chunks.jsonl 路径")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR, help="报告输出目录")
-    parser.add_argument("--mode", choices=["append", "replace"], default="append", help="append 追加/更新；replace 仅替换本脚本导入的数据")
+    parser.add_argument("--mode", choices=["append"], default="append", help="仅允许 append；历史文档和 chunk 不删除。")
     parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument(
+        "--embedding-mode",
+        choices=["pending", "ready"],
+        default="pending",
+        help="pending 仅导入文档与 Chunk；ready 是 A2.2 的显式 Embedding 操作。",
+    )
     parser.add_argument("--dry-run", action="store_true", help="只校验 JSONL 和数据库状态，不入库、不生成 embedding")
-    parser.add_argument("--limit", type=int, default=0, help="限制导入 chunks 数，用于小批量测试")
+    parser.add_argument("--target-chunks", type=int, default=DEFAULT_TARGET_CHUNKS, help="平衡选择的目标有效 chunk 数。")
+    parser.add_argument("--min-chars", type=int, default=DEFAULT_MIN_CHARS)
+    parser.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
+    parser.add_argument("--limit", type=int, default=0, help="在平衡筛选后进一步限制，用于小批量测试。")
     parser.add_argument("--resume", action="store_true", help="跳过已存在的本脚本导入 chunk")
     parser.add_argument("--verbose", action="store_true")
     return parser
@@ -618,7 +831,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     report = run_import(args)
     safe_print(report)
-    return 0 if not report.get("validation_failures") and not report.get("duplicate_db_chunk_ids") else 1
+    return 0 if not report.get("validation_failures") and not report.get("duplicate_db_chunk_ids") and not report.get("embedding_failed") else 1
 
 
 if __name__ == "__main__":

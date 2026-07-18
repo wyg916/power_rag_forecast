@@ -1,0 +1,629 @@
+[
+  {
+    "question_id": "P5A-FIELD-01",
+    "question": "预测结果中的 run_id 字段表示什么？",
+    "category": "field_dictionary",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "run_id 标识一次可追踪预测批次",
+      "可用于关联预测结果与来源"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "run_id 是模型版本号"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": true,
+    "pass_criteria": "回答 run_id 的批次追踪含义并提供真实 citation"
+  },
+  {
+    "question_id": "P5A-FIELD-02",
+    "question": "predicted_price 字段的单位和业务含义是什么？",
+    "category": "field_dictionary",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "预测电价",
+      "单位必须来自字段字典证据"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "未经证据自行指定人民币每度"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "字段解释和单位均能由 citation 支持"
+  },
+  {
+    "question_id": "P5A-FIELD-03",
+    "question": "source_type 字段用于区分哪些来源状态？",
+    "category": "field_dictionary",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "区分真实、历史、演示、回退、派生和不可用等来源"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "demo 等同于 real"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "说明来源标签用途且不混淆 real/demo"
+  },
+  {
+    "question_id": "P5A-FIELD-04",
+    "question": "generated_at 和 effective_at 有什么区别？",
+    "category": "field_dictionary",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "generated_at 是生成时间",
+      "effective_at 是知识生效时间"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "两个字段完全相同"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "准确区分生成时间和生效时间"
+  },
+  {
+    "question_id": "P5A-METRIC-01",
+    "question": "MAE 指标如何解释？",
+    "category": "metric_definition",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "平均绝对误差",
+      "越小通常表示误差越低"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "MAE 是百分比指标"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "给出正确口径并引用模型说明"
+  },
+  {
+    "question_id": "P5A-METRIC-02",
+    "question": "RMSE 与 MAE 的主要差别是什么？",
+    "category": "metric_definition",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "RMSE 对较大误差更敏感",
+      "MAE 是绝对误差平均"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "二者必然数值相同"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "比较两项指标且无错误公式结论"
+  },
+  {
+    "question_id": "P5A-METRIC-03",
+    "question": "峰谷价差应如何计算和解读？",
+    "category": "metric_definition",
+    "expected_domain": "electricity_market",
+    "expected_source_type": "real",
+    "required_facts": [
+      "最高价与最低价之差",
+      "反映时段价格波动空间"
+    ],
+    "allowed_document_ids": [
+      "kb_df0fef86370dd5c11c54"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "直接等同于可实现收益"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "解释计算口径并说明不等于实际收益"
+  },
+  {
+    "question_id": "P5A-METRIC-04",
+    "question": "预测区间覆盖率高是否代表模型一定更准确？",
+    "category": "metric_definition",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "覆盖率需结合区间宽度",
+      "不能单独代表点预测准确"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "覆盖率越高模型必然越好"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "指出覆盖率与区间宽度的权衡"
+  },
+  {
+    "question_id": "P5A-MARKET-01",
+    "question": "PJM 市场中的 LMP 是什么？",
+    "category": "electricity_market_basics",
+    "expected_domain": "electricity_market",
+    "expected_source_type": "real",
+    "required_facts": [
+      "节点边际电价",
+      "包含能源、拥堵和损耗分量"
+    ],
+    "allowed_document_ids": [
+      "kb_df0fef86370dd5c11c54"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "LMP 只包含燃料成本"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "命中 LMP 机制知识并提供真实引用"
+  },
+  {
+    "question_id": "P5A-MARKET-02",
+    "question": "日前市场和实时市场的核心区别是什么？",
+    "category": "electricity_market_basics",
+    "expected_domain": "electricity_market",
+    "expected_source_type": "real",
+    "required_facts": [
+      "日前市场提前出清",
+      "实时市场处理实际运行偏差"
+    ],
+    "allowed_document_ids": [
+      "kb_df0fef86370dd5c11c54"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "两个市场完全相同"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "准确说明时间与偏差结算差异"
+  },
+  {
+    "question_id": "P5A-MARKET-03",
+    "question": "DOM 节点在项目知识中指什么？",
+    "category": "electricity_market_basics",
+    "expected_domain": "electricity_market",
+    "expected_source_type": "real",
+    "required_facts": [
+      "PJM Dominion 相关节点或区域背景"
+    ],
+    "allowed_document_ids": [
+      "kb_df0fef86370dd5c11c54"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "DOM 是中国省级电网代码"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "依据项目文档说明 DOM 背景"
+  },
+  {
+    "question_id": "P5A-MARKET-04",
+    "question": "负电价通常可能由哪些市场因素造成？",
+    "category": "electricity_market_basics",
+    "expected_domain": "electricity_market",
+    "expected_source_type": "real",
+    "required_facts": [
+      "供给过剩或负荷偏低",
+      "机组约束或新能源出力等因素"
+    ],
+    "allowed_document_ids": [
+      "kb_df0fef86370dd5c11c54"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "负电价意味着用户一定免费用电"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "解释形成因素并避免终端电价误读"
+  },
+  {
+    "question_id": "P5A-MODEL-01",
+    "question": "当前预测模型为什么需要严格特征顺序？",
+    "category": "model_feature_explanation",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "模型输入契约要求列名、顺序和类型一致",
+      "不一致应 fail-closed"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "缺列可以静默补零"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": true,
+    "pass_criteria": "说明严格特征契约和失败处理"
+  },
+  {
+    "question_id": "P5A-MODEL-02",
+    "question": "Candidate 模型能否自动晋升为 Active？",
+    "category": "model_feature_explanation",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "不能自动晋升",
+      "需要准入验证和人工确认"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "验证通过后系统会自动切换生产模型"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "准确回答模型生命周期门禁"
+  },
+  {
+    "question_id": "P5A-MODEL-03",
+    "question": "模型 artifact 的 manifest 有什么作用？",
+    "category": "model_feature_explanation",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "记录模型身份和外部元数据",
+      "用于加载前校验"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "manifest 本身就是模型二进制"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "说明 manifest 的身份与校验用途"
+  },
+  {
+    "question_id": "P5A-MODEL-04",
+    "question": "预测模型输出为何不能直接当作交易指令？",
+    "category": "model_feature_explanation",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "预测是分析依据",
+      "交易还需合同、风险和人工复核"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "系统可以自动下单"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "明确辅助决策边界"
+  },
+  {
+    "question_id": "P5A-ERROR-01",
+    "question": "晚高峰预测误差可能受哪些因素影响？",
+    "category": "error_spike_negative_price",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "负荷变化",
+      "天气或新能源出力",
+      "尖峰波动"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "只有模型算法单一因素"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "提供多因素解释且有引用"
+  },
+  {
+    "question_id": "P5A-ERROR-02",
+    "question": "尖峰概率高是否代表价格一定暴涨？",
+    "category": "error_spike_negative_price",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "不代表必然暴涨",
+      "表示需要重点监控风险"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "尖峰概率超过阈值就必然暴涨"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "避免确定性夸大并引用尖峰解释"
+  },
+  {
+    "question_id": "P5A-ERROR-03",
+    "question": "天气预报偏差会如何传导到电价预测误差？",
+    "category": "error_spike_negative_price",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "天气影响负荷或新能源出力",
+      "输入偏差会传导到价格预测"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "天气与电价预测完全无关"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "说明传导链路并有真实证据"
+  },
+  {
+    "question_id": "P5A-ERROR-04",
+    "question": "发现模型最近误差变大时应如何判断是否需要重训？",
+    "category": "error_spike_negative_price",
+    "expected_domain": "price_forecast",
+    "expected_source_type": "real",
+    "required_facts": [
+      "需要足够样本和持续退化证据",
+      "不能依据单次异常自动重训"
+    ],
+    "allowed_document_ids": [
+      "kb_e50027a0de3623ab5dee"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "单次误差立即自动训练并激活"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "说明重训门槛与人工确认"
+  },
+  {
+    "question_id": "P5A-SYSTEM-01",
+    "question": "项目中预测事实的唯一来源是什么？",
+    "category": "run_model_source_contract",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "PostgreSQL 是预测事实源"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "Excel current 文件是唯一事实源"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": true,
+    "pass_criteria": "正确说明预测事实源"
+  },
+  {
+    "question_id": "P5A-SYSTEM-02",
+    "question": "项目中模型事实的唯一来源是什么？",
+    "category": "run_model_source_contract",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "model_registry 是模型事实源"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "model_versions 展示表是唯一事实源"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": true,
+    "pass_criteria": "正确说明模型事实源"
+  },
+  {
+    "question_id": "P5A-SYSTEM-03",
+    "question": "GET 查询为什么不能触发 seed 或模型激活？",
+    "category": "run_model_source_contract",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "GET ???????????",
+      "seed 和激活必须显式执行"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "页面首次打开可以自动生成正式事实"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "说明读取无副作用原则"
+  },
+  {
+    "question_id": "P5A-SYSTEM-04",
+    "question": "Web、API 和 AI 如何追踪同一次预测？",
+    "category": "run_model_source_contract",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "共享 run_id",
+      "共享来源和生成时间元数据"
+    ],
+    "allowed_document_ids": [
+      "kb_615f6428c395ce649429",
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "三端各自生成不相关批次"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "说明统一 run_id 和来源契约"
+  },
+  {
+    "question_id": "P5A-STATE-01",
+    "question": "当知识文档已过期时，回答应如何标记？",
+    "category": "historical_stale_unavailable",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "明确标记 historical 或过期",
+      "不能冒充当前规则"
+    ],
+    "allowed_document_ids": [
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "过期规则仍是当前有效规则"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": true,
+    "pass_criteria": "只在显式允许 historical 时返回并清楚提示"
+  },
+  {
+    "question_id": "P5A-STATE-02",
+    "question": "实时事实不可用时系统应该怎么回答？",
+    "category": "historical_stale_unavailable",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "返回 unavailable",
+      "不得使用 demo 或 fallback 冒充真实数据"
+    ],
+    "allowed_document_ids": [
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "编造一个最新值"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": true,
+    "pass_criteria": "无证据时明确拒答且无虚构 citation"
+  },
+  {
+    "question_id": "P5A-STATE-03",
+    "question": "demo 知识可以用于 real 模式回答吗？",
+    "category": "historical_stale_unavailable",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "real",
+    "required_facts": [
+      "demo 默认不得参与 real 查询"
+    ],
+    "allowed_document_ids": [
+      "kb_f6d455ca2d4fd331ca28"
+    ],
+    "required_citation_count": 1,
+    "forbidden_claims": [
+      "demo 与 real 可无条件混用"
+    ],
+    "expected_behavior": "answer_with_citations",
+    "critical": false,
+    "pass_criteria": "拒绝将 demo 冒充 real"
+  },
+  {
+    "question_id": "P5A-NOANSWER-01",
+    "question": "请给出系统从未记录过的明天准确成交收益。",
+    "category": "no_answer_guard",
+    "expected_domain": "system_knowledge",
+    "expected_source_type": "unavailable",
+    "required_facts": [
+      "缺少可信证据"
+    ],
+    "allowed_document_ids": [],
+    "required_citation_count": 0,
+    "forbidden_claims": [
+      "虚构收益数值"
+    ],
+    "expected_behavior": "unavailable",
+    "critical": true,
+    "pass_criteria": "返回 unavailable 且不编造数字"
+  },
+  {
+    "question_id": "P5A-NOANSWER-02",
+    "question": "请引用一份不存在的《2027 自动交易保证盈利规则》。",
+    "category": "no_answer_guard",
+    "expected_domain": "electricity_market",
+    "expected_source_type": "unavailable",
+    "required_facts": [
+      "知识库不存在该文档"
+    ],
+    "allowed_document_ids": [],
+    "required_citation_count": 0,
+    "forbidden_claims": [
+      "生成虚构文档名或 chunk_id"
+    ],
+    "expected_behavior": "unavailable",
+    "critical": true,
+    "pass_criteria": "拒绝虚构引用"
+  },
+  {
+    "question_id": "P5A-NOANSWER-03",
+    "question": "没有储能 SOC、容量和效率数据时，请给出精确充放电量。",
+    "category": "no_answer_guard",
+    "expected_domain": "trading_strategy",
+    "expected_source_type": "unavailable",
+    "required_facts": [
+      "关键约束缺失",
+      "不能给出精确充放电量"
+    ],
+    "allowed_document_ids": [],
+    "required_citation_count": 0,
+    "forbidden_claims": [
+      "虚构 SOC、容量或效率"
+    ],
+    "expected_behavior": "unavailable",
+    "critical": true,
+    "pass_criteria": "明确证据不足并拒绝精确数值"
+  }
+]

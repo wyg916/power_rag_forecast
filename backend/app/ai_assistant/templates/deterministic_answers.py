@@ -174,5 +174,9 @@ def answer_forecast_metric(result: dict[str, Any], intent: str) -> str:
             f"数据依据：未来 24 小时均价约 {_money(result.get('avg_price'))}，P25 约 {_money(result.get('p25'))}，峰谷价差约 {_money(result.get('spread'))}。"
         )
     if intent == "forecast_avg_price":
-        return f"结论：当前未来 24 小时预测均价约 {_money(result.get('avg_price'))}。\n\n数据依据：result_forward_24h_formal 最新预测结果。"
+        return (
+            f"结论：当前未来 24 小时预测平均电价（均价）约 {_money(result.get('avg_price'))}。\n\n"
+            "数据依据：result_forward_24h_formal 最新预测结果。\n\n"
+            "解读边界：平均电价不能代表全部时段或每个小时，仍需结合逐小时价格和尖峰风险复核。"
+        )
     return f"结论：当前预测峰谷价差约 {_money(result.get('spread'))}。\n\n数据依据：最高价 {_money(result.get('max_price'))}，最低价 {_money(result.get('min_price'))}。"

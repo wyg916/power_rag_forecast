@@ -9,7 +9,18 @@ TABLE_NAME_RE = re.compile(r"\b[a-zA-Z][a-zA-Z0-9_]{2,}\b")
 
 
 def _has_any(question: str, terms: list[str]) -> bool:
-    return any(compact_question(term) in question for term in terms if compact_question(term))
+    for term in terms:
+        compact_term = compact_question(term)
+        if not compact_term:
+            continue
+        # Short ASCII chat markers such as "hi" must be matched as tokens.
+        # Substring matching makes words such as "historical" look like a greeting.
+        if compact_term.isascii() and compact_term.isalnum():
+            if re.search(rf"(?<![a-z0-9]){re.escape(compact_term)}(?![a-z0-9])", question.lower()):
+                return True
+        elif compact_term in question:
+            return True
+    return False
 
 
 def _extract_table_names(question: str) -> list[str]:
