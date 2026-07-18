@@ -110,7 +110,7 @@ def business_key_for_payload(kind: str, payload: dict[str, Any] | None) -> str:
         return str(data.get("path") or data.get("root") or data.get("source_path") or data.get("limit_files") or "local_knowledge")
     if normalized == "embedding_refresh":
         return str(data.get("scope") or data.get("doc_id") or data.get("source") or "all")
-    if normalized in {"report_generate", "report_only"}:
+    if normalized in {"report_generate", "report_only", "report_daily"}:
         return str(data.get("report_id") or data.get("run_id") or data.get("report_type") or "latest")
     if normalized in {"sync_core_data", "refresh_data", "data_sync"}:
         return ":".join(str(data.get(key) or "") for key in ("source", "start", "end", "date", "market")) or "default"

@@ -3,18 +3,13 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import text
-
 from backend.app.config import PROJECT_ROOT, project_paths
-from backend.app.data_access import load_latest_forecast
-from backend.app.repositories.base import dumps_json, postgres_engine
-from backend.app.repositories.task_repository import task_overview
+from backend.app.repositories.base import postgres_engine
 from backend.app.services.core_data_sync import sync_core_facts_and_tariff_assets
 from backend.app.services.forecast_transaction_service import (
     ForecastRunRequest,
@@ -23,6 +18,7 @@ from backend.app.services.forecast_transaction_service import (
     PredictionBatch,
     generate_run_id,
 )
+from backend.app.services.report_generation_service import generate_operational_report
 from model_ops.result_hash import RESULT_VALUE_COLUMNS
 
 
@@ -130,7 +126,7 @@ def run_price_predict(payload: dict[str, Any], context: TaskStepLogger | None = 
             input_end_at=timestamps[-1].to_pydatetime(),
             input_hash=str(manifest["input_file_hash"]),
             environment_hash=str(manifest["environment_hash"]),
-            source_type="t003_isolated_model_inference",
+            source_type="real",
             expected_result_hash=str(manifest["result_data_hash"]),
         )
 
@@ -180,77 +176,27 @@ def run_report_daily(payload: dict[str, Any], context: TaskStepLogger | None = N
     engine = postgres_engine()
     if engine is None:
         raise RuntimeError("PostgreSQL 不可用，无法保存日报结果。")
-    report_date = str(payload.get("report_date") or datetime.now().date().isoformat())
-    region = str(payload.get("region") or "浙江省")
+    requested_run_id = str(payload.get("run_id") or "latest")
+    report_date = str(payload.get("report_date") or "") or None
+    region = str(payload.get("region") or "模型覆盖市场")
     report_type = str(payload.get("report_type") or "daily")
     if context:
-        context.log("parse", "读取日报生成参数", progress=18, metadata={"report_date": report_date, "region": region, "report_type": report_type})
-        context.log("load_data", "读取预测结果与任务运行摘要", progress=42)
-    forecast = load_latest_forecast()
-    overview = task_overview()
-    summary = {
-        "report_date": report_date,
-        "region": region,
-        "forecast_summary": forecast.get("summary") or {},
-        "task_summary": {
-            "task_total": overview.get("task_total", 0),
-            "success_total": overview.get("success_total", 0),
-            "failed_total": overview.get("failed_total", 0),
-            "timeout_total": overview.get("timeout_total", 0),
-        },
-        "sections": [
-            "电价预测摘要",
-            "任务运行健康",
-            "失败与超时任务复盘",
-            "次日运行建议",
-        ],
-    }
-    report_id = "daily_" + report_date.replace("-", "") + "_" + datetime.now().strftime("%H%M%S")
-    title = f"{region}售电交易运行日报（{report_date}）"
-    if context:
-        context.log("generate", "生成结构化日报内容", progress=72, metadata={"report_id": report_id})
-    with engine.begin() as conn:
-        conn.execute(
-            text(
-                """
-                INSERT INTO report_runs (
-                    report_id, run_id, title, status, report_type, file_path,
-                    metadata_json, content_json, generated_at
-                )
-                VALUES (
-                    :report_id, :run_id, :title, 'ready', :report_type, :file_path,
-                    CAST(:metadata_json AS jsonb), CAST(:content_json AS jsonb), :generated_at
-                )
-                ON CONFLICT (report_id) DO UPDATE SET
-                    title = EXCLUDED.title,
-                    status = EXCLUDED.status,
-                    report_type = EXCLUDED.report_type,
-                    file_path = EXCLUDED.file_path,
-                    metadata_json = EXCLUDED.metadata_json,
-                    content_json = EXCLUDED.content_json,
-                    generated_at = EXCLUDED.generated_at,
-                    updated_at = CURRENT_TIMESTAMP
-                """
-            ),
-            {
-                "report_id": report_id,
-                "run_id": str(forecast.get("run_id") or "latest"),
-                "title": title,
-                "report_type": report_type,
-                "file_path": "",
-                "metadata_json": dumps_json({"region": region, "generated_by": "task_center_worker"}),
-                "content_json": dumps_json(summary),
-                "generated_at": datetime.now(),
-            },
+        context.log(
+            "parse",
+            "读取报告生成参数",
+            progress=18,
+            metadata={"run_id": requested_run_id, "report_date": report_date, "region": region, "report_type": report_type},
         )
+        context.log("load_data", "读取唯一 success 预测批次与 24 行结果", progress=42)
+    result = generate_operational_report(
+        engine,
+        run_id=requested_run_id,
+        report_type=report_type,
+        region=region,
+        report_date=report_date,
+    )
     if context:
-        context.log("persist", "保存日报结果到 report_runs", progress=90, metadata={"report_id": report_id})
-    return {
-        "available": True,
-        "execution_path": "postgresql_report_runs",
-        "report_id": report_id,
-        "title": title,
-        "report_date": report_date,
-        "region": region,
-        "summary": summary,
-    }
+        context.log("generate", "生成可追溯运营决策报告", progress=72, metadata={"report_id": result["report_id"], "run_id": result["run_id"]})
+        context.log("persist", "原子保存报告记录与文件", progress=90, metadata={"report_id": result["report_id"], "idempotent": result["idempotent"]})
+    result["execution_path"] = "phase5_c_operational_report"
+    return result

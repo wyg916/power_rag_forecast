@@ -481,15 +481,9 @@ def embedding_refresh_task(task_id: str, run_id: str, payload: dict[str, Any] | 
 
 @_task_decorator("power_trading.report_generate_task")
 def report_generate_task(task_id: str, run_id: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    result = run_command_task("report_only", task_id, run_id)
-    result["kind"] = "report_generate"
-    result["task_name"] = "report_generate"
-    result["task_type"] = "report_generate"
-    result["payload"] = payload or {}
-    if not result.get("result_ref"):
-        result["result_ref"] = str(result.get("log_path") or "report_generate")
-    save_task_record(result, status=str(result.get("status") or "success"))
-    return result
+    from backend.app.services.task_business_handlers import run_report_daily
+
+    return _run_python_task(task_id=task_id, run_id=run_id, kind="report_generate", payload=payload, handler=run_report_daily)
 
 
 @_task_decorator("power_trading.run_price_predict_task")

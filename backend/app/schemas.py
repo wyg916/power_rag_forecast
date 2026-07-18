@@ -103,7 +103,10 @@ class ReviewRequest(BaseModel):
 
 
 class ReportGenerateRequest(BaseModel):
-    run_id: str = "latest"
+    run_id: str = Field(default="latest", min_length=1, max_length=128)
+    report_type: Literal["daily", "weekly", "operation_decision"] = "daily"
+    region: str = Field(default="模型覆盖市场", min_length=1, max_length=128)
+    report_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
 
 
 class ScheduledTaskCreateRequest(BaseModel):

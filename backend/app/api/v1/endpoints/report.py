@@ -23,14 +23,24 @@ def _with_report_meta(payload: dict, *, historical: bool = False) -> dict:
     items = payload.get("items") or []
     available = bool(payload.get("available", payload.get("report_id") or items))
     item = items[0] if items else payload
+    metadata = item.get("metadata") or payload.get("metadata") or {}
+    report_run_id = item.get("run_id") or payload.get("run_id")
     return attach_source_meta(
         payload,
         source_meta(
             SourceType.HISTORICAL if historical and available else (SourceType.REAL if available else SourceType.UNAVAILABLE),
             "report",
-            run_id=item.get("run_id"),
+            run_id=report_run_id,
             generated_at=item.get("generated_at") or item.get("updated_at") or item.get("created_at"),
-            evidence=[{"table": "report_runs", "report_id": item.get("report_id")}],
+            model_version=metadata.get("model_version"),
+            feature_version=metadata.get("feature_version"),
+            schema_hash=metadata.get("schema_hash"),
+            is_stale=bool(metadata.get("is_stale")),
+            stale_reason=metadata.get("stale_reason"),
+            evidence=[
+                {"table": "report_runs", "report_id": item.get("report_id")},
+                {"table": "forecast_runs", "run_id": report_run_id, "result_hash": metadata.get("result_hash")},
+            ],
             unavailable_reason=None if available else payload.get("unavailable_reason") or "report_not_found",
         ),
     )
@@ -43,7 +53,15 @@ def report_generate(
     user: Annotated[CurrentUser, Depends(require_permission("report:generate"))],
 ) -> dict:
     try:
-        result = enqueue_task("report_generate", {"run_id": payload.run_id})
+        result = enqueue_task(
+            "report_daily",
+            {
+                "run_id": payload.run_id,
+                "report_type": payload.report_type,
+                "region": payload.region,
+                "report_date": payload.report_date,
+            },
+        )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     write_audit_log(
@@ -52,7 +70,7 @@ def report_generate(
         resource_type="report",
         resource_id=str(result.get("task_id") or payload.run_id),
         ip_address=request.client.host if request.client else "",
-        metadata={"run_id": payload.run_id, "task": result},
+        metadata={"run_id": payload.run_id, "report_type": payload.report_type, "task": result},
     )
     return result
 
@@ -113,7 +131,12 @@ def report_download(report_id: str):
     path = Path(str(report.get("report_path") or ""))
     if not path.exists():
         raise HTTPException(status_code=404, detail="报告文件不存在")
-    return FileResponse(path, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document", filename=path.name)
+    media_types = {
+        ".md": "text/markdown; charset=utf-8",
+        ".json": "application/json",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+    return FileResponse(path, media_type=media_types.get(path.suffix.lower(), "application/octet-stream"), filename=path.name)
 
 
 @router.post("/api/reports/{report_id}/regenerate")
