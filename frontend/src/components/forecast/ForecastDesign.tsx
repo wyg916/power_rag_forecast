@@ -47,64 +47,19 @@ function metricIcon(index: number) {
   return [<RiseOutlined />, <CloudDownloadOutlined />, <LineChartOutlined />, <ReloadOutlined />, <SafetyCertificateOutlined />, <ExperimentOutlined />][index] || <BarChartOutlined />;
 }
 
-export function ForecastPageHeader({
-  title,
-  subtitle,
-  tabs,
-  controls
-}: {
-  title: string;
-  subtitle: string;
-  tabs?: ReactNode;
-  controls?: ReactNode;
-}) {
-  return (
-    <div className="forecast-design-header">
-      <div className="forecast-heading-copy">
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </div>
-      <div className="forecast-header-utility">
-        {tabs}
-        {controls}
-      </div>
-    </div>
-  );
-}
-
-export function ForecastContextBar({ data, actions }: { data: any; actions: ReactNode }) {
+export function ForecastContextBar({ data }: { data: any }) {
   return (
     <div className="forecast-context-bar">
       <div className="forecast-filter-items">
-        <span>预测日期 <strong>{data?.date || '待接入'}</strong></span>
-        <span>区域 <strong>{data?.region || '浙江省'}</strong></span>
-        <span>模型版本 <strong>{data?.modelVersion || 'v3.2.1'}</strong><Tag color="success">最新</Tag></span>
+        <span>预测日期 <strong>{data?.date || '--'}</strong></span>
+        <span>区域 <strong>{data?.region || '--'}</strong></span>
+        <span>模型版本 <strong>{data?.modelVersion || '--'}</strong>{data?.modelVersion ? <Tag color="success">接口返回</Tag> : null}</span>
       </div>
-      <Space size={8}>{actions}</Space>
     </div>
   );
 }
 
-export function MiniSparkline({ values, tone = 'green' }: { values?: number[]; tone?: string }) {
-  const data = (values || []).filter((item) => Number.isFinite(Number(item))).slice(-24);
-  const color = tone === 'red' ? chartColors.red : tone === 'orange' ? chartColors.orange : tone === 'blue' ? chartColors.blue : chartColors.green;
-  if (!data.length) return <div className="forecast-mini-empty">暂无趋势</div>;
-  return (
-    <AppChart
-      height={30}
-      option={{
-        animation: false,
-        grid: { left: 0, right: 0, top: 5, bottom: 5 },
-        xAxis: { type: 'category', show: false, data: data.map((_, index) => index) },
-        yAxis: { type: 'value', show: false, min: 'dataMin', max: 'dataMax' },
-        series: [{ type: 'line', smooth: true, symbol: 'none', data, lineStyle: { width: 2, color }, areaStyle: { color: `${color}18` } }]
-      }}
-    />
-  );
-}
-
-export function ForecastMetricCards({ metrics, series }: { metrics: any[]; series: any[] }) {
-  const spark = series.map((item) => Number(item.value)).filter(Number.isFinite);
+export function ForecastMetricCards({ metrics }: { metrics: any[] }) {
   return (
     <div className={`forecast-metric-grid metric-count-${metrics.length}`}>
       {metrics.map((item, index) => (
@@ -122,7 +77,7 @@ export function ForecastMetricCards({ metrics, series }: { metrics: any[]; serie
               <span className={Number(item.trend) >= 0 ? 'trend-up' : 'trend-down'}>{Number(item.trend) >= 0 ? '↑' : '↓'} {Math.abs(Number(item.trend)).toFixed(2)}%</span>
             ) : null}
           </p>
-          <MiniSparkline values={spark} tone={item.tone} />
+          <span className="forecast-metric-source">{item.sourceLabel || '当前预测批次'}</span>
         </div>
       ))}
     </div>
@@ -167,9 +122,15 @@ export function ForecastChartCard({ data }: { data: any }) {
     <div className="forecast-card forecast-chart-card">
       <div className="forecast-card-head">
         <div><h2>24小时电价预测</h2><p>展示真实预测电价序列与峰值点；低价窗口和高风险时段在右侧洞察中说明。</p></div>
-        <Space><Tag>小时</Tag><span className="card-unit">单位：元/kWh</span></Space>
+        <Space wrap>
+          <Tag>小时</Tag>
+          <span className="card-unit">单位：元/kWh</span>
+          <Tag color={data?.quality?.confidenceIntervalAvailable ? 'success' : 'warning'}>
+            {data?.quality?.confidenceIntervalAvailable ? '正式置信区间' : '置信区间待接入'}
+          </Tag>
+        </Space>
       </div>
-      {series.length ? <AppChart option={option} height={300} /> : <Empty description="暂无 24 小时预测曲线" />}
+      {series.length ? <div className="forecast-chart-body"><AppChart option={option} height="100%" /></div> : <Empty description="暂无 24 小时预测曲线" />}
     </div>
   );
 }
@@ -177,19 +138,22 @@ export function ForecastChartCard({ data }: { data: any }) {
 export function StrategyInsightPanel({ data }: { data: any }) {
   const highItems = (data?.highWindow || []).slice(0, 5);
   const insights = data?.strategy?.must_watch || data?.strategy?.items || [];
+  const strategyItems = data?.strategy?.items || [];
+  const highAdvice = strategyItems.find((item: any) => String(item.risk_level).toLowerCase() === 'high');
+  const lowAdvice = strategyItems.find((item: any) => String(item.risk_level).toLowerCase() === 'low');
   return (
     <div className="forecast-card forecast-insight-panel">
       <div className="forecast-card-head"><h2>策略洞察</h2></div>
-      <StrategyBlock type="success" title="今日核心结论">
+      <StrategyBlock type="success" title="预测事实摘要">
         预计 {data?.highWindowLabel} 出现显著高价风险窗口，峰值 {hour(data?.summary?.maxHour)} 达到 {fmt(data?.summary?.maxPrice, 2)} 元/kWh；{data?.lowWindowLabel} 为低价采购窗口。
       </StrategyBlock>
       <StrategyBlock type="danger" title="高价风险时段">
         <div className="tag-row">{highItems.map((item: any) => <Tag color="error" key={item.time}>{item.time}</Tag>)}</div>
-        <p>建议控制敞口，必要时提前部分采购。</p>
+        <p>{highAdvice?.advice_text || '策略接口未返回该时段建议。'}</p>
       </StrategyBlock>
       <StrategyBlock type="success" title="低价采购窗口">
         <Tag color="success">{data?.lowWindowLabel || '--'}</Tag>
-        <p>建议增加采购或储能充电，降低成本。</p>
+        <p>{lowAdvice?.advice_text || '策略接口未返回该时段建议。'}</p>
       </StrategyBlock>
       <StrategyBlock type="info" title="AI 建议摘要">
         {(insights.length ? insights : [{ advice_text: '当前策略接口暂无建议，页面仅展示预测与风险窗口。' }]).slice(0, 3).map((item: any, index: number) => (
@@ -197,7 +161,8 @@ export function StrategyInsightPanel({ data }: { data: any }) {
         ))}
       </StrategyBlock>
       <StrategyBlock type="info" title="风险提示 / 可信度说明">
-        本次预测可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%，请结合风险窗口和业务约束审慎决策。
+        本次预测可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%（{data?.confidence?.source || '来源待接入'}）；
+        {data?.quality?.confidenceIntervalAvailable ? '接口已返回正式置信区间。' : data?.quality?.confidenceIntervalReason || '置信区间待接入。'}
       </StrategyBlock>
     </div>
   );
@@ -212,16 +177,17 @@ export function StrategyBlock({ title, children, type = 'info' }: { title: strin
   );
 }
 
-export function ForecastDetailTable({ rows, compact = false }: { rows: any[]; compact?: boolean }) {
+export function ForecastDetailTable({ rows, compact = false, onExplain }: { rows: any[]; compact?: boolean; onExplain?: (row: any) => void }) {
   const columns: ColumnsType<any> = [
     { title: '时间', dataIndex: 'time', width: 120 },
     { title: '预测电价（元/kWh）', dataIndex: 'price', align: 'right' },
     { title: '风险等级', dataIndex: 'risk', render: (value) => <RiskTag value={value} /> },
-    { title: '建议动作', dataIndex: 'action' },
+    { title: '接口建议', dataIndex: 'action', width: 240, ellipsis: true, render: (value, row) => <span title={`${value}；来源：${row.actionSource}`}>{value}</span> },
     { title: '置信度（%）', dataIndex: 'confidence', align: 'right' },
-    { title: '操作', render: () => <Button type="link" size="small">小时解释</Button> }
+    { title: '置信区间', dataIndex: 'interval', width: 190 },
+    { title: '操作', render: (_, row) => <Button type="link" size="small" onClick={() => onExplain?.(row)}>小时解释</Button> }
   ];
-  return <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={compact ? false : { pageSize: 8, showSizeChanger: false }} scroll={{ y: compact ? 116 : 210, x: 780 }} />;
+  return <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={compact ? false : { pageSize: 8, showSizeChanger: false }} scroll={{ y: compact ? 142 : 210, x: 1080 }} />;
 }
 
 export function ForecastSummaryCards({ data }: { data: any }) {
@@ -240,7 +206,8 @@ function ModelStatusCard({ model, data }: { model: any; data: any }) {
     <div className="forecast-card compact-card">
       <div className="forecast-card-head"><h2>模型状态摘要</h2><Tag color={model?.model_version ? 'success' : 'warning'}>{model?.model_version ? 'Active' : '待接入'}</Tag></div>
       <dl className="kv-list">
-        <dt>模型</dt><dd>{model?.model_name || model?.name || '电价预测模型'} {model?.model_version || data?.modelVersion || ''}</dd>
+        <dt>模型</dt><dd>{model?.model_name || model?.name || '名称待接入'} {model?.model_version || data?.modelVersion || ''}</dd>
+        <dt>特征版本</dt><dd>{model?.feature_version || data?.featureVersion || '--'}</dd>
         <dt>MAE</dt><dd>{fmt(model?.test_mae || model?.mae)}</dd>
         <dt>RMSE</dt><dd>{fmt(model?.test_rmse || model?.rmse)}</dd>
         <dt>训练时间</dt><dd>{String(model?.activated_at || model?.created_at || data?.generatedAt || '--').slice(0, 16)}</dd>
@@ -258,7 +225,7 @@ function PeakSummaryCard({ data }: { data: any }) {
         <dt>峰值电价</dt><dd>{fmt(data?.peakValley?.peakPrice, 2)} 元/kWh</dd>
         <dt>谷值时段</dt><dd>{data?.peakValley?.valleyRange}</dd>
         <dt>谷值电价</dt><dd>{fmt(data?.peakValley?.valleyPrice, 2)} 元/kWh</dd>
-        <dt>波动率</dt><dd>{data?.peakValley?.volatility == null ? '--' : `${data.peakValley.volatility}%`}</dd>
+        <dt>价格变异系数</dt><dd>{data?.peakValley?.volatility == null ? '--' : `${data.peakValley.volatility}%`}</dd>
       </dl>
     </div>
   );
@@ -275,9 +242,10 @@ export function DataHealthCard({ health }: { health: any }) {
           <dt>异常数</dt><dd>{health?.exceptionCount ?? '--'} 条</dd>
           <dt>缺失数据</dt><dd>{health?.missingCount ?? '--'} 条</dd>
           <dt>更新时间</dt><dd>{health?.updatedAt || '--'}</dd>
+          <dt>异常原因</dt><dd title={health?.staleReason || ''}>{health?.staleReason || '--'}</dd>
         </dl>
       </div>
-      <Button block>数据健康详情</Button>
+      <Button block href="#/data/quality">数据健康详情</Button>
     </div>
   );
 }
@@ -285,23 +253,29 @@ export function DataHealthCard({ health }: { health: any }) {
 export function ComparisonChartCard({ data }: { data: any }) {
   const comparison = data?.comparison || {};
   const times = (data?.series || []).map((item: any) => item.time);
+  const historyLabel = '历史小时均值（接口范围）';
+  const legend = ['最新预测', ...(comparison.previousAvailable ? ['上一成功批次'] : []), historyLabel];
+  const chartSeries: any[] = [
+    { name: '最新预测', type: 'line', smooth: true, data: comparison.latest, lineStyle: { width: 3, color: chartColors.green }, itemStyle: { color: chartColors.green } },
+    ...(comparison.previousAvailable ? [{ name: '上一成功批次', type: 'line', smooth: true, data: comparison.previous, lineStyle: { width: 2, type: 'dashed', color: chartColors.blue }, itemStyle: { color: chartColors.blue } }] : []),
+    { name: historyLabel, type: 'line', smooth: true, data: comparison.historyMean, lineStyle: { width: 2, color: chartColors.orange }, itemStyle: { color: chartColors.orange } }
+  ];
   const option = {
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A' } },
-    legend: { top: 0, left: 0, data: ['最新预测', '上一批次/历史参考', '历史均值（近30天）'] },
+    legend: { top: 0, left: 0, data: legend },
     grid: { left: 48, right: 28, top: 54, bottom: 46 },
     xAxis: { type: 'category', data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085' } },
     yAxis: { type: 'value', name: '元/kWh', splitLine: { lineStyle: { color: '#EDF2F7' } }, axisLabel: { color: '#667085' } },
-    series: [
-      { name: '最新预测', type: 'line', smooth: true, data: comparison.latest, lineStyle: { width: 3, color: chartColors.green }, itemStyle: { color: chartColors.green } },
-      { name: '上一批次/历史参考', type: 'line', smooth: true, data: comparison.previous, lineStyle: { width: 2, type: 'dashed', color: chartColors.blue }, itemStyle: { color: chartColors.blue } },
-      { name: '历史均值（近30天）', type: 'line', smooth: true, data: comparison.historyMean, lineStyle: { width: 2, color: chartColors.orange }, itemStyle: { color: chartColors.orange } }
-    ]
+    series: chartSeries
   };
   return (
     <div className="forecast-card comparison-chart-card">
       <div className="forecast-card-head">
-        <div><h2>历史对比趋势（元/kWh）</h2><p>最新预测、上一批次/历史参考与近30天历史均值对比。</p></div>
-        <Space><Tag>近7天</Tag><Tag color="success">近30天</Tag></Space>
+        <div>
+          <h2>历史对比趋势（元/kWh）</h2>
+          <p>{comparison.previousAvailable ? `上一成功批次：${comparison.previousRunId}` : comparison.previousUnavailableReason} 历史均值保持独立参考口径。</p>
+        </div>
+        <Space><Tag color="success">历史接口 {comparison.historyRecordCount || 0} 条</Tag></Space>
       </div>
       <AppChart option={option} height={300} />
     </div>
@@ -314,25 +288,32 @@ export function ComparisonInsightPanel({ data }: { data: any }) {
   return (
     <div className="forecast-card forecast-insight-panel">
       <div className="forecast-card-head"><h2>关键变化洞察</h2></div>
-      <StrategyBlock type="success" title="差值摘要">全天均值变化 {data?.comparison?.avgChange == null ? '--' : `${data.comparison.avgChange.toFixed(2)}%`}，晚高峰变化更明显。</StrategyBlock>
+      <StrategyBlock type="success" title="差值摘要">
+        {data?.comparison?.previousAvailable
+          ? `较上一成功批次的全天均值变化 ${data.comparison.avgChange == null ? '--' : `${data.comparison.avgChange.toFixed(2)}%`}。`
+          : data?.comparison?.previousUnavailableReason}
+      </StrategyBlock>
       <StrategyBlock type="danger" title="关键变化点（相对参考）">
         {notable.length ? notable.map((row: any) => <p key={row.time}>{row.time} {row.remark} {row.rate}</p>) : <p>历史参考数据不足，暂无显著变化点。</p>}
       </StrategyBlock>
       <StrategyBlock type="info" title="变化原因说明">
-        {(data?.modelExplain?.main_factors || ['负荷预期抬升', '新能源出力变化', '气温因素']).slice(0, 3).map((item: any, index: number) => <p key={index}>• {typeof item === 'string' ? item : item.factor || item.name || JSON.stringify(item)}</p>)}
+        {(data?.modelExplain?.main_factors || []).slice(0, 3).map((item: any, index: number) => <p key={index}>• {typeof item === 'string' ? item : item.factor || item.name || JSON.stringify(item)}</p>)}
+        {!data?.modelExplain?.main_factors?.length ? <p>模型解释接口未返回主要因素。</p> : null}
       </StrategyBlock>
-      <StrategyBlock type="info" title="AI 建议摘要">建议重点关注 {data?.highWindowLabel} 风险时段，结合历史参考和最新预测优化调度与采购策略。</StrategyBlock>
+      <StrategyBlock type="info" title="接口建议摘要">
+        {(data?.strategy?.must_watch || []).slice(0, 1).map((item: any) => item.advice_text).join('') || '策略接口未返回建议。'}
+      </StrategyBlock>
     </div>
   );
 }
 
-export function ComparisonDetailTable({ rows }: { rows: any[] }) {
+export function ComparisonDetailTable({ rows, comparison }: { rows: any[]; comparison?: any }) {
   const columns: ColumnsType<any> = [
     { title: '时间', dataIndex: 'time' },
     { title: '最新预测', dataIndex: 'latest', align: 'right' },
-    { title: '上一批次', dataIndex: 'previous', align: 'right' },
-    { title: '历史均值（近30天）', dataIndex: 'historyMean', align: 'right' },
-    { title: '差值（较上一批次）', dataIndex: 'diff', align: 'right' },
+    { title: comparison?.previousAvailable ? '上一成功批次' : '上一成功批次（不可用）', dataIndex: 'previous', align: 'right' },
+    { title: '历史小时均值（接口范围）', dataIndex: 'historyMean', align: 'right' },
+    { title: '差值（较上一成功批次）', dataIndex: 'diff', align: 'right' },
     { title: '变化率', dataIndex: 'rate', align: 'right' },
     { title: '备注', dataIndex: 'remark' }
   ];
@@ -344,13 +325,13 @@ export function PeakAndModelTop({ data }: { data: any }) {
   return (
     <div className="forecast-peak-model-grid">
       <div className="forecast-card peak-gauge-card">
-        <div className="forecast-card-head"><h2>峰谷分析（基于24小时预测）</h2><Button type="link">详情</Button></div>
+        <div className="forecast-card-head"><h2>峰谷分析（基于24小时预测）</h2><Button type="link" href="#/forecast/24h">查看24小时明细</Button></div>
         <div className="peak-gauge-layout">
-          <GaugeChart value={pv.index || 0} name="价差指数" height={210} />
+          <GaugeChart value={pv.index || 0} name="价差/均价" height={210} />
           <dl className="kv-list large">
             <dt>峰值时段</dt><dd>{pv.peakRange}</dd>
             <dt>谷值时段</dt><dd>{pv.valleyRange}</dd>
-            <dt>波动率（标准差）</dt><dd>{pv.volatility == null ? '--' : `${pv.volatility}%`}</dd>
+            <dt>价格变异系数</dt><dd>{pv.volatility == null ? '--' : `${pv.volatility}%`}</dd>
             <dt>峰值电价</dt><dd>{fmt(pv.peakPrice)} 元/kWh（{pv.peakHour}）</dd>
             <dt>谷值电价</dt><dd>{fmt(pv.valleyPrice)} 元/kWh（{pv.valleyHour}）</dd>
           </dl>
@@ -358,9 +339,14 @@ export function PeakAndModelTop({ data }: { data: any }) {
       </div>
       <div className="forecast-card peak-explain-card">
         <div className="forecast-card-head"><h2>峰谷策略解释（业务视角）</h2></div>
-        <StrategyBlock type="info" title="结论">今日价差指数为 {pv.index || 0}%，高价集中在 {pv.peakRange}，低价窗口在 {pv.valleyRange}。</StrategyBlock>
-        <StrategyBlock type="success" title="数据依据">基于 24 小时预测曲线、风险概率、置信区间和模型解释结果识别高 / 低价形成机理。</StrategyBlock>
-        <StrategyBlock type="warning" title="业务建议">低价窗口建议补充采购或储能充电；高价风险段建议控制敞口，并人工复核大额申报与对冲策略。</StrategyBlock>
+        <StrategyBlock type="info" title="结论">今日峰谷价差/均价比例（封顶 100%）为 {pv.index || 0}%，高价集中在 {pv.peakRange}，低价窗口在 {pv.valleyRange}。</StrategyBlock>
+        <StrategyBlock type="success" title="数据依据">
+          基于 24 小时预测曲线和风险概率识别高 / 低价时段；
+          {data?.quality?.confidenceIntervalAvailable ? '正式置信区间可用。' : '正式置信区间未接入，不参与解释。'}
+        </StrategyBlock>
+        <StrategyBlock type="warning" title="接口建议">
+          {(data?.strategy?.items || []).slice(0, 2).map((item: any) => item.advice_text).join('；') || '策略接口未返回建议。'}
+        </StrategyBlock>
       </div>
     </div>
   );
@@ -423,7 +409,7 @@ export function BaselineAndTraining({ data }: { data: any }) {
           <dt>最近回测时间</dt><dd>{data?.backtestSummary?.generated_at || data?.generatedAt || '--'}</dd>
           <dt>下次自动训练</dt><dd>{data?.retrainSuggestion?.recommended_time || '待接入'}</dd>
         </dl>
-        <Space><Button type="link">查看训练日志</Button><Button type="link">查看回测报告</Button></Space>
+        <Space><Button type="link" href="#/task/log">查看训练日志</Button><Button type="link" href="#/report/list">查看回测报告</Button></Space>
       </div>
     </div>
   );
