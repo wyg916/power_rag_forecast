@@ -2,10 +2,10 @@
 
 - 状态：`pass`
 - 连接：host=localhost port=5432 user=postgres db=postgres password=******
-- Alembic upgrade head：已执行
+- Alembic upgrade head：未执行
 - Alembic version at head：True
-- 表数量：32
-- 索引数量：88
+- 表数量：70
+- 索引数量：236
 
 ## 核心表
 | 表名 | 存在 |
