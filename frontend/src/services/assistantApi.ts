@@ -1,5 +1,4 @@
 import { api, clearStoredAccessToken, downloadUrl, getStoredAccessToken } from '../api';
-import { assistantMock } from '../mock/assistantMock';
 import { errorMessage, withServiceState } from './serviceState';
 
 type StreamHandler = (event: string, payload: any) => void;
@@ -44,7 +43,6 @@ export async function getAssistantData() {
     const rows = Array.isArray(sessions?.sessions) ? sessions.sessions : [];
     return withServiceState(
       {
-        ...assistantMock,
         dataSource: 'postgresql.ai_chat_sessions',
         conversations: rows.map((item: any) => ({
           session_id: item.session_id,
@@ -64,7 +62,6 @@ export async function getAssistantData() {
   } catch (error) {
     return withServiceState(
       {
-        ...assistantMock,
         conversations: [],
         answer: emptyAssistantAnswer,
         docs: [],

@@ -24,18 +24,48 @@ export function sanitizeErrorMessage(value: unknown) {
     .replace(/\b(password|passwd|pwd|access[_-]?token|refresh[_-]?token|jwt[_-]?secret(?:[_-]?key)?|api[_-]?key|database[_-]?url)\b(\s*[:=]\s*)([^\s,;]+)/gi, '$1$2******');
 }
 
-function responseErrorMessage(status: number, text: string) {
-  if (!text) return `HTTP ${status}`;
+interface ParsedResponseError {
+  message: string;
+  code: string;
+  requestId?: string;
+}
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly requestId?: string;
+
+  constructor(status: number, message: string, code = `HTTP_${status}`, requestId?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.requestId = requestId;
+  }
+}
+
+function responseError(status: number, text: string): ParsedResponseError {
+  if (!text) return { message: `HTTP ${status}`, code: `HTTP_${status}` };
   try {
     const payload = JSON.parse(text);
     const detail = payload?.detail || payload?.message || payload?.error;
-    if (Array.isArray(detail)) return `[${status}] ${sanitizeErrorMessage(detail.map((item) => item.msg || JSON.stringify(item)).join('; '))}`;
-    if (detail && typeof detail === 'object') return `[${status}] ${sanitizeErrorMessage(detail)}`;
-    if (detail) return `[${status}] ${sanitizeErrorMessage(detail)}`;
+    const code = String(payload?.error_code || payload?.code || detail?.code || `HTTP_${status}`);
+    const requestId = payload?.request_id || payload?.requestId;
+    if (Array.isArray(detail)) {
+      return {
+        message: `[${status}] ${sanitizeErrorMessage(detail.map((item) => item.msg || JSON.stringify(item)).join('; '))}`,
+        code,
+        requestId
+      };
+    }
+    if (detail && typeof detail === 'object') {
+      return { message: `[${status}] ${sanitizeErrorMessage(detail)}`, code, requestId };
+    }
+    if (detail) return { message: `[${status}] ${sanitizeErrorMessage(detail)}`, code, requestId };
   } catch {
     // keep raw text below
   }
-  return `[${status}] ${sanitizeErrorMessage(text)}`;
+  return { message: `[${status}] ${sanitizeErrorMessage(text)}`, code: `HTTP_${status}` };
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -51,11 +81,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const text = await response.text();
+    const parsed = responseError(response.status, text);
     if (response.status === 401) {
       clearStoredAccessToken();
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
-    throw new Error(responseErrorMessage(response.status, text));
+    throw new ApiError(response.status, parsed.message, parsed.code, parsed.requestId);
   }
   return response.json() as Promise<T>;
 }
@@ -69,11 +100,12 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
   });
   if (!response.ok) {
     const text = await response.text();
+    const parsed = responseError(response.status, text);
     if (response.status === 401) {
       clearStoredAccessToken();
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
-    throw new Error(responseErrorMessage(response.status, text));
+    throw new ApiError(response.status, parsed.message, parsed.code, parsed.requestId);
   }
   return response.json() as Promise<T>;
 }
@@ -89,11 +121,12 @@ async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
   });
   if (!response.ok) {
     const text = await response.text();
+    const parsed = responseError(response.status, text);
     if (response.status === 401) {
       clearStoredAccessToken();
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
-    throw new Error(responseErrorMessage(response.status, text));
+    throw new ApiError(response.status, parsed.message, parsed.code, parsed.requestId);
   }
   return response.blob();
 }
@@ -167,12 +200,20 @@ export const api = {
     request<any>('/api/data/sql/query', { method: 'POST', body: JSON.stringify(payload) }),
   dataRefresh: () => request<any>('/api/data/refresh', { method: 'POST', body: '{}' }),
   syncCoreData: () => request<any>('/api/data/sync-core', { method: 'POST', body: '{}' }),
-  dataQuality: () => request<any>('/api/data/quality').then(unwrapApi),
-  importExportRecords: () => request<any>('/api/data/import-export-records').then(unwrapApi),
+  dataQuality: () => request<any>('/api/data/quality'),
+  importExportRecords: (page = 1, pageSize = 10) => {
+    const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+    return request<any>(`/api/data/import-export-records?${params}`);
+  },
   exportTableUrl: (tableName: string, search?: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     return downloadUrl(`/api/data/tables/${encodeURIComponent(tableName)}/export${params.toString() ? `?${params}` : ''}`);
+  },
+  exportTable: (tableName: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    return requestBlob(`/api/data/tables/${encodeURIComponent(tableName)}/export${params.toString() ? `?${params}` : ''}`);
   },
   databaseTables: (search?: string) => {
     const params = new URLSearchParams();
@@ -182,11 +223,17 @@ export const api = {
   databaseTableRows: (tableName: string, options: any = {}) => {
     const params = new URLSearchParams();
     if (options.search) params.set('search', options.search);
-    params.set('limit', String(options.limit || 100));
-    params.set('offset', String(options.offset || 0));
+    params.set('page', String(options.page || 1));
+    params.set('page_size', String(options.pageSize || options.page_size || 20));
     return request<any>(`/api/data/tables/${encodeURIComponent(tableName)}/rows?${params}`);
   },
   forecastLatest: () => request<any>('/api/forecast/latest'),
+  forecastRuns: (status = 'success', limit = 2) => {
+    const params = new URLSearchParams({ status, limit: String(limit) });
+    return request<any>(`/api/forecast/runs?${params}`);
+  },
+  forecastRunResults: (runId: string) =>
+    request<any>(`/api/forecast/runs/${encodeURIComponent(runId)}/results`),
   sourceContext: (domain = 'electricity_day_ahead_price', runId = 'latest') => {
     const params = new URLSearchParams({ domain, run_id: runId });
     return request<any>(`/api/source/context?${params}`);
@@ -196,10 +243,22 @@ export const api = {
     request<any>('/api/forecast/run', { method: 'POST', body: JSON.stringify({ mode }) }),
   strategyLatest: () => request<any>('/api/strategy/latest'),
   strategyToday: () => request<any>('/api/strategy/today'),
+  strategyRuntimeFacts: () => request<any>('/api/strategy/runtime-facts'),
   generateStrategy: () => request<any>('/api/strategy/generate', { method: 'POST', body: '{}' }),
   strategyConfig: () => request<any>('/api/strategy/config').then(unwrapApi),
   saveStrategyConfig: (payload: any) => request<any>('/api/strategy/config', { method: 'POST', body: JSON.stringify(payload) }).then(unwrapApi),
   saveStrategyReview: (payload: any) => request<any>('/api/strategy/reviews', { method: 'POST', body: JSON.stringify(payload) }).then(unwrapApi),
+  strategyGovernanceList: (options: any = {}) => {
+    const params = new URLSearchParams();
+    if (options.run_id) params.set('run_id', options.run_id);
+    if (options.report_id) params.set('report_id', options.report_id);
+    if (options.status) params.set('status', options.status);
+    return request<any>(`/api/strategies${params.toString() ? `?${params}` : ''}`);
+  },
+  generateGovernedStrategy: (payload: { run_id: string; report_id: string }) => request<any>('/api/strategies/generate', { method: 'POST', body: JSON.stringify(payload) }),
+  strategyEvidence: (strategyId: string) => request<any>(`/api/strategies/${encodeURIComponent(strategyId)}/evidence`),
+  strategyReviews: (strategyId: string) => request<any>(`/api/strategies/${encodeURIComponent(strategyId)}/reviews`),
+  strategyAction: (strategyId: string, action: string, payload: { request_id: string; review_comment: string }) => request<any>(`/api/strategies/${encodeURIComponent(strategyId)}/${encodeURIComponent(action)}`, { method: 'POST', body: JSON.stringify(payload) }),
   anomalyLatest: () => request<any>('/api/anomaly/latest'),
   explainAnomaly: () => request<any>('/api/anomaly/explain', { method: 'POST', body: '{}' }),
   chat: (question: string, session_id?: string, options: any = {}) =>

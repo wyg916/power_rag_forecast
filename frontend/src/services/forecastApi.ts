@@ -15,7 +15,7 @@ function fmt(value: unknown, digits = 4) {
 
 function dateText(value: unknown) {
   const text = String(value || '');
-  return text.length >= 10 ? text.slice(0, 10) : '2025-06-21';
+  return text.length >= 10 ? text.slice(0, 10) : '';
 }
 
 function hourText(value: unknown, fallback = '--') {
@@ -24,8 +24,10 @@ function hourText(value: unknown, fallback = '--') {
   return text || fallback;
 }
 
-function nextHourLabel(index: number) {
-  return `${String((index + 1) % 24).padStart(2, '0')}:00`;
+function nextHourLabel(value: unknown) {
+  const text = String(value || '');
+  const hour = text.length >= 13 ? Number(text.slice(11, 13)) : Number.NaN;
+  return Number.isFinite(hour) ? `${String((hour + 1) % 24).padStart(2, '0')}:00` : '--';
 }
 
 function readPrice(row: any): number | null {
@@ -40,21 +42,32 @@ function riskLabel(level?: string) {
   const raw = String(level || '').toLowerCase();
   if (raw.includes('high') || raw.includes('高')) return '高';
   if (raw.includes('medium') || raw.includes('中')) return '中';
-  return '低';
+  if (raw.includes('low') || raw.includes('低')) return '低';
+  return '待接入';
 }
 
 function statusFromRisk(level?: string) {
   const risk = riskLabel(level);
   if (risk === '高') return 'danger';
   if (risk === '中') return 'warning';
-  return 'success';
+  return risk === '低' ? 'success' : 'default';
 }
 
 function rangeLabel(items: any[] = []) {
   if (!items.length) return '--';
-  const times = items.map((item, index) => item.time || hourText(item.datetime, `${String(index).padStart(2, '0')}:00`)).filter(Boolean);
+  const normalized = items
+    .map((item) => ({
+      datetime: String(item.datetime || item.forecast_datetime || item.target_hour || ''),
+      time: item.time || hourText(item.datetime || item.forecast_datetime || item.target_hour)
+    }))
+    .filter((item) => item.time && item.time !== '--')
+    .sort((a, b) => a.datetime.localeCompare(b.datetime));
+  const times = normalized.map((item) => item.time);
   if (!times.length) return '--';
-  return times.length === 1 ? times[0] : `${times[0]}-${times[times.length - 1]}`;
+  if (times.length === 1) return times[0];
+  const hours = times.map((time) => Number(String(time).slice(0, 2)));
+  const contiguous = hours.every((hour, index) => index === 0 || hour === (hours[index - 1] + 1) % 24);
+  return contiguous ? `${times[0]}-${times[times.length - 1]}` : times.join('、');
 }
 
 function buildSeries(forecast24h: any, latest: any) {
@@ -62,26 +75,32 @@ function buildSeries(forecast24h: any, latest: any) {
     ? forecast24h.series
     : (Array.isArray(latest?.records) ? latest.records.slice(0, 24) : []);
   const prices = rawSeries.map(readPrice).filter((value): value is number => value != null);
-  const spread = prices.length ? Math.max(...prices) - Math.min(...prices) : 0;
   const derivedFields = new Set<string>(forecast24h?.quality?.derived_fields || []);
+  const intervalIsDerived = derivedFields.has('confidence_interval');
   const series = rawSeries.map((row: any, index: number) => {
     const price = readPrice(row);
     if (price == null) return null;
-    const margin = Math.max(Math.abs(price) * 0.08, spread * 0.04, 0.01);
     const lower = toNumber(row.lower ?? row.prediction_lower ?? row.p10_price);
     const upper = toNumber(row.upper ?? row.prediction_upper ?? row.p90_price);
-    if (lower == null || upper == null) derivedFields.add('confidence_interval');
     return {
       key: String(index),
       index,
       datetime: row.datetime || row.forecast_datetime,
       time: row.time || hourText(row.datetime || row.forecast_datetime, `${String(index).padStart(2, '0')}:00`),
       value: price,
-      lower: lower ?? Math.max(price - margin, 0),
-      upper: upper ?? price + margin,
+      lower: intervalIsDerived ? null : lower,
+      upper: intervalIsDerived ? null : upper,
+      intervalAvailable: !intervalIsDerived && lower != null && upper != null,
+      intervalReason: intervalIsDerived
+        ? '后端标记为派生区间，不作为正式置信区间展示'
+        : lower == null || upper == null ? '接口未返回正式置信区间' : '',
       load: toNumber(row.load ?? row.forecast_load),
       riskProbability: toNumber(row.risk_probability ?? row.spike_risk_prob),
-      riskLevel: row.risk_level || (toNumber(row.risk_probability ?? row.spike_risk_prob) != null && Number(row.risk_probability ?? row.spike_risk_prob) >= 0.5 ? 'high' : 'low')
+      riskLevel: row.risk_level || (
+        toNumber(row.risk_probability ?? row.spike_risk_prob) == null
+          ? 'unavailable'
+          : Number(row.risk_probability ?? row.spike_risk_prob) >= 0.5 ? 'high' : 'low'
+      )
     };
   }).filter(Boolean);
   return { series, derivedFields: Array.from(derivedFields) };
@@ -105,19 +124,20 @@ function summarize(series: any[], apiSummary: any = {}) {
   };
 }
 
-function confidenceFrom(prediction: any, series: any[]) {
+function confidenceFrom(prediction: any) {
   const direct = toNumber(prediction?.model_confidence ?? prediction?.confidence);
   if (direct != null) return { value: direct > 1 ? direct : direct * 100, source: 'api_prediction_latest' };
-  const risks = series.map((item) => Number(item.riskProbability)).filter(Number.isFinite);
-  if (!risks.length) return { value: null, source: 'api_prediction_latest_empty' };
-  const avgRisk = risks.reduce((sum, item) => sum + item, 0) / risks.length;
-  return { value: Math.max(0, Math.min(100, 100 - avgRisk * 35)), source: 'derived_from_api_forecast_risk' };
+  return { value: null, source: 'api_prediction_confidence_unavailable' };
 }
 
-function actionFor(risk: string) {
-  if (risk === '高') return '控制敞口，提前采购';
-  if (risk === '中') return '关注价格上行，适度采购';
-  return '增加低价采购';
+function adviceForHour(strategy: any, datetime: unknown) {
+  const target = String(datetime || '').slice(0, 16).replace('T', ' ');
+  const items = Array.isArray(strategy?.items) ? strategy.items : [];
+  const match = items.find((item: any) => String(item.target_hour || '').slice(0, 16).replace('T', ' ') === target);
+  return {
+    action: match?.advice_text || '待接入',
+    source: match ? `api_strategy_today:${match.advice_type || 'advice'}` : 'api_strategy_today_unavailable'
+  };
 }
 
 function aggregateHistoryByHour(records: any[] = []) {
@@ -138,10 +158,13 @@ function aggregateHistoryByHour(records: any[] = []) {
   });
 }
 
-function buildComparison(series: any[], marketHistory: any) {
+function buildComparison(series: any[], previousForecast: any, marketHistory: any) {
   const latest = series.map((item) => Number(item.value));
   const historyMean = aggregateHistoryByHour(marketHistory?.records || []);
-  const previous = historyMean.map((value, index) => value ?? null);
+  const previousRows = Array.isArray(previousForecast?.records) ? previousForecast.records : [];
+  const previous = previousRows.length === 24
+    ? previousRows.map((row: any) => readPrice(row))
+    : Array.from({ length: series.length }, () => null);
   const rows = series.map((item, index) => {
     const prev = previous[index];
     const hist = historyMean[index];
@@ -165,41 +188,52 @@ function buildComparison(series: any[], marketHistory: any) {
     historyMean,
     rows,
     avgChange: changeRates.length ? changeRates.reduce((sum, item) => sum + item, 0) / changeRates.length : null,
+    previousAvailable: previousRows.length === 24,
+    previousRunId: previousForecast?.run_id || '',
+    previousUnavailableReason: previousRows.length === 24 ? '' : '当前只有一个成功预测批次，无法形成真实上一批次对比。',
+    historyRecordCount: (marketHistory?.records || []).length,
     source: marketHistory?.available ? 'api_market_history' : 'api_market_history_empty',
-    derivedSource: marketHistory?.available ? 'derived_from_api_market_history' : 'derived_unavailable'
+    derivedSource: previousRows.length === 24 ? 'api_forecast_previous_success_run' : 'api_forecast_previous_run_unavailable'
   };
 }
 
-function buildDataHealth(dataStatus: any, forecast24h: any) {
+function buildDataHealth(dataStatus: any, forecast24h: any, dataQuality: any) {
   const sources = dataStatus?.sources || [];
-  const exceptionCount = sources.filter((item: any) => !['正常', 'success', 'ok'].includes(String(item.status || '').toLowerCase())).length;
+  const summary = dataQuality?.summary || {};
+  const exceptionCount = toNumber(summary.exception_count)
+    ?? sources.filter((item: any) => !['正常', 'success', 'ok'].includes(String(item.status || '').toLowerCase())).length;
   const missingCount = Number(forecast24h?.quality?.missing_price_count || 0) + Number(forecast24h?.quality?.missing_load_count || 0);
-  const score = sources.length ? Math.max(0, Number((100 - exceptionCount / sources.length * 40 - Math.min(20, missingCount * 2)).toFixed(1))) : null;
+  const score = toNumber(summary.avg_check_pass_rate);
+  const sourceUpdatedTimes = sources.map((item: any) => String(item.updated_at || '')).filter(Boolean).sort();
   return {
     score,
     exceptionCount,
     missingCount,
     delayCount: 0,
     sourceCount: sources.length,
-    updatedAt: '10:30:00',
-    status: score == null ? '待接入' : score >= 90 ? '正常' : '关注',
+    updatedAt: dataQuality?.generated_at || dataQuality?.meta?.generated_at || sourceUpdatedTimes.at(-1) || '',
+    status: score == null ? '待接入' : dataQuality?.is_stale ? '已过期' : score >= 90 ? '正常' : '关注',
+    staleReason: dataQuality?.stale_reason || dataQuality?.meta?.stale_reason || '',
+    generatedAt: dataQuality?.generated_at || dataQuality?.meta?.generated_at || '',
     sources,
-    dataSource: sources.length ? 'derived_from_api_data_status' : 'api_data_status_empty'
+    dataSource: dataQuality?.data_source || (sources.length ? 'derived_from_api_data_status' : 'api_data_status_empty')
   };
 }
 
 export async function getForecastCenterData() {
   const partialErrors: string[] = [];
+  const requestErrors: unknown[] = [];
   const safe = async <T>(label: string, loader: () => Promise<T>): Promise<T | null> => {
     try {
       return await loader();
     } catch (error) {
+      requestErrors.push(error);
       partialErrors.push(`${label}: ${errorMessage(error)}`);
       return null;
     }
   };
 
-  const [forecast24h, latest, prediction, detail, history, risk, strategy, dataStatus, models, modelExplain, backtestSummary, featureSchema, leakageCheck, retrainSuggestion] = await Promise.all([
+  const [forecast24h, latest, prediction, detail, history, risk, strategy, dataStatus, dataQuality, models, modelExplain, backtestSummary, featureSchema, leakageCheck, retrainSuggestion, forecastRuns] = await Promise.all([
     safe('forecast24h', api.forecast24h),
     safe('forecastLatest', api.forecastLatest),
     safe('predictionLatest', () => api.predictionLatest()),
@@ -208,59 +242,81 @@ export async function getForecastCenterData() {
     safe('riskSummary', api.riskSummary),
     safe('strategyToday', api.strategyToday),
     safe('dataStatus', api.dataStatus),
+    safe('dataQuality', api.dataQuality),
     safe('models', api.models),
     safe('modelExplain', () => api.modelExplain()),
     safe('modelBacktestSummary', api.modelBacktestSummary),
     safe('modelFeatureSchema', api.modelFeatureSchema),
     safe('modelLeakageCheck', api.modelLeakageCheck),
-    safe('retrainSuggestion', api.retrainSuggestion)
+    safe('retrainSuggestion', api.retrainSuggestion),
+    safe('forecastRuns', () => api.forecastRuns('success', 3))
   ]);
 
   const { series, derivedFields } = buildSeries(forecast24h, latest);
+  const currentRunId = forecast24h?.run_id || latest?.run_id || forecast24h?.meta?.run_id || '';
+  const previousRun = (forecastRuns?.items || []).find((item: any) => item.run_id !== currentRunId && item.status === 'success' && Number(item.record_count) === 24);
+  const previousForecast = previousRun
+    ? await safe('previousForecastResults', () => api.forecastRunResults(previousRun.run_id))
+    : null;
   const summary = summarize(series, forecast24h?.summary || latest?.summary || prediction || {});
-  const confidence = confidenceFrom(prediction, series);
-  const comparison = buildComparison(series, history);
-  const dataHealth = buildDataHealth(dataStatus, forecast24h);
+  const confidence = confidenceFrom(prediction);
+  const comparison = buildComparison(series, previousForecast, history);
+  const dataHealth = buildDataHealth(dataStatus, forecast24h, dataQuality);
   const lowWindow = (forecast24h?.windows?.low_price || []).length
     ? forecast24h.windows.low_price
     : [...series].sort((a, b) => a.value - b.value).slice(0, 3);
   const highWindow = (forecast24h?.windows?.high_risk || forecast24h?.windows?.high_price || []).length
     ? (forecast24h.windows.high_risk || forecast24h.windows.high_price)
     : [...series].sort((a, b) => b.value - a.value).slice(0, 5);
-  const detailRows = series.map((item, index) => {
+  const detailRows = series.map((item) => {
     const riskText = riskLabel(item.riskLevel);
-    const confidenceValue = item.riskProbability == null ? confidence.value : Math.max(60, 100 - Number(item.riskProbability) * 35);
+    const advice = adviceForHour(strategy, item.datetime);
     return {
       key: item.key,
-      time: `${item.time}-${nextHourLabel(index)}`,
+      time: `${item.time}-${nextHourLabel(item.datetime)}`,
       price: fmt(item.value),
       risk: riskText,
       status: statusFromRisk(item.riskLevel),
-      action: actionFor(riskText),
-      confidence: confidenceValue == null ? '--' : Math.round(confidenceValue),
+      action: advice.action,
+      actionSource: advice.source,
+      confidence: confidence.value == null ? '--' : Math.round(confidence.value),
+      riskProbability: item.riskProbability,
+      intervalAvailable: item.intervalAvailable,
+      interval: item.intervalAvailable ? `${fmt(item.lower)} - ${fmt(item.upper)}` : item.intervalReason,
       source: 'api_forecast_24h'
     };
   });
 
-  const activeModel = modelExplain?.active_model || models?.active || {};
-  const peakVolatility = summary.avgPrice ? Number((Number(summary.peakValleySpread || 0) / Math.max(Number(summary.avgPrice), 1) * 100).toFixed(1)) : null;
+  const activeModel = { ...(models?.active || {}), ...(modelExplain?.active_model || {}) };
+  const sourceMeta = forecast24h?.meta || latest?.meta || prediction?.meta || {};
+  const seriesValues = series.map((item: any) => Number(item.value)).filter(Number.isFinite);
+  const seriesMean = seriesValues.length ? seriesValues.reduce((sum: number, value: number) => sum + value, 0) / seriesValues.length : null;
+  const seriesStd = seriesMean == null
+    ? null
+    : Math.sqrt(seriesValues.reduce((sum: number, value: number) => sum + (value - seriesMean) ** 2, 0) / seriesValues.length);
+  const peakVolatility = seriesMean == null || seriesStd == null || seriesMean === 0
+    ? null
+    : Number((seriesStd / Math.abs(seriesMean) * 100).toFixed(1));
   const metrics = [
     { key: 'max', title: '最高价', value: fmt(summary.maxPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.maxHour)}`, tone: 'orange', source: 'api_forecast_24h' },
     { key: 'min', title: '最低价', value: fmt(summary.minPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.minHour)}`, tone: 'green', source: 'api_forecast_24h' },
     { key: 'avg', title: '均价', value: fmt(summary.avgPrice), unit: '元/kWh', note: '24小时预测均值', tone: 'blue', source: 'api_forecast_24h' },
     { key: 'spread', title: '峰谷价差', value: fmt(summary.peakValleySpread), unit: '元/kWh', note: '峰谷波动空间', tone: 'red', source: 'api_forecast_24h' },
-    { key: 'confidence', title: '预测可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: '来自模型/风险评估', tone: 'green', source: confidence.source },
+    { key: 'confidence', title: '预测可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: confidence.source === 'api_prediction_latest' ? '模型接口返回' : '模型接口未返回可信度', tone: 'green', source: confidence.source },
   ];
 
   return withServiceState({
     available: Boolean(series.length),
     date: dateText(summary.maxHour || latest?.generated_at || forecast24h?.generated_at),
-    region: '浙江省',
-    modelVersion: activeModel.model_version || activeModel.version || 'v3.2.1',
+    region: forecast24h?.region || forecast24h?.market || prediction?.market || '',
+    modelVersion: activeModel.model_version || activeModel.version || sourceMeta.model_version || '',
+    featureVersion: activeModel.feature_version || sourceMeta.feature_version || featureSchema?.feature_version || '',
     dataSource: forecast24h?.data_source || latest?.source_type || 'api_forecast_empty',
     unit: forecast24h?.unit || '元/kWh',
-    runId: forecast24h?.run_id || latest?.run_id || 'latest',
-    generatedAt: forecast24h?.generated_at || latest?.generated_at,
+    runId: currentRunId,
+    generatedAt: forecast24h?.generated_at || latest?.generated_at || sourceMeta.generated_at || '',
+    isStale: Boolean(sourceMeta.is_stale),
+    staleReason: sourceMeta.stale_reason || '',
     series,
     summary,
     metrics,
@@ -281,7 +337,7 @@ export async function getForecastCenterData() {
     leakageCheck,
     retrainSuggestion,
     peakValley: {
-      index: summary.avgPrice ? Math.min(100, Math.round(Number(summary.peakValleySpread || 0) / Math.max(Number(summary.avgPrice), 1) * 25)) : 0,
+      index: summary.avgPrice ? Math.min(100, Math.round(Number(summary.peakValleySpread || 0) / Math.max(Math.abs(Number(summary.avgPrice)), 0.0001) * 100)) : 0,
       volatility: peakVolatility,
       spread: summary.peakValleySpread,
       peakRange: rangeLabel(highWindow),
@@ -294,13 +350,20 @@ export async function getForecastCenterData() {
     },
     quality: {
       ...(forecast24h?.quality || {}),
-      derivedFields
+      derivedFields,
+      confidenceIntervalAvailable: series.every((item: any) => item.intervalAvailable),
+      confidenceIntervalReason: series.every((item: any) => item.intervalAvailable)
+        ? ''
+        : derivedFields.includes('confidence_interval')
+          ? '/api/forecast/24h 将区间标记为 derived，页面未将其作为正式置信区间展示。'
+          : 'forecast_results 未提供正式上下界字段，前端未合成。'
     },
     historyApi: history,
     predictionDetail: detail
   }, {
     dataSource: forecast24h?.data_source || latest?.source_type || 'api_forecast_empty',
     empty: !series.length,
+    error: requestErrors.length && !series.length ? requestErrors[0] : undefined,
     mockFallback: false,
     partialErrors
   });

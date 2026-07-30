@@ -2,6 +2,7 @@ import { api } from '../api';
 import { errorMessage, withServiceState } from './serviceState';
 
 function numberValue(value: unknown) {
+  if (value == null || value === '') return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -27,6 +28,24 @@ function compactWindows(items: any[], predicate: (item: any) => boolean) {
   return items.filter(predicate).map((item) => hourText(item.target_hour)).filter((value) => value !== '--');
 }
 
+function runtimeAction(value: unknown) {
+  if (value === 'charge') return '充电';
+  if (value === 'discharge') return '放电';
+  return '待机';
+}
+
+function runtimeStatus(value: unknown) {
+  const labels: Record<string, string> = {
+    scheduled: '待执行',
+    in_progress: '执行中',
+    completed: '已完成',
+    partial: '部分完成',
+    failed: '执行失败',
+    cancelled: '已取消'
+  };
+  return labels[String(value || '')] || String(value || '--');
+}
+
 export async function getStrategyCenterData(): Promise<any> {
   const partialErrors: string[] = [];
   const safe = async <T>(label: string, loader: () => Promise<T>): Promise<T | null> => {
@@ -38,12 +57,14 @@ export async function getStrategyCenterData(): Promise<any> {
     }
   };
 
-  const [today, latest, anomaly, config, forecast] = await Promise.all([
+  const [today, latest, anomaly, config, forecast, governance, runtime] = await Promise.all([
     safe('strategyToday', api.strategyToday),
     safe('strategyLatest', api.strategyLatest),
     safe('anomalyLatest', api.anomalyLatest),
     safe('strategyConfig', api.strategyConfig),
-    safe('forecast24h', api.forecast24h)
+    safe('forecast24h', api.forecast24h),
+    safe('strategyGovernance', api.strategyGovernanceList),
+    safe('strategyRuntimeFacts', api.strategyRuntimeFacts)
   ]);
 
   const strategyItems = Array.isArray(today?.items)
@@ -53,17 +74,8 @@ export async function getStrategyCenterData(): Promise<any> {
       : [];
   const anomalies = Array.isArray(anomaly?.items) ? anomaly.items : [];
   const forecastSeries = Array.isArray(forecast?.series) ? forecast.series : [];
-  const resolvedConfig = {
-    high_price_threshold: 160,
-    low_price_threshold: 40,
-    soc_upper: 90,
-    soc_lower: 20,
-    charge_power: 80,
-    discharge_power: 80,
-    risk_threshold: 0.5,
-    auto_suggestion: true,
-    ...(config || {})
-  };
+  const governedItems = Array.isArray(governance?.items) ? governance.items : [];
+  const resolvedConfig = config && typeof config === 'object' ? config : {};
   const storageItems = strategyItems.filter((item: any) => String(item.scenario || '').includes('储能'));
   const reviewItems = strategyItems.filter((item: any) => String(item.advice_type || '').includes('复核'));
   const highRiskItems = strategyItems.filter((item: any) => normalizeRisk(item.risk_level) === 'high');
@@ -72,17 +84,13 @@ export async function getStrategyCenterData(): Promise<any> {
   );
   const chargeHours = new Set(compactWindows(storageItems, (item) => String(item.advice_type || '').includes('充电')));
   const dischargeHours = new Set(compactWindows(storageItems, (item) => String(item.advice_type || '').includes('放电')));
-  const chargePower = Number(resolvedConfig.charge_power || 0);
-  const dischargePower = Number(resolvedConfig.discharge_power || 0);
-  const socLower = Number(resolvedConfig.soc_lower || 20);
-  const socUpper = Number(resolvedConfig.soc_upper || 90);
-  let soc = (socLower + socUpper) / 2;
+  const chargePower = numberValue(resolvedConfig.charge_power);
+  const dischargePower = numberValue(resolvedConfig.discharge_power);
 
   const hourlyPlan = forecastSeries.map((point: any, index: number) => {
     const time = point.time || hourText(point.datetime);
     const action = chargeHours.has(time) ? '充电' : dischargeHours.has(time) ? '放电' : '观望';
-    const power = action === '充电' ? chargePower : action === '放电' ? -dischargePower : 0;
-    soc = Math.max(socLower, Math.min(socUpper, soc + (action === '充电' ? 4 : action === '放电' ? -4 : 0)));
+    const power = action === '充电' ? chargePower : action === '放电' ? (dischargePower == null ? null : -dischargePower) : 0;
     return {
       key: `${today?.run_id || latest?.run_id || 'strategy'}-${index}`,
       time,
@@ -93,13 +101,50 @@ export async function getStrategyCenterData(): Promise<any> {
       risk: normalizeRisk(point.risk_level),
       action,
       power,
-      derivedSoc: Number(soc.toFixed(1)),
       executionStatus: '未接入',
       advice: action === '充电' ? '低价窗口，建议核对设备约束后充电' : action === '放电' ? '高价窗口，建议核对敞口后放电' : '保持状态，关注价格变化'
     };
   });
 
-  const reviewRows = (reviewItems.length ? reviewItems : anomalies.filter((item: any) => normalizeRisk(item.risk_level) !== 'low'))
+  const statusLabels: Record<string, string> = {
+    draft: '草稿', pending_review: '待复核', approved: '已通过', rejected: '已驳回',
+    published: '已发布', superseded: '已替代', expired: '已过期', cancelled: '已取消'
+  };
+  const governedReviewRows = governedItems.map((item: any) => {
+    const explanation = item.explanation || {};
+    const supportingFacts = Array.isArray(explanation.supporting_facts) ? explanation.supporting_facts : [];
+    const forecastFact = supportingFacts.find((fact: any) => fact.table === 'forecast_results') || {};
+    return {
+      key: item.strategy_id,
+      id: item.strategy_id,
+      reason: (explanation.strategy_types || []).join('、') || item.strategy_type || '策略风险复核',
+      action: item.summary || explanation.executive_summary || '建议人工复核',
+      risk: normalizeRisk(item.risk_level),
+      confidence: numberValue(item.confidence) == null ? null : Number(item.confidence) * 100,
+      submittedAt: item.generated_at || item.created_at || '--',
+      period: `${String(item.applicable_start_at || '--').slice(0, 16)} ~ ${String(item.applicable_end_at || '--').slice(0, 16)}`,
+      status: item.status,
+      statusLabel: statusLabels[item.status] || item.status || '未知',
+      assignee: item.approved_by || item.rejected_by || '待分配',
+      isStale: Boolean(item.is_stale),
+      staleReason: item.stale_reason,
+      sourceType: item.source_type,
+      runId: item.run_id,
+      reportId: item.report_id,
+      contentHash: item.content_hash,
+      prohibitedActions: item.prohibited_actions_json || [],
+      evidence: {
+        predictedPrice: numberValue(forecastFact.maximum_price),
+        forecastLoad: null,
+        riskProbability: numberValue(forecastFact.maximum_spike_probability),
+        peakValleySpread: numberValue(forecastFact.peak_valley_spread),
+        explanation: explanation.rationale || explanation.executive_summary || item.summary || '--',
+        supportingFacts,
+        citations: explanation.citations || []
+      }
+    };
+  });
+  const legacyReviewRows = (reviewItems.length ? reviewItems : anomalies.filter((item: any) => normalizeRisk(item.risk_level) !== 'low'))
     .map((item: any, index: number) => {
       const evidence = item.evidence || {};
       const targetHour = item.target_hour || evidence.target_hour;
@@ -112,7 +157,8 @@ export async function getStrategyCenterData(): Promise<any> {
         confidence: numberValue(evidence.spike_risk_probability) == null ? null : Number(evidence.spike_risk_probability) * 100,
         submittedAt: targetHour || item.created_at || '--',
         period: hourText(targetHour),
-        status: '待复核',
+        status: 'pending_review',
+        statusLabel: '待复核（旧接口）',
         assignee: '待分配',
         evidence: {
           predictedPrice: numberValue(evidence.predicted_price),
@@ -123,31 +169,92 @@ export async function getStrategyCenterData(): Promise<any> {
         }
       };
     });
+  const reviewRows = governedReviewRows.length ? governedReviewRows : legacyReviewRows;
+  const devices = Array.isArray(runtime?.devices) ? runtime.devices : [];
+  const executionItems = (Array.isArray(runtime?.execution_items) ? runtime.execution_items : []).map((item: any) => ({
+    ...item,
+    key: item.execution_id,
+    time: hourText(item.window_start_at),
+    actionLabel: runtimeAction(item.action),
+    statusLabel: runtimeStatus(item.execution_status),
+    plannedPower: numberValue(item.planned_power_mw),
+    actualPower: numberValue(item.actual_power_mw),
+    plannedEnergy: numberValue(item.planned_energy_mwh),
+    actualEnergy: numberValue(item.actual_energy_mwh),
+    socBefore: numberValue(item.soc_before_pct),
+    socAfter: numberValue(item.soc_after_pct),
+    realizedRevenue: numberValue(item.realized_revenue_cny)
+  }));
+  const devicePlans = Object.fromEntries(devices.map((device: any) => [
+    device.device_id,
+    (Array.isArray(device.soc_series) ? device.soc_series : []).map((item: any) => ({
+      key: item.snapshot_id,
+      deviceId: device.device_id,
+      deviceName: device.device_name,
+      datetime: item.observed_at,
+      time: hourText(item.observed_at),
+      actualSoc: numberValue(item.soc_pct),
+      availableEnergy: numberValue(item.available_energy_mwh),
+      power: numberValue(item.active_power_mw),
+      operatingMode: item.operating_mode,
+      sourceType: item.is_simulated ? 'simulated' : 'real',
+      batchId: item.batch_id,
+      generatedAt: item.generated_at
+    }))
+  ]));
+  const runtimeSummary = runtime?.summary || {};
+  const averageSocValues = devices
+    .map((item: any) => numberValue(item.latest_soc?.soc_pct))
+    .filter((item: number | null): item is number => item != null);
+  const averageSoc = averageSocValues.length
+    ? averageSocValues.reduce((total: number, value: number) => total + value, 0) / averageSocValues.length
+    : null;
 
   const thresholds = today?.summary?.thresholds || latest?.thresholds || {};
   const spread = numberValue(today?.summary?.estimated_revenue) ?? numberValue(thresholds.spread) ?? numberValue(forecast?.summary?.peak_valley_spread);
   const maxRiskProbability = Math.max(0, ...forecastSeries.map((item: any) => Number(item.risk_probability || 0)));
 
   return withServiceState({
-    available: Boolean(strategyItems.length || forecastSeries.length),
-    runId: today?.run_id || latest?.run_id || forecast?.run_id || '',
-    strategyDate: dateText(forecast?.summary?.forecast_start || forecast?.generated_at),
-    generatedAt: forecast?.generated_at || strategyItems[0]?.created_at || '',
-    modelVersion: 'v3.2.1',
-    region: '浙江省',
+    available: Boolean(runtime?.available || governedItems.length || strategyItems.length || forecastSeries.length),
+    runId: governedItems[0]?.run_id || today?.run_id || latest?.run_id || forecast?.run_id || '',
+    runtimeBatchId: runtime?.batch_ids?.[0] || '',
+    strategyDate: dateText(runtime?.generated_at || forecast?.summary?.forecast_start || forecast?.generated_at),
+    strategyVersion: governedItems[0]?.strategy_version || '',
+    generatedAt: runtime?.generated_at || governedItems[0]?.generated_at || forecast?.generated_at || strategyItems[0]?.created_at || '',
+    modelVersion: governedItems[0]?.model_version || forecast?.model_version || '',
+    sourceType: runtime?.source_type || governedItems[0]?.source_type || today?.source_type || forecast?.source_type || 'unavailable',
+    sourceLabel: runtime?.source_label || governedItems[0]?.source_label || today?.source_label || forecast?.source_label || '',
+    isSimulated: Boolean(runtime?.is_simulated),
+    isStale: runtime?.available
+      ? Boolean(runtime?.is_stale)
+      : Boolean(governedItems[0]?.is_stale ?? today?.is_stale ?? forecast?.is_stale),
+    staleReason: runtime?.available
+      ? runtime?.stale_reason || ''
+      : governedItems[0]?.stale_reason || today?.stale_reason || forecast?.stale_reason || '',
+    region: devices[0]?.region || governedItems[0]?.region || forecast?.region || today?.region || latest?.region || null,
     strategyItems,
     storageItems,
+    devices,
+    devicePlans,
+    executionItems,
     anomalies,
     forecastSeries,
     hourlyPlan,
     reviewRows,
     config: resolvedConfig,
     summary: {
-      strategyCount: Number(today?.summary?.strategy_count ?? strategyItems.length),
+      strategyCount: governedItems.length || Number(today?.summary?.strategy_count ?? strategyItems.length),
       highRiskCount: highRiskItems.length,
       highRiskHours: new Set(highRiskItems.map((item: any) => hourText(item.target_hour))).size,
       lowWindowCount: new Set(lowItems.map((item: any) => hourText(item.target_hour))).size,
       storageCount: storageItems.length,
+      deviceCount: Number(runtimeSummary.device_count || devices.length),
+      onlineDeviceCount: Number(runtimeSummary.online_device_count || 0),
+      executionCount: Number(runtimeSummary.execution_count || executionItems.length),
+      completedExecutionCount: Number(runtimeSummary.completed_count || 0),
+      inProgressExecutionCount: Number(runtimeSummary.in_progress_count || 0),
+      realizedRevenue: numberValue(runtimeSummary.realized_revenue_cny),
+      averageSoc,
       reviewCount: reviewRows.length,
       spread,
       spreadNote: today?.summary?.estimated_revenue_note || '由预测峰谷价差计算，不等同实际收益',
@@ -157,13 +264,13 @@ export async function getStrategyCenterData(): Promise<any> {
     },
     capability: {
       reviewAudit: true,
-      reviewStateMachine: false,
-      executionPersistence: false,
-      actualSoc: false,
-      realizedRevenue: false
+      reviewStateMachine: Boolean(governance),
+      executionPersistence: Boolean(executionItems.length),
+      actualSoc: Boolean(devices.some((item: any) => item.latest_soc)),
+      realizedRevenue: numberValue(runtimeSummary.realized_revenue_cny) != null
     }
   }, {
-    empty: !strategyItems.length && !forecastSeries.length,
+    empty: !runtime?.available && !governedItems.length && !strategyItems.length && !forecastSeries.length,
     mockFallback: false,
     partialErrors
   });
