@@ -19,8 +19,9 @@ def test_knowledge_page_is_single_workbench_not_tab_stack() -> None:
     assert "onSubNavigate" not in content
     assert "knowledge-workbench-page" in content
     assert "knowledge-top-workspace" in content
-    assert "knowledge-title-block" in content
-    assert "knowledge-toolbar-card" in content
+    assert "PageHeader" in content
+    assert "knowledge-title-block" not in content
+    assert "knowledge-toolbar-card" not in content
     assert "knowledge-kpi-grid" in content
     assert "knowledge-content-grid" in content
     assert "knowledge-search-grid" in content

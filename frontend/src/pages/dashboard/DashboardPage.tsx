@@ -1,13 +1,15 @@
 import { FileTextOutlined, ReloadOutlined, RobotOutlined } from '@ant-design/icons';
-import { Button, message, Space, Tag } from 'antd';
+import { message, Tag } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../api';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
+import { PageHeader } from '../../components/common/PageHeader';
 import { HomeAuxiliaryGrid } from '../../components/dashboard/HomeAuxiliaryGrid';
 import { HomeForecastChart } from '../../components/dashboard/HomeForecastChart';
 import { HomeKpiStrip } from '../../components/dashboard/HomeKpiStrip';
 import { HomeQuickActions } from '../../components/dashboard/HomeQuickActions';
 import { HomeSideRail } from '../../components/dashboard/HomeSideRail';
+import { useAuth } from '../../context/AuthContext';
 import { loadHomeDashboard, type HomeDashboardData } from '../../services/homeDashboardApi';
 import type { PageProps } from '../../types/ui';
 
@@ -30,6 +32,8 @@ export function DashboardPage(_: PageProps) {
   const [logOpen, setLogOpen] = useState(false);
   const [logLoading, setLogLoading] = useState(false);
   const [logText, setLogText] = useState('');
+  const { authRequired, hasPermission } = useAuth();
+  const canGenerateReport = !authRequired || hasPermission('report:generate');
 
   const loadData = useCallback(async () => {
     setData(await loadHomeDashboard());
@@ -69,22 +73,37 @@ export function DashboardPage(_: PageProps) {
   const kpiItems = data?.kpi?.items || [];
   return (
     <div className="home-dashboard-page">
-      <div className="home-dashboard-titlebar">
-        <div>
-          <div className="home-breadcrumb">首页 / 总览驾驶舱</div>
-          <h1>总览驾驶舱</h1>
-          <p>汇总今日供需风险、预测、策略、报告与任务状态，辅助经营决策。</p>
-        </div>
-        <HomeQuickActions />
-        <Space wrap>
-          <Tag color={data?.risk?.risk_level === 'high' ? 'error' : data?.risk?.risk_level === 'medium' ? 'warning' : 'success'}>
-            {riskLevel}
-          </Tag>
-          <Button type="primary" icon={<FileTextOutlined />} onClick={generateReport}>生成日报</Button>
-          <Button icon={<RobotOutlined />} onClick={() => { window.location.hash = '/assistant/assistant-chat'; }}>AI 智能问答</Button>
-          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新总览</Button>
-        </Space>
-      </div>
+      <PageHeader
+        title="总览驾驶舱"
+        eyebrow="首页"
+        subtitle="汇总今日供需风险、预测、策略、报告与任务状态，辅助经营决策。"
+        metadata={<Tag color={data?.risk?.risk_level === 'high' ? 'error' : data?.risk?.risk_level === 'medium' ? 'warning' : 'success'}>{riskLevel}</Tag>}
+        filters={<HomeQuickActions />}
+        actions={[
+          {
+            key: 'report',
+            label: '生成日报',
+            icon: <FileTextOutlined />,
+            type: 'primary',
+            disabled: !canGenerateReport,
+            disabledReason: '需要 report:generate 权限',
+            onClick: generateReport
+          },
+          {
+            key: 'assistant',
+            label: 'AI 智能问答',
+            icon: <RobotOutlined />,
+            onClick: () => { window.location.hash = '/assistant/assistant-chat'; }
+          },
+          {
+            key: 'refresh',
+            label: '刷新总览',
+            icon: <ReloadOutlined />,
+            collapseAtNarrow: true,
+            onClick: loadData
+          }
+        ]}
+      />
 
       <section className="home-dashboard-content">
         <HomeKpiStrip items={kpiItems} />

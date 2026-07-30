@@ -23,6 +23,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { AppChart } from '../../components/charts/AppChart';
 import { SectionCard } from '../../components/cards/SectionCard';
+import { PageHeader } from '../../components/common/PageHeader';
 import { PageTabs } from '../../components/common/PageTabs';
 import { DataSourceTag } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
@@ -173,25 +174,22 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   return (
     <div className="report-workbench page-stack">
-      <div className="report-page-heading">
-        <div className="report-heading-main">
-          <h2>{isReviewPage ? '报告审核与发布' : '报告中心'}</h2>
-          <p>
-            {isReviewPage
-              ? '从待审核到发布归档的全流程管理，确保报告质量与合规发布。'
-              : '集中管理各类分析报告，支持查看、审核、发布与归档，保障数据合规与决策高效。'}
-          </p>
-          <PageTabs items={reportTabs} activeKey={activeTabKey} onChange={onSubNavigate} />
-        </div>
-        <ReportFilterBar
+      <PageHeader
+        className="report-unified-header"
+        title={isReviewPage ? '报告审核与发布' : '报告中心'}
+        subtitle={isReviewPage
+          ? '从待审核到发布归档的全流程管理，确保报告质量与合规发布。'
+          : '集中管理各类分析报告，支持查看、审核、发布与归档，保障数据合规与决策高效。'}
+        navigation={<PageTabs items={reportTabs} activeKey={activeTabKey} onChange={onSubNavigate} />}
+        filters={<ReportFilterBar
           review={isReviewPage}
           keyword={keyword}
           setKeyword={setKeyword}
           onSearch={() => loadData(keyword)}
           onGenerate={generateReport}
           source={data.dataSource}
-        />
-      </div>
+        />}
+      />
       <div className="report-metric-band">
         <MetricGrid items={metrics} icons={metricIcons} loading={loading} minColumnWidth={160} />
       </div>

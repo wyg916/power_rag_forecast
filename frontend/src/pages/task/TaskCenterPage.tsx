@@ -25,6 +25,8 @@ import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
 import { AppChart } from '../../components/charts/AppChart';
 import { baseGrid, chartColors } from '../../components/charts/chartTheme';
+import { PageHeader } from '../../components/common/PageHeader';
+import { useAuth } from '../../context/AuthContext';
 import { getTaskCenterData, statusText } from '../../services/taskApi';
 import type { PageProps } from '../../types/ui';
 
@@ -171,6 +173,8 @@ function jsonPreview(value: unknown) {
 export function TaskCenterPage(_props: PageProps) {
   const [taskData, setTaskData] = useState<any>({ tasks: [], metrics: [], health: {}, retryQueue: [], recentLogs: [], queueRows: [], trendRows: [] });
   const [loading, setLoading] = useState(true);
+  const { authRequired, hasPermission } = useAuth();
+  const canRunTask = !authRequired || hasPermission('task:run');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
@@ -425,12 +429,10 @@ export function TaskCenterPage(_props: PageProps) {
 
   return (
     <div className="task-workbench-page">
-      <div className="task-titlebar">
-        <div className="task-title-copy">
-          <h1>任务中心</h1>
-          <p>集中管理任务调度、运行日志、运行健康与失败重试，保障任务稳定可靠执行。</p>
-        </div>
-        <div className="task-filter-actions">
+      <PageHeader
+        title="任务中心"
+        subtitle="集中管理任务调度、运行日志、运行健康与失败重试，保障任务稳定可靠执行。"
+        filters={<div className="task-filter-actions">
           <span>任务类型</span>
           <Select value={selectedTaskKind} options={taskOptions} onChange={setSelectedTaskKind} />
           <span>日期范围</span>
@@ -439,10 +441,20 @@ export function TaskCenterPage(_props: PageProps) {
           <Input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="请输入任务名称/任务ID" allowClear />
           <span>队列标签</span>
           <Select value={selectedQueue} options={queueOptions} onChange={setSelectedQueue} />
-          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
-          <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => runTask()}>启动任务</Button>
-        </div>
-      </div>
+        </div>}
+        actions={[
+          { key: 'refresh', label: '刷新', icon: <ReloadOutlined />, loading, onClick: loadData },
+          {
+            key: 'run',
+            label: '启动任务',
+            icon: <PlayCircleOutlined />,
+            type: 'primary',
+            disabled: !canRunTask || selectedTaskKind === 'all',
+            disabledReason: !canRunTask ? '需要 task:run 权限' : '请先选择具体任务类型',
+            onClick: () => runTask()
+          }
+        ]}
+      />
 
       <div className="task-body-grid">
         <div className="task-left-column">

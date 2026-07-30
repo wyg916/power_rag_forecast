@@ -21,6 +21,8 @@ import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { AppChart } from '../../components/charts/AppChart';
 import { baseGrid, chartColors } from '../../components/charts/chartTheme';
+import { PageHeader } from '../../components/common/PageHeader';
+import { useAuth } from '../../context/AuthContext';
 import {
   activateModel,
   exportModelCenterReport,
@@ -133,6 +135,8 @@ export function ModelCenterPage(_props: PageProps) {
   const [logLoading, setLogLoading] = useState(false);
   const [logText, setLogText] = useState('');
   const [eventsOpen, setEventsOpen] = useState(false);
+  const { authRequired, hasPermission } = useAuth();
+  const canRunTraining = !authRequired || hasPermission('task:run');
 
   async function loadData(nextFilters = filters) {
     setLoading(true);
@@ -332,15 +336,10 @@ export function ModelCenterPage(_props: PageProps) {
 
   return (
     <div className="model-workbench-page">
-      <div className="model-page-header">
-        <div className="model-title-block">
-          <h1>模型中心</h1>
-          <p>管理预测模型生命周期、误差趋势和回滚操作</p>
-        </div>
-      </div>
-
-      <div className="model-filterbar">
-        <Space size={12} wrap>
+      <PageHeader
+        title="模型中心"
+        subtitle="管理预测模型生命周期、误差趋势和回滚操作"
+        filters={<Space size={12} wrap>
           <span className="filter-label">模型类型：</span>
           <Select
             value={filters.model_type}
@@ -370,14 +369,22 @@ export function ModelCenterPage(_props: PageProps) {
             onSearch={() => loadData()}
             style={{ width: 280 }}
           />
-        </Space>
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={() => loadData()}>刷新</Button>
-          <Button type="primary" icon={<RocketOutlined />} onClick={handleTraining}>启动训练</Button>
-          <Button icon={<HistoryOutlined />} onClick={() => setEventsOpen(true)}>治理记录</Button>
-          <Button icon={<CloudDownloadOutlined />} onClick={handleExport}>导出报告</Button>
-        </Space>
-      </div>
+        </Space>}
+        actions={[
+          { key: 'refresh', label: '刷新', icon: <ReloadOutlined />, loading, onClick: () => loadData() },
+          {
+            key: 'training',
+            label: '启动训练',
+            icon: <RocketOutlined />,
+            type: 'primary',
+            disabled: !canRunTraining,
+            disabledReason: '需要 task:run 权限',
+            onClick: handleTraining
+          },
+          { key: 'governance', label: '治理记录', icon: <HistoryOutlined />, collapseAtNarrow: true, onClick: () => setEventsOpen(true) },
+          { key: 'export', label: '导出报告', icon: <CloudDownloadOutlined />, collapseAtNarrow: true, onClick: handleExport }
+        ]}
+      />
 
       {error && <div className="model-error-banner">{error}</div>}
 

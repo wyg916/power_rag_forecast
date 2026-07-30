@@ -21,6 +21,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { SectionCard } from '../../components/cards/SectionCard';
+import { PageHeader } from '../../components/common/PageHeader';
+import { useAuth } from '../../context/AuthContext';
 import { getKnowledgeBaseData, searchKnowledge, type KnowledgeData } from '../../services/knowledgeApi';
 import type { PageProps } from '../../types/ui';
 
@@ -135,6 +137,8 @@ function blockIcon(key: string) {
 export function KnowledgeBasePage(_: PageProps) {
   const [data, setData] = useState<KnowledgeData>(defaultKnowledgeData);
   const [loading, setLoading] = useState(true);
+  const { authRequired, hasPermission } = useAuth();
+  const canWriteKnowledge = !authRequired || hasPermission('knowledge:write');
   const [error, setError] = useState('');
   const [query, setQuery] = useState('分时电价、现货交易风险和购电建议是什么？');
   const [topK, setTopK] = useState(5);
@@ -292,12 +296,49 @@ export function KnowledgeBasePage(_: PageProps) {
 
   return (
     <div className="knowledge-workbench-page">
+      <PageHeader
+        title="知识库"
+        subtitle="管理政策文档、RAG 检索、索引状态和 QA 测试"
+        filters={<div className="knowledge-source-control">
+          <span>数据源</span>
+          <Select value="postgresql_kb_documents" options={dataSourceOptions} size="small" />
+        </div>}
+        actions={[
+          {
+            key: 'rebuild',
+            label: '重建索引',
+            icon: <SyncOutlined />,
+            type: 'primary',
+            loading,
+            disabled: !canWriteKnowledge,
+            disabledReason: '需要 knowledge:write 权限',
+            onClick: rebuildIndex
+          },
+          {
+            key: 'embedding',
+            label: '刷新 Embedding',
+            icon: <ReloadOutlined />,
+            loading,
+            disabled: !canWriteKnowledge,
+            disabledReason: '需要 knowledge:write 权限',
+            onClick: refreshEmbeddings
+          },
+          { key: 'validate', label: '批量校验', icon: <SafetyCertificateOutlined />, loading: searching, collapseAtNarrow: true, onClick: batchValidate },
+          { key: 'export', label: '导出结果', icon: <DownloadOutlined />, collapseAtNarrow: true, onClick: exportResult }
+        ]}
+        extra={<Upload
+          disabled={!canWriteKnowledge}
+          showUploadList={false}
+          beforeUpload={(file) => {
+            uploadDocument(file as File);
+            return false;
+          }}
+          accept=".txt,.md,.csv,.json"
+        >
+          <Button className="knowledge-upload-button" disabled={!canWriteKnowledge} title={!canWriteKnowledge ? '需要 knowledge:write 权限' : undefined} icon={<CloudUploadOutlined />}>上传文档</Button>
+        </Upload>}
+      />
       <div className="knowledge-top-workspace">
-        <div className="knowledge-title-block">
-          <h1>知识库</h1>
-          <p>管理政策文档、RAG 检索、索引状态和 QA 测试</p>
-        </div>
-
         <SectionCard title="索引状态" className="knowledge-flow-card knowledge-flow-card-top" compact>
           <div className="knowledge-flow">
             {flowNodes.map((item, index) => (
@@ -312,29 +353,6 @@ export function KnowledgeBasePage(_: PageProps) {
             ))}
           </div>
         </SectionCard>
-
-        <div className="knowledge-toolbar-card">
-          <div className="knowledge-source-control">
-            <span>数据源</span>
-            <Select value="postgresql_kb_documents" options={dataSourceOptions} size="small" />
-          </div>
-          <Upload
-            showUploadList={false}
-            beforeUpload={(file) => {
-              uploadDocument(file as File);
-              return false;
-            }}
-            accept=".txt,.md,.csv,.json"
-          >
-            <Button className="knowledge-upload-button" icon={<CloudUploadOutlined />}>上传文档</Button>
-          </Upload>
-          <Space className="knowledge-toolbar-actions" size={8} wrap>
-            <Button type="primary" loading={loading} icon={<SyncOutlined />} onClick={rebuildIndex}>重建索引</Button>
-            <Button type="primary" loading={loading} icon={<ReloadOutlined />} onClick={refreshEmbeddings}>刷新 Embedding</Button>
-            <Button loading={searching} icon={<SafetyCertificateOutlined />} onClick={batchValidate}>批量校验</Button>
-            <Button icon={<DownloadOutlined />} onClick={exportResult}>导出结果</Button>
-          </Space>
-        </div>
       </div>
 
       {error && <Alert type="error" showIcon message="知识库数据加载失败" description={error} action={<Button onClick={loadData}>重试</Button>} />}

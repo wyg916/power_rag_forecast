@@ -27,7 +27,7 @@ import { api } from '../../api';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { TableCard } from '../../components/cards/TableCard';
 import { PageTabs } from '../../components/common/PageTabs';
-import { DataStateBanner } from '../../components/common/States';
+import { DataStateBanner, SourceContextPanel } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
 import { useAuth } from '../../context/AuthContext';
 import { getSettingsData } from '../../services/settingsApi';
@@ -96,6 +96,7 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { hasPermission } = useAuth();
   const [data, setData] = useState<any>({ dataSource: 'backend_api', mockFallback: false });
   const [loading, setLoading] = useState(true);
+  const [sourceRefreshedAt, setSourceRefreshedAt] = useState<string | null>(null);
   const [configValues, setConfigValues] = useState<Record<string, any>>({});
   const [users, setUsers] = useState<UserItem[]>([]);
   const [roles, setRoles] = useState<RoleInfo[]>([]);
@@ -123,6 +124,7 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
     try {
       const payload = await getSettingsData({ interfaceKeyword: nextKeyword });
       setData(payload);
+      setSourceRefreshedAt(new Date().toISOString());
       setConfigValues(payload.config?.runtime || payload.config?.values || {});
       setAuditLogs(payload.auditLogs || []);
     } finally {
@@ -334,6 +336,9 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
           rows={systemRows}
           healthRecords={data.healthRecords || []}
           health={data.statusOverview?.system_health_score ?? systemHealth}
+          sourceMeta={data.sourceContext?.meta}
+          sourceRefreshedAt={sourceRefreshedAt}
+          refreshSourceContext={loadData}
           configValues={configValues}
           setConfigValues={setConfigValues}
           saveConfig={saveConfig}
@@ -500,6 +505,9 @@ function SystemStatusTab({
   rows,
   healthRecords,
   health,
+  sourceMeta,
+  sourceRefreshedAt,
+  refreshSourceContext,
   configValues,
   setConfigValues,
   saveConfig,
@@ -510,6 +518,9 @@ function SystemStatusTab({
   rows: any[];
   healthRecords: any[];
   health: number;
+  sourceMeta: any;
+  sourceRefreshedAt: string | null;
+  refreshSourceContext: () => void;
   configValues: Record<string, any>;
   setConfigValues: Dispatch<SetStateAction<Record<string, any>>>;
   saveConfig: () => void;
@@ -526,6 +537,12 @@ function SystemStatusTab({
   return (
     <>
       <MetricGrid items={metrics} loading={loading} minColumnWidth={240} />
+      <SourceContextPanel
+        meta={sourceMeta}
+        loading={loading}
+        lastRefreshedAt={sourceRefreshedAt}
+        onRefresh={refreshSourceContext}
+      />
       <div className="settings-status-grid">
         <SectionCard title="运行状态摘要" loading={loading}>
           <div className="settings-status-list">
