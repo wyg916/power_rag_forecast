@@ -44,8 +44,7 @@ export const menuGroups: MenuGroup[] = [
     icon: <SafetyCertificateOutlined />,
     children: [
       { key: 'strategy-high', label: '总览' },
-      { key: 'strategy-low', label: '低价窗口' },
-      { key: 'strategy-storage', label: '储能策略' },
+      { key: 'strategy-storage', label: '低价窗口与储能策略' },
       { key: 'strategy-review', label: '人工复核' }
     ]
   },
@@ -210,7 +209,8 @@ const childAliases: Partial<Record<RouteKey, Record<string, string>>> = {
   },
   strategy: {
     'high-risk': 'strategy-high',
-    'low-window': 'strategy-low',
+    'strategy-low': 'strategy-storage',
+    'low-window': 'strategy-storage',
     storage: 'strategy-storage',
     review: 'strategy-review'
   },
