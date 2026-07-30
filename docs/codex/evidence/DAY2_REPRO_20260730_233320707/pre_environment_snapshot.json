@@ -1,0 +1,160 @@
+﻿{
+    "captured_at":  "2026-07-30T23:36:18.3958453+08:00",
+    "current_directory":  "E:\\智能运营分析项目",
+    "branch":  "beta10d/day2-reproducible-environment",
+    "head":  "583a185ef089943bdb55a270e010e79cf1c3cfe3",
+    "git_status_short":  [
+
+                         ],
+    "python":  "Python 3.11.9",
+    "python_executable":  "E:\\智能运营分析项目\\.venv\\Scripts\\python.exe",
+    "node":  "v24.18.0",
+    "node_executable":  "D:\\DevTools\\nodejs\\node-v24.18.0-win-x64\\node.exe",
+    "npm":  "11.16.0",
+    "npm_executable":  "D:\\DevTools\\nodejs\\node-v24.18.0-win-x64\\npm.cmd",
+    "docker":  "Docker version 26.0.0, build 2ae903e",
+    "docker_compose":  "Docker Compose version v2.26.1-desktop.1",
+    "docker_context":  "default",
+    "listeners":  [
+                      {
+                          "address":  "::",
+                          "port":  5432,
+                          "pid":  6200,
+                          "process":  "postgres"
+                      },
+                      {
+                          "address":  "0.0.0.0",
+                          "port":  5432,
+                          "pid":  6200,
+                          "process":  "postgres"
+                      },
+                      {
+                          "address":  "127.0.0.1",
+                          "port":  6379,
+                          "pid":  18188,
+                          "process":  "com.docker.backend"
+                      },
+                      {
+                          "address":  "::1",
+                          "port":  8080,
+                          "pid":  15400,
+                          "process":  "wslrelay"
+                      },
+                      {
+                          "address":  "::",
+                          "port":  8080,
+                          "pid":  18188,
+                          "process":  "com.docker.backend"
+                      },
+                      {
+                          "address":  "::1",
+                          "port":  18000,
+                          "pid":  15400,
+                          "process":  "wslrelay"
+                      },
+                      {
+                          "address":  "::",
+                          "port":  18000,
+                          "pid":  18188,
+                          "process":  "com.docker.backend"
+                      }
+                  ],
+    "docker_containers":  [
+                              {
+                                  "Command":  "\"pytest -q\"",
+                                  "CreatedAt":  "2026-07-30 22:42:03 +0800 CST",
+                                  "ID":  "e352455e71b4",
+                                  "Image":  "renewable-operations-alpha-api",
+                                  "Labels":  "com.docker.compose.project=renewable-operations-alpha,com.docker.compose.service=api,com.docker.compose.version=2.26.1,desktop.docker.io/binds/0/Source=E:\\新能源企业经营分析智能平台,desktop.docker.io/binds/0/SourceKind=hostFile,desktop.docker.io/binds/0/Target=/workspace",
+                                  "LocalVolumes":  "0",
+                                  "Mounts":  "/run/desktop/m…",
+                                  "Names":  "keen_saha",
+                                  "Networks":  "bridge",
+                                  "Ports":  "",
+                                  "RunningFor":  "54 minutes ago",
+                                  "Size":  "48.5MB (virtual 286MB)",
+                                  "State":  "running",
+                                  "Status":  "Up 54 minutes"
+                              },
+                              {
+                                  "Command":  "\"/docker-entrypoint.…\"",
+                                  "CreatedAt":  "2026-07-30 22:17:39 +0800 CST",
+                                  "ID":  "d1f4aa78e88b",
+                                  "Image":  "renewable-operations-alpha-web",
+                                  "Labels":  "com.docker.compose.image=sha256:e0d3531c280e17296dd0d7146995a07db650fc1e63ecd4875474f4e03c3e6ef4,com.docker.compose.project=renewable-operations-alpha,com.docker.compose.project.working_dir=E:\\新能源企业经营分析智能平台,com.docker.compose.service=web,com.docker.compose.version=2.26.1,maintainer=NGINX Docker Maintainers \u003cdocker-maint@nginx.com\u003e,com.docker.compose.config-hash=108ac1a9e932394e01630954c07794439545f2d42d2f0db1be99534f022ad11c,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=E:\\新能源企业经营分析智能平台\\docker-compose.yml,com.docker.compose.replace=0e66daeb4e2ea1d181cda9af0451351c42bf73dc3dec875121eb84772af9502b",
+                                  "LocalVolumes":  "0",
+                                  "Mounts":  "",
+                                  "Names":  "renewable-operations-alpha-web-1",
+                                  "Networks":  "renewable-operations-alpha_default",
+                                  "Ports":  "0.0.0.0:8080-\u003e80/tcp",
+                                  "RunningFor":  "About an hour ago",
+                                  "Size":  "199B (virtual 48.8MB)",
+                                  "State":  "running",
+                                  "Status":  "Up About an hour"
+                              },
+                              {
+                                  "Command":  "\"sh -c \u0027alembic upgr…\"",
+                                  "CreatedAt":  "2026-07-30 22:11:03 +0800 CST",
+                                  "ID":  "104dc47cd6e5",
+                                  "Image":  "renewable-operations-alpha-api",
+                                  "Labels":  "com.docker.compose.depends_on=redis:service_healthy:false,db:service_healthy:false,com.docker.compose.project=renewable-operations-alpha,com.docker.compose.project.config_files=E:\\新能源企业经营分析智能平台\\docker-compose.yml,com.docker.compose.project.working_dir=E:\\新能源企业经营分析智能平台,com.docker.compose.replace=0ba5891e4d5e7e4415a62a19d76e5c087036395c03a7aa64836ef9f1bfa2c13a,com.docker.compose.version=2.26.1,com.docker.compose.config-hash=403f49a834b12ac7d1eed1255a9f09ef21388cbd97d6fbbc7d2404d9b73ee480,com.docker.compose.container-number=1,com.docker.compose.image=sha256:d52984ba74499a674c57ff4e61214aef98da9deb0f649171f56a1e195df62b55,com.docker.compose.oneoff=False,com.docker.compose.service=api",
+                                  "LocalVolumes":  "1",
+                                  "Mounts":  "renewable-oper…",
+                                  "Names":  "renewable-operations-alpha-api-1",
+                                  "Networks":  "renewable-operations-alpha_default,renewable-sqlbot-proxy",
+                                  "Ports":  "0.0.0.0:18000-\u003e8000/tcp",
+                                  "RunningFor":  "About an hour ago",
+                                  "Size":  "0B (virtual 237MB)",
+                                  "State":  "running",
+                                  "Status":  "Up About an hour (healthy)"
+                              },
+                              {
+                                  "Command":  "\"docker-entrypoint.s…\"",
+                                  "CreatedAt":  "2026-07-22 19:57:39 +0800 CST",
+                                  "ID":  "d9d979d9ba44",
+                                  "Image":  "redis:7.4.5-alpine",
+                                  "Labels":  "com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.project=renewable-operations-alpha,com.docker.compose.service=redis,com.docker.compose.project.working_dir=E:\\新能源企业经营分析智能平台,com.docker.compose.version=2.26.1,com.docker.compose.config-hash=f11e5f4908c53eaf15304a8d47e8d3d983ae47e060adb3e2b193e1352bba07ca,com.docker.compose.image=sha256:f218e591b571a4129aa29a8566b597d849fba21af7be853d31b03122b20db5e9,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=E:\\新能源企业经营分析智能平台\\docker-compose.yml",
+                                  "LocalVolumes":  "1",
+                                  "Mounts":  "renewable-oper…",
+                                  "Names":  "renewable-operations-alpha-redis-1",
+                                  "Networks":  "renewable-operations-alpha_default",
+                                  "Ports":  "6379/tcp",
+                                  "RunningFor":  "8 days ago",
+                                  "Size":  "0B (virtual 41.4MB)",
+                                  "State":  "running",
+                                  "Status":  "Up 7 hours (healthy)"
+                              },
+                              {
+                                  "Command":  "\"docker-entrypoint.s…\"",
+                                  "CreatedAt":  "2026-07-22 19:57:39 +0800 CST",
+                                  "ID":  "efcdf7f84566",
+                                  "Image":  "postgres:16.9-alpine",
+                                  "Labels":  "com.docker.compose.project=renewable-operations-alpha,com.docker.compose.project.config_files=E:\\新能源企业经营分析智能平台\\docker-compose.yml,com.docker.compose.project.working_dir=E:\\新能源企业经营分析智能平台,com.docker.compose.config-hash=1882ba99de41b2bbc18c5dde25d2002a494fb203fe689b8909205f4e76b065d8,com.docker.compose.container-number=1,com.docker.compose.depends_on=,com.docker.compose.image=sha256:dca9c7aa70c71caf8bcc48c8ec40658c1fdf2d1e4e8d26bc27d4d18e030d779a,com.docker.compose.oneoff=False,com.docker.compose.service=db,com.docker.compose.version=2.26.1",
+                                  "LocalVolumes":  "1",
+                                  "Mounts":  "renewable-oper…",
+                                  "Names":  "renewable-operations-alpha-db-1",
+                                  "Networks":  "renewable-operations-alpha_default",
+                                  "Ports":  "5432/tcp",
+                                  "RunningFor":  "8 days ago",
+                                  "Size":  "12.4MB (virtual 288MB)",
+                                  "State":  "running",
+                                  "Status":  "Up 7 hours (healthy)"
+                              },
+                              {
+                                  "Command":  "\"docker-entrypoint.s…\"",
+                                  "CreatedAt":  "2026-07-16 21:06:12 +0800 CST",
+                                  "ID":  "e91207f56174",
+                                  "Image":  "redis:7-alpine",
+                                  "Labels":  "com.docker.compose.depends_on=,com.docker.compose.project=power-trading-ai,com.docker.compose.project.working_dir=E:\\智能运营分析项目,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=E:\\智能运营分析项目\\docker-compose.yml,com.docker.compose.replace=9e598c60999fb52e8f7b24de84347d008533937840fe0faff960863b7e024773,com.docker.compose.service=redis,com.docker.compose.version=2.26.1,com.docker.compose.config-hash=5a060f713f16035e58dffefca9cee0c5420581d428551a1b992f9a5b1510a2b3,com.docker.compose.container-number=1,com.docker.compose.image=sha256:487efc0616382465781b8fdc3d6d1db449e6fd80ae23bf48432a2da6b6929908",
+                                  "LocalVolumes":  "1",
+                                  "Mounts":  "power-trading-…",
+                                  "Names":  "power-trading-ai-redis-1",
+                                  "Networks":  "power-trading-ai_default",
+                                  "Ports":  "127.0.0.1:6379-\u003e6379/tcp",
+                                  "RunningFor":  "2 weeks ago",
+                                  "Size":  "0B (virtual 39.1MB)",
+                                  "State":  "running",
+                                  "Status":  "Up 7 hours (healthy)"
+                              }
+                          ]
+}

@@ -1,0 +1,170 @@
+﻿{
+  "active_alembic_version": [
+    "0016_strategy_runtime"
+  ],
+  "captured_at_utc": "2026-07-30T15:35:52.133548+00:00",
+  "critical_tables": {
+    "forecast_results": {
+      "content_md5": "f9ed4a5b26c424fdff1cfd8c977666f1",
+      "exists": true,
+      "row_count": 24
+    },
+    "forecast_runs": {
+      "content_md5": "2bb289f644a89fcaa46a507076ba372d",
+      "exists": true,
+      "row_count": 2
+    },
+    "model_registry": {
+      "content_md5": "25975d247d84c9257a398a996d9341e4",
+      "exists": true,
+      "row_count": 1
+    },
+    "report_reviews": {
+      "content_md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "exists": true,
+      "row_count": 0
+    },
+    "report_runs": {
+      "content_md5": "686a705b333d895331008fdf68f31d38",
+      "exists": true,
+      "row_count": 1
+    },
+    "strategy_advice": {
+      "content_md5": "b5d950be6ea002b5e8c7bc968c19962a",
+      "exists": true,
+      "row_count": 1
+    },
+    "strategy_audit_logs": {
+      "content_md5": null,
+      "exists": false,
+      "row_count": null
+    },
+    "strategy_device_facts": {
+      "content_md5": null,
+      "exists": false,
+      "row_count": null
+    },
+    "strategy_execution_feedback": {
+      "content_md5": null,
+      "exists": false,
+      "row_count": null
+    },
+    "strategy_reviews": {
+      "content_md5": "fa6ae465f34c6050481db2ae58f2d6ec",
+      "exists": true,
+      "row_count": 2
+    },
+    "strategy_soc_timeseries": {
+      "content_md5": null,
+      "exists": false,
+      "row_count": null
+    },
+    "task_runs": {
+      "content_md5": "2e1ca0ed758efe12a1a51169d83ddcba",
+      "exists": true,
+      "row_count": 15
+    }
+  },
+  "current_role": {
+    "rolbypassrls": true,
+    "rolcanlogin": true,
+    "rolcreatedb": true,
+    "rolcreaterole": true,
+    "rolinherit": true,
+    "rolname": "postgres",
+    "rolreplication": true,
+    "rolsuper": true
+  },
+  "identity": {
+    "current_schema": "public",
+    "current_user": "postgres",
+    "database": "postgres",
+    "server_address": "::1/128",
+    "server_port": 5432,
+    "server_version": "18.4",
+    "session_user": "postgres"
+  },
+  "preexisting_day2_roles": [],
+  "public_functions_sha256": "fb737f2f14d2d47124cdce462843d890188e2288570b5dd3023e836ecb0c6bff",
+  "public_object_counts": {
+    "functions": 37,
+    "sequences": 47,
+    "tables": 62,
+    "views": 8
+  },
+  "public_sequence_names": [
+    "ai_answer_feedback_id_seq",
+    "ai_chat_feedback_id_seq",
+    "ai_chat_messages_id_seq",
+    "ai_chat_sessions_id_seq",
+    "ai_conversation_state_id_seq",
+    "ai_prompt_templates_id_seq",
+    "ai_qa_test_cases_id_seq",
+    "ai_report_review_runs_id_seq",
+    "ai_tool_call_logs_id_seq",
+    "analysis_runs_id_seq",
+    "anomaly_explanations_id_seq",
+    "audit_logs_id_seq",
+    "feature_importance_id_seq",
+    "forecast_results_id_seq",
+    "kb_qa_tests_id_seq",
+    "kb_search_results_id_seq",
+    "market_power_price_rules_id_seq",
+    "model_comparison_runs_id_seq",
+    "model_error_memory_id_seq",
+    "model_evaluation_runs_id_seq",
+    "model_governance_events_id_seq",
+    "model_metrics_id_seq",
+    "model_performance_daily_id_seq",
+    "model_prediction_comparison_points_id_seq",
+    "model_retrain_jobs_id_seq",
+    "model_strategy_memory_id_seq",
+    "model_versions_id_seq",
+    "monitoring_metrics_id_seq",
+    "prediction_tracking_id_seq",
+    "pv_policy_files_id_seq",
+    "pv_station_tariff_check_id_seq",
+    "pv_tariff_period_rules_id_seq",
+    "pv_tariff_rules_id_seq",
+    "raw_load_id_seq",
+    "raw_market_id_seq",
+    "raw_renewable_id_seq",
+    "raw_weather_id_seq",
+    "report_approval_runs_id_seq",
+    "report_reviews_id_seq",
+    "southern_grid_tax_rules_id_seq",
+    "strategy_advice_id_seq",
+    "system_api_configs_id_seq",
+    "system_api_test_logs_id_seq",
+    "system_health_snapshots_id_seq",
+    "system_runtime_config_id_seq",
+    "task_logs_id_seq",
+    "users_id_seq"
+  ],
+  "public_sequences_sha256": "338854e93383e97528dd87e83a0fb57c2a08cdf3edcf2944ea71bd7a479b2193",
+  "public_structure_sha256": "2f56cd9331b33aa3c6f82591a7d9b5a2dd4871b193bf8f9148739c365c1a5cbf",
+  "public_table_count_in_fingerprint": 62,
+  "public_view_names": [
+    "model_feature_importance",
+    "raw_actual_load",
+    "raw_da_price",
+    "raw_forecast_load_selected",
+    "raw_rt_price",
+    "vw_latest_active_model",
+    "vw_model_comparison",
+    "vw_recent_model_errors"
+  ],
+  "public_views_sha256": "c8fe6109407f27c198deb2f8ee4e92cf0d0e7bff4a2e110ec6baf1db6477aba7",
+  "schemas": [
+    "information_schema",
+    "pg_catalog",
+    "public"
+  ],
+  "target": {
+    "configured_host": "localhost",
+    "configured_user": "postgres",
+    "database": "postgres",
+    "host": "localhost",
+    "port": 5432
+  }
+}

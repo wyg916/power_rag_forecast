@@ -1,0 +1,26 @@
+# Day 2 修改文件清单
+
+共 20 个文件，未超过仓库停止门禁：
+
+1. `.env.docker.example`
+2. `.env.example`
+3. `README.md`
+4. `README_DEPLOY.md`
+5. `docker-compose.enterprise.yml`
+6. `docker-compose.yml`
+7. `frontend/package-lock.json`
+8. `frontend/package.json`
+9. `migrations/env.py`
+10. `scripts/day2_repro_preflight.py`
+11. `tests/test_t004_security.py`
+12. `docs/codex/TASK_STATUS.md`
+13. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/plan.md`
+14. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/changed_files.txt`
+15. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/commands.txt`
+16. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/test_summary.md`
+17. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/rollback.md`
+18. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/unresolved.md`
+19. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/pre_database_snapshot.json`
+20. `docs/codex/evidence/DAY2_REPRO_20260730_233320707/pre_environment_snapshot.json`
+
+未提交验证目录中的 `.env`、虚拟环境、`node_modules`、`dist`、缓存、PID 或原始日志。

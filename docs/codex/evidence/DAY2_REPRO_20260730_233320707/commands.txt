@@ -1,0 +1,75 @@
+# Day 2 命令索引
+
+完整原始输出位于：
+
+`E:\智能运营分析项目_验证\beta10d_day2_20260730_233320707\logs`
+
+以下命令均未记录密码、Token、API Key 或完整连接串。
+
+## 基线与检查点
+
+- `git branch --show-current`
+- `git rev-parse HEAD`
+- `git status --short`
+- `python -m alembic heads`
+- 检查点：`E:\智能运营分析项目_备份\beta10d\20260730_233152624_DAY2_REPRO_PRE`
+
+## 干净 clone 与依赖
+
+- `git clone --no-hardlinks --branch beta10d/day2-reproducible-environment --single-branch <local-repo> <validation-repo>`
+- `python -m venv .venv`
+- `.venv\Scripts\python.exe -m pip install --no-cache-dir -r requirements.txt`
+- `.venv\Scripts\python.exe -m pip check`
+- `node.exe <npm-cli.js> ci`
+- `node.exe <npm-cli.js> ls --depth=0`
+- `node.exe <npm-cli.js> audit --json`
+
+## 配置与 Compose
+
+- `python scripts/day2_repro_preflight.py --check-db --require-clean`
+- `docker compose --env-file <temporary-env> -f docker-compose.yml config --quiet`
+- `docker compose --env-file <temporary-env> -f docker-compose.enterprise.yml config --quiet`
+
+## 隔离迁移
+
+所有迁移命令均设置并校验：
+
+- `ALEMBIC_TARGET_SCHEMA`
+- `ALEMBIC_SCHEMA_PREFIX=beta10d_day2_`
+- `ALEMBIC_EXECUTION_ROLE`
+- 预期 database/host/port/user 门禁
+
+执行命令：
+
+- `python -m alembic upgrade head`
+- `python -m alembic downgrade 0014_t003_run_transaction`
+- `python -m alembic upgrade head`
+
+关键日志：
+
+- `final_upgrade_head.log`
+- `final_downgrade_0014.log`
+- `final_reupgrade_head.log`
+- `final_head1_structure.json`
+- `final_head2_structure.json`
+- `final_head_comparison.json`
+- `final_protected_gate.json`
+- `cleanup_summary.json`
+- `final_after_cleanup_db_gate.json`
+
+## 后端
+
+- `python -m compileall -q backend migrations scripts`
+- `python -m pytest tests/test_t004_security.py tests/test_migrations.py tests/test_p4_task_health.py tests/test_deepseek_config_security.py -q`
+- `python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 18080`
+- HTTP：`/health`、`/api/db/health`、`/api/tasks/health`、`/api/knowledge/health`、`/api/model-gateway/health`、`/openapi.json`
+
+## 前端
+
+- `node --test tests/view_state.test.mjs`
+- `node node_modules/typescript/bin/tsc --noEmit`
+- `node <npm-cli.js> run build`
+- `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 15173 --strictPort`
+- 内置浏览器打开本地预览，检查登录态页面与 console。
+
+后端与前端冒烟进程已按监听端口解析到精确 PID 后停止；`18080`、`15173` 均已释放。
