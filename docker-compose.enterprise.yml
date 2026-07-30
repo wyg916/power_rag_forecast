@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-power_trading}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       TZ: Asia/Shanghai
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "${REDIS_PORT:-6380}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -39,9 +39,17 @@ services:
       dockerfile: docker/Dockerfile.backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-power_trading}
+      APP_ENV: ${APP_ENV:-production}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-1}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required for production}
+      ADMIN_INITIALIZED: ${ADMIN_INITIALIZED:?ADMIN_INITIALIZED=1 is required after admin bootstrap}
+      DATABASE_PRIMARY: postgresql
+      DATABASE_ALLOW_LEGACY_FALLBACK: ${DATABASE_ALLOW_LEGACY_FALLBACK:-0}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-power_trading}
       REDIS_URL: redis://redis:6379/0
-      AUTH_REQUIRED: ${AUTH_REQUIRED:-0}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      TASK_EXECUTION_MODE: ${TASK_EXECUTION_MODE:-celery}
       LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       LLM_API_MODE: ${LLM_API_MODE:-native}
       LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
@@ -50,6 +58,8 @@ services:
       LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-qwen3:4b}
       AI_ASSISTANT_REQUIRE_EVIDENCE: ${AI_ASSISTANT_REQUIRE_EVIDENCE:-1}
       AI_ASSISTANT_ALLOW_EXTERNAL_FACTS: ${AI_ASSISTANT_ALLOW_EXTERNAL_FACTS:-0}
+      AI_ASSISTANT_LLM_ENABLED: ${AI_ASSISTANT_LLM_ENABLED:-0}
+      RAG_ENABLED: ${RAG_ENABLED:-0}
       TZ: Asia/Shanghai
     ports:
       - "${BACKEND_PORT:-8000}:8000"
@@ -66,7 +76,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5).read()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()"]
       interval: 15s
       timeout: 8s
       retries: 12
@@ -76,11 +86,21 @@ services:
       context: .
       dockerfile: docker/Dockerfile.backend
     restart: unless-stopped
-    command: ["celery", "-A", "backend.app.workers.celery_app.celery_app", "worker", "--loglevel=INFO", "--pool=solo"]
+    command: ["celery", "-A", "backend.app.workers.celery_app:celery_app", "worker", "--loglevel=INFO", "--pool=solo"]
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-power_trading}
+      APP_ENV: ${APP_ENV:-production}
+      AUTH_REQUIRED: ${AUTH_REQUIRED:-1}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required for production}
+      ADMIN_INITIALIZED: ${ADMIN_INITIALIZED:?ADMIN_INITIALIZED=1 is required after admin bootstrap}
+      DATABASE_PRIMARY: postgresql
+      DATABASE_ALLOW_LEGACY_FALLBACK: ${DATABASE_ALLOW_LEGACY_FALLBACK:-0}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-power_trading}
       REDIS_URL: redis://redis:6379/0
-      AUTH_REQUIRED: ${AUTH_REQUIRED:-0}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      TASK_EXECUTION_MODE: ${TASK_EXECUTION_MODE:-celery}
+      AI_ASSISTANT_LLM_ENABLED: ${AI_ASSISTANT_LLM_ENABLED:-0}
+      RAG_ENABLED: ${RAG_ENABLED:-0}
       TZ: Asia/Shanghai
     volumes:
       - ./output:/app/output

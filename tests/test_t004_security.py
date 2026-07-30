@@ -155,6 +155,7 @@ def test_frontend_and_deployment_auth_contracts_are_fail_closed():
     api = (ROOT / "frontend/src/api.ts").read_text(encoding="utf-8")
     auth_api = (ROOT / "frontend/src/services/authApi.ts").read_text(encoding="utf-8")
     compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    enterprise_compose = (ROOT / "docker-compose.enterprise.yml").read_text(encoding="utf-8")
     example = (ROOT / ".env.example").read_text(encoding="utf-8")
 
     assert "import.meta.env.PROD ? '1' : '0'" in context
@@ -165,12 +166,16 @@ def test_frontend_and_deployment_auth_contracts_are_fail_closed():
     admin_lines = [line for line in compose.splitlines() if "ADMIN_INITIALIZED:" in line]
     assert jwt_lines and all(":?JWT_SECRET_KEY is required for production" in line for line in jwt_lines)
     assert admin_lines and all(":?ADMIN_INITIALIZED=1 is required after admin bootstrap" in line for line in admin_lines)
+    assert "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}" in compose
+    assert "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}" in enterprise_compose
+    assert "AUTH_REQUIRED: ${AUTH_REQUIRED:-0}" not in enterprise_compose
+    assert "POSTGRES_PASSWORD:-postgres" not in enterprise_compose
     assert "JWT_SECRET_KEY=change_me" not in example
 
 
 def test_env_docker_requires_external_production_secrets(monkeypatch):
     values: dict[str, str] = {}
-    for raw_line in (ROOT / ".env.docker").read_text(encoding="utf-8").splitlines():
+    for raw_line in (ROOT / ".env.docker.example").read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -179,13 +184,35 @@ def test_env_docker_requires_external_production_secrets(monkeypatch):
 
     assert values.get("APP_ENV") == "production"
     assert values.get("AUTH_REQUIRED") == "1"
-    assert not values.get("JWT_SECRET_KEY")
+    assert values.get("ADMIN_INITIALIZED") == "1"
+    assert values.get("JWT_SECRET_KEY", "").startswith("replace_with_")
+    assert values.get("POSTGRES_PASSWORD", "").startswith("replace_with_")
     assert not values.get("ADMIN_PASSWORD")
+    assert values.get("RAG_ENABLED") == "0"
+    assert values.get("RAG_EMBEDDING_ALLOW_FALLBACK") == "0"
+    assert values.get("RAG_FILE_FALLBACK_ENABLED") == "0"
 
     monkeypatch.setenv("APP_ENV", values["APP_ENV"])
     monkeypatch.setenv("AUTH_REQUIRED", values["AUTH_REQUIRED"])
-    monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
-    monkeypatch.delenv("ADMIN_INITIALIZED", raising=False)
+    monkeypatch.setenv("JWT_SECRET_KEY", values["JWT_SECRET_KEY"])
+    monkeypatch.setenv("ADMIN_INITIALIZED", values["ADMIN_INITIALIZED"])
     reset_settings_cache()
     with pytest.raises(SecurityConfigurationError, match="JWT_SECRET_KEY"):
         create_app()
+
+
+def test_day2_preflight_static_gates_pass():
+    from scripts.day2_repro_preflight import _config_checks, _migration_checks
+
+    _, config_failures = _config_checks(ROOT / ".env.docker.example")
+    migration_result, migration_failures = _migration_checks()
+
+    assert config_failures == []
+    assert migration_failures == []
+    assert migration_result["files_scanned"] == 16
+
+    env_py = (ROOT / "migrations/env.py").read_text(encoding="utf-8")
+    assert "ALEMBIC_TARGET_SCHEMA" in env_py
+    assert "version_table_schema" in env_py
+    assert "SET search_path" in env_py
+    assert "context.run_migrations()" in env_py
