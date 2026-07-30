@@ -1,19 +1,28 @@
-# 智能运营分析项目 Codex 分阶段执行包
+# 智能运营分析项目
 
-## 使用顺序
-1. 将本执行包中的 `AGENTS.md` 放到项目根目录。
-2. 将 `docs/codex/` 整体复制到项目根目录下的 `docs/codex/`。
-3. 首先把 `tasks/00_PHASE0_BASELINE.md` 的完整内容发送给 Codex。
-4. Phase 0 完成并人工确认备份后，依次发送：
-   - `01_T004_AUTH_FAIL_CLOSED.md`
-   - `02_T001_MODEL_FACT_SOURCE.md`
-   - `03_T002_SAFE_MODEL_CONTRACT.md`
-   - `04_T003_RUN_ID_TRANSACTION.md`
-   - `05_T005_SOURCE_CONTRACT.md`
-   - `06_FINAL_ACCEPTANCE.md`
-5. 每个任务必须单独开任务/对话；上一个任务验收通过后再进入下一个。
+当前产品版本：`v2.11.2`。这是基于 FastAPI、React/Vite、PostgreSQL、Redis/Celery 和 Alembic 的智能电力运营分析与决策支持平台。
 
-## 关键原则
-- 一周仅以完成 P0 核心工程收敛和“可稳定本地运行”验收为目标。
-- 不把 RAG 全量恢复、AI 100 题、报告策略状态机、完整企业部署等全部塞入同一周。
-- 高风险步骤必须停下来请求人工确认。
+## 可复现运行基线
+
+- Python：`3.11.x`
+- Node.js：`>=18 <25`
+- npm：`>=9 <12`
+- PostgreSQL：应用目标为 PostgreSQL；当前本地工程约束使用 `localhost:5432/postgres`
+- 前端容器构建基线：Node 18
+- 最新 Alembic 版本：`0016_strategy_runtime`
+
+依赖安装、配置生成、迁移、启动、健康检查和回滚步骤统一见 [README_DEPLOY.md](README_DEPLOY.md)。生产模式必须启用认证、使用随机 JWT/数据库密钥并完成受控管理员初始化；示例占位值不能直接用于部署。
+
+## 最短本地验证
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m alembic heads
+cd frontend
+npm ci
+npm run build
+```
+
+不要提交 `.env`、`.env.docker`、数据库密码、API Key、模型二进制或本地构建产物。

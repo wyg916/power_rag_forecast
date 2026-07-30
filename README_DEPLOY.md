@@ -4,9 +4,11 @@
 
 ## 1. 环境要求
 
+- 本地后端：Python `3.11.x`
+- 本地前端：Node.js `>=18 <25`、npm `>=9 <12`
 - Docker Engine 24+ 或 Docker Desktop
 - Docker Compose v2
-- 可用端口：默认 `5432`、`6379`、`8000`、`8080`
+- Compose 示例端口：`5433`、`6380`、`8000`、`8080`；启动前先检查冲突
 - 服务器可访问外部大模型 API 时，按需配置 DeepSeek/OpenAI 等 Key
 - 如使用本地 Ollama，可在宿主机启动 Ollama，或用 compose 的 `ollama` profile 启动
 
@@ -21,12 +23,21 @@ cp .env.docker.example .env.docker
 必须检查并修改：
 
 ```env
-POSTGRES_PASSWORD=change_me
+POSTGRES_PASSWORD=<本机随机强密码>
+JWT_SECRET_KEY=<至少32字符的随机密钥>
 AUTH_REQUIRED=1
+ADMIN_INITIALIZED=1
 DATABASE_ALLOW_LEGACY_FALLBACK=0
 TASK_EXECUTION_MODE=celery
 CORS_ALLOWED_ORIGINS=http://your-frontend-domain
 ```
+
+`.env.docker.example` 中的 `replace_with_*` 只是可解析占位值，后端会拒绝把它当作生产密钥。可在本机执行
+`python -c "import secrets; print(secrets.token_urlsafe(48))"` 生成随机值；不得把结果写入 Git、日志或验收报告。
+
+首次管理员初始化应分两步执行：先仅启动 PostgreSQL/Redis，使用本机 `.env.docker` 中的
+`ADMIN_USERNAME`、`ADMIN_PASSWORD` 运行 `python scripts/create_admin_user.py`，确认成功后再设置
+`ADMIN_INITIALIZED=1` 并启动完整服务。该标记不得在管理员尚未创建时虚假开启。
 
 如使用 DeepSeek：
 
@@ -39,8 +50,20 @@ DEEPSEEK_MODEL=deepseek-chat
 ```
 
 不要把真实 `DEEPSEEK_API_KEY`、数据库密码或任何 Authorization token 写入 README、测试、日志或代码。
+默认示例将外部 LLM 与 RAG 设为禁用，未配置时健康状态必须显示 disabled/unavailable，不得伪报可用。
+启用前需显式设置 `AI_ASSISTANT_LLM_ENABLED=1` 或 `RAG_ENABLED=1`，并验证模型路径、维度和服务健康。
 
 ## 3. 启动服务
+
+先做只读配置解析：
+
+```bash
+python scripts/day2_repro_preflight.py --env-file .env.docker.example
+docker compose --env-file .env.docker config
+docker compose -f docker-compose.enterprise.yml --env-file .env.docker config
+```
+
+确认占位密钥已在未跟踪的 `.env.docker` 中替换、管理员已受控初始化、端口无冲突后再启动：
 
 ```bash
 docker compose --env-file .env.docker up -d --build
@@ -67,6 +90,21 @@ docker compose --env-file .env.docker --profile ollama up -d --build
 ```bash
 alembic upgrade head
 ```
+
+生产或活动业务 Schema 禁止直接做验收 downgrade。迁移回放必须使用独立临时 Schema、独立
+`alembic_version` 和受限 `search_path`；Day 2 隔离验证使用的环境变量如下：
+
+```env
+ALEMBIC_TARGET_SCHEMA=beta10d_day2_<timestamp>
+ALEMBIC_SCHEMA_PREFIX=beta10d_day2_
+ALEMBIC_EXECUTION_ROLE=beta10d_day2_<timestamp>_role
+ALEMBIC_EXPECTED_HOST=localhost
+ALEMBIC_EXPECTED_PORT=5432
+ALEMBIC_EXPECTED_DATABASE=postgres
+ALEMBIC_EXPECTED_USER=postgres
+```
+
+隔离 Schema/角色必须由获授权操作员预先创建，回放完成并核对 `public` 与业务指纹后才可精确清理。
 
 如需手动执行：
 
@@ -140,9 +178,9 @@ docker compose --env-file .env.docker exec backend sh scripts/health_check.sh
 本地代码测试：
 
 ```bash
-python -m compileall backend tests knowledge_pipeline scripts
+python -m compileall backend tests knowledge_pipeline scripts migrations
 python -m pytest
-cd frontend && npm run build
+cd frontend && npm ci && npm run build
 ```
 
 容器配置校验：
