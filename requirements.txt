@@ -19,6 +19,7 @@ python-dotenv>=1.0,<2.0
 PySide6>=6.7,<7.0
 PySide6-Fluent-Widgets>=1.5,<2.0
 fastapi>=0.111,<1.0
+httpx2>=2.7,<3.0
 uvicorn[standard]>=0.30,<1.0
 pydantic>=2.7,<3.0
 passlib[bcrypt]==1.7.4
