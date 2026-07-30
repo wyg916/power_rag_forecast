@@ -130,6 +130,7 @@ def test_source_type_enum_and_timezone_contract():
     assert {item.value for item in SourceType} == {
         "real",
         "historical",
+        "simulated",
         "demo",
         "seed",
         "fallback",
@@ -226,13 +227,18 @@ def test_api_web_ai_share_run_and_all_read_paths_are_side_effect_free(monkeypatc
     assert after == before
 
 
-def test_frontend_contract_has_fact_status_and_no_fake_zero_empty_state():
+def test_frontend_contract_migrates_fact_status_out_of_global_layout():
     states = (ROOT / "frontend/src/components/common/States.tsx").read_text(encoding="utf-8")
     layout = (ROOT / "frontend/src/layout/BasicLayout.tsx").read_text(encoding="utf-8")
+    settings = (ROOT / "frontend/src/pages/settings/SettingsPage.tsx").read_text(encoding="utf-8")
+    settings_api = (ROOT / "frontend/src/services/settingsApi.ts").read_text(encoding="utf-8")
     api = (ROOT / "frontend/src/api.ts").read_text(encoding="utf-8")
-    assert "FactStatusBar" in states
+    assert "SourceContextPanel" in states
     for label in ["数据来源", "运行批次", "生成时间", "模型版本", "特征版本", "最后刷新"]:
         assert label in states
     assert "当前无可用真实预测" in states
-    assert "api.sourceContext()" in layout
+    assert "FactStatusBar" not in layout
+    assert "api.sourceContext()" not in layout
+    assert "SourceContextPanel" in settings
+    assert "api.sourceContext" in settings_api
     assert "/api/source/context" in api
