@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -97,6 +97,150 @@ class ReadOnlySqlRequest(BaseModel):
     limit: int = Field(default=100, ge=1, le=500)
 
 
+class DataStatusResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class DataCatalogResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    available: bool
+    catalog_version: str
+    datasets: list[dict[str, Any]] = Field(default_factory=list)
+    total: int = 0
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class DataFreshnessResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    available: bool
+    catalog_version: str
+    checked_at: str
+    items: list[dict[str, Any]] = Field(default_factory=list)
+    summary: dict[str, Any] = Field(default_factory=dict)
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class DatabaseTablesResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    available: bool
+    tables: list[dict[str, Any]] = Field(default_factory=list)
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class DatabaseTableColumn(BaseModel):
+    name: str
+    type: str = ""
+
+
+class DatabaseTableRowsResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    available: bool
+    table_name: str
+    object_type: str = ""
+    columns: list[DatabaseTableColumn] = Field(default_factory=list)
+    records: list[dict[str, Any]] = Field(default_factory=list)
+    total: int = 0
+    limit: int
+    offset: int
+    pagination: dict[str, int]
+    search: str = ""
+    order_by: str = ""
+    order_direction: str = "desc"
+    message: str = ""
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class DataQualityItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    table_name: str
+    source_name: str | None = None
+    available: bool
+    status: str
+    rows: int | None = None
+    missing_values: int | None = None
+    missing_rate: float | None = None
+    duplicate_rate: float | None = None
+    freshness_score: float | None = None
+    freshness_age_hours: float | None = None
+    consistency_score: float | None = None
+    check_pass_rate: float | None = None
+    latest_time: Any = None
+    message: str = ""
+    data_source: str
+    is_stale: bool = False
+    stale_reason: str | None = None
+
+
+class DataQualityAlert(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    alert_id: str
+    severity: str
+    alert_type: str
+    object_name: str
+    detected_at: str
+    status: str
+    source: str
+    message: str
+
+
+class DataQualityResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    available: bool
+    generated_at: str
+    is_stale: bool = False
+    stale_reason: str | None = None
+    summary: dict[str, int | float | None] = Field(default_factory=dict)
+    items: list[DataQualityItem] = Field(default_factory=list)
+    exceptions: list[DataQualityItem] = Field(default_factory=list)
+    alerts: list[DataQualityAlert] = Field(default_factory=list)
+    data_source: str | None = None
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class DataSyncRecord(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    record_id: str
+    run_id: str | None = None
+    type: str
+    name: str
+    task_kind: str
+    status: str
+    processed_rows: int | None = None
+    success_rows: int | None = None
+    failed_rows: int | None = None
+    created_at: Any = None
+    started_at: Any = None
+    ended_at: Any = None
+    duration_seconds: float | None = None
+    error_code: str = ""
+    error_message: str = ""
+    status_reason: str | None = None
+    data_source: str
+
+
+class DataSyncRecordsResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    available: bool
+    generated_at: str
+    records: list[DataSyncRecord] = Field(default_factory=list)
+    pagination: dict[str, int]
+    summary: dict[str, Any] = Field(default_factory=dict)
+    data_source: str
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
 class ReviewRequest(BaseModel):
     reviewer: str = Field(default="web_user", max_length=64)
     review_comment: str = Field(default="", max_length=2000)
@@ -148,7 +292,7 @@ class UserCreateRequest(BaseModel):
     email: str = Field(default="", max_length=255)
     display_name: str = Field(default="", max_length=128)
     password: str = Field(..., min_length=8, max_length=256)
-    role: Literal["admin", "analyst", "viewer", "developer", "operator"] = "viewer"
+    role: Literal["admin", "analyst", "reviewer", "viewer", "developer", "operator"] = "viewer"
     is_active: bool = True
 
     @field_validator("password")
@@ -160,7 +304,7 @@ class UserCreateRequest(BaseModel):
 class UserUpdateRequest(BaseModel):
     email: str | None = Field(default=None, max_length=255)
     display_name: str | None = Field(default=None, max_length=128)
-    role: Literal["admin", "analyst", "viewer", "developer", "operator"] | None = None
+    role: Literal["admin", "analyst", "reviewer", "viewer", "developer", "operator"] | None = None
     is_active: bool | None = None
 
 
@@ -171,3 +315,13 @@ class UserResetPasswordRequest(BaseModel):
     @classmethod
     def _validate_new_password_length(cls, value: str) -> str:
         return validate_password_length(value)
+
+
+class StrategyGenerateRequest(BaseModel):
+    run_id: str = Field(..., min_length=8, max_length=96)
+    report_id: str = Field(..., min_length=8, max_length=96)
+
+
+class StrategyActionRequest(BaseModel):
+    request_id: str = Field(..., min_length=8, max_length=96)
+    review_comment: str = Field(default="", max_length=2000)

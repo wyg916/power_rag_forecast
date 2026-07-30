@@ -27,6 +27,9 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "report:generate",
         "report:review",
         "model:read",
+        "strategy:read",
+        "strategy:generate",
+        "strategy:submit",
     },
     "developer": {
         "dashboard:read",
@@ -38,6 +41,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "knowledge:read",
         "report:read",
         "model:read",
+        "strategy:read",
         "trace:read",
         "security:read",
         "user:read",
@@ -51,6 +55,17 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "knowledge:read",
         "report:read",
         "model:read",
+        "strategy:read",
+    },
+    "reviewer": {
+        "dashboard:read",
+        "forecast:read",
+        "task:read",
+        "knowledge:read",
+        "report:read",
+        "model:read",
+        "strategy:read",
+        "strategy:review",
     },
 }
 

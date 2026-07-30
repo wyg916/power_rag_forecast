@@ -20,6 +20,7 @@ PROJECT_TIMEZONE = ZoneInfo("Asia/Shanghai")
 class SourceType(str, Enum):
     REAL = "real"
     HISTORICAL = "historical"
+    SIMULATED = "simulated"
     DEMO = "demo"
     SEED = "seed"
     FALLBACK = "fallback"

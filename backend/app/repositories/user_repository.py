@@ -10,7 +10,7 @@ from .base import mapping_dict, mapping_list, postgres_engine
 
 
 ROLE_ALIASES = {"operator": "analyst"}
-VALID_ROLES = {"admin", "analyst", "viewer", "developer", "operator"}
+VALID_ROLES = {"admin", "analyst", "reviewer", "viewer", "developer", "operator"}
 
 _MEMORY_USERS: dict[str, dict[str, Any]] = {}
 
