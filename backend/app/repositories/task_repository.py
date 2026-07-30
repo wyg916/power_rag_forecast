@@ -347,6 +347,7 @@ def create_pending_task_record(
 def list_task_runs(
     *,
     task_type: str = "",
+    kind_keywords: tuple[str, ...] = (),
     status: str = "",
     queue_name: str = "",
     keyword: str = "",
@@ -365,6 +366,18 @@ def list_task_runs(
     if task_type and task_type != "all":
         clauses.append("(task_kind = :task_type OR task_type = :task_type)")
         params["task_type"] = normalize_task_kind(task_type)
+    normalized_keywords = [str(value or "").strip().lower() for value in kind_keywords if str(value or "").strip()]
+    if normalized_keywords:
+        predicates: list[str] = []
+        for index, value in enumerate(normalized_keywords):
+            key = f"kind_keyword_{index}"
+            predicates.append(
+                f"(LOWER(COALESCE(task_kind, '')) LIKE :{key} "
+                f"OR LOWER(COALESCE(task_type, '')) LIKE :{key} "
+                f"OR LOWER(COALESCE(task_name, '')) LIKE :{key})"
+            )
+            params[key] = f"%{value}%"
+        clauses.append("(" + " OR ".join(predicates) + ")")
     if status and status != "all":
         clauses.append("status = :status")
         params["status"] = normalize_status(status)
@@ -384,6 +397,40 @@ def list_task_runs(
     try:
         with engine.connect() as conn:
             total = int(conn.execute(text(f"SELECT COUNT(*) FROM task_runs {where_sql}"), params).scalar() or 0)
+            summary = dict(
+                conn.execute(
+                    text(
+                        f"""
+                        SELECT
+                            MAX(COALESCE(started_at, created_at, queued_at, updated_at)) AS latest_started_at,
+                            MAX(CASE WHEN status = 'success'
+                                THEN COALESCE(ended_at, finished_at, updated_at) END) AS latest_success_at,
+                            COUNT(*) FILTER (
+                                WHERE COALESCE(created_at, queued_at, started_at, updated_at) >= CURRENT_DATE
+                            ) AS today_task_count
+                        FROM task_runs
+                        {where_sql}
+                        """
+                    ),
+                    params,
+                ).mappings().first()
+                or {}
+            )
+            latest = dict(
+                conn.execute(
+                    text(
+                        f"""
+                        SELECT task_id, run_id
+                        FROM task_runs
+                        {where_sql}
+                        ORDER BY COALESCE(created_at, queued_at, started_at, updated_at) DESC, task_id DESC
+                        LIMIT 1
+                        """
+                    ),
+                    params,
+                ).mappings().first()
+                or {}
+            )
             rows = conn.execute(
                 text(
                     f"""
@@ -409,7 +456,15 @@ def list_task_runs(
         log_suppressed_exception("repositories.task.list_task_runs", exc)
         return {"list": [], "tasks": [], "total": 0, "page": safe_page, "page_size": safe_size, "error": str(exc)[:200]}
     items = [_task_row_to_payload(row) for row in mapping_list(rows)]
-    return {"list": items, "tasks": items, "total": total, "page": safe_page, "page_size": safe_size}
+    return {
+        "list": items,
+        "tasks": items,
+        "total": total,
+        "page": safe_page,
+        "page_size": safe_size,
+        "summary": jsonable(summary),
+        "latest": jsonable(latest),
+    }
 
 
 def task_overview() -> dict[str, Any]:

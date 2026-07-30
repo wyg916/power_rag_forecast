@@ -483,7 +483,8 @@ def database_tables(search: str | None = None) -> dict[str, Any]:
 
     try:
         inspector = inspect(engine)
-        table_names = sorted(inspector.get_table_names())
+        view_names = set(inspector.get_view_names())
+        table_names = sorted(set(inspector.get_table_names()) | view_names)
     except Exception as exc:
         log_suppressed_exception("data_access.database_tables.inspect", exc)
         return {"available": False, "tables": [], "message": f"读取数据库表失败：{exc}"}
@@ -496,10 +497,12 @@ def database_tables(search: str | None = None) -> dict[str, Any]:
     for table_name in table_names:
         try:
             columns = inspector.get_columns(table_name)
-            pk = inspector.get_pk_constraint(table_name).get("constrained_columns") or []
+            object_type = "view" if table_name in view_names else "table"
+            pk = [] if object_type == "view" else inspector.get_pk_constraint(table_name).get("constrained_columns") or []
             rows.append(
                 {
                     "table_name": table_name,
+                    "object_type": object_type,
                     "rows": None,
                     "columns": len(columns),
                     "primary_key": ", ".join(pk),
@@ -513,21 +516,41 @@ def database_tables(search: str | None = None) -> dict[str, Any]:
 
 
 def database_table_rows(table_name: str, search: str | None = None, limit: int = 100, offset: int = 0) -> dict[str, Any]:
+    limit = max(1, min(int(limit or 100), 5000))
+    offset = max(0, int(offset or 0))
+
+    def empty_payload(message: str) -> dict[str, Any]:
+        return {
+            "available": False,
+            "table_name": table_name,
+            "object_type": "",
+            "columns": [],
+            "records": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "pagination": {"page": offset // limit + 1, "page_size": limit, "total": 0},
+            "search": str(search or "").strip(),
+            "order_by": "",
+            "order_direction": "desc",
+            "message": message,
+        }
+
     engine = database_engine()
     if engine is None:
-        return {"available": False, "table_name": table_name, "columns": [], "records": [], "message": "数据库未启用或连接不可用。"}
+        return empty_payload("数据库未启用或连接不可用。")
     try:
         inspector = inspect(engine)
         table_names = set(inspector.get_table_names())
-        if table_name not in table_names:
-            return {"available": False, "table_name": table_name, "columns": [], "records": [], "message": "未找到该数据库表。"}
+        view_names = set(inspector.get_view_names())
+        if table_name not in table_names | view_names:
+            return empty_payload("未找到该数据库表或视图。")
         columns = inspector.get_columns(table_name)
+        primary_keys = [] if table_name in view_names else inspector.get_pk_constraint(table_name).get("constrained_columns") or []
     except Exception as exc:
         log_suppressed_exception("data_access.database_table_rows.schema", exc, table_name=table_name)
-        return {"available": False, "table_name": table_name, "columns": [], "records": [], "message": f"读取表结构失败：{exc}"}
+        return empty_payload(f"读取表结构失败：{exc}")
 
-    limit = max(1, min(int(limit or 100), 200))
-    offset = max(0, int(offset or 0))
     dialect = engine.dialect.name
     safe_table = _quote_identifier(table_name, dialect)
     column_names = [str(col.get("name")) for col in columns if col.get("name")]
@@ -539,17 +562,32 @@ def database_table_rows(table_name: str, search: str | None = None, limit: int =
         params["keyword"] = f"%{keyword}%"
         predicates = [_text_search_expression(col, dialect) for col in searchable_columns]
         where = " WHERE " + " OR ".join(predicates)
+    preferred_order = [
+        *[str(name) for name in primary_keys if name in column_names],
+        "datetime",
+        "forecast_datetime",
+        "created_at",
+        "updated_at",
+        "id",
+    ]
+    order_by = next((name for name in preferred_order if name in column_names), column_names[0] if column_names else "")
+    order_sql = f" ORDER BY {_quote_identifier(order_by, dialect)} DESC" if order_by else ""
     total_df = query_dataframe(f"SELECT COUNT(*) AS rows_count FROM {safe_table}{where}", params)
-    data_df = query_dataframe(f"SELECT * FROM {safe_table}{where} LIMIT {limit} OFFSET {offset}", params)
+    data_df = query_dataframe(f"SELECT * FROM {safe_table}{where}{order_sql} LIMIT {limit} OFFSET {offset}", params)
+    total = int(total_df.iloc[0].get("rows_count") or 0) if not total_df.empty else len(data_df)
     return {
         "available": True,
         "table_name": table_name,
+        "object_type": "view" if table_name in view_names else "table",
         "columns": [{"name": name, "type": str(col.get("type") or "")} for name, col in zip(column_names, columns)],
         "records": records(data_df),
-        "total": int(total_df.iloc[0].get("rows_count") or 0) if not total_df.empty else len(data_df),
+        "total": total,
         "limit": limit,
         "offset": offset,
+        "pagination": {"page": offset // limit + 1, "page_size": limit, "total": total},
         "search": keyword,
+        "order_by": order_by,
+        "order_direction": "desc",
     }
 
 

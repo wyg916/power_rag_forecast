@@ -1,5 +1,5 @@
 import { DownloadOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
-import { Button, message } from 'antd';
+import { App } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
@@ -9,22 +9,26 @@ import {
   DataFlowPanel,
   DataHealthOverview,
   DataOverviewMetrics,
-  DataPageHeader,
   ExceptionTable,
   OverviewSideRail,
   QualityMetrics,
   QualityMonitor,
   SourceStatusBar,
-  SyncRecordsTable
+  SyncRecordsTable,
+  dataTabs
 } from '../../components/data/DataCenterDesign';
-import { DataStateBanner } from '../../components/common/States';
+import { PageHeader } from '../../components/common/PageHeader';
+import type { PageHeaderAction } from '../../components/common/PageHeader';
+import { PageTabs } from '../../components/common/PageTabs';
+import { PageDataState } from '../../components/common/States';
+import { useAuth } from '../../context/AuthContext';
 import { getDataCenterData } from '../../services/dataApi';
+import { resolvePageDataMeta } from '../../services/viewState';
 import type { PageProps } from '../../types/ui';
 
 function exportCsv(filename: string, rows: any[]) {
   if (!rows.length) {
-    message.info('当前没有可导出的记录');
-    return;
+    return false;
   }
   const keys = Object.keys(rows[0]);
   const csv = [keys, ...rows.map((row) => keys.map((key) => row[key]))]
@@ -36,32 +40,118 @@ function exportCsv(filename: string, rows: any[]) {
   link.download = `${filename}_${Date.now()}.csv`;
   link.click();
   URL.revokeObjectURL(url);
+  return true;
+}
+
+function downloadBlob(filename: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
+  const { message } = App.useApp();
+  const syncPageSize = 8;
+  const tablePageSize = 20;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [requestError, setRequestError] = useState<unknown>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [syncPage, setSyncPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedCatalog, setSelectedCatalog] = useState<any>(null);
+  const [tablePreview, setTablePreview] = useState<any>(null);
+  const [tablePreviewLoading, setTablePreviewLoading] = useState(false);
+  const [tablePreviewError, setTablePreviewError] = useState<unknown>(null);
+  const [tablePage, setTablePage] = useState(1);
+  const [tableSearch, setTableSearch] = useState('');
+  const [tableSearchDraft, setTableSearchDraft] = useState('');
+  const [tableExporting, setTableExporting] = useState(false);
   const [detail, setDetail] = useState<any>(null);
+  const { authRequired, hasPermission } = useAuth();
+  const canSync = !authRequired || hasPermission('data:sync');
+  const qualityMode = activeSubKey === 'data-quality';
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setRequestError(null);
     try {
-      const result = await getDataCenterData();
+      const result = await getDataCenterData({ syncPage, syncPageSize });
       setData(result);
       setSelectedCatalog((current: any) => current || result.catalog?.[0] || null);
+      setLastUpdatedAt(new Date().toISOString());
+    } catch (error) {
+      setRequestError(error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncPage]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const qualityMode = activeSubKey === 'data-quality';
+  const loadTablePreview = useCallback(async () => {
+    const tableName = selectedCatalog?.table_name;
+    if (!qualityMode || !tableName) return;
+    if (selectedCatalog?.runtime?.exists === false) {
+      setTablePreview({
+        available: false,
+        table_name: tableName,
+        records: [],
+        columns: [],
+        pagination: { page: 1, page_size: tablePageSize, total: 0 },
+        message: '数据库中不存在该表或视图。'
+      });
+      setTablePreviewError(null);
+      setTablePreviewLoading(false);
+      return;
+    }
+    setTablePreviewLoading(true);
+    setTablePreviewError(null);
+    try {
+      setTablePreview(await api.databaseTableRows(tableName, {
+        page: tablePage,
+        pageSize: tablePageSize,
+        search: tableSearch
+      }));
+    } catch (error) {
+      setTablePreviewError(error);
+    } finally {
+      setTablePreviewLoading(false);
+    }
+  }, [qualityMode, selectedCatalog?.runtime?.exists, selectedCatalog?.table_name, tablePage, tableSearch]);
+
+  useEffect(() => {
+    loadTablePreview();
+  }, [loadTablePreview]);
+
+  function selectCatalog(row: any) {
+    setSelectedCatalog(row);
+    setTablePage(1);
+    setTableSearch('');
+    setTableSearchDraft('');
+  }
+
+  async function exportSelectedTable() {
+    const tableName = selectedCatalog?.table_name;
+    if (!tableName) return;
+    setTableExporting(true);
+    try {
+      const blob = await api.exportTable(tableName, tableSearch);
+      downloadBlob(`${tableName}_${new Date().toISOString().slice(0, 10)}.csv`, blob);
+      message.success(`已导出 ${tableName}${tableSearch ? `（筛选：${tableSearch}）` : ''}`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '表数据导出失败');
+    } finally {
+      setTableExporting(false);
+    }
+  }
+
   const filteredCatalog = useMemo(() => {
     const rows = data?.catalog || [];
     const keyword = search.trim().toLowerCase();
@@ -89,57 +179,92 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     }
   }
 
-  const actions = qualityMode ? (
-    <>
-      <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
-      <Button icon={<DownloadOutlined />} onClick={() => exportCsv('data_quality', data?.qualityItems || [])}>导出报告</Button>
-      <Button type="primary" loading={syncing} icon={<SyncOutlined />} onClick={syncData}>质量巡检</Button>
-    </>
-  ) : (
-    <>
-      <Button icon={<ReloadOutlined />} onClick={loadData}>刷新总览</Button>
-      <Button type="primary" loading={syncing} icon={<SyncOutlined />} onClick={syncData}>手动同步</Button>
-      <Button icon={<DownloadOutlined />} onClick={() => exportCsv('data_overview', data?.freshnessItems || [])}>导出概览</Button>
-    </>
-  );
+  const exportRows = qualityMode ? data?.qualityItems || [] : data?.freshnessItems || [];
+  const actions = useMemo<PageHeaderAction[]>(() => [
+    {
+      key: 'refresh',
+      label: qualityMode ? '刷新质量' : '刷新总览',
+      icon: <ReloadOutlined />,
+      loading,
+      onClick: loadData
+    },
+    {
+      key: 'sync',
+      label: '手动刷新数据',
+      icon: <SyncOutlined />,
+      type: 'primary',
+      loading: syncing,
+      disabled: !canSync,
+      disabledReason: '需要 data:sync 权限',
+      onClick: syncData
+    },
+    {
+      key: 'export',
+      label: qualityMode ? '导出质量报告' : '导出概览',
+      icon: <DownloadOutlined />,
+      collapseAtNarrow: true,
+      disabled: !exportRows.length,
+      disabledReason: '当前没有可导出的接口记录',
+      onClick: () => {
+        if (!exportCsv(qualityMode ? 'data_quality' : 'data_overview', exportRows)) {
+          message.info('当前没有可导出的记录');
+        }
+      }
+    }
+  ], [canSync, exportRows, loading, loadData, message, qualityMode, syncing]);
 
-  const stateVisible = loading || data?.empty || Boolean(data?.partialErrors?.length);
-  const exceptions = [...(data?.exceptions || []), ...(data?.freshnessProblems || [])];
+  const viewMeta = useMemo(() => resolvePageDataMeta({
+    loading,
+    hasData: Boolean(data?.available && !data?.empty),
+    empty: Boolean(data?.empty),
+    error: requestError || data?.error,
+    partialErrors: data?.partialErrors,
+    source: data?.dataSource,
+    generatedAt: data?.generatedAt || data?.checkedAt,
+    updatedAt: lastUpdatedAt,
+    isStale: Boolean(data?.isStale),
+    staleReason: data?.staleReason,
+    emptyReason: '所选页面与搜索条件下，接口未返回可用数据源、目录或数据库表记录。',
+    queryScope: `${qualityMode ? '数据质量 / 数据目录' : '数据总览'}${search ? `；关键词：${search}` : '；全部记录'}`
+  }), [data, lastUpdatedAt, loading, qualityMode, requestError, search]);
+  const showContent = viewMeta.state === 'success' || viewMeta.state === 'stale';
+  const exceptions = data?.exceptions || [];
 
   return (
     <div className={`data-design-page ${qualityMode ? 'quality-catalog-page' : 'data-overview-page'}`}>
-      <DataPageHeader
-        title={qualityMode ? '数据质量与数据目录' : '数据中心 / 数据总览'}
+      <PageHeader
+        title="数据中心"
         subtitle={qualityMode ? '缺失率、重复率、新鲜度、校验通过率与数据目录可追溯管理。' : '数据接入、质量监控、目录管理、同步记录的一体化入口。'}
-        controls={!qualityMode ? <DataContextBar qualityMode={false} search={search} onSearch={setSearch} actions={actions} /> : null}
+        navigation={<PageTabs items={dataTabs} activeKey={activeSubKey} onChange={onSubNavigate} />}
+        filters={<DataContextBar qualityMode={qualityMode} search={search} onSearch={setSearch} />}
+        actions={actions}
       />
-      {qualityMode ? <DataContextBar qualityMode search={search} onSearch={setSearch} actions={actions} /> : null}
-      {stateVisible ? (
-        <DataStateBanner
-          scope="数据中心"
-          loading={loading}
-          empty={data?.empty}
-          partialErrors={data?.partialErrors}
-          mockFallback={false}
-          onRetry={loadData}
-        />
-      ) : null}
+      <PageDataState meta={viewMeta} onRetry={loadData} />
 
-      {!qualityMode ? (
+      {showContent && !qualityMode ? (
         <>
           <DataOverviewMetrics data={data} loading={loading} />
           <div className="data-overview-main">
             <div className="data-overview-left">
               <DataFlowPanel data={data} onCatalog={() => onSubNavigate('data-quality')} />
-              <SyncRecordsTable rows={filteredImports} onDetail={setDetail} />
+              <SyncRecordsTable
+                rows={filteredImports}
+                total={Number(data?.syncPagination?.total || 0)}
+                page={Number(data?.syncPagination?.page || syncPage)}
+                pageSize={Number(data?.syncPagination?.page_size || syncPageSize)}
+                loading={loading}
+                onPageChange={setSyncPage}
+                onDetail={setDetail}
+              />
             </div>
             <div className="data-overview-right">
               <DataHealthOverview data={data} />
-              <OverviewSideRail data={data} onNavigate={onSubNavigate} />
+              <OverviewSideRail data={data} onDetail={setDetail} />
             </div>
           </div>
         </>
-      ) : (
+      ) : null}
+      {showContent && qualityMode ? (
         <>
           <QualityMetrics data={data} loading={loading} />
           <div className="data-quality-main">
@@ -150,13 +275,37 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
                 <ExceptionTable rows={exceptions} />
               </div>
             </div>
-            <CatalogPanel rows={filteredCatalog} selected={selectedCatalog} onSelect={setSelectedCatalog} />
+            <CatalogPanel
+              rows={filteredCatalog}
+              selected={selectedCatalog}
+              onSelect={selectCatalog}
+              preview={tablePreview}
+              previewLoading={tablePreviewLoading}
+              previewError={tablePreviewError}
+              previewPage={tablePage}
+              previewPageSize={tablePageSize}
+              previewSearch={tableSearchDraft}
+              exporting={tableExporting}
+              onPreviewPageChange={setTablePage}
+              onPreviewSearchDraft={setTableSearchDraft}
+              onPreviewSearch={(value) => {
+                setTableSearch(value.trim());
+                setTablePage(1);
+              }}
+              onPreviewRetry={loadTablePreview}
+              onExport={exportSelectedTable}
+            />
           </div>
-          <SourceStatusBar rows={data?.freshnessItems || []} />
+          <SourceStatusBar rows={data?.qualityItems || []} />
         </>
-      )}
+      ) : null}
 
-      <DetailDrawer title="同步任务详情" open={Boolean(detail)} data={detail} onClose={() => setDetail(null)} />
+      <DetailDrawer
+        title={detail?.alertId ? '数据质量告警详情' : '同步任务详情'}
+        open={Boolean(detail)}
+        data={detail}
+        onClose={() => setDetail(null)}
+      />
     </div>
   );
 }
