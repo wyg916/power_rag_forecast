@@ -12,6 +12,7 @@ from backend.model_gateway.router import router as model_gateway_router
 from .api.v1.router import api_router
 from .config import APP_VERSION, PLATFORM_NAME
 from .core.config import get_settings
+from .core.api_security import ApiSecurityMiddleware, validate_app_route_coverage
 from .core.redaction import mask_secret_fields
 from .observability import configure_app_logging
 
@@ -38,10 +39,18 @@ async def sanitized_http_exception_handler(_: Request, exc: StarletteHTTPExcepti
 
 
 def create_app() -> FastAPI:
-    get_settings()
+    settings = get_settings()
     configure_app_logging()
-    app = FastAPI(title=PLATFORM_NAME, version=APP_VERSION)
+    docs_enabled = not settings.is_production
+    app = FastAPI(
+        title=PLATFORM_NAME,
+        version=APP_VERSION,
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        openapi_url="/openapi.json" if docs_enabled else None,
+    )
     app.add_exception_handler(StarletteHTTPException, sanitized_http_exception_handler)
+    app.add_middleware(ApiSecurityMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_cors_allowed_origins(),
@@ -51,6 +60,11 @@ def create_app() -> FastAPI:
     )
     app.include_router(model_gateway_router)
     app.include_router(api_router)
+
+    @app.on_event("startup")
+    async def validate_api_security_matrix() -> None:
+        validate_app_route_coverage(app)
+
     return app
 
 

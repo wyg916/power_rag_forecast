@@ -13,57 +13,70 @@ from backend.app.repositories.user_repository import get_user_by_username, norma
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
     "analyst": {
+        "auth:self",
         "dashboard:read",
         "forecast:read",
         "forecast:run",
         "data:read",
+        "data:export",
+        "data:query",
         "data:sync",
         "task:read",
-        "task:run",
         "assistant:use",
+        "assistant:export",
         "knowledge:read",
         "knowledge:write",
+        "knowledge:export",
         "report:read",
+        "report:download",
         "report:generate",
-        "report:review",
         "model:read",
         "strategy:read",
         "strategy:generate",
         "strategy:submit",
     },
     "developer": {
+        "auth:self",
         "dashboard:read",
         "forecast:read",
         "data:read",
+        "data:export",
+        "data:query",
         "task:read",
+        "task:diagnostics",
         "assistant:use",
+        "assistant:export",
         "assistant:debug",
         "knowledge:read",
+        "knowledge:export",
         "report:read",
+        "report:download",
         "model:read",
+        "model:export",
         "strategy:read",
         "trace:read",
         "security:read",
+        "system:diagnostics",
+        "settings:read",
+        "audit:read",
         "user:read",
     },
     "viewer": {
+        "auth:self",
         "dashboard:read",
         "forecast:read",
-        "data:read",
-        "task:read",
-        "assistant:use",
         "knowledge:read",
         "report:read",
-        "model:read",
         "strategy:read",
     },
     "reviewer": {
+        "auth:self",
         "dashboard:read",
         "forecast:read",
-        "task:read",
         "knowledge:read",
         "report:read",
-        "model:read",
+        "report:download",
+        "report:review",
         "strategy:read",
         "strategy:review",
     },
@@ -90,8 +103,19 @@ class CurrentUser:
 
 
 def _permissions_for_role(role: str) -> list[str]:
-    normalized = normalize_role(role)
-    return sorted(ROLE_PERMISSIONS.get(normalized, ROLE_PERMISSIONS["viewer"]))
+    raw_role = str(role or "").strip().lower()
+    if raw_role not in ROLE_PERMISSIONS:
+        return []
+    normalized = normalize_role(raw_role)
+    return sorted(ROLE_PERMISSIONS.get(normalized, set()))
+
+
+def _unauthorized(detail: str) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=detail,
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 def _authorization_bearer(request: Request) -> str:
@@ -105,13 +129,13 @@ def _current_user_from_jwt(request: Request, token: str) -> CurrentUser:
     try:
         payload = decode_access_token(token)
     except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录令牌无效或已过期") from exc
+        raise _unauthorized("登录令牌无效或已过期") from exc
     username = str(payload.get("sub") or "").strip()
     if not username:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录令牌缺少用户信息")
+        raise _unauthorized("登录令牌缺少用户信息")
     record = get_user_by_username(username)
     if not record or not record.get("is_active", True):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在或已停用")
+        raise _unauthorized("用户不存在或已停用")
     role = normalize_role(str(record.get("role") or payload.get("role") or "viewer"))
     user = CurrentUser(
         user_id=str(record.get("user_id") or payload.get("user_id") or username),
@@ -133,17 +157,14 @@ def get_current_user(request: Request) -> CurrentUser:
     username = (request.headers.get("X-User") or request.headers.get("X-Username") or "").strip()
     role = (request.headers.get("X-Role") or "").strip().lower()
     if not username:
-        if settings.auth_required:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="缺少登录令牌")
-        username = "dev_admin"
-        role = role or "admin"
-        auth_mode = "dev_header_fallback"
-    else:
-        if settings.auth_required:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="生产认证模式必须使用 Bearer token")
-        role = role or "viewer"
-        auth_mode = "header"
-    role = normalize_role(role)
+        raise _unauthorized("缺少登录令牌")
+    if settings.auth_required or settings.is_production:
+        raise _unauthorized("认证模式要求使用 Bearer token")
+    if settings.app_env not in {"development", "test"}:
+        raise _unauthorized("当前环境不允许开发身份头")
+    role = role or "viewer"
+    auth_mode = "development_header"
+    role = normalize_role(role) if role in ROLE_PERMISSIONS else ""
     user = CurrentUser(
         user_id=username,
         username=username,

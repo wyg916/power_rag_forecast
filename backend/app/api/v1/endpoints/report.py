@@ -129,7 +129,7 @@ def report_detail(report_id: str) -> dict:
 def report_download(report_id: str):
     report = report_status(report_id)
     path = Path(str(report.get("report_path") or ""))
-    if not path.exists():
+    if not path.is_file():
         raise HTTPException(status_code=404, detail="报告文件不存在")
     media_types = {
         ".md": "text/markdown; charset=utf-8",
