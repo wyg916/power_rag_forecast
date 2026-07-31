@@ -136,7 +136,7 @@ export function ModelCenterPage(_props: PageProps) {
   const [logText, setLogText] = useState('');
   const [eventsOpen, setEventsOpen] = useState(false);
   const { authRequired, hasPermission } = useAuth();
-  const canRunTraining = !authRequired || hasPermission('task:run');
+  const canRunTraining = !authRequired || hasPermission('model:manage');
 
   async function loadData(nextFilters = filters) {
     setLoading(true);

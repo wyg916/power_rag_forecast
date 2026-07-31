@@ -27,6 +27,7 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { PageTabs } from '../../components/common/PageTabs';
 import { DataSourceTag } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
+import { useAuth } from '../../context/AuthContext';
 import { getReportCenterData } from '../../services/reportApi';
 import type { PageProps } from '../../types/ui';
 
@@ -102,6 +103,7 @@ const reportTabs = [
 ];
 
 export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
+  const { hasPermission } = useAuth();
   const isReviewPage = activeSubKey === 'report-review' || activeSubKey === 'report-publish';
   const activeTabKey = isReviewPage ? 'report-review' : 'report-daily';
   const [data, setData] = useState<any>({ reports: [], summary: {} });
@@ -109,6 +111,11 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [selectedId, setSelectedId] = useState('');
   const [keyword, setKeyword] = useState('');
   const [reviewComment, setReviewComment] = useState('');
+  const permissions = {
+    canDownload: hasPermission('report:download'),
+    canGenerate: hasPermission('report:generate'),
+    canReview: hasPermission('report:review')
+  };
 
   async function loadData(nextKeyword = keyword) {
     setLoading(true);
@@ -161,9 +168,15 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     await loadData();
   }
 
-  function downloadReport() {
+  async function downloadReport() {
     if (!activeReport?.report_id) return;
-    window.open(api.reportDownloadUrl(activeReport.report_id), '_blank');
+    const { blob, filename } = await api.reportDownload(activeReport.report_id);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename || `${activeReport.report_id}.bin`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   function copyLink() {
@@ -187,6 +200,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           setKeyword={setKeyword}
           onSearch={() => loadData(keyword)}
           onGenerate={generateReport}
+          canGenerate={permissions.canGenerate}
           source={data.dataSource}
         />}
       />
@@ -209,6 +223,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onPublish={() => review('publish')}
           onRegenerate={regenerateReport}
           onDownload={downloadReport}
+          permissions={permissions}
         />
       ) : (
         <ReportPreviewView
@@ -223,13 +238,14 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onDownload={downloadReport}
           onRegenerate={regenerateReport}
           onCopyLink={copyLink}
+          permissions={permissions}
         />
       )}
     </div>
   );
 }
 
-function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, source }: any) {
+function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, canGenerate, source }: any) {
   return (
     <section className={`report-filter-bar ${review ? 'is-review' : 'is-list'}`}>
       <div className="report-filter-controls">
@@ -277,7 +293,7 @@ function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, so
         )}
         {source ? <span className="report-source-pill">数据源 <DataSourceTag source={source} /></span> : null}
         <div className="report-filter-actions">
-          {review ? <Button onClick={() => setKeyword('')}>重置</Button> : <Button type="primary" icon={<PlusCircleOutlined />} onClick={onGenerate}>生成报告</Button>}
+          {review ? <Button onClick={() => setKeyword('')}>重置</Button> : <Button type="primary" icon={<PlusCircleOutlined />} disabled={!canGenerate} onClick={onGenerate}>生成报告</Button>}
           {!review && <Button icon={<DownloadOutlined />}>导出</Button>}
         </div>
       </div>
@@ -320,7 +336,7 @@ function ReportListCard({ title, reports, selectedId, setSelectedId, total }: an
   );
 }
 
-function ReportPreviewView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink }: any) {
+function ReportPreviewView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink, permissions }: any) {
   return (
     <div className="report-main-grid">
       <ReportListCard title={`报告列表（共 ${total} 份）`} reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} />
@@ -357,18 +373,18 @@ function ReportPreviewView({ reports, total, activeReport, selectedId, setSelect
         </div>
       </SectionCard>
       <div className="report-side-stack">
-        <QuickActions onDownload={onDownload} onRegenerate={onRegenerate} onCopyLink={onCopyLink} />
+        <QuickActions onDownload={onDownload} onRegenerate={onRegenerate} onCopyLink={onCopyLink} permissions={permissions} />
         <PublishTimeline report={activeReport} />
       </div>
     </div>
   );
 }
 
-function ReviewPublishView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload }: any) {
+function ReviewPublishView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions }: any) {
   return (
     <div className="report-review-grid">
       <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} />
-      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />}>全屏预览</Button><Button icon={<DownloadOutlined />} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview">
+      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />}>全屏预览</Button><Button icon={<DownloadOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview">
         <div className="report-review-title">
           <h3>{activeReport?.title || '--'}</h3>
           <Tag color="green">v2.3.1</Tag>
@@ -402,10 +418,10 @@ function ReviewPublishView({ reports, total, activeReport, selectedId, setSelect
           <label className="report-comment-label">审核意见 <i>*</i></label>
           <Input.TextArea rows={5} maxLength={500} showCount value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} placeholder="请输入审核意见（选填）..." />
           <div className="report-review-actions">
-            <Button type="primary" onClick={onApprove}>通过</Button>
-            <Button danger onClick={onReject}>驳回</Button>
-            <Button onClick={onRegenerate}>重新生成</Button>
-            <Button onClick={onPublish}>发布归档</Button>
+            <Button type="primary" disabled={!permissions.canReview} onClick={onApprove}>通过</Button>
+            <Button danger disabled={!permissions.canReview} onClick={onReject}>驳回</Button>
+            <Button disabled={!permissions.canGenerate} onClick={onRegenerate}>重新生成</Button>
+            <Button disabled={!permissions.canReview} onClick={onPublish}>发布归档</Button>
           </div>
         </SectionCard>
         <SectionCard title="发布归档流程" className="report-process-card"><ProcessSteps /></SectionCard>
@@ -444,16 +460,16 @@ function MiniMetric({ label, value, unit, change }: any) {
   );
 }
 
-function QuickActions({ onDownload, onRegenerate, onCopyLink }: any) {
+function QuickActions({ onDownload, onRegenerate, onCopyLink, permissions }: any) {
   const disabledTip = '当前后端接口待接入';
   return (
     <SectionCard title="快捷操作" className="report-quick-card">
       <div className="report-action-grid">
-        <Button icon={<FilePdfOutlined />} onClick={onDownload}>下载报告（PDF）</Button>
+        <Button icon={<FilePdfOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载报告（PDF）</Button>
         <Tooltip title={disabledTip}><Button icon={<FileExcelOutlined />} disabled>下载报告（Excel）</Button></Tooltip>
         <Button icon={<EyeOutlined />}>查看详情</Button>
         <Tooltip title={disabledTip}><Button type="primary" icon={<SendOutlined />} disabled>提交审核</Button></Tooltip>
-        <Button icon={<SyncOutlined />} onClick={onRegenerate}>重新生成</Button>
+        <Button icon={<SyncOutlined />} disabled={!permissions.canGenerate} onClick={onRegenerate}>重新生成</Button>
         <Button icon={<CopyOutlined />} onClick={onCopyLink}>复制报告链接</Button>
         <Tooltip title={disabledTip}><Button icon={<InboxOutlined />} disabled>归档报告</Button></Tooltip>
         <Tooltip title={disabledTip}><Button danger icon={<DeleteOutlined />} disabled>删除报告</Button></Tooltip>

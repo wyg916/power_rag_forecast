@@ -174,7 +174,7 @@ export function TaskCenterPage(_props: PageProps) {
   const [taskData, setTaskData] = useState<any>({ tasks: [], metrics: [], health: {}, retryQueue: [], recentLogs: [], queueRows: [], trendRows: [] });
   const [loading, setLoading] = useState(true);
   const { authRequired, hasPermission } = useAuth();
-  const canRunTask = !authRequired || hasPermission('task:run');
+  const canRunTask = !authRequired || hasPermission('task:manage');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);

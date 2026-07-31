@@ -110,7 +110,7 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
+async function requestBinaryResponse(path: string, options?: RequestInit): Promise<Response> {
   const token = getStoredAccessToken();
   const response = await fetch(`${API_BASE}${path}`, {
     ...(options || {}),
@@ -128,7 +128,27 @@ async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
     }
     throw new ApiError(response.status, parsed.message, parsed.code, parsed.requestId);
   }
-  return response.blob();
+  return response;
+}
+
+async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
+  return (await requestBinaryResponse(path, options)).blob();
+}
+
+async function requestDownload(path: string): Promise<{ blob: Blob; filename: string }> {
+  const response = await requestBinaryResponse(path);
+  const disposition = response.headers.get('content-disposition') || '';
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const plain = disposition.match(/filename="?([^";]+)"?/i)?.[1];
+  let filename = plain || '';
+  if (encoded) {
+    try {
+      filename = decodeURIComponent(encoded);
+    } catch {
+      filename = encoded;
+    }
+  }
+  return { blob: await response.blob(), filename };
 }
 
 export function unwrapApi<T = any>(payload: any): T {
@@ -312,7 +332,7 @@ export const api = {
   },
   reportSummary: () => request<any>('/api/reports/summary'),
   reportDetail: (reportId: string) => request<any>(`/api/reports/${encodeURIComponent(reportId)}`),
-  reportDownloadUrl: (reportId: string) => downloadUrl(`/api/reports/${encodeURIComponent(reportId)}/download`),
+  reportDownload: (reportId: string) => requestDownload(`/api/reports/${encodeURIComponent(reportId)}/download`),
   generateReport: () => request<any>('/api/reports/generate', { method: 'POST', body: JSON.stringify({ run_id: 'latest' }) }),
   regenerateReport: (reportId: string) =>
     request<any>(`/api/reports/${encodeURIComponent(reportId)}/regenerate`, { method: 'POST', body: JSON.stringify({}) }),

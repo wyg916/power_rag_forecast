@@ -19,8 +19,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const defaultAuthRequired = import.meta.env.PROD ? '1' : '0';
-const authRequired = String(import.meta.env.VITE_AUTH_REQUIRED ?? defaultAuthRequired) !== '0';
+const authRequired = String(import.meta.env.VITE_AUTH_REQUIRED ?? '1') !== '0';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(Boolean(getStoredAccessToken()));
