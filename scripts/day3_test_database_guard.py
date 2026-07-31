@@ -32,6 +32,8 @@ ISOLATION_FLAG = "BETA10D_TEST_ISOLATION_ACTIVE"
 SCHEMA_ENV = "BETA10D_TEST_SCHEMA"
 ROLE_ENV = "BETA10D_TEST_ROLE"
 MODE_ENV = "BETA10D_TEST_DATABASE_MODE"
+SECURITY_DATABASE_URL_ENV = "SECURITY_DATABASE_URL"
+MIGRATION_DATABASE_URL_ENV = "MIGRATION_DATABASE_URL"
 _IDENTIFIER_RE = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 _SECRET_URL_RE = re.compile(r"(postgres(?:ql)?(?:\+\w+)?://[^:\s/@]+:)[^@\s]+(@)", re.IGNORECASE)
 
@@ -87,6 +89,15 @@ def build_isolated_runtime_url(database_url: str, schema: str, role: str) -> str
         raise DatabaseIsolationError("测试角色必须与测试 Schema 精确绑定")
     options = f"-csearch_path={schema},pg_catalog -crole={role}"
     return parsed.update_query_dict({"options": options}).render_as_string(hide_password=False)
+
+
+def build_isolated_security_url(runtime_url: str) -> str:
+    """Keep security repositories on the same disposable test identity."""
+
+    parsed = make_url(runtime_url)
+    query = dict(parsed.query)
+    query["application_name"] = "beta10d_security_isolated"
+    return parsed.set(query=query).render_as_string(hide_password=False)
 
 
 def _quote_identifier(value: str) -> str:
@@ -238,7 +249,11 @@ def configure_pytest_database() -> dict[str, Any]:
     load_dotenv()
     if os.environ.get(ISOLATION_FLAG, "").strip() != "1":
         had_database_url = bool(os.environ.get("DATABASE_URL", "").strip())
+        had_security_database_url = bool(os.environ.get(SECURITY_DATABASE_URL_ENV, "").strip())
+        had_migration_database_url = bool(os.environ.get(MIGRATION_DATABASE_URL_ENV, "").strip())
         os.environ["DATABASE_URL"] = ""
+        os.environ[SECURITY_DATABASE_URL_ENV] = ""
+        os.environ[MIGRATION_DATABASE_URL_ENV] = ""
         os.environ[MODE_ENV] = "disabled-no-database"
         readonly_option = "-c default_transaction_read_only=on"
         current_options = os.environ.get("PGOPTIONS", "").strip()
@@ -247,14 +262,19 @@ def configure_pytest_database() -> dict[str, Any]:
         return {
             "mode": "disabled-no-database",
             "local_database_url_was_blocked": had_database_url,
+            "security_database_url_was_blocked": had_security_database_url,
+            "migration_database_url_was_blocked": had_migration_database_url,
             "server_default_transaction_read_only": True,
         }
 
     schema = validate_isolated_identifier(os.environ.get(SCHEMA_ENV, ""), kind="测试 Schema")
     role = validate_isolated_identifier(os.environ.get(ROLE_ENV, ""), kind="测试角色")
     runtime = verify_isolated_runtime(os.environ.get("DATABASE_URL", ""), schema, role)
+    security_runtime = verify_isolated_runtime(
+        os.environ.get(SECURITY_DATABASE_URL_ENV, ""), schema, role
+    )
     os.environ[MODE_ENV] = "isolated-schema"
-    return {"mode": "isolated-schema", **runtime}
+    return {"mode": "isolated-schema", **runtime, "security_runtime": security_runtime}
 
 
 def _public_snapshot(engine: Engine) -> dict[str, Any]:
@@ -793,6 +813,7 @@ def run_isolated_command(
         created = True
         _run_alembic(base_url, schema, role, project_root)
         runtime_url = build_isolated_runtime_url(base_url, schema, role)
+        security_runtime_url = build_isolated_security_url(runtime_url)
         runtime_verification = verify_isolated_runtime(runtime_url, schema, role)
         isolated_migrated = _schema_snapshot(base_engine, schema)
         controlled_fixtures = _seed_controlled_business_fixtures(runtime_url)
@@ -802,6 +823,7 @@ def run_isolated_command(
         environment.update(
             {
                 "DATABASE_URL": runtime_url,
+                SECURITY_DATABASE_URL_ENV: security_runtime_url,
                 "APP_ENV": "test",
                 ISOLATION_FLAG: "1",
                 SCHEMA_ENV: schema,
@@ -809,6 +831,7 @@ def run_isolated_command(
                 MODE_ENV: "isolated-schema",
             }
         )
+        environment.pop(MIGRATION_DATABASE_URL_ENV, None)
         environment.pop("PGOPTIONS", None)
         child = subprocess.run(list(command), cwd=project_root, env=environment, check=False)
         child_returncode = child.returncode

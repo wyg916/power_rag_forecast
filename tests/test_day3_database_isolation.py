@@ -14,6 +14,7 @@ from scripts.day3_test_database_guard import (
     SCHEMA_ENV,
     TEST_ROLE_SUFFIX,
     DatabaseIsolationError,
+    build_isolated_security_url,
     build_isolated_runtime_url,
     validate_database_target,
     validate_isolated_identifier,
@@ -56,6 +57,12 @@ def test_runtime_url_contains_only_isolated_search_path_and_role():
     assert schema in runtime
     assert role in runtime
     assert "public" not in runtime
+    security_runtime = build_isolated_security_url(runtime)
+    assert security_runtime != runtime
+    assert "beta10d_security_isolated" in security_runtime
+    assert schema in security_runtime
+    assert role in security_runtime
+    assert "public" not in security_runtime
 
 
 def test_plain_pytest_mode_blocks_inherited_local_database_url():
@@ -71,6 +78,8 @@ result = configure_pytest_database()
 assert result["mode"] == "disabled-no-database"
 assert result["local_database_url_was_blocked"] is True
 assert os.environ["DATABASE_URL"] == ""
+assert os.environ["SECURITY_DATABASE_URL"] == ""
+assert os.environ["MIGRATION_DATABASE_URL"] == ""
 assert "default_transaction_read_only=on" in os.environ["PGOPTIONS"]
 from backend.app.repositories.base import postgres_engine
 assert postgres_engine() is None
@@ -96,6 +105,13 @@ def test_active_pytest_database_is_restricted_and_not_public():
     assert "public" not in verification["identity"]["current_schemas"]
     assert verification["alembic_head"] == EXPECTED_ALEMBIC_HEAD
     assert not any(verification["public_write_privileges"].values())
+    security_verification = verify_isolated_runtime(
+        os.environ["SECURITY_DATABASE_URL"], schema, role
+    )
+    assert security_verification["identity"]["current_schema"] == schema
+    assert security_verification["identity"]["current_user"] == role
+    assert "public" not in security_verification["identity"]["current_schemas"]
+    assert not any(security_verification["public_write_privileges"].values())
 
 
 def test_restricted_role_cannot_write_public():
