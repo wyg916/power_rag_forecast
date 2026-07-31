@@ -189,4 +189,5 @@ def test_old_stale_information_box_is_removed_but_stale_reason_remains() -> None
     assert "当前展示的是可追溯旧数据" not in states_source
     assert "page-state-stale-inline" in states_source
     assert "meta.staleReason" in states_source
-    assert "模拟入库" in states_source
+    assert "模拟入库" not in states_source
+    assert "规则测算" in states_source

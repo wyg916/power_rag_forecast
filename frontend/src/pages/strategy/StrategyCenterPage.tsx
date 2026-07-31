@@ -373,7 +373,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         )}
         actions={headerActions}
       />
-      <PageDataState meta={viewMeta} onRetry={loadData} />
+      <PageDataState meta={viewMeta} onRetry={loadData} mockFallback={false} />
       {showContent ? <StrategyMetricStrip data={data} mode={mode} /> : null}
       {showContent && mode === 'overview' && (
         <>

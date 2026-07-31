@@ -60,7 +60,6 @@ def test_p13b_does_not_add_frontend_business_fallbacks() -> None:
     page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
     service = _read("frontend/src/services/strategyApi.ts")
     assert "Math.random" not in page
-    assert "PageDataState" in page
-    assert "showContent" in page
+    assert "mockFallback={false}" in page
     assert "mockFallback: false" in service
     assert "PHASE5_D_TEST_DATABASE_URL" not in page

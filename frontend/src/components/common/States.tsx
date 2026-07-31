@@ -164,12 +164,17 @@ function PageStateMeta({ meta }: { meta: PageDataMeta }) {
 export function PageDataState({
   meta,
   onRetry,
-  loadingRows = 4
+  loadingRows = 4,
+  mockFallback = false
 }: {
   meta: PageDataMeta;
   onRetry?: () => void;
   loadingRows?: number;
+  mockFallback?: boolean;
 }) {
+  if (mockFallback) {
+    return <ErrorState code="MOCK_FALLBACK_BLOCKED" message="页面状态契约禁止使用模拟或固定业务值填充成功态。" />;
+  }
   if (meta.state === 'loading') {
     return (
       <section className="page-state-panel page-state-loading" aria-live="polite" aria-label="页面加载中">
