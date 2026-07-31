@@ -25,10 +25,11 @@ import { AppChart } from '../../components/charts/AppChart';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { PageHeader } from '../../components/common/PageHeader';
 import { PageTabs } from '../../components/common/PageTabs';
-import { DataSourceTag } from '../../components/common/States';
+import { DataSourceTag, PageDataState } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
 import { useAuth } from '../../context/AuthContext';
-import { getReportCenterData } from '../../services/reportApi';
+import { getReportCenterData, getReportFacts } from '../../services/reportApi';
+import { resolvePageDataMeta } from '../../services/viewState';
 import type { PageProps } from '../../types/ui';
 
 const statusColor: Record<string, string> = {
@@ -53,26 +54,24 @@ function shortTime(value: unknown) {
 
 function mainMetrics(summary: any) {
   return [
-    { title: '今日生成数', value: summary?.today_generated ?? 0, unit: '份', trendLabel: '同比 +12.5% ↑', status: 'success' as const },
-    { title: '待审核', value: summary?.pending_review ?? 0, unit: '份', trendLabel: '同比 +9.3% ↑', status: 'warning' as const },
-    { title: '已发布', value: summary?.published ?? 0, unit: '份', trendLabel: '同比 +18.7% ↑', status: 'success' as const },
-    { title: '驳回数', value: summary?.rejected ?? 0, unit: '份', trendLabel: '同比 -20.0% ↓', status: 'danger' as const }
+    { title: '今日生成数', value: summary?.today_generated ?? '--', unit: '份', trendLabel: '当前事实统计，无同比基线', status: 'success' as const },
+    { title: '待审核', value: summary?.pending_review ?? '--', unit: '份', trendLabel: '当前事实统计，无同比基线', status: 'warning' as const },
+    { title: '已发布', value: summary?.published ?? '--', unit: '份', trendLabel: '当前事实统计，无同比基线', status: 'success' as const },
+    { title: '驳回数', value: summary?.rejected ?? '--', unit: '份', trendLabel: '当前事实统计，无同比基线', status: 'danger' as const }
   ];
 }
 
 function reviewMetrics(summary: any) {
   return [
-    { title: '待审核', value: summary?.pending_review ?? 0, unit: '份报告', trendLabel: '较昨日 +3 份', status: 'warning' as const },
-    { title: '已通过', value: summary?.approved ?? summary?.published ?? 0, unit: '份报告', trendLabel: '较昨日 +8 份', status: 'success' as const },
-    { title: '待发布', value: summary?.pending_publish ?? 0, unit: '份报告', trendLabel: '较昨日 +1 份', status: 'info' as const },
-    { title: '已归档', value: summary?.archived ?? 0, unit: '份报告', trendLabel: '较昨日 +15 份', status: 'info' as const }
+    { title: '待审核', value: summary?.pending_review ?? '--', unit: '份报告', trendLabel: '当前事实统计，无昨日基线', status: 'warning' as const },
+    { title: '已通过/发布', value: summary?.approved ?? summary?.published ?? '--', unit: '份报告', trendLabel: '按持久化状态统计', status: 'success' as const },
+    { title: '待发布', value: summary?.pending_publish ?? '--', unit: '份报告', trendLabel: '接口未提供则不可计算', status: 'info' as const },
+    { title: '已归档', value: summary?.archived ?? '--', unit: '份报告', trendLabel: '接口未提供则不可计算', status: 'info' as const }
   ];
 }
 
 function buildPriceOption(rows: any[], review = false) {
-  const data = rows.length
-    ? rows
-    : Array.from({ length: 24 }).map((_, index) => ({ time: `${String(index).padStart(2, '0')}:00`, value: 0, actual: 0 }));
+  const data = rows;
   return {
     grid: { top: 36, right: 22, bottom: 28, left: 44 },
     tooltip: { trigger: 'axis' },
@@ -80,20 +79,11 @@ function buildPriceOption(rows: any[], review = false) {
       top: 0,
       itemWidth: 16,
       itemHeight: 8,
-      data: review ? ['本期', '上期', '同比'] : ['实时电价', '预测电价']
+      data: [review ? '报告绑定预测值' : '绑定预测值']
     },
     xAxis: { type: 'category', data: data.map((item) => item.time), axisTick: { show: false } },
-    yAxis: { type: 'value', name: '元/MWh', splitLine: { lineStyle: { color: '#edf1f7' } } },
-    series: review
-      ? [
-          { name: '本期', type: 'line', smooth: true, data: data.map((item) => item.value), color: '#0fb98a' },
-          { name: '上期', type: 'line', smooth: true, data: data.map((item) => item.actual), color: '#2f80ed', lineStyle: { type: 'dashed' } },
-          { name: '同比', type: 'line', smooth: true, data: data.map((item) => Number(item.value || 0) * 0.85), color: '#f59e0b' }
-        ]
-      : [
-          { name: '实时电价', type: 'line', smooth: true, data: data.map((item) => item.actual), color: '#0fb98a' },
-          { name: '预测电价', type: 'line', smooth: true, data: data.map((item) => item.value), color: '#2f80ed', lineStyle: { type: 'dashed' } }
-        ]
+    yAxis: { type: 'value', name: '元/kWh', splitLine: { lineStyle: { color: '#edf1f7' } } },
+    series: [{ name: review ? '报告绑定预测值' : '绑定预测值', type: 'line', smooth: true, data: data.map((item) => item.value), color: '#2f80ed' }]
   };
 }
 
@@ -103,7 +93,7 @@ const reportTabs = [
 ];
 
 export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const isReviewPage = activeSubKey === 'report-review' || activeSubKey === 'report-publish';
   const activeTabKey = isReviewPage ? 'report-review' : 'report-daily';
   const [data, setData] = useState<any>({ reports: [], summary: {} });
@@ -135,10 +125,52 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   const reports = data.reports || [];
   const activeReport = useMemo(
-    () => reports.find((item: any) => item.report_id === selectedId) || data.activeReport || reports[0],
+    () => data.activeReport?.report_id === selectedId
+      ? data.activeReport
+      : reports.find((item: any) => item.report_id === selectedId) || data.activeReport || reports[0],
     [reports, selectedId, data.activeReport]
   );
+  useEffect(() => {
+    const selected = reports.find((item: any) => item.report_id === selectedId);
+    if (!selected) return;
+    let cancelled = false;
+    getReportFacts(selected).then((facts) => {
+      if (cancelled) return;
+      setData((current: any) => ({
+        ...current,
+        activeReport: facts.report,
+        previewCurve: facts.previewCurve,
+        previewMetrics: facts.previewMetrics,
+        risks: facts.risks,
+        reviews: facts.reviews,
+        generatedAt: facts.report?.generated_at,
+        validFrom: facts.report?.validFrom,
+        validTo: facts.report?.validTo,
+        runId: facts.report?.run_id,
+        isStale: Boolean(facts.report?.isStale),
+        staleReason: facts.report?.staleReason || ''
+      }));
+    }).catch((error) => {
+      if (!cancelled) setData((current: any) => ({ ...current, partialErrors: [...(current.partialErrors || []), String(error)] }));
+    });
+    return () => { cancelled = true; };
+  }, [reports, selectedId]);
   const metrics = isReviewPage ? reviewMetrics(data.summary) : mainMetrics(data.summary);
+  const viewMeta = useMemo(() => resolvePageDataMeta({
+    loading,
+    hasData: Boolean(activeReport),
+    empty: !loading && !activeReport,
+    partialErrors: data.partialErrors,
+    source: data.dataSource,
+    generatedAt: data.generatedAt || activeReport?.generated_at,
+    runId: data.runId || activeReport?.run_id,
+    modelVersion: activeReport?.modelVersion,
+    featureVersion: activeReport?.featureVersion,
+    isStale: Boolean(data.isStale ?? activeReport?.isStale),
+    staleReason: data.staleReason || activeReport?.staleReason,
+    queryScope: isReviewPage ? '报告审核与发布' : '报告列表与预览'
+  }), [activeReport, data, isReviewPage, loading]);
+  const showContent = viewMeta.state === 'success' || viewMeta.state === 'stale';
 
   async function generateReport() {
     const res = await api.generateReport();
@@ -159,7 +191,11 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       message.warning('驳回报告需要填写审核意见');
       return;
     }
-    const payload = { reviewer: 'admin', review_comment: reviewComment || (action === 'approve' ? '审核通过' : '发布归档') };
+    if (!user?.username) {
+      message.error('当前登录身份不可用，无法写入可追溯审核记录');
+      return;
+    }
+    const payload = { reviewer: user.username, review_comment: reviewComment || (action === 'approve' ? '审核通过' : '发布归档') };
     if (action === 'approve') await api.approveReport(activeReport.report_id, payload);
     if (action === 'reject') await api.rejectReport(activeReport.report_id, payload);
     if (action === 'publish') await api.publishReport(activeReport.report_id, payload);
@@ -202,12 +238,14 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onGenerate={generateReport}
           canGenerate={permissions.canGenerate}
           source={data.dataSource}
+          windowText={activeReport?.data_window}
         />}
       />
-      <div className="report-metric-band">
+      <PageDataState meta={viewMeta} onRetry={() => loadData(keyword)} />
+      {showContent ? <div className="report-metric-band">
         <MetricGrid items={metrics} icons={metricIcons} loading={loading} minColumnWidth={160} />
-      </div>
-      {isReviewPage ? (
+      </div> : null}
+      {showContent && isReviewPage ? (
         <ReviewPublishView
           reports={reports}
           total={data.total || reports.length}
@@ -216,6 +254,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           setSelectedId={setSelectedId}
           curve={data.previewCurve || []}
           previewMetrics={data.previewMetrics || []}
+          reviews={data.reviews || []}
           reviewComment={reviewComment}
           setReviewComment={setReviewComment}
           onApprove={() => review('approve')}
@@ -225,7 +264,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onDownload={downloadReport}
           permissions={permissions}
         />
-      ) : (
+      ) : showContent ? (
         <ReportPreviewView
           reports={reports}
           total={data.total || reports.length}
@@ -240,32 +279,32 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onCopyLink={copyLink}
           permissions={permissions}
         />
-      )}
+      ) : null}
     </div>
   );
 }
 
-function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, canGenerate, source }: any) {
+function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, canGenerate, source, windowText }: any) {
   return (
     <section className={`report-filter-bar ${review ? 'is-review' : 'is-list'}`}>
       <div className="report-filter-controls">
         <label>
           {review ? '报告批次' : '报告类型'}
-          <Select value={review ? '2025-06-21 批次' : '全部'} options={[{ value: review ? '2025-06-21 批次' : '全部', label: review ? '2025-06-21 批次' : '全部' }]} />
+          <Select disabled value="全部" options={[{ value: '全部', label: '全部（接口筛选待接入）' }]} />
         </label>
         <label>
           {review ? '报告版本' : '状态'}
-          <Select value="全部" options={[{ value: '全部', label: '全部' }]} />
+          <Select disabled value="全部" options={[{ value: '全部', label: '全部（接口筛选待接入）' }]} />
         </label>
         {review && (
           <label>
             审核人
-            <Select value="全部审核人" options={[{ value: '全部审核人', label: '全部审核人' }]} />
+            <Select disabled value="全部审核人" options={[{ value: '全部审核人', label: '全部审核人（接口筛选待接入）' }]} />
           </label>
         )}
         <label>
           日期范围
-          <Input value="2025-06-14 ~ 2025-06-21" readOnly />
+          <Input value={windowText && windowText !== '--' ? windowText : '当前报告未提供适用窗口'} readOnly />
         </label>
         {!review && (
           <Input.Search
@@ -291,7 +330,7 @@ function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, ca
             placeholder="搜索报告名称 / 版本号 / 批次号"
           />
         )}
-        {source ? <span className="report-source-pill">数据源 <DataSourceTag source={source} /></span> : null}
+        {source ? <span className="report-source-pill">业务来源 <DataSourceTag source={source} /></span> : null}
         <div className="report-filter-actions">
           {review ? <Button onClick={() => setKeyword('')}>重置</Button> : <Button type="primary" icon={<PlusCircleOutlined />} disabled={!canGenerate} onClick={onGenerate}>生成报告</Button>}
           {!review && <Button icon={<DownloadOutlined />}>导出</Button>}
@@ -345,8 +384,8 @@ function ReportPreviewView({ reports, total, activeReport, selectedId, setSelect
         <div className="report-mini-metrics">{previewMetrics.map((item: any) => <MiniMetric key={item.label} {...item} />)}</div>
         <div className="report-preview-split">
           <section>
-            <h3>分时电价走势（元/MWh）</h3>
-            <AppChart option={buildPriceOption(curve)} height={220} />
+            <h3>报告绑定预测曲线（元/kWh）</h3>
+            {curve.length ? <AppChart option={buildPriceOption(curve)} height={220} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="该报告未绑定可用预测曲线" />}
           </section>
           <section>
             <h3>风险时段提醒</h3>
@@ -380,35 +419,35 @@ function ReportPreviewView({ reports, total, activeReport, selectedId, setSelect
   );
 }
 
-function ReviewPublishView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions }: any) {
+function ReviewPublishView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviews, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions }: any) {
   return (
     <div className="report-review-grid">
       <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} />
       <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />}>全屏预览</Button><Button icon={<DownloadOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview">
         <div className="report-review-title">
           <h3>{activeReport?.title || '--'}</h3>
-          <Tag color="green">v2.3.1</Tag>
+          <Tag color="blue">{activeReport?.reportSchemaVersion || '报告版本未提供'}</Tag>
           <Tag color={statusColor[activeReport?.statusText] || 'warning'}>{activeReport?.statusText || '待审核'}</Tag>
+          {activeReport?.isStale ? <Tag color="warning">历史窗口已结束</Tag> : null}
         </div>
         <ReportBaseInfo report={activeReport} compact />
         <p className="report-review-summary">{activeReport?.summaryText || '暂无报告摘要'}</p>
         <div className="report-mini-metrics">{previewMetrics.map((item: any) => <MiniMetric key={item.label} {...item} />)}</div>
-        <h3>电价趋势（元/MWh）</h3>
-        <AppChart option={buildPriceOption(curve, true)} height={230} />
+        <h3>报告绑定预测曲线（元/kWh）</h3>
+        {curve.length ? <AppChart option={buildPriceOption(curve, true)} height={230} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="该报告未绑定可用预测曲线" />}
         <div className="report-version-grid">
           <div>
             <h3>版本信息</h3>
-            <p><span>当前版本</span><strong>v2.3.1</strong></p>
-            <p><span>上个版本</span><strong>v2.3.0</strong></p>
+            <p><span>报告契约版本</span><strong>{activeReport?.reportSchemaVersion || '--'}</strong></p>
+            <p><span>数据版本</span><strong title={activeReport?.dataVersion}>{activeReport?.dataVersion ? `${activeReport.dataVersion.slice(0, 16)}…` : '--'}</strong></p>
             <p><span>版本状态</span><strong>{activeReport?.statusText || '--'}</strong></p>
-            <p><span>报告模板</span><strong>市场运行周报模板 v1.2</strong></p>
+            <p><span>模型版本</span><strong>{activeReport?.modelVersion || '--'}</strong></p>
           </div>
           <div>
-            <h3>变更说明</h3>
-            <p>新增：增加分时电价对比图表</p>
-            <p>优化：优化负荷预测模型参数</p>
-            <p>修正：修正部分数据口径说明</p>
-            <p>调整：调整峰谷价差计算方式</p>
+            <h3>事实边界</h3>
+            <p>报告仅展示绑定 run_id 的预测与报告内容。</p>
+            <p>当前无上一版本或同比基线，不生成对比结论。</p>
+            <p>{activeReport?.isStale ? '适用窗口已结束，仅用于审计与复盘。' : '适用窗口内仍须核对最新市场事实。'}</p>
           </div>
         </div>
       </SectionCard>
@@ -424,12 +463,12 @@ function ReviewPublishView({ reports, total, activeReport, selectedId, setSelect
             <Button disabled={!permissions.canReview} onClick={onPublish}>发布归档</Button>
           </div>
         </SectionCard>
-        <SectionCard title="发布归档流程" className="report-process-card"><ProcessSteps /></SectionCard>
+        <SectionCard title="发布归档流程" className="report-process-card"><ProcessSteps report={activeReport} reviews={reviews} /></SectionCard>
         <div className="report-review-info-grid">
-          <SmallInfoCard title="时间线" rows={['2025-06-21 09:45:21 系统生成', '2025-06-21 09:50:12 提交审核', '当前节点：初审']} />
-          <SmallInfoCard title="审核记录" rows={['张三（初审）：审核中', '李四（复审）：待处理', '王五（终审）：待处理']} />
-          <SmallInfoCard title="版本信息" rows={['当前版本：v2.3.1', '上个版本：v2.3.0', '文件格式：后端生成文件']} />
-          <SmallInfoCard title="操作日志" rows={['系统生成报告', 'admin 提交审核', '查看更多']} />
+          <SmallInfoCard title="时间线" rows={[`${fmtTime(activeReport?.generated_at)} 系统生成`, `当前状态：${activeReport?.statusText || '--'}`]} />
+          <SmallInfoCard title="审核记录" rows={(reviews || []).length ? reviews.map((item: any) => `${item.reviewer || '未知审核人'}：${item.status || item.action || '--'} · ${fmtTime(item.updated_at || item.created_at)}`) : ['暂无持久化审核记录']} />
+          <SmallInfoCard title="版本信息" rows={[`报告契约：${activeReport?.reportSchemaVersion || '--'}`, `数据版本：${activeReport?.dataVersion ? `${activeReport.dataVersion.slice(0, 16)}…` : '--'}`]} />
+          <SmallInfoCard title="追溯信息" rows={[`run_id：${activeReport?.run_id || '--'}`, `适用窗口：${activeReport?.data_window || '--'}`]} />
         </div>
       </div>
     </div>
@@ -445,17 +484,19 @@ function ReportBaseInfo({ report, compact }: any) {
       <p><span>生成时间</span><strong>{fmtTime(report?.generated_at)}</strong></p>
       <p><span>关联批次</span><strong>{report?.batch || report?.run_id || '--'}</strong></p>
       <p><span>数据时间</span><strong>{report?.data_window || '--'}</strong></p>
+      <p><span>模型 / 特征</span><strong>{report?.modelVersion || '--'} / {report?.featureVersion || '--'}</strong></p>
+      <p><span>事实状态</span><strong>{report?.isStale ? '历史窗口已结束' : report?.validFrom && report?.validTo ? '报告窗口有效' : '有效期未提供，不判定为当前'}</strong></p>
     </div>
   );
 }
 
-function MiniMetric({ label, value, unit, change }: any) {
+function MiniMetric({ label, value, unit }: any) {
   return (
     <div>
       <span>{label}</span>
       <strong>{value}</strong>
       <em>{unit}</em>
-      <small className={String(change).startsWith('-') ? 'down' : ''}>同比 {change}</small>
+      <small>当前报告事实 · 无对比基线</small>
     </div>
   );
 }
@@ -479,30 +520,41 @@ function QuickActions({ onDownload, onRegenerate, onCopyLink, permissions }: any
 }
 
 function PublishTimeline({ report }: any) {
+  const review = report?.latestReview || {};
+  const reviewed = Boolean(review?.updated_at || review?.created_at);
+  const published = report?.statusText === '已发布';
+  const archived = report?.statusText === '已归档';
   return (
     <SectionCard title="发布记录" className="report-timeline-card">
       <Timeline
         items={[
           { color: 'green', children: <div><strong>系统生成</strong><p>{fmtTime(report?.generated_at)}</p><span>报告已由系统自动生成</span></div> },
-          { color: 'orange', children: <div><strong>提交审核</strong><p>--</p><span>待写入审核记录</span></div> },
-          { color: 'green', children: <div><strong>审核通过</strong><p>--</p><span>审核通过后展示</span></div> },
-          { color: 'green', children: <div><strong>发布成功</strong><p>--</p><span>发布后展示</span></div> },
-          { color: 'gray', children: <div><strong>归档</strong><p>--</p><span>尚未归档</span></div> }
+          { color: reviewed ? 'orange' : 'gray', children: <div><strong>审核记录</strong><p>{reviewed ? fmtTime(review.updated_at || review.created_at) : '--'}</p><span>{reviewed ? `${review.reviewer || '审核人未提供'} · ${review.review_status || '--'}` : '暂无持久化审核记录'}</span></div> },
+          { color: published ? 'green' : 'gray', children: <div><strong>发布</strong><p>{published ? fmtTime(review.updated_at || review.created_at) : '--'}</p><span>{published ? '报告状态为已发布' : '尚未发布'}</span></div> },
+          { color: archived ? 'green' : 'gray', children: <div><strong>归档</strong><p>{archived ? fmtTime(review.updated_at || review.created_at) : '--'}</p><span>{archived ? '报告状态为已归档' : '尚未归档'}</span></div> }
         ]}
       />
     </SectionCard>
   );
 }
 
-function ProcessSteps() {
-  const steps = ['系统生成', '提交审核', '审核中', '审核通过', '发布归档'];
+function ProcessSteps({ report, reviews = [] }: { report: any; reviews: any[] }) {
+  const status = String(report?.status || '').toLowerCase();
+  const reviewTime = reviews[0]?.updated_at || reviews[0]?.created_at;
+  const steps = [
+    { label: '系统生成', done: Boolean(report?.generated_at), time: report?.generated_at },
+    { label: '形成审核记录', done: reviews.length > 0, time: reviewTime },
+    { label: '审核完成', done: ['approved', 'rejected', 'published', 'archived'].includes(status), time: reviewTime },
+    { label: '发布', done: ['published', 'archived'].includes(status), time: reviewTime },
+    { label: '归档', done: status === 'archived', time: reviewTime }
+  ];
   return (
     <div className="report-process-steps">
       {steps.map((step, index) => (
-        <div key={step} className={index < 3 ? 'done' : ''}>
+        <div key={step.label} className={step.done ? 'done' : ''}>
           <i>{index + 1}</i>
-          <span>{step}</span>
-          <small>{index < 3 ? '06-21 09:45' : '未完成'}</small>
+          <span>{step.label}</span>
+          <small>{step.done ? shortTime(step.time) : '未完成'}</small>
         </div>
       ))}
     </div>

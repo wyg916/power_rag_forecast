@@ -57,9 +57,11 @@ function normalizeRisks(summary: any) {
   }));
 }
 
-function normalizeReport(item: any) {
+export function normalizeReport(item: any) {
   const summary = item?.summary || {};
   const metadata = item?.metadata || {};
+  const meta = item?.meta || {};
+  const source = summary?.source || metadata?.source || {};
   const executiveSummary = summary?.executive_summary || {};
   const id = item?.report_id || item?.run_id || 'latest';
   return {
@@ -69,8 +71,21 @@ function normalizeReport(item: any) {
     statusText: statusText(item?.status),
     typeText: typeText(item?.report_type),
     generated_at: item?.generated_at || item?.updated_at || item?.created_at,
-    batch: metadata?.batch || item?.run_id || 'latest',
-    data_window: metadata?.data_window || metadata?.report_date || summary?.report_date || '--',
+    batch: metadata?.batch || item?.run_id || '--',
+    validFrom: source?.forecast_start_at || metadata?.forecast_start_at || meta?.valid_from || null,
+    validTo: source?.forecast_end_at || metadata?.forecast_end_at || meta?.valid_to || null,
+    data_window: source?.forecast_start_at && source?.forecast_end_at
+      ? `${String(source.forecast_start_at).slice(0, 16)} 至 ${String(source.forecast_end_at).slice(0, 16)}`
+      : metadata?.data_window || metadata?.report_date || summary?.report_date || '--',
+    modelVersion: metadata?.model_version || source?.model_version || meta?.model_version || '--',
+    featureVersion: metadata?.feature_version || source?.feature_version || meta?.feature_version || '--',
+    reportSchemaVersion: metadata?.report_schema_version || '--',
+    dataVersion: source?.result_hash || metadata?.result_hash || metadata?.schema_hash || meta?.data_version || '--',
+    isStale: Boolean(metadata?.is_stale || source?.is_stale || meta?.is_stale),
+    staleReason: metadata?.stale_reason || source?.stale_reason || meta?.staleness_reason || meta?.stale_reason || '',
+    sourceLabel: metadata?.is_stale || source?.is_stale || meta?.is_stale ? '历史报告事实' : '报告事实记录',
+    availability: meta?.availability || (item?.available === false ? 'unavailable' : 'available'),
+    latestReview: item?.latest_review || {},
     metrics: summary?.metrics || summary?.kpis || executiveSummary,
     risks: normalizeRisks(summary),
     summaryText:
@@ -80,22 +95,54 @@ function normalizeReport(item: any) {
       (Object.keys(executiveSummary).length
         ? `共 ${executiveSummary.record_count ?? '--'} 个预测时点，平均电价 ${executiveSummary.average_price ?? '--'} 元/MWh，最高 ${executiveSummary.maximum_price ?? '--'}，最低 ${executiveSummary.minimum_price ?? '--'}；尖峰风险 ${executiveSummary.spike_risk_hour_count ?? '--'} 个时段，负电价 ${executiveSummary.negative_price_hour_count ?? '--'} 个时段。`
         : '') ||
-      '后端报告结果未返回结构化摘要，页面保留报告预览结构。'
+      '报告事实未提供结构化摘要。'
   };
 }
 
 function buildPreviewCurve(forecast: any) {
   const rows = Array.isArray(forecast?.records) ? forecast.records : [];
-  return rows.slice(0, 24).map((row: any, index: number) => ({
-    time: `${String(row.hour ?? index).padStart(2, '0')}:00`,
-    value: Number(row.predicted_price ?? row.corrected_predicted_price ?? 0),
-    actual: Number(row.actual_price ?? row.predicted_price ?? row.corrected_predicted_price ?? 0)
-  }));
+  return rows.slice(0, 24).flatMap((row: any, index: number) => {
+    const value = Number(row.predicted_price ?? row.corrected_predicted_price);
+    if (!Number.isFinite(value)) return [];
+    const datetime = String(row.forecast_datetime || row.datetime || '');
+    return [{
+      time: datetime.length >= 16 ? datetime.slice(11, 16) : `${String(row.hour ?? index).padStart(2, '0')}:00`,
+      value
+    }];
+  });
+}
+
+function buildPreviewMetrics(report: any) {
+  const metrics = report?.metrics || {};
+  return [
+    { label: '预测时点数', value: metricValue(metrics, ['record_count'], '--'), unit: '个' },
+    { label: '最高预测价', value: metricValue(metrics, ['max_price', 'highest_price', 'maximum_price'], '--'), unit: '元/kWh' },
+    { label: '最低预测价', value: metricValue(metrics, ['min_price', 'lowest_price', 'minimum_price'], '--'), unit: '元/kWh' },
+    { label: '平均预测价', value: metricValue(metrics, ['avg_price', 'average_price'], '--'), unit: '元/kWh' },
+    { label: '尖峰风险时点', value: metricValue(metrics, ['spike_risk_hour_count', 'high_risk_count'], '--'), unit: '个' }
+  ];
+}
+
+export async function getReportFacts(report: any): Promise<any> {
+  if (!report?.report_id) return { report, previewCurve: [], previewMetrics: [], risks: [], reviews: [] };
+  const [detailPayload, forecast, reviewsPayload] = await Promise.all([
+    api.reportDetail(report.report_id),
+    report?.run_id ? api.forecastRunResults(report.run_id) : Promise.resolve({ records: [] }),
+    api.reportReviews(report.report_id)
+  ]);
+  const detail = normalizeReport(detailPayload?.report_id ? { ...report, ...detailPayload } : report);
+  return {
+    report: detail,
+    previewCurve: buildPreviewCurve(forecast),
+    previewMetrics: buildPreviewMetrics(detail),
+    risks: detail.risks || [],
+    reviews: reviewsPayload?.reviews || []
+  };
 }
 
 export async function getReportCenterData(params: Record<string, any> = {}): Promise<any> {
   const partialErrors: string[] = [];
-  const [list, summary, latest, forecast] = await Promise.all([
+  const [list, summary, latest] = await Promise.all([
     api.reports({ page: 1, page_size: 20, ...params }).catch((error) => {
       partialErrors.push(error instanceof Error ? error.message : String(error));
       return { items: [], total: 0 };
@@ -107,35 +154,39 @@ export async function getReportCenterData(params: Record<string, any> = {}): Pro
     api.reportLatest().catch((error) => {
       partialErrors.push(error instanceof Error ? error.message : String(error));
       return null;
-    }),
-    api.forecastLatest().catch((error) => {
-      partialErrors.push(error instanceof Error ? error.message : String(error));
-      return null;
     })
   ]);
 
   const reports = (list.items || []).map(normalizeReport);
   const latestReport = latest?.report_id || latest?.run_id ? normalizeReport(latest) : null;
   const activeReport = reports[0] || latestReport;
-  const metrics = activeReport?.metrics || {};
+  let facts = { report: activeReport, previewCurve: [] as any[], previewMetrics: buildPreviewMetrics(activeReport), risks: activeReport?.risks || [], reviews: [] as any[] };
+  if (activeReport) {
+    try {
+      facts = await getReportFacts(activeReport);
+    } catch (error) {
+      partialErrors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
 
   return withServiceState(
     {
-      dataSource: list.source || latest?.source || 'report_api',
+      dataSource: list?.meta?.source_type || latest?.meta?.source_type || list.source || latest?.source || 'unavailable',
       reports,
       total: list.total || reports.length,
       summary,
-      activeReport,
+      activeReport: facts.report,
       latestReport,
-      previewCurve: buildPreviewCurve(forecast),
-      previewMetrics: [
-        { label: '全网用电量', value: metricValue(metrics, ['total_load', 'energy', 'total_energy'], '--'), unit: '万kWh', change: '+7.21%' },
-        { label: '最高电价', value: metricValue(metrics, ['max_price', 'highest_price', 'maximum_price'], '--'), unit: '元/MWh', change: '+18.65%' },
-        { label: '最低电价', value: metricValue(metrics, ['min_price', 'lowest_price', 'minimum_price'], '--'), unit: '元/MWh', change: '-12.38%' },
-        { label: '平均电价', value: metricValue(metrics, ['avg_price', 'average_price'], '--'), unit: '元/MWh', change: '+3.21%' },
-        { label: '预测准确率', value: metricValue(metrics, ['accuracy', 'confidence'], '--'), unit: '%', change: '+2.40%' }
-      ],
-      risks: activeReport?.risks || [],
+      previewCurve: facts.previewCurve,
+      previewMetrics: facts.previewMetrics,
+      risks: facts.risks,
+      reviews: facts.reviews,
+      generatedAt: facts.report?.generated_at || list?.meta?.generated_at,
+      validFrom: facts.report?.validFrom || list?.meta?.valid_from,
+      validTo: facts.report?.validTo || list?.meta?.valid_to,
+      runId: facts.report?.run_id || list?.meta?.run_id,
+      isStale: Boolean(facts.report?.isStale ?? list?.meta?.is_stale),
+      staleReason: facts.report?.staleReason || list?.meta?.staleness_reason || list?.meta?.stale_reason || '',
       partialErrors
     },
     {
