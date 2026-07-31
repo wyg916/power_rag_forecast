@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { PageHeader, type PageHeaderAction } from '../../components/common/PageHeader';
 import { PageTabs } from '../../components/common/PageTabs';
-import { DataStateBanner } from '../../components/common/States';
+import { PageDataState } from '../../components/common/States';
 import {
   ReviewWorkspace,
   StorageWorkspace,
@@ -13,6 +13,7 @@ import {
   StrategyOverviewMain
 } from '../../components/strategy/StrategyDesign';
 import { getStrategyCenterData } from '../../services/strategyApi';
+import { resolvePageDataMeta } from '../../services/viewState';
 import { useAuth } from '../../context/AuthContext';
 import type { PageProps } from '../../types/ui';
 
@@ -28,6 +29,15 @@ const REVIEW_FILTER_POLICY = 'preserve-within-session';
 function displayTimestamp(value: unknown) {
   const text = String(value || '').trim();
   return text ? text.replace('T', ' ').slice(0, 19) : '--';
+}
+
+function staleReasonText(value?: string) {
+  const labels: Record<string, string> = {
+    forecast_window_expired: '预测适用窗口已结束',
+    runtime_facts_older_than_6h: '运行事实已超过 6 小时',
+    historical_run: '当前查看的是历史批次'
+  };
+  return labels[String(value || '')] || '数据超过有效时限';
 }
 
 const strategyTabs = [
@@ -110,7 +120,9 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       setSelectedStorage((current) => result.executionItems?.some((item: any) => item.key === current) ? current : result.executionItems?.[0]?.key);
       setSelectedReview((current) => result.reviewRows?.some((item: any) => item.key === current) ? current : result.reviewRows?.[0]?.key);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '策略数据加载失败');
+      const reason = error instanceof Error ? error.message : '策略数据加载失败';
+      setData({ available: false, empty: false, error: reason, partialErrors: [] });
+      message.error(reason);
     } finally {
       setLoading(false);
     }
@@ -175,7 +187,22 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     }
   }
 
-  const stateVisible = loading || data?.empty || Boolean(data?.partialErrors?.length);
+  const viewMeta = useMemo(() => resolvePageDataMeta({
+    loading,
+    hasData: Boolean(data?.available && !data?.empty),
+    empty: Boolean(data?.empty),
+    error: data?.error,
+    partialErrors: data?.partialErrors,
+    source: data?.sourceType,
+    generatedAt: data?.generatedAt,
+    runId: data?.runId,
+    modelVersion: data?.modelVersion,
+    featureVersion: data?.featureVersion,
+    isStale: data?.isStale,
+    staleReason: data?.staleReason,
+    queryScope: mode === 'review' ? '策略人工复核' : mode === 'storage' ? '储能运行与执行反馈' : '策略事实总览'
+  }), [data, loading, mode]);
+  const showContent = viewMeta.state === 'success' || viewMeta.state === 'stale';
   const headerActions = useMemo<PageHeaderAction[]>(() => {
     const actions: PageHeaderAction[] = [
       {
@@ -233,10 +260,18 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     }
     return actions;
   }, [canConfigure, data?.executionItems, data?.hourlyPlan, filteredReviewRows, loadData, loading, mode, selectedDevice]);
-  const strategySubtitle = mode === 'overview'
-    ? '承接预测结果并形成交易决策的核心页面，提供可执行策略与风险管理建议。'
+  const strategySubtitle = loading
+    ? '正在核对策略、审核、预测有效期和运行反馈。'
+    : !data?.available
+      ? '当前策略事实不可用；页面不会生成默认策略、收益或执行状态。'
+      : mode === 'overview'
+    ? data?.strategyUsable
+      ? '展示处于有效窗口且通过治理门禁的策略事实；执行前仍须人工复核。'
+      : '展示可追溯的历史策略记录；当前记录已过期或未通过，不可作为当前策略。'
     : mode === 'storage'
-      ? '将价格预测转化为采购与储能动作建议，平衡成本、收益与风险。'
+      ? data?.isSimulated
+        ? '展示模拟设备、模拟执行与测算收益；所有结果均不代表实际执行或结算。'
+        : '展示设备运行、执行反馈与收益口径，支持只读复核。'
       : '承接高风险策略的人工审核与人机协同闭环，确保关键交易决策安全、合规、可追溯。';
 
   return (
@@ -264,16 +299,18 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               <strong>{displayTimestamp(data?.generatedAt)}</strong>
             </span>
             <span>
-              <small>数据来源</small>
+              <small>业务事实</small>
               <Tag color={data?.isStale ? 'warning' : data?.isSimulated ? 'processing' : data?.sourceType === 'unavailable' ? 'default' : 'success'}>
-                {data?.sourceLabel || data?.sourceType || '--'}
+                {data?.sourceLabel || '--'}
               </Tag>
             </span>
+            <span><small>策略状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
+            <span className="strategy-meta-run"><small>适用窗口</small><Tooltip title={`${data?.strategyValidFrom || '--'} 至 ${data?.strategyValidTo || '--'}`}><strong>{data?.strategyValidFrom && data?.strategyValidTo ? `${String(data.strategyValidFrom).slice(5, 16)} 至 ${String(data.strategyValidTo).slice(5, 16)}` : '--'}</strong></Tooltip></span>
             {data?.isStale && (
               <span className="strategy-meta-stale">
                 <small>过期原因</small>
                 <Tooltip title={data?.staleReason || '上游数据已过有效期'}>
-                  <Tag color="warning">{data?.staleReason || '数据已过期'}</Tag>
+                  <Tag color="warning">{staleReasonText(data?.staleReason)}</Tag>
                 </Tooltip>
               </span>
             )}
@@ -336,24 +373,15 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         )}
         actions={headerActions}
       />
-      {stateVisible && (
-        <DataStateBanner
-          scope="策略中心"
-          loading={loading}
-          empty={data?.empty}
-          partialErrors={data?.partialErrors}
-          mockFallback={false}
-          onRetry={loadData}
-        />
-      )}
-      <StrategyMetricStrip data={data} mode={mode} />
-      {mode === 'overview' && (
+      <PageDataState meta={viewMeta} onRetry={loadData} />
+      {showContent ? <StrategyMetricStrip data={data} mode={mode} /> : null}
+      {showContent && mode === 'overview' && (
         <>
           <StrategyOverviewMain data={data} />
           <StrategyOverviewBottom data={data} />
         </>
       )}
-      {mode === 'storage' && (
+      {showContent && mode === 'storage' && (
         <StorageWorkspace
           data={data}
           selectedKey={selectedStorage}
@@ -365,7 +393,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           }}
         />
       )}
-      {mode === 'review' && (
+      {showContent && mode === 'review' && (
         <ReviewWorkspace
           data={data}
           selectedKey={selectedReview}

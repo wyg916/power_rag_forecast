@@ -60,24 +60,24 @@ export function StrategyMetricStrip({ data, mode }: { data: any; mode: 'overview
   const rejectedReviews = reviewRows.filter((row: any) => row.status === 'rejected').length;
   const metrics = mode === 'overview'
     ? [
-        ['今日策略结论', data?.available ? '已生成策略' : '暂无策略', '建议：人工复核后执行', 'green'],
-        ['高价风险时段', `${summary.highRiskHours ?? 0} 段`, `${summary.highRiskCount ?? 0} 条风险建议`, 'red'],
-        ['低价采购窗口', `${summary.lowWindowCount ?? 0} 段`, '来自预测与策略结果', 'green'],
-        ['已实现收益', summary.realizedRevenue == null ? '--' : `¥${Number(summary.realizedRevenue).toLocaleString()}`, data?.isSimulated ? '业务规则模拟入库' : '来自执行反馈', 'blue'],
-        ['人工复核数', summary.reviewCount ?? 0, `${waitingReviews} 条待处理`, 'orange']
+        ['策略结论', data?.strategyUsable ? '当前有效策略' : data?.available ? '历史策略记录' : '暂无策略', data?.strategyUsable ? '人工复核通过后可供参考' : '已过期或未通过，不可作为当前策略', 'green'],
+        ['预测高价时段', summary.highRiskHours == null ? '--' : `${summary.highRiskHours} 段`, summary.highRiskCount == null ? '策略事实暂不可用' : `${summary.highRiskCount} 条绑定预测建议`, 'red'],
+        ['预测低价窗口', summary.lowWindowCount == null ? '--' : `${summary.lowWindowCount} 段`, data?.isStale ? '来自历史预测窗口' : '来自当前预测与策略结果', 'green'],
+        [data?.isSimulated ? '测算收益' : '执行收益', summary.realizedRevenue == null ? '--' : `¥${Number(summary.realizedRevenue).toLocaleString()}`, data?.isSimulated ? '模拟执行测算，非实际结算' : '来自执行反馈与结算口径', 'blue'],
+        ['人工复核数', summary.reviewCount ?? '--', summary.reviewCount == null ? '审核事实暂不可用' : `${waitingReviews} 条待处理`, 'orange']
       ]
     : mode === 'storage'
       ? [
-          ['储能设备', `${summary.onlineDeviceCount ?? 0} / ${summary.deviceCount ?? 0}`, '在线 / 全部设备', 'green'],
-          ['当前平均 SOC', summary.averageSoc == null ? '--' : `${fmt(summary.averageSoc, 1)}%`, '来自数据库最新采集点', 'blue'],
-          ['执行反馈', `${summary.completedExecutionCount ?? 0} / ${summary.executionCount ?? 0}`, '完成 / 全部执行项', 'orange'],
-          ['执行中', summary.inProgressExecutionCount ?? 0, '只读反馈，不下发设备指令', 'green'],
-          ['已实现收益', summary.realizedRevenue == null ? '--' : `¥${Number(summary.realizedRevenue).toLocaleString()}`, data?.isSimulated ? '模拟批次核算结果' : '执行结算结果', 'orange']
+          [data?.isSimulated ? '测算设备' : '储能设备', summary.deviceCount == null ? '--' : `${summary.onlineDeviceCount ?? '--'} / ${summary.deviceCount}`, data?.isSimulated ? '模拟在线 / 全部测算设备' : '在线 / 全部设备', 'green'],
+          [data?.isSimulated ? '测算平均 SOC' : '当前平均 SOC', summary.averageSoc == null ? '--' : `${fmt(summary.averageSoc, 1)}%`, data?.isSimulated ? '规则生成的设备状态点' : '来自数据库最新采集点', 'blue'],
+          ['执行反馈', summary.executionCount == null ? '--' : `${summary.completedExecutionCount ?? '--'} / ${summary.executionCount}`, data?.isSimulated ? '模拟完成 / 全部执行项' : '完成 / 全部执行项', 'orange'],
+          ['执行中', summary.inProgressExecutionCount ?? '--', '只读反馈，不下发设备指令', 'green'],
+          [data?.isSimulated ? '测算收益' : '执行收益', summary.realizedRevenue == null ? '--' : `¥${Number(summary.realizedRevenue).toLocaleString()}`, data?.isSimulated ? '模拟执行核算，非实际结算' : '执行结算结果', 'orange']
         ]
       : [
           ['待处理数量', waitingReviews, '草稿与待复核策略', 'orange'],
-          ['已通过', approvedReviews, '来自真实状态机', 'green'],
-          ['已驳回', rejectedReviews, '来自真实状态机', 'red'],
+          ['已通过', approvedReviews, '来自持久化审核状态机', 'green'],
+          ['已驳回', rejectedReviews, '来自持久化审核状态机', 'red'],
           ['紧急高风险', data?.reviewRows?.filter((row: any) => row.risk === 'high').length ?? 0, '需要优先人工判断', 'red'],
           ['平均处理时长', '--', '当前无已处理记录', 'blue']
         ];
@@ -151,8 +151,8 @@ function OverviewInsight({ data }: { data: any }) {
   const lowLabel = (summary.lowHours || []).slice(0, 5).join('、') || '--';
   return (
     <section className="strategy-card strategy-advice-card">
-      <div className="strategy-card-head"><h2>策略建议说明</h2><div><Tag color="success">优先执行</Tag><Tag color="warning">需人工确认</Tag></div></div>
-      <InsightBlock tone="green" title="结论">已基于预测与策略接口形成候选动作；实际执行前必须结合合同、设备和实时市场复核。</InsightBlock>
+      <div className="strategy-card-head"><h2>{data?.strategyUsable ? '策略建议说明' : '历史策略说明'}</h2><div><Tag color={data?.strategyUsable ? 'success' : 'error'}>{data?.strategyUsable ? '人工复核后参考' : '不可作为当前策略'}</Tag><Tag color="warning">需人工确认</Tag></div></div>
+      <InsightBlock tone={data?.strategyUsable ? 'green' : 'red'} title="结论">{data?.strategyUsable ? '已形成处于有效窗口的治理策略；实际执行前仍须结合合同、设备与当前市场复核。' : `当前记录状态为${data?.strategyStatusLabel || '不可用'}，且适用窗口已结束，仅用于审计和复盘。`}</InsightBlock>
       <InsightBlock tone="blue" title="业务建议">
         <ul><li>低价候选时段：{lowLabel}</li><li>高风险候选时段：{highLabel}</li><li>储能动作仅作为辅助决策建议。</li></ul>
       </InsightBlock>
@@ -160,7 +160,7 @@ function OverviewInsight({ data }: { data: any }) {
         <div className="priority-row"><strong>{summary.priorityScore >= 80 ? '高' : summary.priorityScore >= 50 ? '中' : '低'}（建议优先复核）</strong><Progress percent={summary.priorityScore || 0} showInfo={false} strokeColor={chartColors.green} /><span>{summary.priorityScore || 0} / 100</span></div>
       </InsightBlock>
       <InsightBlock tone="red" title="风险提示">
-        <ul><li>峰谷价差仅表示候选空间，不等同已实现收益。</li><li>执行反馈、SOC 与收益已通过数据库事实链路接入；模拟记录会明确标识。</li><li>高风险策略必须人工确认。</li></ul>
+        <ul><li>预测峰谷价差仅表示候选空间，不等同收益。</li><li>{data?.isSimulated ? '设备、SOC、执行与收益均为规则测算事实，不代表实际执行或结算。' : '执行反馈与收益来自数据库事实链路，仍须核对结算口径。'}</li><li>高风险策略必须人工确认。</li></ul>
       </InsightBlock>
     </section>
   );
@@ -182,17 +182,17 @@ export function StrategyOverviewBottom({ data }: { data: any }) {
   return (
     <div className="strategy-overview-bottom">
       <section className="strategy-card mini-panel"><div className="strategy-card-head"><h2>关键操作建议</h2></div>
-        <p><SafetyCertificateOutlined /> 低价补仓：优先复核 {summary.lowWindowCount || 0} 个候选窗口</p>
-        <p><AlertOutlined /> 晚高峰风险：关注 {summary.highRiskHours || 0} 个高风险时段</p>
-        <p><ThunderboltOutlined /> 储能状态：{summary.onlineDeviceCount || 0} 台在线，平均 SOC {summary.averageSoc == null ? '--' : `${fmt(summary.averageSoc, 1)}%`}</p>
+        <p><SafetyCertificateOutlined /> 低价补仓：优先复核 {summary.lowWindowCount ?? '--'} 个候选窗口</p>
+        <p><AlertOutlined /> 晚高峰风险：关注 {summary.highRiskHours ?? '--'} 个高风险时段</p>
+        <p><ThunderboltOutlined /> 储能状态：{summary.onlineDeviceCount ?? '--'} 台在线，平均 SOC {summary.averageSoc == null ? '--' : `${fmt(summary.averageSoc, 1)}%`}</p>
       </section>
       <section className="strategy-card mini-panel risk-source-panel"><div className="strategy-card-head"><h2>风险来源分布</h2></div>
         {riskRows.length ? riskRows.map(([name, count], index) => <p key={name}><i className={`dot dot-${index}`} /><span>{name}</span><strong>{String(count)}</strong></p>) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无风险来源" />}
       </section>
       <section className="strategy-card mini-panel execution-panel"><div className="strategy-card-head"><h2>执行状态摘要</h2></div>
-        <div><span>策略生成</span><strong>{summary.strategyCount || 0}</strong></div>
-        <div><span>执行反馈</span><strong>{summary.executionCount || 0}</strong></div>
-        <div><span>已完成</span><strong>{summary.completedExecutionCount || 0}</strong></div>
+        <div><span>策略生成</span><strong>{summary.strategyCount ?? '--'}</strong></div>
+        <div><span>执行反馈</span><strong>{summary.executionCount ?? '--'}</strong></div>
+        <div><span>已完成</span><strong>{summary.completedExecutionCount ?? '--'}</strong></div>
         <Progress
           type="circle"
           size={68}
@@ -202,8 +202,8 @@ export function StrategyOverviewBottom({ data }: { data: any }) {
       </section>
       <section className="strategy-card mini-panel revenue-panel"><div className="strategy-card-head"><h2>收益对比</h2></div>
         <p><span>峰谷价差空间</span><strong>{fmt(summary.spread)} 元/kWh</strong></p>
-        <p><span>已实现收益</span><strong>{summary.realizedRevenue == null ? '--' : `¥${Number(summary.realizedRevenue).toLocaleString()}`}</strong></p>
-        <small>{data?.isSimulated ? '收益来自数据库模拟批次，不代表真实结算。' : summary.spreadNote}</small>
+        <p><span>{data?.isSimulated ? '测算收益' : '执行收益'}</span><strong>{summary.realizedRevenue == null ? '--' : `¥${Number(summary.realizedRevenue).toLocaleString()}`}</strong></p>
+        <small>{data?.isSimulated ? '口径：模拟执行反馈汇总；不代表实际执行或结算。' : summary.spreadNote}</small>
       </section>
     </div>
   );
@@ -273,7 +273,7 @@ function StorageChart({ plan, simulated }: { plan: any[]; simulated: boolean }) 
   };
   return (
     <section className="strategy-card storage-chart-card">
-      <div className="strategy-card-head"><h2>设备 SOC 与充放电功率</h2><Tooltip title={simulated ? '数据由业务规则模拟后写入数据库，再经 API 返回' : '数据来自设备运行事实'}><Tag color={simulated ? 'processing' : 'success'}>{simulated ? '模拟入库' : '设备事实'}</Tag></Tooltip></div>
+      <div className="strategy-card-head"><h2>设备 SOC 与充放电功率</h2><Tooltip title={simulated ? '规则测算结果经数据库与 API 返回，不代表现场采集' : '数据来自设备运行事实'}><Tag color={simulated ? 'processing' : 'success'}>{simulated ? '模拟设备 / 非实际执行' : '设备运行事实'}</Tag></Tooltip></div>
       {plan.length ? <AppChart option={option} height={286} /> : <Empty description="当前设备暂无 SOC 事实" />}
     </section>
   );
@@ -284,9 +284,9 @@ function StorageExecutionTable({ rows, onSelect }: { rows: any[]; onSelect: (row
     { title: '窗口', dataIndex: 'time', width: 74 },
     { title: '动作', dataIndex: 'actionLabel', width: 72, render: (value) => <Tag color={value === '充电' ? 'success' : value === '放电' ? 'blue' : 'default'}>{value}</Tag> },
     { title: '计划功率', dataIndex: 'plannedPower', align: 'right', render: (value) => `${fmt(value, 1)} MW` },
-    { title: '实际功率', dataIndex: 'actualPower', align: 'right', render: (value) => value == null ? '--' : `${fmt(value, 1)} MW` },
+    { title: '反馈功率', dataIndex: 'actualPower', align: 'right', render: (value) => value == null ? '--' : `${fmt(value, 1)} MW` },
     { title: '状态', dataIndex: 'statusLabel', render: (value, row) => <Tag color={row.execution_status === 'completed' ? 'success' : row.execution_status === 'failed' ? 'error' : 'processing'}>{value}</Tag> },
-    { title: '收益', dataIndex: 'realizedRevenue', align: 'right', render: (value) => value == null ? '--' : `¥${Number(value).toLocaleString()}` },
+    { title: '收益/测算', dataIndex: 'realizedRevenue', align: 'right', render: (value) => value == null ? '--' : `¥${Number(value).toLocaleString()}` },
     { title: '反馈', render: (_, row) => <Button type="link" size="small" onClick={() => onSelect(row)}>查看详情</Button> }
   ];
   return (
@@ -300,7 +300,7 @@ function StorageExecutionTable({ rows, onSelect }: { rows: any[]; onSelect: (row
 function StorageDetail({ data, device, selected }: { data: any; device: any; selected: any }) {
   return (
     <section className="strategy-card storage-detail-panel">
-      <div className="strategy-card-head"><h2>执行与收益详情</h2><Tag color={data?.isSimulated ? 'processing' : 'success'}>{data?.isSimulated ? '模拟入库' : '运行事实'}</Tag></div>
+      <div className="strategy-card-head"><h2>执行与收益详情</h2><Tag color={data?.isSimulated ? 'processing' : 'success'}>{data?.isSimulated ? '模拟执行事实' : '运行事实'}</Tag></div>
       {selected ? (
         <>
           <h3>{selected.time} <Tag color={selected.actionLabel === '充电' ? 'success' : selected.actionLabel === '放电' ? 'blue' : 'default'}>{selected.actionLabel}</Tag></h3>
@@ -308,7 +308,7 @@ function StorageDetail({ data, device, selected }: { data: any; device: any; sel
           <InsightBlock tone="green" title="计划与实绩"><p>功率：{fmt(selected.plannedPower, 1)} / {selected.actualPower == null ? '--' : fmt(selected.actualPower, 1)} MW（计划 / 实际）</p><p>电量：{fmt(selected.plannedEnergy, 1)} / {selected.actualEnergy == null ? '--' : fmt(selected.actualEnergy, 1)} MWh</p></InsightBlock>
           <InsightBlock tone="orange" title="SOC 反馈"><p>执行前：{fmt(selected.socBefore, 1)}%</p><p>执行后：{selected.socAfter == null ? '--' : `${fmt(selected.socAfter, 1)}%`}</p></InsightBlock>
           <InsightBlock tone="red" title="执行反馈"><p>状态：{selected.statusLabel}</p><p>{selected.feedback_message || '暂无反馈说明'}</p></InsightBlock>
-          <div className="strategy-runtime-revenue"><span>已实现收益</span><strong>{selected.realizedRevenue == null ? '--' : `¥${Number(selected.realizedRevenue).toLocaleString()}`}</strong><small>{data?.isSimulated ? '模拟入库核算，不代表真实结算' : selected.settlement_method}</small></div>
+          <div className="strategy-runtime-revenue"><span>{data?.isSimulated ? '测算收益' : '执行收益'}</span><strong>{selected.realizedRevenue == null ? '--' : `¥${Number(selected.realizedRevenue).toLocaleString()}`}</strong><small>{data?.isSimulated ? `模拟执行核算，非实际结算；口径：${selected.settlement_method || '接口未提供'}` : selected.settlement_method}</small></div>
           <Tag color="blue">只读事实，不自动交易、不控制设备</Tag>
         </>
       ) : <Empty description="当前设备暂无执行反馈" />}
@@ -364,7 +364,7 @@ export function ReviewWorkspace({
 function ReviewBottomSummary({ rows }: { rows: any[] }) {
   return (
     <div className="review-bottom-summary">
-      <section className="strategy-card"><div className="strategy-card-head"><h2>复核队列摘要（实时）</h2></div>
+      <section className="strategy-card"><div className="strategy-card-head"><h2>复核队列摘要（当前筛选）</h2></div>
         <div className="review-kpis"><p><span>队列总数</span><strong>{rows.length}</strong></p><p><span>紧急</span><strong className="danger">{rows.filter((row) => row.risk === 'high').length}</strong></p><p><span>中风险</span><strong className="warning">{rows.filter((row) => row.risk === 'medium').length}</strong></p><p><span>低风险</span><strong>{rows.filter((row) => row.risk === 'low').length}</strong></p></div>
       </section>
       <section className="strategy-card"><div className="strategy-card-head"><h2>风险分布</h2></div>
@@ -396,7 +396,7 @@ function ReviewDetail({ row, onAction, permissions, reviewHistory }: {
             <InsightBlock tone="red" title="受控解释"><p>{row.evidence?.explanation}</p><p>风险概率：{row.evidence?.riskProbability == null ? '--' : `${fmt(row.evidence.riskProbability * 100, 1)}%`}</p></InsightBlock>
             <div className="review-evidence-grid">
               <InsightBlock tone="blue" title="模型依据"><p>最高预测价格：{fmt(row.evidence?.predictedPrice, 3)}</p><p>峰谷价差：{fmt(row.evidence?.peakValleySpread, 3)}</p><p>置信度：{row.confidence == null ? '未提供' : `${fmt(row.confidence, 1)}%`}</p></InsightBlock>
-              <InsightBlock tone="green" title="证据来源"><p>run_id：{row.runId || '--'}</p><p>report_id：{row.reportId || '--'}</p><p>来源：{row.sourceType || '--'}</p></InsightBlock>
+              <InsightBlock tone="green" title="证据来源"><p>run_id：{row.runId || '--'}</p><p>report_id：{row.reportId || '--'}</p><p>来源：{row.sourceLabel || '策略事实记录'}</p></InsightBlock>
             </div>
             <div className="review-related"><h3>完整性与禁止项</h3><p><span>内容哈希</span><strong>{row.contentHash ? `${row.contentHash.slice(0, 16)}…` : '--'}</strong></p><p><span>禁止自动动作</span><strong>{row.prohibitedActions?.length || 0} 项</strong></p></div>
             <div className="review-related"><h3>不可变审核历史（{reviewHistory.length}）</h3>

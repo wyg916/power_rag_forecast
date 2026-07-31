@@ -129,6 +129,7 @@ export async function getStrategyCenterData(): Promise<any> {
       isStale: Boolean(item.is_stale),
       staleReason: item.stale_reason,
       sourceType: item.source_type,
+      sourceLabel: item.source_type === 'historical' ? '历史策略记录' : item.is_stale ? '过期策略记录' : '策略事实记录',
       runId: item.run_id,
       reportId: item.report_id,
       contentHash: item.content_hash,
@@ -213,24 +214,41 @@ export async function getStrategyCenterData(): Promise<any> {
   const thresholds = today?.summary?.thresholds || latest?.thresholds || {};
   const spread = numberValue(today?.summary?.estimated_revenue) ?? numberValue(thresholds.spread) ?? numberValue(forecast?.summary?.peak_valley_spread);
   const maxRiskProbability = Math.max(0, ...forecastSeries.map((item: any) => Number(item.risk_probability || 0)));
+  const governedStrategy = governedItems[0] || null;
+  const strategyFactsAvailable = Boolean(today || latest || governance);
+  const runtimeFactsAvailable = Boolean(runtime);
+  const strategyIsStale = Boolean(governedStrategy?.is_stale || today?.is_stale || forecast?.is_stale);
+  const strategyStatus = governedStrategy?.status || (strategyItems.length ? 'unreviewed' : 'unavailable');
+  const strategyUsable = ['approved', 'published'].includes(strategyStatus) && !strategyIsStale;
+  const strategySourceLabel = !governedStrategy
+    ? strategyItems.length ? '未治理策略建议' : '策略暂不可用'
+    : strategyIsStale
+      ? `历史策略记录（${statusLabels[strategyStatus] || strategyStatus}）`
+      : `策略事实记录（${statusLabels[strategyStatus] || strategyStatus}）`;
 
   return withServiceState({
     available: Boolean(runtime?.available || governedItems.length || strategyItems.length || forecastSeries.length),
-    runId: governedItems[0]?.run_id || today?.run_id || latest?.run_id || forecast?.run_id || '',
+    runId: governedStrategy?.run_id || today?.run_id || latest?.run_id || forecast?.run_id || '',
     runtimeBatchId: runtime?.batch_ids?.[0] || '',
-    strategyDate: dateText(runtime?.generated_at || forecast?.summary?.forecast_start || forecast?.generated_at),
+    strategyDate: dateText(governedStrategy?.applicable_start_at || forecast?.summary?.forecast_start || forecast?.generated_at),
     strategyVersion: governedItems[0]?.strategy_version || '',
-    generatedAt: runtime?.generated_at || governedItems[0]?.generated_at || forecast?.generated_at || strategyItems[0]?.created_at || '',
-    modelVersion: governedItems[0]?.model_version || forecast?.model_version || '',
-    sourceType: runtime?.source_type || governedItems[0]?.source_type || today?.source_type || forecast?.source_type || 'unavailable',
-    sourceLabel: runtime?.source_label || governedItems[0]?.source_label || today?.source_label || forecast?.source_label || '',
+    generatedAt: governedStrategy?.generated_at || forecast?.generated_at || strategyItems[0]?.created_at || '',
+    modelVersion: governedStrategy?.model_version || forecast?.model_version || '',
+    featureVersion: governedStrategy?.feature_version || forecast?.feature_version || forecast?.meta?.feature_version || '',
+    sourceType: governedStrategy?.source_type || today?.source_type || forecast?.source_type || 'unavailable',
+    sourceLabel: strategySourceLabel,
+    strategyStatus,
+    strategyStatusLabel: statusLabels[strategyStatus] || strategyStatus,
+    strategyUsable,
+    strategyValidFrom: governedStrategy?.applicable_start_at || forecast?.meta?.valid_from || '',
+    strategyValidTo: governedStrategy?.applicable_end_at || forecast?.meta?.valid_to || '',
     isSimulated: Boolean(runtime?.is_simulated),
-    isStale: runtime?.available
-      ? Boolean(runtime?.is_stale)
-      : Boolean(governedItems[0]?.is_stale ?? today?.is_stale ?? forecast?.is_stale),
-    staleReason: runtime?.available
-      ? runtime?.stale_reason || ''
-      : governedItems[0]?.stale_reason || today?.stale_reason || forecast?.stale_reason || '',
+    isStale: strategyIsStale,
+    staleReason: governedStrategy?.stale_reason || today?.stale_reason || forecast?.stale_reason || '',
+    runtimeGeneratedAt: runtime?.generated_at || '',
+    runtimeIsStale: Boolean(runtime?.is_stale),
+    runtimeStaleReason: runtime?.stale_reason || '',
+    runtimeSourceLabel: runtime?.is_simulated ? '模拟设备与执行事实' : runtime?.available ? '设备运行事实' : '运行事实暂不可用',
     region: devices[0]?.region || governedItems[0]?.region || forecast?.region || today?.region || latest?.region || null,
     strategyItems,
     storageItems,
@@ -243,21 +261,22 @@ export async function getStrategyCenterData(): Promise<any> {
     reviewRows,
     config: resolvedConfig,
     summary: {
-      strategyCount: governedItems.length || Number(today?.summary?.strategy_count ?? strategyItems.length),
-      highRiskCount: highRiskItems.length,
-      highRiskHours: new Set(highRiskItems.map((item: any) => hourText(item.target_hour))).size,
-      lowWindowCount: new Set(lowItems.map((item: any) => hourText(item.target_hour))).size,
-      storageCount: storageItems.length,
-      deviceCount: Number(runtimeSummary.device_count || devices.length),
-      onlineDeviceCount: Number(runtimeSummary.online_device_count || 0),
-      executionCount: Number(runtimeSummary.execution_count || executionItems.length),
-      completedExecutionCount: Number(runtimeSummary.completed_count || 0),
-      inProgressExecutionCount: Number(runtimeSummary.in_progress_count || 0),
+      strategyCount: strategyFactsAvailable ? governedItems.length || Number(today?.summary?.strategy_count ?? strategyItems.length) : null,
+      highRiskCount: strategyFactsAvailable ? highRiskItems.length : null,
+      highRiskHours: strategyFactsAvailable ? new Set(highRiskItems.map((item: any) => hourText(item.target_hour))).size : null,
+      lowWindowCount: strategyFactsAvailable ? new Set(lowItems.map((item: any) => hourText(item.target_hour))).size : null,
+      storageCount: strategyFactsAvailable ? storageItems.length : null,
+      deviceCount: runtimeFactsAvailable ? Number(runtimeSummary.device_count ?? devices.length) : null,
+      onlineDeviceCount: runtimeFactsAvailable ? Number(runtimeSummary.online_device_count ?? 0) : null,
+      executionCount: runtimeFactsAvailable ? Number(runtimeSummary.execution_count ?? executionItems.length) : null,
+      completedExecutionCount: runtimeFactsAvailable ? Number(runtimeSummary.completed_count ?? 0) : null,
+      inProgressExecutionCount: runtimeFactsAvailable ? Number(runtimeSummary.in_progress_count ?? 0) : null,
       realizedRevenue: numberValue(runtimeSummary.realized_revenue_cny),
       averageSoc,
-      reviewCount: reviewRows.length,
+      reviewCount: strategyFactsAvailable ? reviewRows.length : null,
       spread,
-      spreadNote: today?.summary?.estimated_revenue_note || '由预测峰谷价差计算，不等同实际收益',
+      spreadNote: String(today?.summary?.estimated_revenue_note || '由预测峰谷价差计算，不等同实际收益')
+        .replace(/真实预测/g, '绑定预测'),
       priorityScore: Math.round(maxRiskProbability * 100),
       lowHours: compactWindows(lowItems, () => true),
       highHours: compactWindows(highRiskItems, () => true)
