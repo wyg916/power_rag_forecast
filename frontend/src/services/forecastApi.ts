@@ -1,7 +1,7 @@
 import { api } from '../api';
 import { errorMessage, withServiceState } from './serviceState';
 
-const PRICE_KEYS = ['price', 'predicted_price', 'corrected_predicted_price', 'forecast_price', 'da_price', 'actual_price', 'clearing_price'];
+const PRICE_KEYS = ['price', 'predicted_price', 'corrected_predicted_price', 'forecast_price', 'da_price'];
 
 function toNumber(value: unknown): number | null {
   const num = Number(value);
@@ -32,6 +32,14 @@ function nextHourLabel(value: unknown) {
 
 function readPrice(row: any): number | null {
   for (const key of PRICE_KEYS) {
+    const value = toNumber(row?.[key]);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function readObservedPrice(row: any): number | null {
+  for (const key of ['actual_price', 'clearing_price', 'market_price', 'price']) {
     const value = toNumber(row?.[key]);
     if (value != null) return value;
   }
@@ -143,7 +151,7 @@ function adviceForHour(strategy: any, datetime: unknown) {
 function aggregateHistoryByHour(records: any[] = []) {
   const buckets = new Map<number, number[]>();
   records.forEach((row) => {
-    const price = readPrice(row);
+    const price = readObservedPrice(row);
     const dt = String(row.datetime || row.forecast_datetime || row.date || '');
     const hour = dt.length >= 13 ? Number(dt.slice(11, 13)) : null;
     if (price == null || hour == null || !Number.isFinite(hour)) return;
@@ -289,6 +297,13 @@ export async function getForecastCenterData() {
 
   const activeModel = { ...(models?.active || {}), ...(modelExplain?.active_model || {}) };
   const sourceMeta = forecast24h?.meta || latest?.meta || prediction?.meta || {};
+  const freshnessStatus = sourceMeta.freshness_status
+    || (sourceMeta.availability === 'unavailable' ? 'unavailable' : sourceMeta.is_stale ? 'stale' : series.length ? 'current' : 'unavailable');
+  const forecastBatchLabel = freshnessStatus === 'unavailable'
+    ? '预测批次暂不可用'
+    : sourceMeta.is_stale || freshnessStatus === 'historical' || freshnessStatus === 'stale'
+      ? '历史预测批次'
+      : '当前可用预测批次';
   const seriesValues = series.map((item: any) => Number(item.value)).filter(Number.isFinite);
   const seriesMean = seriesValues.length ? seriesValues.reduce((sum: number, value: number) => sum + value, 0) / seriesValues.length : null;
   const seriesStd = seriesMean == null
@@ -298,31 +313,38 @@ export async function getForecastCenterData() {
     ? null
     : Number((seriesStd / Math.abs(seriesMean) * 100).toFixed(1));
   const metrics = [
-    { key: 'max', title: '最高价', value: fmt(summary.maxPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.maxHour)}`, tone: 'orange', source: 'api_forecast_24h' },
-    { key: 'min', title: '最低价', value: fmt(summary.minPrice), unit: '元/kWh', note: `出现于 ${hourText(summary.minHour)}`, tone: 'green', source: 'api_forecast_24h' },
-    { key: 'avg', title: '均价', value: fmt(summary.avgPrice), unit: '元/kWh', note: '24小时预测均值', tone: 'blue', source: 'api_forecast_24h' },
-    { key: 'spread', title: '峰谷价差', value: fmt(summary.peakValleySpread), unit: '元/kWh', note: '峰谷波动空间', tone: 'red', source: 'api_forecast_24h' },
-    { key: 'confidence', title: '预测可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: confidence.source === 'api_prediction_latest' ? '模型接口返回' : '模型接口未返回可信度', tone: 'green', source: confidence.source },
+    { key: 'max', title: '最高预测价', value: fmt(summary.maxPrice), unit: '元/kWh', note: `预测时点 ${hourText(summary.maxHour)}`, tone: 'orange', sourceLabel: forecastBatchLabel },
+    { key: 'min', title: '最低预测价', value: fmt(summary.minPrice), unit: '元/kWh', note: `预测时点 ${hourText(summary.minHour)}`, tone: 'green', sourceLabel: forecastBatchLabel },
+    { key: 'avg', title: '预测均价', value: fmt(summary.avgPrice), unit: '元/kWh', note: '绑定 24 小时预测均值', tone: 'blue', sourceLabel: forecastBatchLabel },
+    { key: 'spread', title: '预测峰谷价差', value: fmt(summary.peakValleySpread), unit: '元/kWh', note: '由绑定预测曲线计算', tone: 'red', sourceLabel: forecastBatchLabel },
+    { key: 'confidence', title: '模型可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: confidence.source === 'api_prediction_latest' ? '模型接口返回' : '模型接口未返回可信度', tone: 'green', sourceLabel: forecastBatchLabel },
   ];
 
   return withServiceState({
-    available: Boolean(series.length),
-    date: dateText(summary.maxHour || latest?.generated_at || forecast24h?.generated_at),
+    available: Boolean(series.length && freshnessStatus !== 'unavailable'),
+    date: dateText(sourceMeta.valid_from || forecast24h?.summary?.forecast_start || summary.maxHour),
     region: forecast24h?.region || forecast24h?.market || prediction?.market || '',
     modelVersion: activeModel.model_version || activeModel.version || sourceMeta.model_version || '',
     featureVersion: activeModel.feature_version || sourceMeta.feature_version || featureSchema?.feature_version || '',
-    dataSource: forecast24h?.data_source || latest?.source_type || 'api_forecast_empty',
+    dataSource: sourceMeta.source_type || latest?.source_type || 'unavailable',
     unit: forecast24h?.unit || '元/kWh',
     runId: currentRunId,
     generatedAt: forecast24h?.generated_at || latest?.generated_at || sourceMeta.generated_at || '',
+    updatedAt: sourceMeta.updated_at || forecast24h?.generated_at || latest?.generated_at || '',
+    validFrom: sourceMeta.valid_from || forecast24h?.summary?.forecast_start || '',
+    validTo: sourceMeta.valid_to || forecast24h?.summary?.forecast_end || '',
+    dataVersion: sourceMeta.data_version || '',
+    freshnessStatus,
     isStale: Boolean(sourceMeta.is_stale),
-    staleReason: sourceMeta.stale_reason || '',
+    staleReason: sourceMeta.staleness_reason || sourceMeta.stale_reason || '',
     series,
     summary,
     metrics,
     detailRows,
     lowWindow,
     highWindow,
+    lowWindowDerived: !(forecast24h?.windows?.low_price || []).length,
+    highWindowDerived: !(forecast24h?.windows?.high_risk || forecast24h?.windows?.high_price || []).length,
     lowWindowLabel: rangeLabel(lowWindow),
     highWindowLabel: rangeLabel(highWindow),
     confidence,
@@ -361,8 +383,8 @@ export async function getForecastCenterData() {
     historyApi: history,
     predictionDetail: detail
   }, {
-    dataSource: forecast24h?.data_source || latest?.source_type || 'api_forecast_empty',
-    empty: !series.length,
+    dataSource: sourceMeta.source_type || latest?.source_type || 'unavailable',
+    empty: !series.length || freshnessStatus === 'unavailable',
     error: requestErrors.length && !series.length ? requestErrors[0] : undefined,
     mockFallback: false,
     partialErrors

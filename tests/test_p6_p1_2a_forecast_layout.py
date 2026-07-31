@@ -56,8 +56,11 @@ def test_hour_explanation_is_a_real_local_detail_action():
     assert "<DetailDrawer" in page
     assert "onExplain={setSelectedHour}" in page
     assert "onClick={() => onExplain?.(row)}" in design
-    for field in ["run_id", "model_version", "feature_version", "data_source"]:
+    for field in ["预测批次", "模型版本", "特征版本", "业务来源"]:
         assert field in page
+    detail = page.split('<DetailDrawer', 1)[1].split('onClose=', 1)[0]
+    for technical_field in ["model_version", "feature_version", "data_source"]:
+        assert technical_field not in detail
 
 
 def test_forecast_secondary_actions_have_real_urls_or_explicit_disable_reason():

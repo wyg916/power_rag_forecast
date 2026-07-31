@@ -288,10 +288,10 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           建议动作: selectedHour.action || '接口未返回',
           置信度: selectedHour.confidence === '--' ? '接口未返回' : `${selectedHour.confidence}%`,
           正式置信区间: selectedHour.interval,
-          run_id: data?.runId || '--',
-          model_version: data?.modelVersion || '--',
-          feature_version: data?.featureVersion || '--',
-          data_source: selectedHour.source || data?.dataSource || '--'
+          预测批次: data?.runId || '--',
+          模型版本: data?.modelVersion || '--',
+          特征版本: data?.featureVersion || '--',
+          业务来源: data?.freshnessStatus === 'stale' ? '历史预测批次' : data?.runId ? '预测批次' : '暂不可用'
         } : null}
         onClose={() => setSelectedHour(null)}
       />

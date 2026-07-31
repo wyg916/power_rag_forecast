@@ -48,12 +48,15 @@ function metricIcon(index: number) {
 }
 
 export function ForecastContextBar({ data }: { data: any }) {
+  const unavailable = !data?.available || data?.freshnessStatus === 'unavailable';
   return (
     <div className="forecast-context-bar">
       <div className="forecast-filter-items">
         <span>预测日期 <strong>{data?.date || '--'}</strong></span>
         <span>区域 <strong>{data?.region || '--'}</strong></span>
         <span>模型版本 <strong>{data?.modelVersion || '--'}</strong>{data?.modelVersion ? <Tag color="success">接口返回</Tag> : null}</span>
+        <span>适用窗口 <strong>{data?.validFrom && data?.validTo ? `${String(data.validFrom).slice(0, 16)} 至 ${String(data.validTo).slice(0, 16)}` : '--'}</strong></span>
+        <span>批次状态 <Tag color={unavailable ? 'default' : data?.isStale ? 'warning' : 'success'}>{unavailable ? '暂不可用' : data?.isStale ? '历史窗口已结束' : '当前可用'}</Tag></span>
       </div>
     </div>
   );
@@ -121,7 +124,7 @@ export function ForecastChartCard({ data }: { data: any }) {
   return (
     <div className="forecast-card forecast-chart-card">
       <div className="forecast-card-head">
-        <div><h2>24小时电价预测</h2><p>展示真实预测电价序列与峰值点；低价窗口和高风险时段在右侧洞察中说明。</p></div>
+        <div><h2>{data?.isStale ? '历史 24 小时电价预测' : '24 小时电价预测'}</h2><p>{data?.isStale ? '展示已结束适用窗口的可追溯预测序列，仅供复盘。' : '展示当前可用预测序列与峰值点；低价窗口和高风险时段在右侧说明。'}</p></div>
         <Space wrap>
           <Tag>小时</Tag>
           <span className="card-unit">单位：元/kWh</span>
@@ -144,8 +147,8 @@ export function StrategyInsightPanel({ data }: { data: any }) {
   return (
     <div className="forecast-card forecast-insight-panel">
       <div className="forecast-card-head"><h2>策略洞察</h2></div>
-      <StrategyBlock type="success" title="预测事实摘要">
-        预计 {data?.highWindowLabel} 出现显著高价风险窗口，峰值 {hour(data?.summary?.maxHour)} 达到 {fmt(data?.summary?.maxPrice, 2)} 元/kWh；{data?.lowWindowLabel} 为低价采购窗口。
+      <StrategyBlock type={data?.isStale ? 'warning' : 'success'} title={data?.isStale ? '历史预测摘要' : '预测事实摘要'}>
+        {data?.isStale ? '该批次曾预测' : '预计'} {data?.highWindowLabel} 出现高价风险窗口，峰值 {hour(data?.summary?.maxHour)} 为 {fmt(data?.summary?.maxPrice, 2)} 元/kWh；{data?.lowWindowLabel} 为低价候选窗口。{data?.isStale ? ' 适用窗口已结束，不可作为当前交易依据。' : ''}
       </StrategyBlock>
       <StrategyBlock type="danger" title="高价风险时段">
         <div className="tag-row">{highItems.map((item: any) => <Tag color="error" key={item.time}>{item.time}</Tag>)}</div>
@@ -155,13 +158,13 @@ export function StrategyInsightPanel({ data }: { data: any }) {
         <Tag color="success">{data?.lowWindowLabel || '--'}</Tag>
         <p>{lowAdvice?.advice_text || '策略接口未返回该时段建议。'}</p>
       </StrategyBlock>
-      <StrategyBlock type="info" title="AI 建议摘要">
+      <StrategyBlock type="info" title="接口建议摘要">
         {(insights.length ? insights : [{ advice_text: '当前策略接口暂无建议，页面仅展示预测与风险窗口。' }]).slice(0, 3).map((item: any, index: number) => (
           <p key={index}><b>{index + 1}</b> {item.advice_text || item.description || item.message || item.title}</p>
         ))}
       </StrategyBlock>
       <StrategyBlock type="info" title="风险提示 / 可信度说明">
-        本次预测可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%（{data?.confidence?.source || '来源待接入'}）；
+        该预测批次可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%（{data?.confidence?.source || '来源待接入'}）；
         {data?.quality?.confidenceIntervalAvailable ? '接口已返回正式置信区间。' : data?.quality?.confidenceIntervalReason || '置信区间待接入。'}
       </StrategyBlock>
     </div>
@@ -339,7 +342,7 @@ export function PeakAndModelTop({ data }: { data: any }) {
       </div>
       <div className="forecast-card peak-explain-card">
         <div className="forecast-card-head"><h2>峰谷策略解释（业务视角）</h2></div>
-        <StrategyBlock type="info" title="结论">今日峰谷价差/均价比例（封顶 100%）为 {pv.index || 0}%，高价集中在 {pv.peakRange}，低价窗口在 {pv.valleyRange}。</StrategyBlock>
+        <StrategyBlock type={data?.isStale ? 'warning' : 'info'} title="结论">{data?.isStale ? '该历史预测窗口的' : '当前预测窗口的'}峰谷价差/均价比例（封顶 100%）为 {pv.index || 0}%，高价集中在 {pv.peakRange}，低价窗口在 {pv.valleyRange}。{data?.isStale ? ' 仅供复盘。' : ''}</StrategyBlock>
         <StrategyBlock type="success" title="数据依据">
           基于 24 小时预测曲线和风险概率识别高 / 低价时段；
           {data?.quality?.confidenceIntervalAvailable ? '正式置信区间可用。' : '正式置信区间未接入，不参与解释。'}
