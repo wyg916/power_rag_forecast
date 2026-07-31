@@ -2,11 +2,13 @@
 
 ## 1. 结论
 
-- 结论：**CONDITIONAL PASS**。
-- Day 3 技术门禁全部通过：API 路由清单闭合、业务接口默认认证、权限矩阵闭合、401/403 语义区分、生产文档端点关闭、前端权限门控、下载与 SSE/兼容别名封口、定向回归、构建和数据库恢复后终检均通过。
-- 条件项仅来自 Day 3 执行期间出现的外部工作树漂移：`AGENTS.md`、`docs/codex/MASTER_ENGINEERING_RULES.md`、`docs/codex/TASK_STATUS.md` 中的 `GLOBAL-DATA-PRESENTATION` 行，以及未跟踪的 `RAG/企业知识库_知识体系与企业级开发实施指南_v1.0.docx`。这些内容未纳入 Day 3 提交，未删除、覆盖或移动。
-- 因最终工作树不能证明全局干净，**不得据此自动进入 Day 4**；需由用户先确认并处理或提交上述外部漂移。
-- 本轮未实施 Day 4 的数据浏览白名单、任意 SQL 改造及任何后续 Day 内容。
+- 结论：**PASS**。
+- Day 3 技术门禁继续通过：195 个方法+路径全部归类，7 个明确公开端点、188 个受保护端点，未分类和未保护业务路由均为 0。
+- 原 `CONDITIONAL PASS` 条件已经闭合：Pytest 默认不再继承仓库本地业务数据库；所有数据库集成回归改由一次性受限 Schema/NOLOGIN 角色执行，并自动验证 `public` 前后内容、结构、序列和 Alembic 版本。
+- 本次隔离复验期间 `public` 写入为 0，临时 Schema 和角色残留为 0；Day 3 安全与相关业务回归、Node、TypeScript、Vite、Python 编译和敏感信息扫描全部通过。
+- Day 3 执行早期曾向现有数据库产生测试写入、随后经用户授权精确恢复的事实继续完整保留，绝不改写为“测试期间从未写入”。
+- 外部工作树漂移均按文件/hunk 归属隔离，未删除、覆盖、stash 或混入 Day 3 提交。Day 4 独立 worktree 从本报告所在最终 HEAD 创建并保持干净，因此 Day 4 准入为 **GO**。
+- 本轮仅创建 Day 4 分支和 worktree，未实施数据浏览白名单、任意 SQL 改造及任何 Day 4 业务内容。
 
 ## 2. 基线与检查点
 
@@ -67,6 +69,9 @@
 
 ## 6. 测试与构建
 
+- 2026-07-31 Day 3 收口隔离复验：252 passed、0 failed、0 skipped、0 deselected；全部在 `beta10d_day3_close_` 一次性 Schema 中执行。
+- 当前代码态隔离门禁自测：6 passed；受限角色对 `public.audit_logs` 的实际写入探针被 PostgreSQL 拒绝。
+- 隔离复验期间 `public` 前后全部表内容指纹、序列状态、结构清单与 Alembic head 一致；临时 Schema/角色清理后残留均为 0。
 - 权限矩阵生成与 `--check`：PASS，195 个方法+路径、183 个唯一路径、7 个公开、188 个受保护。
 - `tests/test_day3_api_security.py`：48 passed。
 - `tests/test_t004_security.py tests/test_auth_rbac.py tests/test_ai_debug_permission.py`：24 passed。
@@ -105,7 +110,7 @@
 
 ## 8. 修改文件
 
-本任务修改 20 个文件，未超过门禁：
+Day 3 全周期共修改 22 个文件；本次收口增量仅涉及 3 个测试门禁文件、1 个报告和 `TASK_STATUS.md` 的 Day 3 hunk。有效代码增量不超过 1000 行门禁：
 
 1. `backend/app/core/api_security.py`
 2. `scripts/day3_generate_permission_matrix.py`
@@ -127,6 +132,8 @@
 18. `tests/test_day3_api_security.py`
 19. `docs/codex/TASK_STATUS.md`
 20. `docs/codex/evidence/DAY3_RBAC_20260731_113917553/DAY3_EXECUTION_REPORT.md`
+21. `scripts/day3_test_database_guard.py`
+22. `tests/test_day3_database_isolation.py`
 
 外部漂移文件不计入 Day 3 修改清单，也不进入 Day 3 提交。
 
@@ -136,17 +143,72 @@
 2. `f13f4d916a40567d3fc60577570fd88d7f0a8d5a` — `feat(security): enforce fail-closed API authorization`
 3. `5bf54757bdc07d41cc697773824ad7c2b2d89afc` — `fix(frontend): align auth and privileged actions with RBAC`
 4. `911478cbc64cd121066439e2380d17689ab91daf` — `test(security): add Day 3 route and role gates`
-5. 本报告与 `TASK_STATUS.md` 所在收口提交 — `docs(codex): close Day 3 RBAC verification`
+5. `fb3cbd0e2790599c73d2865384e012788ce503cf` — `docs(codex): close Day 3 RBAC verification`
+6. `b6a0c746c56a61156dfa1abe8bc3a553b6b4734d` — `test(security): block RBAC tests from writing business schema`
+7. 本报告与 `TASK_STATUS.md` Day 3 hunk 所在最终收口提交 — `docs(codex): close Day 3 RBAC evidence`
 
 ## 10. 回滚
 
 - 代码与文档：按上述提交逆序执行 `git revert <commit>`；禁止使用 `git reset --hard` 或 `git clean`。
 - 数据库：Day 3 最终逻辑内容已恢复到前快照，回滚代码无需再改数据库。恢复包只用于审计或在确认目标状态后重放，不得无确认执行。
+- 隔离门禁：如需回滚本次门禁，仅 `git revert b6a0c746c56a61156dfa1abe8bc3a553b6b4734d`；该提交不包含数据库迁移。若进程异常中断，只允许核验并删除名称以 `beta10d_day3_close_` 开头且所有者与同名前缀角色精确匹配的临时 Schema/角色，不得操作 `public`。
 - 配置：生产文档端点、认证默认值和权限矩阵均随原子提交回滚。
 - 外部漂移：由其产生者单独处理；Day 3 不提供删除、覆盖或回退操作。
 
 ## 11. 已知问题与 Day 4 准入
 
-- 12 个宽范围历史测试失败未在 Day 3 越界修复；需按其所属任务日另行处理。
-- 当前工作树保留三项已跟踪外部规则/状态漂移和一个未跟踪 RAG Word 文件，故全局 clean-tree 门禁未满足。
-- Day 3 技术能力已闭合，但在用户确认外部漂移归属并使工作树达到可审计状态前，Day 4 准入为 **NO-GO**。
+- 早期宽范围历史套件中的 12 个非 Day 3 失败仍按所属任务日处理；本次没有越界修复，也没有用 deselect 跳过 Day 3 验收。
+- 原工作区继续保留外部规则/状态漂移、RAG Word 和并行任务 `backups/`；这些内容不影响从 Day 3 最终提交创建全新干净 worktree。
+- Day 4 分支：`beta10d/day4-data-access-security`。
+- Day 4 worktree：`E:\智能运营分析项目_worktrees\beta10d_day4_data_security`。
+- Day 4 worktree HEAD 与本报告所在 Day 3 最终提交一致；tracked modified、staged、untracked 均为 0，未复制 `.env`、RAG Word 或原工作区外部漂移。
+- Day 3 最终结论：**PASS**；Day 4 准入：**GO**。
+
+## 12. 收口补充证据
+
+### 12.1 外部工作区归属
+
+| 文件/目录 | 状态 | 与 Day 3 关系 | 处理结论 |
+| --- | --- | --- | --- |
+| `AGENTS.md` | tracked modified | 否；`GLOBAL-DATA-PRESENTATION` 并行规则 | 保留原地，未暂存/提交 |
+| `docs/codex/MASTER_ENGINEERING_RULES.md` | tracked modified | 否；`GLOBAL-DATA-PRESENTATION` 并行规则 | 保留原地，未暂存/提交 |
+| `docs/codex/TASK_STATUS.md` | tracked modified | 部分相关 | 仅暂存本行 Day 3 hunk；`GLOBAL-DATA-PRESENTATION` hunk 保留原地 |
+| `RAG企业知识库_知识体系与企业级开发实施指南_v1.0.docx` | untracked | 否；用户输入附件 | 保留原地，不进入 Git |
+| `backups/phase3/20260731_154414_RAG_ENTERPRISE_PRE` | untracked | 否；并行 RAG 任务检查点 | 保留原地，不进入 Git |
+
+原始复核哈希：
+
+- `AGENTS.md`：`6eecac8421afabe81123a9604169c99f779b3ef35d9cbe3dfcce37f4d7c4d96c`
+- `docs/codex/MASTER_ENGINEERING_RULES.md`：`7a95bc0d58d22194ef99c91efaac752f1c04e3e6b0f52cd10fdab398a6970140`
+- `docs/codex/TASK_STATUS.md`（收口修改前全文件）：`20fbe77848cd984c7f2af59c12c21da1736e786da2de42c4094298e718a5fa7b`；其中外部 `GLOBAL-DATA-PRESENTATION` diff 保持不变，仅追加本报告授权的 Day 3 hunk。
+- RAG Word：`538dec927a9c87d1558645f805564993aa4697f41c03f8182674682e2b365482`
+- 并行 RAG 检查点：17 个文件、1,231,441 bytes，清单 SHA-256 `91184627d5e14aa8056069399cf59deacb96982fdc98083de5faafefa47e31f8`。
+
+### 12.2 写入根因与具体对象
+
+- 根因是旧 `tests/conftest.py` 在导入应用前没有覆盖仓库 `.env` 中的本地 `DATABASE_URL`；身份 override 只替换认证主体，没有隔离数据库连接。未自行 monkeypatch 数据库的测试因而复用全局/缓存 PostgreSQL engine 并连接到现有 `public`。
+- 当时没有服务端受限角色、隔离 `search_path`、Schema 前缀校验或前后内容/序列监测；个别测试清空 `DATABASE_URL` 的做法不是全局门禁，因此未能阻止写入。
+- 定位到的具体写入入口包括任务创建/重试/取消和 Celery 状态测试（`tests/test_task_api.py`、`tests/test_celery_task_status.py`、P4 任务生命周期相关测试），AI/Web 对话与调试测试，以及 `tests/test_p6_p1_3c_strategy_runtime.py::test_controlled_seed_is_idempotent_and_traceable`。
+- 对象包括 `audit_logs`、`ai_traces`、`task_logs`、`task_runs`、`storage_devices`、`storage_soc_snapshots`、`strategy_execution_items` 及 `audit_logs_id_seq`、`task_logs_id_seq`。第 7 节记录的授权精确恢复事实保持不变。
+
+### 12.3 自动化隔离门禁
+
+- 普通 Pytest 启动会在应用导入前清空继承的本地 `DATABASE_URL`，设置会话只读兜底；需要数据库的测试必须经 `scripts/day3_test_database_guard.py`。
+- runner 只接受 `localhost/127.0.0.1/::1:5432/postgres` 与 `postgres` 启动身份，创建唯一 `beta10d_day3_close_` Schema 和同名前缀 `NOLOGIN/NOINHERIT` 角色。
+- Alembic 迁移表位于隔离 Schema，迁移到单一 head `0016_strategy_runtime` 后再运行测试；运行时校验 `current_user`、`current_schema`、`search_path`、Schema owner 和 `public` 写权限。
+- 受限角色没有 `public` CREATE、审计表 DML 或审计序列写权限；测试使用固定时间、固定 run_id、明确 `controlled_test_fixture` 来源的合成 fixture，不读取或修改真实业务记录。
+- runner 对 `public` 全表内容指纹、序列状态、结构清单和 Alembic head 做前后对比；只有精确名称前缀且 owner 匹配时才清理临时 Schema/角色，随后复核残留为 0。
+
+### 12.4 隔离复验与数据库终态
+
+- 收口检查点：`E:\智能运营分析项目_备份\beta10d\20260731_153945424_DAY3_CLOSURE_PRE`
+- 收口验证根：`E:\智能运营分析项目_验证\beta10d_day3_closure_20260731_153945424`
+- 最终 Python 隔离回归：252 passed、0 failed、0 skipped、0 deselected。
+- 合成 fixture 仅写隔离 Schema：`forecast_runs` 1 行，`forecast_results`、`raw_market`、`raw_load`、`raw_weather` 各 24 行。
+- 测试自身仅写隔离 Schema：`ai_traces` 2、`audit_logs` 8、`storage_devices` 2、`storage_soc_snapshots` 48、`strategy_execution_items` 6、`task_logs` 13、`task_runs` 2；隔离序列推进到 audit 8、task log 13。
+- 测试结束后上述 Schema 整体清理；最终 `beta10d_day3_close_` Schema 0、角色 0。
+- `public` 收口前后均为 62 张表、8 个视图、47 个序列、37 个函数，Alembic 单一 head `0016_strategy_runtime`。
+- `public` 结构 SHA-256 前后均为 `9610393a5c8a626f3cea41c534145402a789bbe7cf68741c4869ed329827cf02`；全部表内容指纹和序列状态逐项相同，本次复验 `public` 写入为 0。
+- 最终数据库证据：`E:\智能运营分析项目_验证\beta10d_day3_closure_20260731_153945424\public_database_final.json`，SHA-256 `e90fad7486f26609c7a6945b67bed8a7e6d147bd22e94ca65749c08f6efb930a`。
+- 首次当前态门禁复核因外层日志管道 120 秒超时使子进程返回 120；该次 `public_match=true`、清理 PASS。去除管道并增加外层超时后，同一当前代码态 6/6 通过。
+- Node 7/7、TypeScript `--noEmit`、Vite 正式构建、Python compileall 和权限矩阵 `--check` 均通过；高置信敏感信息扫描 0 命中。
