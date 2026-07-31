@@ -9,6 +9,17 @@ export interface HomeDashboardData {
   context?: any;
   sources?: string[];
   data_source?: string;
+  generatedAt?: string;
+  validFrom?: string;
+  validTo?: string;
+  runId?: string;
+  modelVersion?: string;
+  featureVersion?: string;
+  dataVersion?: string;
+  updatedAt?: string;
+  isStale?: boolean;
+  staleReason?: string;
+  available?: boolean;
   loadedAt: string;
   partialErrors: string[];
 }
@@ -40,7 +51,16 @@ function normalizeForecast(payload: any) {
 }
 
 function normalizeKpi(payload: any) {
-  const items = payload?.kpis || payload?.kpi?.items || [];
+  const items = (payload?.kpis || payload?.kpi?.items || []).map((item: any) => item?.key === 'strategy_revenue'
+    ? {
+        ...item,
+        key: 'strategy_spread',
+        title: '预测峰谷价差',
+        unit: '元/kWh',
+        status: payload?.meta?.is_stale ? 'warning' : item.status,
+        trend_label: '由绑定预测曲线计算，不代表收益或结算结果'
+      }
+    : item);
   return {
     ...(payload?.kpi || {}),
     items,
@@ -68,8 +88,8 @@ function normalizeStrategy(payload: any) {
       must_watch_count: summary.high_price_risk_windows ?? payload?.strategy?.summary?.must_watch_count ?? 0,
       storage_count: summary.low_price_storage_windows ?? payload?.strategy?.summary?.storage_count ?? 0,
       estimated_revenue: summary.expected_spread ?? payload?.strategy?.summary?.estimated_revenue,
-      estimated_revenue_unit: payload?.strategy?.summary?.estimated_revenue_unit || '元/kWh价差',
-      estimated_revenue_note: payload?.strategy?.summary?.estimated_revenue_note || '由 forecast_results 预测价格派生'
+      estimated_revenue_unit: payload?.strategy?.summary?.estimated_revenue_unit || '元/kWh 价差',
+      estimated_revenue_note: payload?.strategy?.summary?.estimated_revenue_note || '由绑定预测曲线派生，不代表收益'
     }
   };
 }
@@ -108,6 +128,7 @@ function normalizeTasks(payload: any) {
 export async function loadHomeDashboard(): Promise<HomeDashboardData> {
   try {
     const payload = await api.dashboardOverview();
+    const meta = payload?.meta || {};
     return {
       kpi: normalizeKpi(payload),
       risk: normalizeRisk(payload),
@@ -117,6 +138,17 @@ export async function loadHomeDashboard(): Promise<HomeDashboardData> {
       context: payload?.context,
       sources: payload?.sources || [],
       data_source: payload?.data_source,
+      generatedAt: meta.generated_at || payload?.generated_at,
+      validFrom: meta.valid_from,
+      validTo: meta.valid_to,
+      runId: meta.run_id || payload?.run_id,
+      modelVersion: meta.model_version,
+      featureVersion: meta.feature_version,
+      dataVersion: meta.data_version,
+      isStale: Boolean(meta.is_stale || ['historical', 'stale'].includes(String(meta.freshness_status || ''))),
+      staleReason: meta.staleness_reason || meta.stale_reason || '',
+      updatedAt: meta.updated_at || payload?.generated_at,
+      available: meta.availability ? meta.availability !== 'unavailable' : Boolean(payload?.kpis?.length || payload?.risk_chart?.series?.length),
       loadedAt: payload?.loadedAt || payload?.generated_at || new Date().toISOString(),
       partialErrors: payload?.partialErrors || payload?.partial_errors || []
     };
