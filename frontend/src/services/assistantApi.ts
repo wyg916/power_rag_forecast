@@ -163,12 +163,12 @@ export async function getAssistantReferenceOptions(query = '') {
     api.forecast24h(),
     api.strategyLatest(),
     api.reportLatest(),
-    api.databaseTables(query),
+    api.dataDatasets(query),
     api.knowledgeSearch(query || '电力交易', 5)
   ]);
   const options: Array<{ id: string; label: string; type: string; summary: string; payload?: any }> = [];
 
-  const [forecast, strategy, report, tables, knowledge] = settled;
+  const [forecast, strategy, report, datasets, knowledge] = settled;
   if (forecast.status === 'fulfilled') {
     options.push({ id: 'forecast_24h', label: '24小时预测结果', type: 'forecast', summary: '来自预测中心数据服务', payload: forecast.value });
   }
@@ -178,15 +178,15 @@ export async function getAssistantReferenceOptions(query = '') {
   if (report.status === 'fulfilled') {
     options.push({ id: 'report_latest', label: '最新分析报告', type: 'report', summary: '来自报告中心数据服务', payload: report.value });
   }
-  if (tables.status === 'fulfilled') {
-    const rows = Array.isArray(tables.value?.tables) ? tables.value.tables : Array.isArray(tables.value?.data) ? tables.value.data : [];
+  if (datasets.status === 'fulfilled') {
+    const rows = Array.isArray(datasets.value?.datasets) ? datasets.value.datasets : [];
     rows.slice(0, 8).forEach((item: any, index: number) => {
-      const tableName = item.name || item.table_name || item.id || `table_${index + 1}`;
+      const datasetId = item.dataset_id || `dataset_${index + 1}`;
       options.push({
-        id: `table_${tableName}`,
-        label: tableName,
-        type: 'database',
-        summary: item.description || item.comment || '来自数据中心表目录',
+        id: `dataset_${datasetId}`,
+        label: item.display_name || datasetId,
+        type: 'dataset',
+        summary: item.description || '来自数据中心受控数据集',
         payload: item
       });
     });

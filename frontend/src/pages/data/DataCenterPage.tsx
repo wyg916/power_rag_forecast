@@ -74,6 +74,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [detail, setDetail] = useState<any>(null);
   const { authRequired, hasPermission } = useAuth();
   const canSync = !authRequired || hasPermission('data:sync');
+  const canExport = !authRequired || hasPermission('data:export');
   const qualityMode = activeSubKey === 'data-quality';
 
   const loadData = useCallback(async () => {
@@ -96,16 +97,16 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   }, [loadData]);
 
   const loadTablePreview = useCallback(async () => {
-    const tableName = selectedCatalog?.table_name;
-    if (!qualityMode || !tableName) return;
+    const datasetId = selectedCatalog?.dataset_id;
+    if (!qualityMode || !datasetId) return;
     if (selectedCatalog?.runtime?.exists === false) {
       setTablePreview({
         available: false,
-        table_name: tableName,
+        dataset_id: datasetId,
         records: [],
         columns: [],
         pagination: { page: 1, page_size: tablePageSize, total: 0 },
-        message: '数据库中不存在该表或视图。'
+        message: '当前注册数据集暂不可用。'
       });
       setTablePreviewError(null);
       setTablePreviewLoading(false);
@@ -114,7 +115,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     setTablePreviewLoading(true);
     setTablePreviewError(null);
     try {
-      setTablePreview(await api.databaseTableRows(tableName, {
+      setTablePreview(await api.datasetRows(datasetId, {
         page: tablePage,
         pageSize: tablePageSize,
         search: tableSearch
@@ -124,7 +125,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     } finally {
       setTablePreviewLoading(false);
     }
-  }, [qualityMode, selectedCatalog?.runtime?.exists, selectedCatalog?.table_name, tablePage, tableSearch]);
+  }, [qualityMode, selectedCatalog?.runtime?.exists, selectedCatalog?.dataset_id, tablePage, tableSearch]);
 
   useEffect(() => {
     loadTablePreview();
@@ -138,15 +139,15 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   }
 
   async function exportSelectedTable() {
-    const tableName = selectedCatalog?.table_name;
-    if (!tableName) return;
+    const datasetId = selectedCatalog?.dataset_id;
+    if (!datasetId || !canExport) return;
     setTableExporting(true);
     try {
-      const blob = await api.exportTable(tableName, tableSearch);
-      downloadBlob(`${tableName}_${new Date().toISOString().slice(0, 10)}.csv`, blob);
-      message.success(`已导出 ${tableName}${tableSearch ? `（筛选：${tableSearch}）` : ''}`);
+      const blob = await api.exportDataset(datasetId, tableSearch);
+      downloadBlob(`${datasetId}_${new Date().toISOString().slice(0, 10)}.csv`, blob);
+      message.success(`已导出 ${selectedCatalog?.display_name || datasetId}${tableSearch ? `（筛选：${tableSearch}）` : ''}`);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '表数据导出失败');
+      message.error(error instanceof Error ? error.message : '数据集导出失败');
     } finally {
       setTableExporting(false);
     }
@@ -156,7 +157,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     const rows = data?.catalog || [];
     const keyword = search.trim().toLowerCase();
     if (!keyword) return rows;
-    return rows.filter((row: any) => [row.table_name, row.display_name, row.business_domain, row.source_system].some((value) => String(value || '').toLowerCase().includes(keyword)));
+    return rows.filter((row: any) => [row.dataset_id, row.display_name, row.business_domain, row.description].some((value) => String(value || '').toLowerCase().includes(keyword)));
   }, [data, search]);
 
   const filteredImports = useMemo(() => {
@@ -286,6 +287,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               previewPageSize={tablePageSize}
               previewSearch={tableSearchDraft}
               exporting={tableExporting}
+              canExport={canExport}
               onPreviewPageChange={setTablePage}
               onPreviewSearchDraft={setTableSearchDraft}
               onPreviewSearch={(value) => {

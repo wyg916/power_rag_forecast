@@ -205,19 +205,17 @@ export const api = {
   dbHealth: () => request<any>('/api/db/health'),
   dataStatus: () => request<any>('/api/data/status'),
   dataCatalog: (includeRuntime = false) => request<any>(`/api/data/catalog${includeRuntime ? '?include_runtime=true' : ''}`),
-  dataFields: (table?: string, search?: string) => {
+  dataFields: (datasetId: string, search?: string) => {
     const params = new URLSearchParams();
-    if (table) params.set('table', table);
+    params.set('dataset_id', datasetId);
     if (search) params.set('search', search);
     return request<any>(`/api/data/fields${params.toString() ? `?${params}` : ''}`);
   },
-  dataFreshness: (tables: string[] = []) => {
+  dataFreshness: (datasetIds: string[] = []) => {
     const params = new URLSearchParams();
-    tables.forEach((table) => params.append('tables', table));
+    datasetIds.forEach((datasetId) => params.append('dataset_ids', datasetId));
     return request<any>(`/api/data/freshness${params.toString() ? `?${params}` : ''}`);
   },
-  readOnlySql: (payload: { sql: string; params?: Record<string, any>; limit?: number }) =>
-    request<any>('/api/data/sql/query', { method: 'POST', body: JSON.stringify(payload) }),
   dataRefresh: () => request<any>('/api/data/refresh', { method: 'POST', body: '{}' }),
   syncCoreData: () => request<any>('/api/data/sync-core', { method: 'POST', body: '{}' }),
   dataQuality: () => request<any>('/api/data/quality'),
@@ -225,27 +223,32 @@ export const api = {
     const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
     return request<any>(`/api/data/import-export-records?${params}`);
   },
-  exportTableUrl: (tableName: string, search?: string) => {
+  exportDatasetUrl: (datasetId: string, search?: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    return downloadUrl(`/api/data/tables/${encodeURIComponent(tableName)}/export${params.toString() ? `?${params}` : ''}`);
+    return downloadUrl(`/api/data/datasets/${encodeURIComponent(datasetId)}/export${params.toString() ? `?${params}` : ''}`);
   },
-  exportTable: (tableName: string, search?: string) => {
+  exportDataset: (datasetId: string, search?: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    return requestBlob(`/api/data/tables/${encodeURIComponent(tableName)}/export${params.toString() ? `?${params}` : ''}`);
+    return requestBlob(`/api/data/datasets/${encodeURIComponent(datasetId)}/export${params.toString() ? `?${params}` : ''}`);
   },
-  databaseTables: (search?: string) => {
+  dataDatasets: (search?: string) => {
     const params = new URLSearchParams();
     if (search) params.set('search', search);
-    return request<any>(`/api/data/tables${params.toString() ? `?${params}` : ''}`);
+    return request<any>(`/api/data/datasets${params.toString() ? `?${params}` : ''}`);
   },
-  databaseTableRows: (tableName: string, options: any = {}) => {
+  datasetRows: (datasetId: string, options: any = {}) => {
     const params = new URLSearchParams();
     if (options.search) params.set('search', options.search);
+    if (options.filterField) params.set('filter_field', options.filterField);
+    if (options.filterOperator) params.set('filter_operator', options.filterOperator);
+    if (options.filterValue !== undefined && options.filterValue !== null) params.set('filter_value', String(options.filterValue));
+    if (options.sort) params.set('sort', options.sort);
+    if (options.direction) params.set('direction', options.direction);
     params.set('page', String(options.page || 1));
     params.set('page_size', String(options.pageSize || options.page_size || 20));
-    return request<any>(`/api/data/tables/${encodeURIComponent(tableName)}/rows?${params}`);
+    return request<any>(`/api/data/datasets/${encodeURIComponent(datasetId)}/rows?${params}`);
   },
   forecastLatest: () => request<any>('/api/forecast/latest'),
   forecastRuns: (status = 'success', limit = 2) => {

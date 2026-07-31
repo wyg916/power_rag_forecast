@@ -76,7 +76,7 @@ export function DataContextBar({
         allowClear
         value={search}
         onChange={(event) => onSearch(event.target.value)}
-        placeholder={qualityMode ? '搜索表名 / 数据域 / 来源系统' : '搜索同步任务 / 类型 / 状态'}
+        placeholder={qualityMode ? '搜索数据集 / 数据域 / 业务说明' : '搜索同步任务 / 类型 / 状态'}
         prefix={<FileSearchOutlined />}
       />
     </FilterBar>
@@ -295,7 +295,7 @@ export function QualityMonitor({ data }: { data: any }) {
 
 export function ExceptionTable({ rows }: { rows: any[] }) {
   const columns: ColumnsType<any> = [
-    { title: '数据源 / 表名', render: (_, row) => row.table_name || row.source_name || '--', width: 190 },
+    { title: '数据集', render: (_, row) => row.source_name || row.dataset_id || '--', width: 190 },
     { title: '问题类型', render: (_, row) => row.stale_reason || row.not_found_reason || row.message || row.status || '--', width: 260 },
     { title: '缺失率', dataIndex: 'missing_rate', render: (value) => value == null ? '--' : `${value}%` },
     { title: '重复率', dataIndex: 'duplicate_rate', render: (value) => value == null ? '--' : `${value}%` },
@@ -304,7 +304,7 @@ export function ExceptionTable({ rows }: { rows: any[] }) {
     { title: '最新时间', dataIndex: 'latest_time', width: 165, render: (value) => value ? String(value).slice(0, 19) : '--' },
     { title: '状态', dataIndex: 'status', render: (value) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> }
   ];
-  return <Table size="small" rowKey={(row) => row.table_name || row.source_name} columns={columns} dataSource={rows} pagination={false} scroll={{ y: 205, x: 1120 }} />;
+  return <Table size="small" rowKey={(row) => row.dataset_id || row.source_name} columns={columns} dataSource={rows} pagination={false} scroll={{ y: 205, x: 1120 }} />;
 }
 
 export function CatalogPanel({
@@ -318,6 +318,7 @@ export function CatalogPanel({
   previewPageSize,
   previewSearch,
   exporting,
+  canExport,
   onPreviewPageChange,
   onPreviewSearchDraft,
   onPreviewSearch,
@@ -334,6 +335,7 @@ export function CatalogPanel({
   previewPageSize: number;
   previewSearch: string;
   exporting: boolean;
+  canExport: boolean;
   onPreviewPageChange: (page: number) => void;
   onPreviewSearchDraft: (value: string) => void;
   onPreviewSearch: (value: string) => void;
@@ -342,12 +344,12 @@ export function CatalogPanel({
 }) {
   const previewColumns = (preview?.columns || []).map((column: any) => ({
     title: (
-      <span title={`${column.name} / ${column.type || 'unknown'}`}>
-        {column.name}<small className="catalog-column-type">{column.type || ''}</small>
+      <span title={`${column.display_name || column.field_id} / ${column.data_type || 'unknown'}`}>
+        {column.display_name || column.field_id}<small className="catalog-column-type">{column.data_type || ''}</small>
       </span>
     ),
-    dataIndex: column.name,
-    key: column.name,
+    dataIndex: column.field_id,
+    key: column.field_id,
     width: 150,
     ellipsis: true,
     render: (value: unknown) => {
@@ -361,45 +363,45 @@ export function CatalogPanel({
     <SectionCard title="数据目录" className="data-catalog-panel">
       <div className="catalog-card-grid">
         {rows.map((row) => (
-          <button className={selected?.table_name === row.table_name ? 'active' : ''} key={row.table_name} onClick={() => onSelect(row)}>
+          <button className={selected?.dataset_id === row.dataset_id ? 'active' : ''} key={row.dataset_id} onClick={() => onSelect(row)}>
             <DatabaseOutlined />
-            <span><strong>{row.display_name || row.table_name}</strong><small>字段数 {row.fields?.length || row.runtime?.columns_count || 0}</small></span>
-            <Tag color={row.runtime?.exists === false ? 'warning' : 'success'}>{row.runtime?.exists === false ? '未建表' : '已接入'}</Tag>
+            <span><strong>{row.display_name || row.dataset_id}</strong><small>字段数 {row.fields?.length || 0}</small></span>
+            <Tag color={row.runtime?.exists === false ? 'warning' : 'success'}>{row.runtime?.exists === false ? '暂不可用' : '已接入'}</Tag>
           </button>
         ))}
       </div>
       {selected ? (
         <div className="catalog-detail">
           <div className="catalog-meta">
-            <h3>{selected.table_name} <small>{selected.display_name}</small></h3>
+            <h3>{selected.display_name} <small>{selected.dataset_id}</small></h3>
             <dl>
               <dt>所属目录</dt><dd>{selected.business_domain || '--'}</dd>
-              <dt>表类型</dt><dd>{selected.grain || '--'}</dd>
-              <dt>时间字段</dt><dd>{selected.time_field || '--'}</dd>
-              <dt>更新频率</dt><dd>{selected.refresh_frequency || '--'}</dd>
-              <dt>来源系统</dt><dd>{selected.source_system || '--'}</dd>
+              <dt>数据形态</dt><dd>{selected.object_type === 'view' ? '业务视图' : '业务数据集'}</dd>
+              <dt>默认排序</dt><dd>{selected.default_sort || '--'}</dd>
+              <dt>最大分页</dt><dd>{selected.max_page_size || '--'}</dd>
+              <dt>导出权限</dt><dd>{selected.export_allowed ? '支持受控导出' : '不可导出'}</dd>
               <dt>用途说明</dt><dd>{selected.description || '--'}</dd>
             </dl>
           </div>
           <Table
             size="small"
-            rowKey="field_name"
+            rowKey="field_id"
             pagination={false}
             scroll={{ y: 130 }}
             dataSource={selected.fields || []}
             columns={[
-              { title: '字段名', dataIndex: 'field_name' },
-              { title: '业务名称', dataIndex: 'business_name' },
-              { title: '类型', dataIndex: 'role' },
-              { title: '说明', dataIndex: 'meaning' }
+              { title: '字段标识', dataIndex: 'field_id' },
+              { title: '业务名称', dataIndex: 'display_name' },
+              { title: '类型', dataIndex: 'data_type' },
+              { title: '说明', dataIndex: 'description' }
             ]}
           />
           <div className="catalog-preview">
             <div className="catalog-preview-toolbar">
               <div>
-                <h3>表级数据明细</h3>
+                <h3>数据集明细</h3>
                 <small>
-                  {preview?.object_type === 'view' ? '视图' : '表'} · 共 {previewTotal.toLocaleString()} 条
+                  受控字段 · 共 {previewTotal.toLocaleString()} 条
                   {preview?.order_by ? ` · 按 ${preview.order_by} ${preview.order_direction || 'desc'} 排序` : ''}
                 </small>
               </div>
@@ -407,7 +409,7 @@ export function CatalogPanel({
                 <Input.Search
                   allowClear
                   value={previewSearch}
-                  placeholder="筛选当前表数据"
+                  placeholder="搜索当前数据集"
                   onChange={(event) => {
                     onPreviewSearchDraft(event.target.value);
                     if (!event.target.value) onPreviewSearch('');
@@ -417,7 +419,7 @@ export function CatalogPanel({
                 <Button
                   icon={<DownloadOutlined />}
                   loading={exporting}
-                  disabled={!preview?.available || previewTotal === 0}
+                  disabled={!canExport || !selected.export_allowed || !preview?.available || previewTotal === 0}
                   onClick={onExport}
                 >
                   导出当前范围
@@ -427,16 +429,16 @@ export function CatalogPanel({
             {previewLoading ? <LoadingBlock rows={3} /> : null}
             {!previewLoading && previewError ? (
               <div className="catalog-preview-error">
-                <InlineError message={previewError instanceof Error ? previewError.message : '表级数据加载失败'} />
+                <InlineError message={previewError instanceof Error ? previewError.message : '数据集加载失败'} />
                 <Button size="small" onClick={onPreviewRetry}>重试</Button>
               </div>
             ) : null}
             {!previewLoading && !previewError && (!preview?.available || !previewRows.length) ? (
               <EmptyState
-                title="当前范围没有表级记录"
+                title="当前范围没有数据集记录"
                 description="数据库查询已完成，但没有可展示的明细。"
-                reason={preview?.message || (previewSearch ? `未找到包含“${previewSearch}”的记录` : '当前表或视图为空')}
-                queryScope={`${selected.table_name}${previewSearch ? `；筛选：${previewSearch}` : '；全部记录'}`}
+                reason={preview?.message || (previewSearch ? `未找到包含“${previewSearch}”的记录` : '当前数据集为空')}
+                queryScope={`${selected.display_name}${previewSearch ? `；筛选：${previewSearch}` : '；全部记录'}`}
                 action={<Button size="small" onClick={onPreviewRetry}>重新查询</Button>}
               />
             ) : null}
@@ -477,8 +479,8 @@ export function SourceStatusBar({ rows }: { rows: any[] }) {
     <div className="data-source-status">
       <strong>数据源状态</strong>
       {rows.slice(0, 6).map((row) => (
-        <div key={row.table_name}>
-          <span>{row.table_name}</span>
+        <div key={row.dataset_id}>
+          <span>{row.source_name || row.dataset_id}</span>
           <Tag color={statusColor(row.status)}>{statusText(row.status)}</Tag>
           <small>{row.latest_time ? `更新 ${String(row.latest_time).slice(5, 16)}` : row.message || '暂无更新时间'}</small>
         </div>

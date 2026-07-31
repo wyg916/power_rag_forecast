@@ -21,10 +21,10 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
     }
   };
 
-  const [status, quality, tables, importExport, catalog, freshness] = await Promise.all([
+  const [status, quality, datasets, importExport, catalog, freshness] = await Promise.all([
     safe('dataStatus', api.dataStatus),
     safe('dataQuality', api.dataQuality),
-    safe('databaseTables', api.databaseTables),
+    safe('dataDatasets', api.dataDatasets),
     safe('importExportRecords', () => api.importExportRecords(syncPage, syncPageSize)),
     safe('dataCatalog', () => api.dataCatalog(true)),
     safe('dataFreshness', api.dataFreshness)
@@ -34,7 +34,7 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
   const qualityItems = Array.isArray(quality?.items) ? quality.items : [];
   const exceptions = Array.isArray(quality?.exceptions) ? quality.exceptions : [];
   const alerts = Array.isArray(quality?.alerts) ? quality.alerts : [];
-  const tableRows = Array.isArray(tables?.tables) ? tables.tables : [];
+  const datasetRows = Array.isArray(datasets?.datasets) ? datasets.datasets : [];
   const records = Array.isArray(importExport?.records) ? importExport.records : [];
   const catalogRows = Array.isArray(catalog?.datasets) ? catalog.datasets : [];
   const freshnessItems = Array.isArray(freshness?.items) ? freshness.items : [];
@@ -67,12 +67,12 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
   }));
 
   return withServiceState({
-    available: Boolean(sources.length || catalogRows.length || tableRows.length),
-    dataSource: quality?.data_source || importExport?.data_source || (tables?.available ? 'postgresql' : 'api_data'),
+    available: Boolean(sources.length || catalogRows.length || datasetRows.length),
+    dataSource: quality?.data_source || importExport?.data_source || (datasets?.available ? 'registered_datasets' : 'api_data'),
     sources,
     qualityItems,
     exceptions,
-    tables: tableRows,
+    datasets: datasetRows,
     catalog: catalogRows,
     freshnessItems,
     freshnessProblems,
@@ -89,7 +89,7 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
       sourceCount: Number(quality?.summary?.source_count ?? sources.length),
       checkedSourceCount: Number(quality?.summary?.checked_source_count ?? qualityItems.length),
       catalogCount: catalogRows.length,
-      tableCount: tableRows.length,
+      datasetCount: datasetRows.length,
       syncCount: Number(importExport?.summary?.total ?? importExport?.pagination?.total ?? imports.length),
       latestSyncAt: importExport?.summary?.latest_sync_at || '',
       latestSyncRunId: importExport?.summary?.latest_sync_run_id || '',
@@ -106,8 +106,8 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
       totalRows
     }
   }, {
-    empty: !sources.length && !catalogRows.length && !tableRows.length,
-    error: requestErrors.length && !sources.length && !catalogRows.length && !tableRows.length ? requestErrors[0] : undefined,
+    empty: !sources.length && !catalogRows.length && !datasetRows.length,
+    error: requestErrors.length && !sources.length && !catalogRows.length && !datasetRows.length ? requestErrors[0] : undefined,
     mockFallback: false,
     partialErrors
   });
