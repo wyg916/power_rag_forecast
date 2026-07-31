@@ -5,6 +5,8 @@ import os
 import pytest
 from fastapi import Request
 
+from scripts.day3_test_database_guard import configure_pytest_database
+
 
 # Unit tests should not load local multi-GB embedding/reranker models or call
 # external LLM providers. Integration/evaluation scripts exercise those paths.
@@ -16,6 +18,11 @@ os.environ["RAG_RERANK_ENABLED"] = "1"
 os.environ["RAG_RERANK_PROVIDER"] = "local"
 os.environ["RAG_RERANK_MODEL"] = "bge-reranker-base"
 os.environ["RAG_CACHE_ENABLED"] = "0"
+
+# This must run before importing the application. Normal pytest invocations
+# cannot inherit the repository's local PostgreSQL target; database-backed
+# tests must use the restricted Day 3 isolated runner.
+PYTEST_DATABASE_GUARD = configure_pytest_database()
 
 from backend.app.core.config import get_settings  # noqa: E402
 from backend.app.core.security import CurrentUser, get_current_user  # noqa: E402
