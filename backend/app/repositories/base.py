@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from backend.app.core.config import get_settings
-from backend.app.db.session import get_engine
+from backend.app.db.session import get_engine, get_security_engine
 from backend.app.observability import log_suppressed_exception
 
 
@@ -24,6 +24,21 @@ def postgres_engine() -> Engine | None:
         return engine
     except Exception as exc:
         log_suppressed_exception("repositories.postgres_engine", exc)
+        return None
+
+
+def security_postgres_engine() -> Engine | None:
+    if not get_settings().has_security_database_url:
+        return None
+    try:
+        engine = get_security_engine()
+        if engine.dialect.name != "postgresql":
+            return None
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return engine
+    except Exception as exc:
+        log_suppressed_exception("repositories.security_postgres_engine", exc)
         return None
 
 

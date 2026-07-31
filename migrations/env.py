@@ -67,9 +67,10 @@ def _validate_expected_target(url: str) -> None:
 
 
 def _database_url() -> str:
-    url = get_settings().database_url
+    settings = get_settings()
+    url = settings.database_url if _isolated_schema() is not None else settings.migration_database_url
     if not url:
-        raise RuntimeError("DATABASE_URL 未配置，无法执行 Alembic migration。")
+        raise RuntimeError("MIGRATION_DATABASE_URL 未配置，无法执行正式 Alembic migration。")
     _validate_expected_target(url)
     return url
 

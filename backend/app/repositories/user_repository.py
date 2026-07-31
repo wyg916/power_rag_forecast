@@ -6,7 +6,15 @@ from typing import Any
 
 from sqlalchemy import text
 
-from .base import mapping_dict, mapping_list, postgres_engine
+from .base import mapping_dict, mapping_list, security_postgres_engine as _security_postgres_engine
+
+# Compatibility seam for existing tests and local adapters. The implementation
+# now resolves the dedicated security identity, not the business runtime engine.
+postgres_engine = _security_postgres_engine
+
+
+def security_postgres_engine():
+    return postgres_engine()
 
 
 ROLE_ALIASES = {"operator": "analyst"}
@@ -76,7 +84,7 @@ def list_users(
 ) -> dict[str, Any]:
     page = max(1, int(page or 1))
     page_size = max(1, min(int(page_size or 20), 100))
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         rows = [public_user(user) for user in _MEMORY_USERS.values()]
         filtered = [user for user in rows if _matches_filters(user, keyword=keyword, role=role, is_active=is_active)]
@@ -126,7 +134,7 @@ def get_user_by_username(username: str) -> dict[str, Any] | None:
     name = str(username or "").strip()
     if not name:
         return None
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         value = _MEMORY_USERS.get(name)
         return dict(value) if value else None
@@ -153,7 +161,7 @@ def get_user_by_id(user_id: str) -> dict[str, Any] | None:
     value = str(user_id or "").strip()
     if not value:
         return None
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         for user in _MEMORY_USERS.values():
             if str(user.get("user_id")) == value or str(user.get("id")) == value:
@@ -197,7 +205,7 @@ def create_user(
     if existing:
         return existing
     user_id = uuid.uuid4().hex
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         now = datetime.utcnow().isoformat(sep=" ", timespec="seconds")
         user = _normalize_user(
@@ -263,7 +271,7 @@ def update_user(
         return None
     role_value = normalize_role(role) if role is not None else str(current.get("role") or "viewer")
     active_value = bool(is_active) if is_active is not None else bool(current.get("is_active", True))
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         for username, user in _MEMORY_USERS.items():
             if str(user.get("user_id")) == str(user_id) or str(user.get("id")) == str(user_id):
@@ -331,7 +339,7 @@ def update_password_hash(user_id: str, password_hash: str) -> bool:
 
 
 def count_admin_users(*, active_only: bool = True) -> int:
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         return sum(
             1
@@ -367,7 +375,7 @@ def update_last_login(username: str) -> bool:
     name = str(username or "").strip()
     if not name:
         return False
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         user = _MEMORY_USERS.get(name)
         if not user:
@@ -389,7 +397,7 @@ def update_password(username: str, password_hash: str) -> bool:
     name = str(username or "").strip()
     if not name:
         return False
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         user = _MEMORY_USERS.get(name)
         if not user:

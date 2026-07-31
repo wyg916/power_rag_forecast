@@ -14,7 +14,10 @@ from .config import APP_VERSION, PLATFORM_NAME
 from .core.config import get_settings
 from .core.api_security import ApiSecurityMiddleware, validate_app_route_coverage
 from .core.redaction import mask_secret_fields
+from .data_registry import validate_dataset_registry
+from .db.session import get_engine, get_security_engine, validate_runtime_database_roles
 from .observability import configure_app_logging
+from .services.dataset_query_service import validate_registry_against_database
 
 
 def _cors_allowed_origins() -> list[str]:
@@ -64,6 +67,11 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def validate_api_security_matrix() -> None:
         validate_app_route_coverage(app)
+        validate_dataset_registry()
+        if settings.has_database_url and not settings.is_test:
+            runtime_engine = get_engine()
+            validate_runtime_database_roles(runtime_engine, get_security_engine())
+            validate_registry_against_database(runtime_engine)
 
     return app
 

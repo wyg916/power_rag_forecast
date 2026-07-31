@@ -76,6 +76,8 @@ class Settings:
     project_root: Path
     app_env: str
     database_url: str
+    security_database_url: str
+    migration_database_url: str
     database_primary: str
     database_allow_legacy_fallback: bool
     redis_url: str
@@ -100,6 +102,10 @@ class Settings:
     @property
     def has_database_url(self) -> bool:
         return bool(self.database_url.strip())
+
+    @property
+    def has_security_database_url(self) -> bool:
+        return bool(self.security_database_url.strip())
 
     @property
     def wants_postgres_primary(self) -> bool:
@@ -148,8 +154,22 @@ def validate_security_settings(settings: Settings) -> None:
             errors.append("production 的 JWT_SECRET_KEY 长度必须至少为 32 个字符")
         if not settings.admin_initialized:
             errors.append("production 缺少 ADMIN_INITIALIZED=1；请先通过受控流程初始化管理员")
+        if not settings.database_url.strip():
+            errors.append("production 缺少普通运行身份 DATABASE_URL")
+        if not settings.security_database_url.strip():
+            errors.append("production 缺少独立安全仓储身份 SECURITY_DATABASE_URL")
+        if settings.database_url.strip() == settings.security_database_url.strip():
+            errors.append("production 的 DATABASE_URL 与 SECURITY_DATABASE_URL 必须分离")
+        if settings.migration_database_url.strip() and settings.migration_database_url.strip() == settings.database_url.strip():
+            errors.append("MIGRATION_DATABASE_URL 不得与普通运行 DATABASE_URL 相同")
     if (settings.auth_required or settings.is_production) and settings.jwt_algorithm.upper() != "HS256":
         errors.append("JWT_ALGORITHM 必须为 HS256")
+    if settings.database_url.strip() and not settings.is_test and not settings.security_database_url.strip():
+        errors.append("配置 DATABASE_URL 时必须同时配置独立 SECURITY_DATABASE_URL")
+    if settings.database_url.strip() and settings.database_url.strip() == settings.security_database_url.strip():
+        errors.append("DATABASE_URL 与 SECURITY_DATABASE_URL 不得使用同一连接")
+    if settings.migration_database_url.strip() and settings.migration_database_url.strip() == settings.database_url.strip():
+        errors.append("MIGRATION_DATABASE_URL 不得与普通运行 DATABASE_URL 相同")
 
     if errors:
         raise SecurityConfigurationError("安全配置无效：" + "；".join(errors))
@@ -163,6 +183,8 @@ def get_settings() -> Settings:
         project_root=PROJECT_ROOT,
         app_env=app_env,
         database_url=_env("DATABASE_URL", ""),
+        security_database_url=_env("SECURITY_DATABASE_URL", ""),
+        migration_database_url=_env("MIGRATION_DATABASE_URL", ""),
         database_primary=_env("DATABASE_PRIMARY", "postgresql"),
         database_allow_legacy_fallback=_bool_env("DATABASE_ALLOW_LEGACY_FALLBACK", False),
         redis_url=_env("REDIS_URL", "redis://localhost:6379/0"),

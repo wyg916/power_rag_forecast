@@ -7,7 +7,14 @@ from sqlalchemy import text
 from backend.app.core.redaction import mask_secret_fields
 from backend.app.core.security import CurrentUser
 
-from .base import dumps_json, mapping_list, postgres_engine
+from .base import dumps_json, mapping_list, security_postgres_engine as _security_postgres_engine
+
+# Compatibility seam; callers still receive the dedicated security engine.
+postgres_engine = _security_postgres_engine
+
+
+def security_postgres_engine():
+    return postgres_engine()
 
 _MEMORY_AUDIT_LOGS: list[dict[str, Any]] = []
 
@@ -78,7 +85,7 @@ def write_audit_log(
 
 
 def list_audit_logs(limit: int = 100, action: str | None = None) -> list[dict[str, Any]]:
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         rows = [row for row in _MEMORY_AUDIT_LOGS if not action or row.get("action") == action]
         return list(reversed(rows))[: max(1, min(int(limit or 100), 500))]

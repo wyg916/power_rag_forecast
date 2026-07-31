@@ -7,7 +7,14 @@ from sqlalchemy import text
 
 from backend.app.core.redaction import mask_secret_fields
 
-from .base import dumps_json, loads_json, mapping_dict, mapping_list, postgres_engine
+from .base import dumps_json, loads_json, mapping_dict, mapping_list, security_postgres_engine as _security_postgres_engine
+
+# Compatibility seam; callers still receive the dedicated security engine.
+postgres_engine = _security_postgres_engine
+
+
+def security_postgres_engine():
+    return postgres_engine()
 
 
 _RUNTIME_MEMORY: dict[str, dict[str, Any]] = {}
@@ -90,7 +97,7 @@ def upsert_runtime_config(
     if not key:
         raise ValueError("config_key is required")
     value = _serialize_value(config_value, value_type)
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         row = {
             "id": len(_RUNTIME_MEMORY) + 1,
@@ -146,7 +153,7 @@ def upsert_runtime_config(
 
 
 def list_runtime_config(category: str | None = None) -> list[dict[str, Any]]:
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         rows = list(_RUNTIME_MEMORY.values())
         if category:
@@ -210,7 +217,7 @@ def insert_health_snapshot(
         "checked_at": _now(),
         "source": source,
     }
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         row["id"] = len(_HEALTH_MEMORY) + 1
         _HEALTH_MEMORY.append(row)
@@ -236,7 +243,7 @@ def insert_health_snapshot(
 
 
 def latest_health_snapshots(limit: int = 50) -> list[dict[str, Any]]:
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         return list(reversed(_HEALTH_MEMORY))[: max(1, min(int(limit or 50), 500))]
     with engine.connect() as conn:
@@ -255,7 +262,7 @@ def latest_health_snapshots(limit: int = 50) -> list[dict[str, Any]]:
 
 
 def health_check_records(limit: int = 100) -> list[dict[str, Any]]:
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     limit_value = max(1, min(int(limit or 100), 500))
     if engine is None:
         return list(reversed(_HEALTH_MEMORY))[:limit_value]
@@ -287,7 +294,7 @@ def upsert_api_config(config: dict[str, Any], *, updated_by: str = "") -> dict[s
     if not key:
         raise ValueError("interface_key is required")
     extra = mask_secret_fields(config.get("extra_json") or {})
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     payload = {
         "interface_key": key,
         "interface_name": str(config.get("interface_name") or key),
@@ -366,7 +373,7 @@ def upsert_api_config(config: dict[str, Any], *, updated_by: str = "") -> dict[s
 def list_api_configs(keyword: str = "", interface_type: str = "", status: str = "", *, page: int = 1, page_size: int = 100) -> dict[str, Any]:
     page = max(1, int(page or 1))
     page_size = max(1, min(int(page_size or 100), 500))
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         rows = [_api_config_row(row) for row in _API_CONFIG_MEMORY.values()]
         rows = _filter_api_config_rows(rows, keyword=keyword, interface_type=interface_type, status=status)
@@ -421,7 +428,7 @@ def get_api_config(interface_key_or_id: str) -> dict[str, Any] | None:
     value = str(interface_key_or_id or "").strip()
     if not value:
         return None
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         for row in _API_CONFIG_MEMORY.values():
             if str(row.get("interface_key")) == value or str(row.get("id")) == value:
@@ -443,7 +450,7 @@ def get_api_config(interface_key_or_id: str) -> dict[str, Any] | None:
 
 
 def update_api_config_status(interface_key: str, *, status: str, latency_ms: float | None, success_rate: float | None = None) -> None:
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     now = _now()
     if engine is None:
         row = _API_CONFIG_MEMORY.get(interface_key)
@@ -491,7 +498,7 @@ def insert_api_test_log(
         "response_summary": response_summary,
         "extra_json": mask_secret_fields(extra_json or {}),
     }
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         row["id"] = len(_API_TEST_MEMORY) + 1
         _API_TEST_MEMORY.append(row)
@@ -523,7 +530,7 @@ def list_api_test_logs(
     limit: int = 100,
 ) -> list[dict[str, Any]]:
     limit_value = max(1, min(int(limit or 100), 500))
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         rows = list(reversed(_API_TEST_MEMORY))
         if interface_name:
@@ -557,7 +564,7 @@ def list_api_test_logs(
 
 
 def list_role_permissions() -> list[dict[str, Any]]:
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         return []
     with engine.connect() as conn:
@@ -582,7 +589,7 @@ def upsert_role_permissions(role_id: str, permissions: list[str], *, role_name: 
     role = str(role_id or "").strip()
     if not role:
         raise ValueError("role_id is required")
-    engine = postgres_engine()
+    engine = security_postgres_engine()
     if engine is None:
         return {"role_id": role, "role_name": role_name or role, "permissions": permissions, "description": description}
     with engine.begin() as conn:
