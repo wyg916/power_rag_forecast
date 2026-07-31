@@ -19,11 +19,20 @@ COMMON_PROVINCES = [
     "湖北省", "湖南省", "广东省", "广西壮族自治区", "海南省", "重庆市", "四川省",
     "贵州省", "云南省", "西藏自治区", "陕西省", "甘肃省", "青海省", "宁夏回族自治区", "新疆维吾尔自治区",
 ]
+_TARIFF_TABLE_QUERIES = {
+    "pv_tariff_rules": ("pv_tariff_rules.csv", "SELECT * FROM pv_tariff_rules LIMIT 5000"),
+    "pv_station_tariff_check": ("pv_station_tariff_check.csv", "SELECT * FROM pv_station_tariff_check LIMIT 5000"),
+    "pv_policy_files": ("pv_policy_files.csv", "SELECT * FROM pv_policy_files LIMIT 5000"),
+    "market_power_price_rules": ("market_power_price_rules.csv", "SELECT * FROM market_power_price_rules LIMIT 5000"),
+    "southern_grid_tax_rules": ("southern_grid_tax_rules.csv", "SELECT * FROM southern_grid_tax_rules LIMIT 5000"),
+}
 
 
 def _read_table(table_name: str, file_name: str) -> tuple[pd.DataFrame, str]:
-    # Table names here are internal constants with PostgreSQL-compatible names.
-    db_df = query_dataframe(f"SELECT * FROM {table_name} LIMIT 5000")
+    registered = _TARIFF_TABLE_QUERIES.get(table_name)
+    if registered is None or registered[0] != file_name:
+        return pd.DataFrame(), "unregistered_dataset"
+    db_df = query_dataframe(registered[1])
     if not db_df.empty:
         return db_df, f"database:{table_name}"
     path = DATA_DIR / file_name

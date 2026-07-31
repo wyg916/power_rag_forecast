@@ -27,7 +27,7 @@ def answer_prediction_window(result: dict[str, Any]) -> str:
 
 
 def answer_data_freshness(result: dict[str, Any], label: str) -> str:
-    if result.get("multi_table"):
+    if result.get("multi_dataset"):
         items = result.get("items") or []
         available = [item for item in items if item.get("available")]
         missing = [item for item in items if not item.get("available")]
@@ -37,26 +37,26 @@ def answer_data_freshness(result: dict[str, Any], label: str) -> str:
             field_text = "、".join(str(field) for field in fields[:8]) if fields else "-"
             if item.get("available"):
                 lines.append(
-                    f"- {item.get('table')}：最新时间 {item.get('max_datetime') or '-'}；"
+                    f"- {item.get('display_name') or item.get('dataset_id')}：最新时间 {item.get('max_datetime') or '-'}；"
                     f"数据范围 {item.get('min_datetime') or '-'} 至 {item.get('max_datetime') or '-'}；"
                     f"记录数 {item.get('row_count') or 0}；时间字段 {item.get('datetime_field') or '-'}；"
                     f"字段 {field_text}；查询摘要：{item.get('query_summary') or '按时间字段执行新鲜度检查'}。"
                 )
             else:
-                lines.append(f"- {item.get('table')}：未找到或不可查询；字段 {field_text}；查询摘要：新鲜度检查未能执行；原因：{item.get('message') or '未知'}")
-        conclusion = "已查到部分数据库表。" if missing and available else ("已查到这些数据库表的最新数据。" if available else "这些数据库表当前未查到可用数据。")
+                lines.append(f"- {item.get('display_name') or item.get('dataset_id')}：未找到或不可查询；字段 {field_text}；查询摘要：新鲜度检查未能执行；原因：{item.get('message') or '未知'}")
+        conclusion = "已查到部分受控数据集。" if missing and available else ("已查到这些受控数据集的最新数据。" if available else "这些受控数据集当前未查到可用数据。")
         return (
             f"结论：{conclusion}\n\n"
-            "表数据新鲜度：\n"
+            "数据集新鲜度：\n"
             + "\n".join(lines)
-            + "\n\n建议：如果某张表显示未找到，请先确认表名是否存在、迁移是否执行到最新版本，以及数据导入任务是否完成。"
+            + "\n\n建议：如果某个数据集显示不可用，请确认迁移和数据导入任务是否完成。"
         )
     if not result.get("available"):
         return f"结论：当前系统未查询到{label}数据范围。\n\n数据依据：{result.get('message') or '数据源不可用'}。"
     return (
         f"结论：当前{label}最新时间为 {result.get('max_datetime')}。\n\n"
         "数据依据：\n"
-        f"1. 数据表：{result.get('table')}\n"
+        f"1. 数据集：{result.get('dataset_id')}\n"
         f"2. 时间字段：{result.get('datetime_field')}\n"
         f"3. 数据范围：{result.get('min_datetime')} 至 {result.get('max_datetime')}\n"
         f"4. 记录数：{result.get('row_count')} 条\n"
@@ -67,8 +67,9 @@ def answer_data_freshness(result: dict[str, Any], label: str) -> str:
 
 
 def answer_data_sql_query(result: dict[str, Any]) -> str:
-    table = result.get("table_name") or "-"
+    dataset_id = result.get("dataset_id") or "-"
     fields = result.get("fields") or result.get("columns") or []
+    fields = [item.get("field_id", "") if isinstance(item, dict) else item for item in fields]
     field_text = "、".join(str(field) for field in fields[:10]) if fields else "-"
     time_range = result.get("time_range") or {}
     range_start = time_range.get("start") or time_range.get("requested_start") or "-"
@@ -79,31 +80,31 @@ def answer_data_sql_query(result: dict[str, Any]) -> str:
     if query_type == "data_catalog_list":
         records = result.get("records") or []
         lines = [
-            f"{idx}. {row.get('table_name')}：{row.get('display_name') or '-'}，业务域 {row.get('business_domain') or '-'}，时间字段 {row.get('time_field') or '-'}。"
+            f"{idx}. {row.get('dataset_id')}：{row.get('display_name') or '-'}，业务域 {row.get('business_domain') or '-'}，默认排序 {row.get('default_sort') or '-'}。"
             for idx, row in enumerate(records[:10], 1)
         ]
         return (
-            f"结论：当前 P1 数据目录登记了 {result.get('row_count') or len(records)} 张核心业务表。\n\n"
+            f"结论：当前数据目录登记了 {result.get('row_count') or len(records)} 个受控业务数据集。\n\n"
             "查数口径：\n"
-            f"1. 表名：{table}\n"
+            f"1. 数据集：{dataset_id}\n"
             f"2. 字段：{field_text}\n"
             f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
             f"4. 查询摘要：{query_summary}\n\n"
-            "核心业务表：\n"
+            "受控业务数据集：\n"
             + ("\n".join(lines) if lines else "暂无目录记录。")
         )
-    if query_type == "empty_table_scan":
+    if query_type == "empty_dataset_scan":
         records = result.get("records") or []
         if records:
-            lines = [f"- {row.get('table_name')}：记录数 {row.get('row_count') or 0}，原因 {row.get('not_found_reason') or '-'}。" for row in records[:10]]
-            conclusion = f"发现 {len(records)} 张已建表但记录数为 0 的空表。"
+            lines = [f"- {row.get('display_name') or row.get('dataset_id')}：记录数 {row.get('row_count') or 0}，原因 {row.get('not_found_reason') or '-'}。" for row in records[:10]]
+            conclusion = f"发现 {len(records)} 个当前记录数为 0 的受控数据集。"
         else:
             lines = [result.get("not_found_reason") or "未发现空表。"]
-            conclusion = "当前未发现已建表且记录数为 0 的空表。"
+            conclusion = "当前未发现记录数为 0 的受控数据集。"
         return (
             f"结论：{conclusion}\n\n"
             "查数口径：\n"
-            f"1. 表名：{table}\n"
+            f"1. 数据集：{dataset_id}\n"
             f"2. 字段：{field_text}\n"
             f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
             f"4. 查询摘要：{query_summary}\n"
@@ -115,13 +116,13 @@ def answer_data_sql_query(result: dict[str, Any]) -> str:
         records = result.get("records") or []
         ready = result.get("readiness_status") == "ready"
         lines = [
-            f"- {row.get('table_name')}：{row.get('status')}，时间字段 {row.get('datetime_field') or '-'}，范围 {row.get('min_datetime') or '-'} 至 {row.get('max_datetime') or '-'}，记录数 {row.get('row_count') or 0}。"
+            f"- {row.get('display_name') or row.get('dataset_id')}：{row.get('status')}，时间字段 {row.get('datetime_field') or '-'}，范围 {row.get('min_datetime') or '-'} 至 {row.get('max_datetime') or '-'}，记录数 {row.get('row_count') or 0}。"
             for row in records[:10]
         ]
         return (
-            f"结论：{'当前核心数据具备预测支撑基础。' if ready else '当前核心数据只具备部分预测支撑，仍需补齐缺失表或空表。'}\n\n"
+            f"结论：{'当前核心数据具备预测支撑基础。' if ready else '当前核心数据只具备部分预测支撑，仍需补齐不可用或空数据集。'}\n\n"
             "查数口径：\n"
-            f"1. 表名：{table}\n"
+            f"1. 数据集：{dataset_id}\n"
             f"2. 字段：{field_text}\n"
             f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
             f"4. 查询摘要：{query_summary}\n"
@@ -133,7 +134,7 @@ def answer_data_sql_query(result: dict[str, Any]) -> str:
         return (
             "结论：本次没有查到可用数据。\n\n"
             "查数口径：\n"
-            f"1. 表名：{table}\n"
+            f"1. 数据集：{dataset_id}\n"
             f"2. 字段：{field_text}\n"
             f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
             f"4. 查询摘要：{query_summary}\n"
@@ -143,15 +144,16 @@ def answer_data_sql_query(result: dict[str, Any]) -> str:
     preview_lines: list[str] = []
     for idx, row in enumerate(records[:3], 1):
         pieces = []
-        for key in (result.get("columns") or fields)[:5]:
+        preview_fields = [item.get("field_id", "") if isinstance(item, dict) else item for item in (result.get("columns") or fields)]
+        for key in preview_fields[:5]:
             if key in row:
                 pieces.append(f"{key}={row.get(key)}")
         preview_lines.append(f"{idx}. " + "；".join(pieces))
     preview = "\n".join(preview_lines) if preview_lines else "已返回记录，但无可展示字段。"
     return (
-        f"结论：已按只读 SQL 查到 {result.get('row_count') or len(records)} 条结果预览。\n\n"
+        f"结论：已通过受控数据集查询得到 {result.get('row_count') or len(records)} 条结果预览。\n\n"
         "查数口径：\n"
-        f"1. 表名：{table}\n"
+        f"1. 数据集：{dataset_id}\n"
         f"2. 字段：{field_text}\n"
         f"3. 时间范围：{range_start} 至 {range_end}，时间字段 {time_field}\n"
         f"4. 查询摘要：{query_summary}\n\n"

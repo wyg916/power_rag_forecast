@@ -4,8 +4,7 @@ from typing import Any
 
 from ...source_contract import normalize_tool_result
 from ...ai.tool_registry import get_high_risk_hours, get_model_error_summary
-from ...services.data_trust_service import query_business_data
-from .data_freshness_tools import get_data_freshness
+from ...services.controlled_business_query_service import get_data_freshness, query_business_data
 from .forecast_tools import explain_high_price_hour, explain_low_price_hour, get_forecast_metrics
 from .knowledge_tools import search_business_knowledge
 from .report_tools import get_report_summary

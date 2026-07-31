@@ -766,12 +766,12 @@ def _data_used(results: list[ToolResult]) -> dict[str, bool]:
                 used["load"] = True
         if name == "query_business_data":
             used["data_query"] = True
-            table = str(result.output.get("table_name") or "")
-            if "weather" in table:
+            dataset_id = str(result.output.get("dataset_id") or "")
+            if "weather" in dataset_id:
                 used["weather"] = True
-            if "load" in table:
+            if "load" in dataset_id:
                 used["load"] = True
-            if "forecast" in table:
+            if "forecast" in dataset_id:
                 used["prediction"] = True
         if name in {"get_storage_discharge_windows", "get_storage_charge_windows"}:
             used["storage"] = True
