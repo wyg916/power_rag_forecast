@@ -111,6 +111,8 @@ def test_strategy_separates_record_review_validity_simulation_and_execution() ->
     design = _read("frontend/src/components/strategy/StrategyDesign.tsx")
     page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
     assert "strategyStatus" in service and "strategyUsable" in service
+    assert "unreviewed: '未进入审核'" in service
+    assert "<small>审核状态</small>" in page
     assert "governedStrategy?.is_stale || today?.is_stale || forecast?.is_stale" in service
     for wording in ["测算收益", "非实际结算", "不可作为当前策略", "模拟设备 / 非实际执行"]:
         assert wording in design
@@ -127,6 +129,8 @@ def test_dashboard_kpi_name_matches_forecast_spread_and_missing_values_stay_miss
     assert "updatedAt: meta.updated_at" in service
     assert "PageDataState" in page
     assert "?? '--'" in page
+    assert "repeat(3, minmax(0, 1fr))" in page
+    assert "home-dashboard-stale" in page
 
 
 def test_seed_and_unavailable_records_cannot_become_core_page_success_fallbacks() -> None:

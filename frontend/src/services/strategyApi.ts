@@ -107,6 +107,7 @@ export async function getStrategyCenterData(): Promise<any> {
   });
 
   const statusLabels: Record<string, string> = {
+    unreviewed: '未进入审核',
     draft: '草稿', pending_review: '待复核', approved: '已通过', rejected: '已驳回',
     published: '已发布', superseded: '已替代', expired: '已过期', cancelled: '已取消'
   };

@@ -304,7 +304,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
                 {data?.sourceLabel || '--'}
               </Tag>
             </span>
-            <span><small>策略状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
+            <span><small>审核状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
             <span className="strategy-meta-run"><small>适用窗口</small><Tooltip title={`${data?.strategyValidFrom || '--'} 至 ${data?.strategyValidTo || '--'}`}><strong>{data?.strategyValidFrom && data?.strategyValidTo ? `${String(data.strategyValidFrom).slice(5, 16)} 至 ${String(data.strategyValidTo).slice(5, 16)}` : '--'}</strong></Tooltip></span>
             {data?.isStale && (
               <span className="strategy-meta-stale">

@@ -113,6 +113,29 @@ export function DashboardPage(_: PageProps) {
   const kpiItems = data?.kpi?.items || [];
   return (
     <div className="home-dashboard-page">
+      <style>{`
+        @media (min-width: 1181px) and (max-width: 1600px) {
+          .home-dashboard-page {
+            overflow-x: hidden;
+            overflow-y: auto;
+          }
+
+          .home-dashboard-page .home-dashboard-content {
+            flex: 0 0 auto;
+            min-height: 710px;
+            grid-template-rows: 178px minmax(260px, 1fr) minmax(238px, 0.52fr);
+          }
+
+          .home-dashboard-page .home-dashboard-content.home-dashboard-stale {
+            min-height: 450px;
+            grid-template-rows: 178px minmax(260px, 1fr);
+          }
+
+          .home-dashboard-page .home-kpi-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+      `}</style>
       <PageHeader
         title="总览驾驶舱"
         eyebrow="首页"
@@ -149,7 +172,7 @@ export function DashboardPage(_: PageProps) {
 
       <PageDataState meta={viewMeta} onRetry={loadData} />
 
-      {showContent ? <section className="home-dashboard-content">
+      {showContent ? <section className={`home-dashboard-content${data?.isStale ? ' home-dashboard-stale' : ''}`}>
         <HomeKpiStrip items={kpiItems} />
         {data?.isStale ? (
           <>
