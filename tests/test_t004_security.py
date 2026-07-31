@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 from pathlib import Path
 
@@ -21,7 +22,15 @@ from backend.app.main import app, create_app, sanitized_http_exception_handler
 
 ROOT = Path(__file__).resolve().parents[1]
 client = TestClient(app)
-SECURITY_ENV_KEYS = ("APP_ENV", "ENV", "AUTH_REQUIRED", "JWT_SECRET_KEY", "JWT_ALGORITHM", "ADMIN_INITIALIZED")
+SECURITY_ENV_KEYS = (
+    "APP_ENV",
+    "ENV",
+    "AUTH_REQUIRED",
+    "JWT_SECRET_KEY",
+    "JWT_ALGORITHM",
+    "ADMIN_INITIALIZED",
+    "SECURITY_DATABASE_URL",
+)
 STRONG_TEST_SECRET = "t004-isolated-test-secret-0123456789abcdef"
 
 
@@ -30,6 +39,11 @@ def _isolated_security_env(monkeypatch):
     monkeypatch.setattr(config_module, "load_dotenv", lambda: None)
     for key in SECURITY_ENV_KEYS:
         monkeypatch.delenv(key, raising=False)
+    if os.environ.get("DATABASE_URL"):
+        monkeypatch.setenv(
+            "SECURITY_DATABASE_URL",
+            "postgresql+psycopg://day4_security_test:unit-test-only@127.0.0.1:1/day4_security_test",
+        )
     reset_settings_cache()
     yield
     reset_settings_cache()

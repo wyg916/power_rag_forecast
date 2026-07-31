@@ -161,7 +161,7 @@ def test_role_permission_matrix(role, method, path, expected):
         ("GET", "/api/tasks"),
         ("GET", "/api/settings/config"),
         ("GET", "/api/users"),
-        ("GET", "/api/data/tables"),
+        ("GET", "/api/data/datasets"),
     ],
 )
 def test_anonymous_users_cannot_access_business_domains(method, path):
@@ -270,6 +270,8 @@ def test_production_disables_documentation_routes(monkeypatch):
     monkeypatch.setenv("AUTH_REQUIRED", "1")
     monkeypatch.setenv("JWT_SECRET_KEY", STRONG_SECRET)
     monkeypatch.setenv("ADMIN_INITIALIZED", "1")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://runtime:placeholder@localhost:5432/postgres")
+    monkeypatch.setenv("SECURITY_DATABASE_URL", "postgresql+psycopg://security:placeholder@localhost:5432/postgres")
     reset_settings_cache()
     production_app = create_app()
     validate_app_route_coverage(production_app)

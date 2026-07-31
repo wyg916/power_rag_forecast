@@ -14,24 +14,25 @@ def test_table_names_are_routed_to_database_freshness_intent():
 def test_multi_table_freshness_answer_lists_missing_and_available_tables():
     answer = answer_data_freshness(
         {
-            "multi_table": True,
+            "multi_dataset": True,
             "available": True,
             "items": [
                 {
-                    "table": "raw_market",
+                    "dataset_id": "market_price_history",
+                    "display_name": "市场电价历史",
                     "available": True,
                     "min_datetime": "2024-01-01",
                     "max_datetime": "2026-06-01",
                     "row_count": 10,
                     "datetime_field": "datetime",
                 },
-                {"table": "forecast_results", "available": False, "message": "未找到该数据库表或视图。"},
+                {"dataset_id": "forecast_output", "display_name": "预测结果", "available": False, "message": "当前数据集不可用。"},
             ],
         },
         "数据库表",
     )
 
-    assert "raw_market" in answer
-    assert "forecast_results" in answer
+    assert "市场电价历史" in answer
+    assert "预测结果" in answer
     assert "最新时间 2026-06-01" in answer
-    assert "未找到" in answer
+    assert "不可用" in answer

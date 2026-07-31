@@ -178,16 +178,16 @@ def test_stage2_agent_endpoint_shape():
 
 
 def test_database_table_browser_endpoints_are_safe():
-    response = client.get("/api/data/tables")
+    response = client.get("/api/data/datasets")
     assert response.status_code == 200
     payload = response.json()
     assert "available" in payload
-    assert "tables" in payload
-    if payload["tables"]:
-        table_name = payload["tables"][0]["table_name"]
-        rows = client.get(f"/api/data/tables/{table_name}/rows?limit=5")
+    assert "datasets" in payload
+    if payload["datasets"]:
+        dataset_id = payload["datasets"][0]["dataset_id"]
+        rows = client.get(f"/api/data/datasets/{dataset_id}/rows?page_size=5")
         assert rows.status_code == 200
         row_payload = rows.json()
-        assert row_payload["table_name"] == table_name
+        assert row_payload["dataset_id"] == dataset_id
         assert "columns" in row_payload
         assert "records" in row_payload

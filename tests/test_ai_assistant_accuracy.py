@@ -26,7 +26,8 @@ def test_weather_data_latest_time_answer():
     assert data["tools"][0]["name"] == "get_data_freshness"
     assert "最新时间" in data["answer"]
     assert "数据范围" in data["answer"]
-    assert "raw_weather" in data["answer"]
+    assert "weather_observations" in data["answer"]
+    assert "raw_weather" not in data["answer"]
 
 
 def test_current_date_query_answer():
