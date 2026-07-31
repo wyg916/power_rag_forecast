@@ -1,0 +1,81 @@
+{
+  "status": "PASS",
+  "target": {
+    "database": "postgres",
+    "host": "localhost",
+    "port": 5432
+  },
+  "roles": {
+    "runtime": {
+      "role_name": "beta10d_app_login",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "database_create": false,
+      "schema_create": false
+    },
+    "security": {
+      "role_name": "beta10d_security_login",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "database_create": false,
+      "schema_create": false
+    },
+    "validation": {
+      "status": "validated",
+      "runtime_role": "beta10d_app_login",
+      "security_role": "beta10d_security_login"
+    }
+  },
+  "registry": {
+    "dataset_count": 11,
+    "validated": true
+  },
+  "allowed": {
+    "registered_dataset_select": "pass",
+    "business_update": "pass_rolled_back",
+    "business_delete": "pass_rolled_back",
+    "audit_insert": "pass_rolled_back_without_sequence_use",
+    "security_auth_select": "pass",
+    "security_audit_select": "pass"
+  },
+  "denied": {
+    "runtime_users": "InsufficientPrivilege",
+    "runtime_audit": "InsufficientPrivilege",
+    "runtime_alembic": "InsufficientPrivilege",
+    "runtime_pg_authid": "InsufficientPrivilege",
+    "runtime_server_file": "InsufficientPrivilege",
+    "runtime_schema_ddl": "InsufficientPrivilege",
+    "runtime_create_role": "InsufficientPrivilege",
+    "security_business_data": "InsufficientPrivilege"
+  },
+  "public_before": {
+    "table_count": 62,
+    "view_count": 8,
+    "sequence_count": 47,
+    "function_count": 37,
+    "alembic_heads": [
+      "0016_strategy_runtime"
+    ],
+    "structure_sha256": "9610393a5c8a626f3cea41c534145402a789bbe7cf68741c4869ed329827cf02"
+  },
+  "public_after": {
+    "table_count": 62,
+    "view_count": 8,
+    "sequence_count": 47,
+    "function_count": 37,
+    "alembic_heads": [
+      "0016_strategy_runtime"
+    ],
+    "structure_sha256": "9610393a5c8a626f3cea41c534145402a789bbe7cf68741c4869ed329827cf02"
+  },
+  "public_delta": {
+    "changed_tables": {},
+    "changed_sequences": {}
+  }
+}

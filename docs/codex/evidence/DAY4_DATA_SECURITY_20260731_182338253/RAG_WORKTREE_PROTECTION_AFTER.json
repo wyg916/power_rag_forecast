@@ -1,0 +1,32 @@
+{
+  "status": "PASS_WITH_EXTERNAL_ADVANCE",
+  "captured_at": "2026-07-31T19:56:21.7810973+08:00",
+  "path": "E:\\智能运营分析项目_worktrees\\beta10d_day4_data_security",
+  "branch": "beta10d/day4-data-access-security",
+  "checkpoint_head": "6c10ae734cb2e24b4936a53f7d6bf6f57def7a79",
+  "captured_head": "5ed3847903e802231560ceab2f277711bc824eeb",
+  "worktree_clean": true,
+  "day4_write_or_integration": false,
+  "latest_commits": [
+    "5ed3847903e802231560ceab2f277711bc824eeb feat(rag): add verified candidate release handoff",
+    "4810c7974ded22afa83d3ed6c83c139a987ac4a4 feat(rag): add enterprise acceptance and health gates",
+    "0ee5c617a49278e33a5ab772b02de4c501d982ae docs(codex): record RAG-R1 wave five",
+    "703ae239de6177340efcbdaadd0289f07cc5a957 fix(rag): fail closed on orchestration program errors"
+  ],
+  "critical_sha256": {
+    "backend/app/api/v1/endpoints/auth.py": "975f7d1c7efad127377e6d71c1e3f057fb42e405f2f50ff8f03c0b08c668dfb8",
+    "backend/app/core/security.py": "db254e797abe1d18908e0e874c6cd095fb2937affd1c2638cded2cbe5ef77d71",
+    "tests/test_rag_enterprise_tenant_permissions.py": "1cc57e3f589d383beff7076f56c7913943ec623337a262cf37aa8fc445c9636b",
+    "docs/codex/RAG_R1_API_PERMISSION_CONTRACT.md": "2bfb2fec85c06ab56daae1a5eb3841ac0a4dd105dbfd14e55e991d417213f964",
+    "docs/codex/RAG_R1_MIGRATION_DESIGN.md": "2f61c7bfd7c149ad8089f2fa8934d003039fb3aebf8c0b5f1bd4a8b4719bd684",
+    "docs/codex/contracts/rag_candidate_corpus_v1.schema.json": "1f4b548185f0ff92f589ed5368a977d9f04efc7b406df4527a665b391faa8bc4",
+    "docs/codex/tasks/08_RAG_ENTERPRISE_R1.md": "70a284ccd435e4388230152023dc1ed5406ed4481fc80cab2a9c28ee6226074c"
+  },
+  "comparison_to_checkpoint": {
+    "unchanged_critical_files": 6,
+    "externally_changed_files": [
+      "docs/codex/tasks/08_RAG_ENTERPRISE_R1.md"
+    ],
+    "note": "HEAD 和任务文档由 RAG-R1 外部流程推进；Day 4 分支未 merge、未 cherry-pick、未复制或写入该工作树。"
+  }
+}
