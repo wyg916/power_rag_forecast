@@ -21,7 +21,7 @@ FilterOperator = Literal["eq", "contains", "gte", "lte"]
 SortDirection = Literal["asc", "desc"]
 QUERY_TIMEOUT_MS = 5000
 MAX_SEARCH_LENGTH = 256
-_TEST_SCHEMA_RE = re.compile(r"^beta10d_day3_close_[a-z0-9_]+$")
+_TEST_SCHEMA_RE = re.compile(r"^beta10d_(?:day3_close|day5)_[a-z0-9_]+$")
 
 
 class DatasetQueryError(RuntimeError):

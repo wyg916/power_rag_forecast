@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -24,6 +25,21 @@ def _reset_runtime():
     reset_settings_cache()
     reset_db_cache()
     return get_engine()
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_t005_runs():
+    """Keep this contract test order-independent inside the shared disposable Schema."""
+
+    yield
+    if os.environ.get("BETA10D_TEST_ISOLATION_ACTIVE") != "1":
+        return
+    engine = _reset_runtime()
+    if engine is None:
+        return
+    with engine.begin() as connection:
+        connection.execute(text("DELETE FROM forecast_results WHERE run_id LIKE 't005_%'"))
+        connection.execute(text("DELETE FROM forecast_runs WHERE run_id LIKE 't005_%'"))
 
 
 def _insert_run(engine, *, status: str, finished_at: datetime, include_results: bool) -> str:
@@ -135,6 +151,7 @@ def test_source_type_enum_and_timezone_contract():
         "seed",
         "fallback",
         "derived",
+        "ai_inferred",
         "unavailable",
     }
     for source_type in SourceType:
@@ -150,7 +167,13 @@ def test_api_web_ai_share_run_and_all_read_paths_are_side_effect_free(monkeypatc
     monkeypatch.setenv("AUTH_REQUIRED", "0")
     monkeypatch.setenv("DATABASE_ALLOW_LEGACY_FALLBACK", "0")
     engine = _reset_runtime()
-    assert engine.url.database == EXPECTED_DB
+    if os.environ.get("BETA10D_TEST_ISOLATION_ACTIVE") == "1":
+        assert engine.url.database == "postgres"
+        expected_prefix = os.environ.get("BETA10D_TEST_SCHEMA_PREFIX", "beta10d_day3_close_")
+        with engine.connect() as connection:
+            assert str(connection.exec_driver_sql("SELECT current_schema()").scalar_one()).startswith(expected_prefix)
+    else:
+        assert engine.url.database == EXPECTED_DB
     assert ensure_seed_knowledge(explicit=True).get("available") is True
     assert ensure_seed_knowledge().get("blocked") is True
 
@@ -236,7 +259,8 @@ def test_frontend_contract_migrates_fact_status_out_of_global_layout():
     assert "SourceContextPanel" in states
     for label in ["数据来源", "运行批次", "生成时间", "模型版本", "特征版本", "最后刷新"]:
         assert label in states
-    assert "当前无可用真实预测" in states
+    assert "当前无可用预测事实" in states
+    assert "当前无可用真实预测" not in states
     assert "FactStatusBar" not in layout
     assert "api.sourceContext()" not in layout
     assert "SourceContextPanel" in settings

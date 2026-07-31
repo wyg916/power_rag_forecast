@@ -2,16 +2,27 @@ import { Alert, Button, Empty, Result, Skeleton, Space, Tag } from 'antd';
 import type { ReactNode } from 'react';
 import type { PageDataMeta } from '../../services/viewState';
 
-type SourceType = 'real' | 'historical' | 'simulated' | 'mixed' | 'demo' | 'seed' | 'fallback' | 'derived' | 'unavailable';
+type SourceType = 'real' | 'historical' | 'simulated' | 'mixed' | 'demo' | 'seed' | 'fallback' | 'derived' | 'ai_inferred' | 'unavailable';
 export interface SourceMeta {
   source_type: SourceType;
+  data_origin?: string;
+  source_name?: string;
   domain: string;
   run_id: string | null;
   generated_at: string | null;
+  updated_at?: string | null;
+  valid_from?: string | null;
+  valid_to?: string | null;
   model_version: string | null;
   feature_version: string | null;
+  data_version?: string | null;
+  freshness_status?: string;
   is_stale: boolean;
   stale_reason: string | null;
+  staleness_reason?: string | null;
+  simulation?: boolean;
+  degraded?: boolean;
+  availability?: string;
   unavailable_reason: string | null;
 }
 
@@ -83,26 +94,44 @@ export function InlineError({ message }: { message?: ReactNode }) {
   return <Alert type="error" showIcon message={message} />;
 }
 
-export function DataSourceTag({ source }: { source?: string }) {
-  const value = source || 'unknown';
+export function DataSourceTag({ source }: { source?: unknown }) {
+  const sourceObject = source && typeof source === 'object' ? source as Record<string, unknown> : null;
+  const value = String(sourceObject?.source_type || sourceObject?.data_origin || sourceObject?.source_name || source || 'unknown');
   const lower = value.toLowerCase();
   const labels: Record<string, [string, string]> = {
-    real: ['真实数据', 'success'],
-    historical: ['历史数据', 'blue'],
-    simulated: ['模拟入库', 'processing'],
-    mixed: ['混合入库', 'warning'],
-    demo: ['演示数据', 'warning'],
-    seed: ['初始化样例', 'warning'],
-    fallback: ['降级数据', 'warning'],
-    derived: ['派生数据', 'processing'],
-    unavailable: ['不可用', 'default']
+    real: ['业务事实', 'success'],
+    historical: ['历史业务记录', 'blue'],
+    simulated: ['规则测算', 'processing'],
+    mixed: ['业务汇总', 'warning'],
+    demo: ['开发样例（受限）', 'warning'],
+    seed: ['初始化样例（受限）', 'warning'],
+    fallback: ['服务降级', 'warning'],
+    derived: ['业务派生结果', 'processing'],
+    ai_inferred: ['AI 推断结果', 'processing'],
+    unavailable: ['暂不可用', 'default']
   };
   const normalized: SourceType | string =
     Object.keys(labels).find((item) => lower === item || lower.includes(item))
     || (lower.includes('postgres') || lower.includes('registry') ? 'real' : value);
-  const [label, color] = labels[normalized] || ['数据源', 'default'];
+  const [label, color] = labels[normalized] || ['业务事实', 'default'];
   const isMock = ['demo', 'seed', 'fallback'].includes(normalized);
-  return <Tag className={`data-source-tag ${isMock ? 'data-source-warning' : ''}`} color={color}>{label}：{value}</Tag>;
+  return <Tag className={`data-source-tag ${isMock ? 'data-source-warning' : ''}`} color={color}>{label}</Tag>;
+}
+
+function freshnessReasonText(value?: string | null) {
+  const labels: Record<string, string> = {
+    forecast_window_expired: '预测适用窗口已结束',
+    historical_run: '当前查看的是历史批次',
+    generated_at_older_than_36h: '生成时间已超过 36 小时',
+    generated_at_missing: '缺少生成时间',
+    runtime_facts_older_than_6h: '运行事实已超过 6 小时',
+    refresh_in_progress: '正在刷新',
+    data_expired: '数据超过有效时限'
+  };
+  const text = String(value || '').trim();
+  if (!text) return '数据超过有效时限';
+  if (text.startsWith('refresh_failed:')) return '刷新失败，保留上一批可追溯结果';
+  return labels[text] || '数据超过有效时限';
 }
 
 function timeText(value?: string | null) {
@@ -125,7 +154,7 @@ function PageStateMeta({ meta }: { meta: PageDataMeta }) {
       {items.map(([label, value]) => (
         <span key={label}>
           <small>{label}</small>
-          <b title={String(value)}>{value}</b>
+          <b title={label === '来源' ? undefined : String(value)}>{label === '来源' ? <DataSourceTag source={value} /> : value}</b>
         </span>
       ))}
     </div>
@@ -195,7 +224,7 @@ export function PageDataState({
     return (
       <section className="page-state-stale-inline" aria-label="数据状态：已过期">
         <Tag color="warning">数据已过期</Tag>
-        <span>原因：{meta.staleReason || '数据超过有效时限'}</span>
+        <span>原因：{freshnessReasonText(meta.staleReason)}</span>
         <PageStateMeta meta={meta} />
         {onRetry && meta.canRetry ? <Button size="small" onClick={onRetry}>重新刷新</Button> : null}
       </section>
@@ -223,7 +252,7 @@ export function SourceContextPanel({
   onRefresh?: () => void;
 }) {
   if (loading && !meta) {
-    return <Alert className="source-context-panel-state" type="info" showIcon message="正在核对事实来源与最新成功批次" />;
+    return <Alert className="source-context-panel-state" type="info" showIcon message="正在核对业务事实与最近成功批次" />;
   }
   if (error || !meta || meta.source_type === 'unavailable') {
     return (
@@ -231,13 +260,13 @@ export function SourceContextPanel({
         className="source-context-panel-state"
         type="warning"
         showIcon
-        message="当前无可用真实预测"
+        message="当前无可用预测事实"
         description={`原因：${meta?.unavailable_reason || error || '来源元数据不可用'}；操作建议：执行预测任务或查看明确标识的历史批次。`}
         action={onRefresh ? <Button size="small" onClick={onRefresh}>重新核对</Button> : undefined}
       />
     );
   }
-  const warning = ['demo', 'seed', 'fallback'].includes(meta.source_type) || meta.is_stale || meta.source_type === 'historical';
+  const warning = ['simulated', 'demo', 'seed', 'fallback'].includes(meta.source_type) || meta.is_stale || meta.source_type === 'historical';
   return (
     <section className={`source-context-panel ${warning ? 'source-context-panel-warning' : ''}`} aria-label="最近成功事实来源">
       <div className="source-context-panel-head">
@@ -257,7 +286,7 @@ export function SourceContextPanel({
         <span><small>特征版本</small><b title={meta.feature_version || '--'}>{meta.feature_version || '--'}</b></span>
         <span>
           <small>事实状态</small>
-          <b>{meta.source_type === 'historical' ? '历史批次' : meta.is_stale ? `已过期：${meta.stale_reason || 'unknown'}` : '最新成功批次'}</b>
+          <b>{meta.source_type === 'historical' ? '历史批次' : meta.is_stale ? `已过期：${freshnessReasonText(meta.stale_reason)}` : '最近成功批次'}</b>
         </span>
         <span><small>最后刷新</small><b>{timeText(lastRefreshedAt)}</b></span>
       </div>
@@ -326,7 +355,7 @@ export function DataStateBanner({
         className="data-state-banner"
         type="info"
         showIcon
-        message={`${scope}暂无真实数据`}
+        message={`${scope}暂无可用业务记录`}
         description={source ? <span>当前数据源：<DataSourceTag source={source} /></span> : '接口返回为空，页面保留结构但不隐藏空状态。'}
         action={action}
       />

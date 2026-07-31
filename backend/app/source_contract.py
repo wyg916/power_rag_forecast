@@ -25,6 +25,7 @@ class SourceType(str, Enum):
     SEED = "seed"
     FALLBACK = "fallback"
     DERIVED = "derived"
+    AI_INFERRED = "ai_inferred"
     UNAVAILABLE = "unavailable"
 
 
@@ -46,15 +47,26 @@ class SourceMeta(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     source_type: SourceType
+    data_origin: str
+    source_name: str
     domain: str
     run_id: str | None = None
     generated_at: str | None = None
+    updated_at: str | None = None
+    valid_from: str | None = None
+    valid_to: str | None = None
     model_version: str | None = None
     feature_version: str | None = None
     schema_hash: str | None = None
+    data_version: str | None = None
+    freshness_status: str
     is_stale: bool = False
     stale_reason: str | None = None
+    staleness_reason: str | None = None
     expected_refresh_at: str | None = None
+    simulation: bool = False
+    degraded: bool = False
+    availability: str
     evidence: list[dict[str, Any]] = Field(default_factory=list)
     unavailable_reason: str | None = None
     fallback_reason: str | None = None
@@ -93,10 +105,15 @@ def source_meta(
     domain: str,
     *,
     run_id: str | None = None,
+    source_name: str | None = None,
     generated_at: Any = None,
+    updated_at: Any = None,
+    valid_from: Any = None,
+    valid_to: Any = None,
     model_version: str | None = None,
     feature_version: str | None = None,
     schema_hash: str | None = None,
+    data_version: str | None = None,
     is_stale: bool = False,
     stale_reason: str | None = None,
     expected_refresh_at: Any = None,
@@ -105,17 +122,55 @@ def source_meta(
     fallback_reason: str | None = None,
 ) -> dict[str, Any]:
     value = SourceType(source_type)
+    stale = bool(is_stale or value is SourceType.HISTORICAL)
+    resolved_stale_reason = stale_reason or ("historical_record" if value is SourceType.HISTORICAL else None)
+    if value is SourceType.REAL:
+        data_origin = "real_historical" if stale else "real_current"
+    elif value is SourceType.HISTORICAL:
+        data_origin = "real_historical"
+    elif value is SourceType.SIMULATED:
+        data_origin = "simulation"
+    elif value in {SourceType.DEMO, SourceType.SEED}:
+        data_origin = "seed"
+    elif value is SourceType.FALLBACK:
+        data_origin = "degraded"
+    elif value is SourceType.AI_INFERRED:
+        data_origin = "ai_inferred"
+    elif value is SourceType.UNAVAILABLE:
+        data_origin = "unavailable"
+    else:
+        data_origin = "derived"
+    degraded = value is SourceType.FALLBACK
+    availability = "unavailable" if value is SourceType.UNAVAILABLE else "degraded" if degraded else "available"
+    freshness_status = (
+        "unavailable" if value is SourceType.UNAVAILABLE
+        else "degraded" if degraded
+        else "historical" if value is SourceType.HISTORICAL
+        else "stale" if stale
+        else "current"
+    )
     return SourceMeta(
         source_type=value,
+        data_origin=data_origin,
+        source_name=str(source_name or f"{domain}_service"),
         domain=_validate_domain(domain),
         run_id=run_id,
         generated_at=_iso(generated_at),
+        updated_at=_iso(updated_at if updated_at is not None else generated_at),
+        valid_from=_iso(valid_from),
+        valid_to=_iso(valid_to),
         model_version=model_version,
         feature_version=feature_version,
         schema_hash=schema_hash,
-        is_stale=bool(is_stale),
-        stale_reason=stale_reason,
+        data_version=data_version or schema_hash,
+        freshness_status=freshness_status,
+        is_stale=stale,
+        stale_reason=resolved_stale_reason,
+        staleness_reason=resolved_stale_reason,
         expected_refresh_at=_iso(expected_refresh_at),
+        simulation=value is SourceType.SIMULATED,
+        degraded=degraded,
+        availability=availability,
         evidence=evidence or [],
         unavailable_reason=unavailable_reason,
         fallback_reason=fallback_reason,
@@ -123,22 +178,89 @@ def source_meta(
 
 
 def attach_source_meta(payload: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
+    normalized_meta = dict(meta)
+    source_type = str(normalized_meta.get("source_type") or SourceType.UNAVAILABLE.value)
+    stale = bool(normalized_meta.get("is_stale") or source_type == SourceType.HISTORICAL.value)
+    normalized_meta["is_stale"] = stale
+    origin_map = {
+        SourceType.REAL.value: "real_historical" if stale else "real_current",
+        SourceType.HISTORICAL.value: "real_historical",
+        SourceType.SIMULATED.value: "simulation",
+        SourceType.DEMO.value: "seed",
+        SourceType.SEED.value: "seed",
+        SourceType.FALLBACK.value: "degraded",
+        SourceType.DERIVED.value: "derived",
+        SourceType.AI_INFERRED.value: "ai_inferred",
+        SourceType.UNAVAILABLE.value: "unavailable",
+    }
+    normalized_meta["data_origin"] = origin_map.get(source_type, "unavailable")
+    normalized_meta["simulation"] = source_type == SourceType.SIMULATED.value
+    normalized_meta["degraded"] = source_type == SourceType.FALLBACK.value
+    normalized_meta["availability"] = (
+        "unavailable" if source_type == SourceType.UNAVAILABLE.value
+        else "degraded" if normalized_meta["degraded"]
+        else "available"
+    )
+    normalized_meta["freshness_status"] = (
+        "unavailable" if source_type == SourceType.UNAVAILABLE.value
+        else "degraded" if normalized_meta["degraded"]
+        else "historical" if source_type == SourceType.HISTORICAL.value
+        else "stale" if stale
+        else "current"
+    )
+    normalized_meta["stale_reason"] = normalized_meta.get("stale_reason") or ("historical_record" if source_type == SourceType.HISTORICAL.value else None)
+    normalized_meta["staleness_reason"] = normalized_meta.get("staleness_reason") or normalized_meta.get("stale_reason")
+
+    items = payload.get("items") or []
+    item = items[0] if items and isinstance(items[0], dict) else payload
+    metadata = item.get("metadata") if isinstance(item, dict) else {}
+    summary = item.get("summary") if isinstance(item, dict) else {}
+    source = summary.get("source") if isinstance(summary, dict) else {}
+    contexts = [payload, item, metadata or {}, source or {}]
+
+    def first_value(*keys: str) -> Any:
+        for context in contexts:
+            if not isinstance(context, dict):
+                continue
+            for key in keys:
+                value = context.get(key)
+                if value is not None and value != "":
+                    return value
+        return None
+
+    domain = str(normalized_meta.get("domain") or "system")
+    normalized_meta["source_name"] = normalized_meta.get("source_name") or f"{domain}_service"
+    normalized_meta["updated_at"] = normalized_meta.get("updated_at") or _iso(first_value("updated_at", "generated_at"))
+    normalized_meta["valid_from"] = normalized_meta.get("valid_from") or _iso(first_value("valid_from", "forecast_start_at", "applicable_start_at"))
+    normalized_meta["valid_to"] = normalized_meta.get("valid_to") or _iso(first_value("valid_to", "forecast_end_at", "applicable_end_at"))
+    normalized_meta["data_version"] = normalized_meta.get("data_version") or first_value("result_hash", "data_version", "schema_hash")
+
     result = dict(payload)
-    result["meta"] = meta
+    result["meta"] = normalized_meta
     for key in (
         "source_type",
+        "data_origin",
+        "source_name",
         "domain",
         "run_id",
         "generated_at",
+        "updated_at",
+        "valid_from",
+        "valid_to",
         "model_version",
         "feature_version",
         "schema_hash",
+        "data_version",
+        "freshness_status",
         "is_stale",
         "stale_reason",
+        "staleness_reason",
+        "simulation",
+        "degraded",
+        "availability",
         "unavailable_reason",
     ):
-        if key not in result or key in {"source_type", "domain"}:
-            result[key] = meta.get(key)
+        result[key] = normalized_meta.get(key)
     return result
 
 
@@ -247,10 +369,15 @@ def resolve_forecast_source(
         SourceType.HISTORICAL if historical else SourceType.REAL,
         domain,
         run_id=resolved_run_id,
+        source_name="postgresql.forecast_runs+forecast_results",
         generated_at=run.get("finished_at") or run.get("created_at"),
+        updated_at=run.get("finished_at") or run.get("created_at"),
+        valid_from=run.get("forecast_start_at"),
+        valid_to=run.get("forecast_end_at"),
         model_version=run.get("model_version"),
         feature_version=run.get("feature_version"),
         schema_hash=run.get("schema_hash"),
+        data_version=run.get("result_hash") or run.get("schema_hash"),
         is_stale=is_stale,
         stale_reason=stale_reason,
         expected_refresh_at=expected_refresh_at,
