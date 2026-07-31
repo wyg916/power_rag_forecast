@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from sqlalchemy import text
@@ -8,11 +7,29 @@ from sqlalchemy import text
 from .base import jsonable, mapping_list, postgres_engine
 
 
-_SAFE_TABLE_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+_TABLE_QUERY_POLICIES: dict[str, dict[str, frozenset[str]]] = {
+    "raw_market": {
+        "order_by": frozenset({"datetime"}),
+        "where_sql": frozenset({"", "da_price IS NOT NULL OR price_type = 'DA'"}),
+    },
+    "raw_da_price": {"order_by": frozenset({"datetime"}), "where_sql": frozenset({""})},
+    "raw_weather": {"order_by": frozenset({"datetime"}), "where_sql": frozenset({""})},
+    "raw_load": {
+        "order_by": frozenset({"datetime"}),
+        "where_sql": frozenset({"", "forecast_load IS NOT NULL"}),
+    },
+    "raw_forecast_load_selected": {"order_by": frozenset({"datetime"}), "where_sql": frozenset({""})},
+    "feature_importance": {"order_by": frozenset({"created_at"}), "where_sql": frozenset({""})},
+    "model_feature_importance": {"order_by": frozenset({"created_at"}), "where_sql": frozenset({""})},
+    "raw_renewable": {"order_by": frozenset({"datetime"}), "where_sql": frozenset({""})},
+    "raw_renewable_forecast": {"order_by": frozenset({"datetime"}), "where_sql": frozenset({""})},
+    "raw_solar_forecast": {"order_by": frozenset({"datetime"}), "where_sql": frozenset({""})},
+    "raw_wind_forecast": {"order_by": frozenset({"datetime"}), "where_sql": frozenset({""})},
+}
 
 
 def table_exists(table_name: str) -> bool:
-    if not _SAFE_TABLE_RE.fullmatch(table_name or ""):
+    if table_name not in _TABLE_QUERY_POLICIES:
         return False
     engine = postgres_engine()
     if engine is None:
@@ -37,10 +54,11 @@ def table_exists(table_name: str) -> bool:
 
 
 def load_table_rows(table_name: str, limit: int = 5000, order_by: str = "datetime", where_sql: str = "") -> list[dict[str, Any]]:
-    if not _SAFE_TABLE_RE.fullmatch(table_name or ""):
+    policy = _TABLE_QUERY_POLICIES.get(table_name)
+    if policy is None:
         return []
-    if order_by and not _SAFE_TABLE_RE.fullmatch(order_by):
-        order_by = "datetime"
+    if order_by not in policy["order_by"] or where_sql not in policy["where_sql"]:
+        return []
     engine = postgres_engine()
     if engine is None or not table_exists(table_name):
         return []

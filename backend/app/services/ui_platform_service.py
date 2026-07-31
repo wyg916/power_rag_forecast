@@ -12,11 +12,10 @@ from sqlalchemy import inspect, text
 
 from backend.app.config import APP_VERSION, PLATFORM_NAME, project_config, project_paths
 from backend.app.core.config import get_settings
-from backend.app.data_access import data_status, database_engine, database_runtime_status, database_table_rows, jsonable, records
+from backend.app.data_access import data_status, database_engine, database_runtime_status, jsonable, records
 from backend.app.observability import recent_suppressed_exceptions
 from backend.app.repositories.audit_repository import write_audit_log
 from backend.app.repositories.task_repository import list_recent_tasks, list_task_runs
-from backend.app.services.data_trust_service import CORE_DATASETS
 
 
 def response(data: Any, data_source: str | None = "postgresql", message: str = "success", code: int = 0) -> dict[str, Any]:
@@ -151,155 +150,9 @@ def _quality_alert(row: dict[str, Any], checked_at: str) -> dict[str, Any] | Non
 
 
 def data_quality_report() -> dict[str, Any]:
-    checked_at = datetime.now().isoformat(sep=" ", timespec="seconds")
-    engine = database_engine()
-    if engine is None:
-        return {
-            "available": False,
-            "generated_at": checked_at,
-            "items": [],
-            "exceptions": [],
-            "alerts": [],
-            "message": "PostgreSQL 数据库连接不可用。",
-            "unavailable_reason": "database_unavailable",
-        }
-    inspector = inspect(engine)
-    available_objects = set(inspector.get_table_names()) | set(inspector.get_view_names())
-    rows: list[dict[str, Any]] = []
-    for table_name in QUALITY_DATASETS:
-        catalog = CORE_DATASETS[table_name]
-        if table_name not in available_objects:
-            rows.append(
-                {
-                    "table_name": table_name,
-                    "source_name": catalog.get("display_name"),
-                    "available": False,
-                    "status": "missing_table",
-                    "rows": None,
-                    "missing_values": None,
-                    "missing_rate": None,
-                    "duplicate_rate": None,
-                    "freshness_score": None,
-                    "consistency_score": 0,
-                    "check_pass_rate": 0,
-                    "latest_time": None,
-                    "message": "数据库中未找到该表或视图。",
-                    "data_source": f"postgresql.{table_name}",
-                    "is_stale": False,
-                    "stale_reason": None,
-                }
-            )
-            continue
-        columns = [str(column.get("name")) for column in inspector.get_columns(table_name) if column.get("name")]
-        expected_fields = [str(field.get("field_name")) for field in catalog.get("fields") or [] if field.get("field_name")]
-        monitored_fields = [field for field in expected_fields if field in columns]
-        time_field = str(catalog.get("time_field") or "")
-        q_table = '"' + table_name.replace('"', '""') + '"'
-        missing_sql = " + ".join(
-            f'SUM(CASE WHEN "{field.replace(chr(34), chr(34) * 2)}" IS NULL THEN 1 ELSE 0 END)'
-            for field in monitored_fields
-        ) or "0"
-        latest_sql = f', MAX("{time_field}") AS latest_time' if time_field in columns else ", NULL AS latest_time"
-        aggregate: dict[str, Any] = {}
-        distinct_count: int | None = None
-        try:
-            with engine.connect() as conn:
-                aggregate = dict(
-                    conn.execute(
-                        text(f"SELECT COUNT(*) AS row_count, {missing_sql} AS missing_values{latest_sql} FROM {q_table}")
-                    ).mappings().first()
-                    or {}
-                )
-                if monitored_fields:
-                    selected = ", ".join(f'"{field}"' for field in monitored_fields)
-                    distinct_count = int(
-                        conn.execute(text(f"SELECT COUNT(*) FROM (SELECT DISTINCT {selected} FROM {q_table}) AS quality_distinct")).scalar()
-                        or 0
-                    )
-        except Exception as exc:
-            rows.append(
-                {
-                    "table_name": table_name,
-                    "source_name": catalog.get("display_name"),
-                    "available": False,
-                    "status": "query_error",
-                    "rows": None,
-                    "missing_values": None,
-                    "missing_rate": None,
-                    "duplicate_rate": None,
-                    "freshness_score": None,
-                    "consistency_score": None,
-                    "check_pass_rate": None,
-                    "latest_time": None,
-                    "message": f"质量查询失败：{exc}",
-                    "data_source": f"postgresql.{table_name}",
-                    "is_stale": False,
-                    "stale_reason": None,
-                }
-            )
-            continue
-        total = int(aggregate.get("row_count") or 0)
-        missing = int(aggregate.get("missing_values") or 0)
-        monitored_cells = total * len(monitored_fields)
-        missing_rate = round(missing / monitored_cells * 100, 4) if monitored_cells else None
-        duplicate_rate = round(max(0, total - int(distinct_count or 0)) / total * 100, 4) if total and distinct_count is not None else None
-        consistency_score = round(len(monitored_fields) / len(expected_fields) * 100, 2) if expected_fields else None
-        freshness, age_hours = _freshness_score(aggregate.get("latest_time"))
-        completeness_score = None if missing_rate is None else max(0.0, 100 - missing_rate)
-        uniqueness_score = None if duplicate_rate is None else max(0.0, 100 - duplicate_rate)
-        scores = [score for score in (completeness_score, uniqueness_score, consistency_score, freshness) if score is not None]
-        pass_rate = round(sum(scores) / len(scores), 2) if scores else None
-        is_stale = bool(age_hours is not None and age_hours > 48)
-        stale_reason = f"latest_record_age_{age_hours:.2f}h_exceeds_48h" if is_stale else None
-        status = "empty" if total == 0 else "stale" if is_stale else "warning" if pass_rate is not None and pass_rate < 95 else "ok"
-        rows.append(
-            {
-                "table_name": table_name,
-                "source_name": catalog.get("display_name"),
-                "available": True,
-                "status": status,
-                "latest_time": aggregate.get("latest_time"),
-                "rows": total,
-                "missing_values": missing,
-                "missing_rate": missing_rate,
-                "duplicate_rate": duplicate_rate,
-                "freshness_score": freshness,
-                "freshness_age_hours": age_hours,
-                "consistency_score": consistency_score,
-                "check_pass_rate": pass_rate,
-                "expected_fields": expected_fields,
-                "monitored_fields": monitored_fields,
-                "message": "基于已登记且实际存在的字段执行缺失、全字段重复、一致性和新鲜度检查。",
-                "data_source": f"postgresql.{table_name}",
-                "is_stale": is_stale,
-                "stale_reason": stale_reason,
-            }
-        )
-    exception_rows = [row for row in rows if row.get("status") != "ok"]
-    alerts = [alert for row in exception_rows if (alert := _quality_alert(row, checked_at))]
-    alert_priority = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-    alerts.sort(key=lambda alert: (alert_priority.get(str(alert.get("severity")), 9), str(alert.get("object_name") or "")))
-    any_stale = any(bool(row.get("is_stale")) for row in rows)
-    return {
-        "available": any(bool(row.get("available")) for row in rows),
-        "generated_at": checked_at,
-        "is_stale": any_stale,
-        "stale_reason": "one_or_more_datasets_exceed_48h_freshness_threshold" if any_stale else None,
-        "summary": {
-            "source_count": sum(1 for row in rows if row.get("available")),
-            "checked_source_count": len(rows),
-            "exception_count": len(exception_rows),
-            "avg_missing_rate": _quality_average(rows, "missing_rate"),
-            "avg_duplicate_rate": _quality_average(rows, "duplicate_rate"),
-            "avg_freshness_score": _quality_average(rows, "freshness_score"),
-            "avg_consistency_score": _quality_average(rows, "consistency_score"),
-            "avg_check_pass_rate": _quality_average(rows, "check_pass_rate"),
-        },
-        "items": rows,
-        "exceptions": exception_rows,
-        "alerts": alerts,
-        "data_source": "postgresql catalog-controlled aggregates",
-    }
+    from .dataset_query_service import dataset_quality_report
+
+    return dataset_quality_report()
 
 
 def _task_metric(task: dict[str, Any], *names: str) -> int | None:
@@ -370,20 +223,10 @@ def import_export_records(page: int = 1, page_size: int = 10) -> dict[str, Any]:
 
 
 def export_table_to_csv(table_name: str, search: str | None = None, max_rows: int = 5000) -> dict[str, Any]:
-    safe_limit = max(1, min(int(max_rows or 5000), 5000))
-    payload = database_table_rows(table_name, search=search, limit=safe_limit, offset=0)
-    rows = payload.get("records") or []
-    columns = [str(item.get("name") or "") for item in payload.get("columns") or [] if item.get("name")]
-    csv_text = pd.DataFrame(rows, columns=columns or None).to_csv(index=False)
-    return {
-        "available": bool(payload.get("available")),
-        "filename": f"{table_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        "content": ("\ufeff" + csv_text).encode("utf-8"),
-        "row_count": len(rows),
-        "total": int(payload.get("total") or 0),
-        "truncated": int(payload.get("total") or 0) > len(rows),
-        "message": payload.get("message") or "",
-    }
+    del max_rows
+    from .dataset_query_service import export_dataset_csv
+
+    return export_dataset_csv(table_name, search=search)
 
 
 def _mask(value: str | None) -> str:

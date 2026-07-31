@@ -420,7 +420,9 @@ def query_dataframe(sql: str, params: dict[str, Any] | None = None) -> pd.DataFr
         with engine.connect() as conn:
             return pd.read_sql(text(sql), conn, params=params or {})
     except Exception as exc:
-        log_suppressed_exception("data_access.query_dataframe", exc, sql=sql[:500])
+        # SQL text and bound values can contain sensitive business conditions.
+        # Only the internal call site and exception type are retained.
+        log_suppressed_exception("data_access.query_dataframe", exc)
         return pd.DataFrame()
 
 
@@ -438,157 +440,22 @@ def _text_search_expression(column_name: str, dialect: str) -> str:
 
 
 def database_tables(search: str | None = None) -> dict[str, Any]:
-    engine = database_engine()
-    if engine is None:
-        return {"available": False, "tables": [], "message": "数据库未启用或连接不可用。"}
-    keyword = str(search or "").strip()
-    schema_df = pd.DataFrame()
-    if engine.dialect.name != "postgresql":
-        schema_df = query_dataframe("SELECT DATABASE() AS schema_name")
-    schema_name = str(schema_df.iloc[0].get("schema_name") or "") if not schema_df.empty else ""
-    if schema_name:
-        params = {"schema": schema_name, "keyword": f"%{keyword}%", "has_keyword": 1 if keyword else 0}
-        info_df = query_dataframe(
-            """
-            SELECT
-                t.TABLE_NAME AS table_name,
-                COALESCE(t.TABLE_ROWS, 0) AS rows_count,
-                COUNT(c.COLUMN_NAME) AS columns_count,
-                GROUP_CONCAT(c.COLUMN_NAME ORDER BY c.ORDINAL_POSITION SEPARATOR ', ') AS column_names
-            FROM information_schema.TABLES t
-            LEFT JOIN information_schema.COLUMNS c
-                ON c.TABLE_SCHEMA = t.TABLE_SCHEMA AND c.TABLE_NAME = t.TABLE_NAME
-            WHERE t.TABLE_SCHEMA = :schema
-              AND (:has_keyword = 0 OR t.TABLE_NAME LIKE :keyword)
-            GROUP BY t.TABLE_NAME, t.TABLE_ROWS
-            ORDER BY t.TABLE_NAME
-            """,
-            params,
-        )
-        if not info_df.empty:
-            rows = []
-            for _, row in info_df.iterrows():
-                columns_text = str(row.get("column_names") or "")
-                sample_columns = ", ".join([item for item in columns_text.split(", ") if item][:6])
-                rows.append(
-                    {
-                        "table_name": row.get("table_name"),
-                        "rows": int(row.get("rows_count") or 0),
-                        "columns": int(row.get("columns_count") or 0),
-                        "primary_key": "",
-                        "sample_columns": sample_columns,
-                    }
-                )
-            return {"available": True, "tables": jsonable(rows)}
+    from .services.dataset_query_service import list_registered_datasets
 
-    try:
-        inspector = inspect(engine)
-        view_names = set(inspector.get_view_names())
-        table_names = sorted(set(inspector.get_table_names()) | view_names)
-    except Exception as exc:
-        log_suppressed_exception("data_access.database_tables.inspect", exc)
-        return {"available": False, "tables": [], "message": f"读取数据库表失败：{exc}"}
-
-    lower_keyword = keyword.lower()
-    if lower_keyword:
-        table_names = [name for name in table_names if lower_keyword in name.lower()]
-
-    rows: list[dict[str, Any]] = []
-    for table_name in table_names:
-        try:
-            columns = inspector.get_columns(table_name)
-            object_type = "view" if table_name in view_names else "table"
-            pk = [] if object_type == "view" else inspector.get_pk_constraint(table_name).get("constrained_columns") or []
-            rows.append(
-                {
-                    "table_name": table_name,
-                    "object_type": object_type,
-                    "rows": None,
-                    "columns": len(columns),
-                    "primary_key": ", ".join(pk),
-                    "sample_columns": ", ".join(str(col.get("name")) for col in columns[:6]),
-                }
-            )
-        except Exception as exc:
-            log_suppressed_exception("data_access.database_tables.table_metadata", exc, table_name=table_name)
-            rows.append({"table_name": table_name, "rows": None, "columns": None, "primary_key": "", "sample_columns": ""})
-    return {"available": True, "tables": jsonable(rows)}
+    return list_registered_datasets(search=search, include_runtime=True)
 
 
 def database_table_rows(table_name: str, search: str | None = None, limit: int = 100, offset: int = 0) -> dict[str, Any]:
-    limit = max(1, min(int(limit or 100), 5000))
-    offset = max(0, int(offset or 0))
+    from .services.dataset_query_service import query_dataset_rows
 
-    def empty_payload(message: str) -> dict[str, Any]:
-        return {
-            "available": False,
-            "table_name": table_name,
-            "object_type": "",
-            "columns": [],
-            "records": [],
-            "total": 0,
-            "limit": limit,
-            "offset": offset,
-            "pagination": {"page": offset // limit + 1, "page_size": limit, "total": 0},
-            "search": str(search or "").strip(),
-            "order_by": "",
-            "order_direction": "desc",
-            "message": message,
-        }
-
-    engine = database_engine()
-    if engine is None:
-        return empty_payload("数据库未启用或连接不可用。")
-    try:
-        inspector = inspect(engine)
-        table_names = set(inspector.get_table_names())
-        view_names = set(inspector.get_view_names())
-        if table_name not in table_names | view_names:
-            return empty_payload("未找到该数据库表或视图。")
-        columns = inspector.get_columns(table_name)
-        primary_keys = [] if table_name in view_names else inspector.get_pk_constraint(table_name).get("constrained_columns") or []
-    except Exception as exc:
-        log_suppressed_exception("data_access.database_table_rows.schema", exc, table_name=table_name)
-        return empty_payload(f"读取表结构失败：{exc}")
-
-    dialect = engine.dialect.name
-    safe_table = _quote_identifier(table_name, dialect)
-    column_names = [str(col.get("name")) for col in columns if col.get("name")]
-    searchable_columns = column_names[:12]
-    params: dict[str, Any] = {}
-    where = ""
-    keyword = str(search or "").strip()
-    if keyword and searchable_columns:
-        params["keyword"] = f"%{keyword}%"
-        predicates = [_text_search_expression(col, dialect) for col in searchable_columns]
-        where = " WHERE " + " OR ".join(predicates)
-    preferred_order = [
-        *[str(name) for name in primary_keys if name in column_names],
-        "datetime",
-        "forecast_datetime",
-        "created_at",
-        "updated_at",
-        "id",
-    ]
-    order_by = next((name for name in preferred_order if name in column_names), column_names[0] if column_names else "")
-    order_sql = f" ORDER BY {_quote_identifier(order_by, dialect)} DESC" if order_by else ""
-    total_df = query_dataframe(f"SELECT COUNT(*) AS rows_count FROM {safe_table}{where}", params)
-    data_df = query_dataframe(f"SELECT * FROM {safe_table}{where}{order_sql} LIMIT {limit} OFFSET {offset}", params)
-    total = int(total_df.iloc[0].get("rows_count") or 0) if not total_df.empty else len(data_df)
-    return {
-        "available": True,
-        "table_name": table_name,
-        "object_type": "view" if table_name in view_names else "table",
-        "columns": [{"name": name, "type": str(col.get("type") or "")} for name, col in zip(column_names, columns)],
-        "records": records(data_df),
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "pagination": {"page": offset // limit + 1, "page_size": limit, "total": total},
-        "search": keyword,
-        "order_by": order_by,
-        "order_direction": "desc",
-    }
+    safe_limit = max(1, min(int(limit or 100), 100))
+    safe_offset = max(0, int(offset or 0))
+    return query_dataset_rows(
+        table_name,
+        search=search,
+        page=safe_offset // safe_limit + 1,
+        page_size=safe_limit,
+    )
 
 
 def model_status(domain: str = "price", target_name: str = "da_price") -> dict[str, Any]:

@@ -91,12 +91,6 @@ class AnswerFeedbackRequest(BaseModel):
     feedback_comment: str = Field(default="", max_length=2000)
 
 
-class ReadOnlySqlRequest(BaseModel):
-    sql: str = Field(..., min_length=1, max_length=5000)
-    params: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
-    limit: int = Field(default=100, ge=1, le=500)
-
-
 class DataStatusResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -125,32 +119,40 @@ class DataFreshnessResponse(BaseModel):
     meta: dict[str, Any] = Field(default_factory=dict)
 
 
-class DatabaseTablesResponse(BaseModel):
+class DatasetListResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     available: bool
-    tables: list[dict[str, Any]] = Field(default_factory=list)
+    catalog_version: str
+    datasets: list[dict[str, Any]] = Field(default_factory=list)
     meta: dict[str, Any] = Field(default_factory=dict)
 
 
-class DatabaseTableColumn(BaseModel):
-    name: str
-    type: str = ""
+class DatasetColumn(BaseModel):
+    field_id: str
+    display_name: str
+    data_type: str
+    description: str = ""
+    sortable: bool = False
+    filterable: bool = False
+    searchable: bool = False
 
 
-class DatabaseTableRowsResponse(BaseModel):
+class DatasetRowsResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     available: bool
-    table_name: str
+    dataset_id: str
+    display_name: str
     object_type: str = ""
-    columns: list[DatabaseTableColumn] = Field(default_factory=list)
+    columns: list[DatasetColumn] = Field(default_factory=list)
     records: list[dict[str, Any]] = Field(default_factory=list)
     total: int = 0
     limit: int
     offset: int
     pagination: dict[str, int]
-    search: str = ""
+    search_applied: bool = False
+    filter: dict[str, Any] = Field(default_factory=dict)
     order_by: str = ""
     order_direction: str = "desc"
     message: str = ""
@@ -160,7 +162,7 @@ class DatabaseTableRowsResponse(BaseModel):
 class DataQualityItem(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    table_name: str
+    dataset_id: str
     source_name: str | None = None
     available: bool
     status: str
