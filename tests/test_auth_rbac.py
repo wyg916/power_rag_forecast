@@ -73,7 +73,7 @@ def test_admin_can_read_audit_logs():
     assert "logs" in response.json()
 
 
-def test_viewer_debug_true_is_downgraded(monkeypatch):
+def test_viewer_cannot_use_ai_endpoint(monkeypatch):
     token = _token("viewer2", "viewer")
 
     def fake_answer_chat(question, **kwargs):
@@ -88,12 +88,8 @@ def test_viewer_debug_true_is_downgraded(monkeypatch):
         headers={"Authorization": f"Bearer {token}"},
         json={"question": "你好", "debug": True},
     )
-    assert response.status_code == 200
-    payload = response.json()
-    assert "trace" not in payload
-    assert "workflow" not in payload
-    assert "tool_calls" not in payload
-    assert "intent" not in payload
+    assert response.status_code == 403
+    assert response.json() == {"detail": "缺少权限：assistant:use"}
 
 
 def test_developer_debug_true_returns_debug_fields(monkeypatch):

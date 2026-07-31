@@ -158,7 +158,7 @@ def test_frontend_and_deployment_auth_contracts_are_fail_closed():
     enterprise_compose = (ROOT / "docker-compose.enterprise.yml").read_text(encoding="utf-8")
     example = (ROOT / ".env.example").read_text(encoding="utf-8")
 
-    assert "import.meta.env.PROD ? '1' : '0'" in context
+    assert "VITE_AUTH_REQUIRED ?? '1'" in context
     assert "setLoginRequested(authRequired)" in context
     assert "sanitizeErrorMessage" in api
     assert "登录响应缺少访问令牌或用户信息" in auth_api
