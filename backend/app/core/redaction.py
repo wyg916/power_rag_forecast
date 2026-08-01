@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import Any
-from urllib.parse import urlsplit, urlunsplit
 
 
 SECRET_FIELD_HINTS = {
@@ -19,6 +19,63 @@ SECRET_FIELD_HINTS = {
     "deepseek_api_key",
     "openai_api_key",
 }
+
+REDACTION_MASK = "******"
+_URL_CREDENTIAL_RE = re.compile(
+    r"(?P<prefix>\b(?:postgres(?:ql)?(?:\+[A-Za-z0-9_]+)?|redis(?:s)?|amqp(?:s)?):"
+    r"//[^\s/:@]+:)(?P<secret>[^@\s/]+)(?P<suffix>@)",
+    flags=re.IGNORECASE,
+)
+_SECRET_ASSIGNMENT_RE = re.compile(
+    r"(?P<prefix>\b(?:password|passwd|pwd|token|access[_-]?token|refresh[_-]?token|"
+    r"api[_-]?key|secret|authorization)\b\s*[:=]\s*)"
+    r"(?P<quote>['\"]?)(?P<secret>[^\s,'\";}&]+)(?P=quote)",
+    flags=re.IGNORECASE,
+)
+_SECRET_QUERY_RE = re.compile(
+    r"(?P<prefix>[?&](?:password|passwd|pwd|token|access[_-]?token|refresh[_-]?token|"
+    r"api[_-]?key|secret)=)(?P<secret>[^&\s#]+)",
+    flags=re.IGNORECASE,
+)
+_BEARER_RE = re.compile(r"(?P<prefix>\bBearer\s+)(?P<secret>[^\s,;]+)", flags=re.IGNORECASE)
+
+
+def redact_text(value: object, *, extra_secrets: Iterable[str] = ()) -> str:
+    """Redact credentials from arbitrary text without relying on one failure shape."""
+
+    text = str(value or "")
+    for secret in sorted({str(item) for item in extra_secrets if item}, key=len, reverse=True):
+        text = text.replace(secret, REDACTION_MASK)
+    text = _URL_CREDENTIAL_RE.sub(rf"\g<prefix>{REDACTION_MASK}\g<suffix>", text)
+    text = _SECRET_QUERY_RE.sub(rf"\g<prefix>{REDACTION_MASK}", text)
+    text = _BEARER_RE.sub(rf"\g<prefix>{REDACTION_MASK}", text)
+    text = _SECRET_ASSIGNMENT_RE.sub(
+        lambda match: f"{match.group('prefix')}{match.group('quote')}{REDACTION_MASK}{match.group('quote')}",
+        text,
+    )
+    return text
+
+
+def safe_exception_summary(exc: BaseException, *, extra_secrets: Iterable[str] = ()) -> dict[str, Any]:
+    """Return a bounded, redacted exception chain safe for logs and evidence."""
+
+    chain: list[dict[str, str]] = []
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen and len(chain) < 6:
+        seen.add(id(current))
+        chain.append(
+            {
+                "error_type": type(current).__name__,
+                "message": redact_text(str(current), extra_secrets=extra_secrets),
+            }
+        )
+        current = current.__cause__ or (None if current.__suppress_context__ else current.__context__)
+    return {
+        "error_type": type(exc).__name__,
+        "message": chain[0]["message"] if chain else "",
+        "chain": chain,
+    }
 
 
 def mask_api_key(value: str | None) -> str:
@@ -41,19 +98,7 @@ def mask_authorization(value: str | None) -> str:
 
 
 def mask_db_url(value: str | None) -> str:
-    text = str(value or "")
-    if not text:
-        return ""
-    try:
-        parts = urlsplit(text)
-    except Exception:
-        return re.sub(r"://([^:/@]+):([^@]+)@", r"://\1:******@", text)
-    netloc = parts.netloc
-    if "@" in netloc:
-        credentials, host = netloc.rsplit("@", 1)
-        user = credentials.split(":", 1)[0]
-        netloc = f"{user}:******@{host}" if user else f"******@{host}"
-    return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+    return redact_text(value)
 
 
 def _is_secret_key(key: str) -> bool:
@@ -84,14 +129,6 @@ def mask_secret_fields(value: Any, *, parent_key: str = "") -> Any:
         if _is_secret_key(parent_key):
             return _mask_string_by_key(parent_key, value)
         text = re.sub(r"(sk-[A-Za-z0-9_-]{12,})", lambda match: mask_api_key(match.group(1)), value)
-        text = re.sub(r"(Bearer)\s+([A-Za-z0-9._~+/=-]{8,})", r"\1 ******", text, flags=re.IGNORECASE)
         text = re.sub(r"\beyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\b", "[JWT REDACTED]", text)
-        text = re.sub(
-            r"\b(password|passwd|pwd|access[_-]?token|refresh[_-]?token|jwt[_-]?secret(?:[_-]?key)?|api[_-]?key|database[_-]?url)\b(\s*[:=]\s*)([^\s,;]+)",
-            r"\1\2******",
-            text,
-            flags=re.IGNORECASE,
-        )
-        text = re.sub(r"(postgresql(?:\+\w+)?://[^:\s/@]+:)([^@\s]+)(@)", r"\1******\3", text, flags=re.IGNORECASE)
-        return text
+        return redact_text(text)
     return value

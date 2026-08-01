@@ -16,6 +16,11 @@ from sqlalchemy.engine import make_url
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from backend.app.core.redaction import safe_exception_summary
+
 OUTPUT_DIR = PROJECT_ROOT / "tests" / "productization" / "output"
 REPORT_JSON = OUTPUT_DIR / "postgres_runtime_report.json"
 REPORT_MD = OUTPUT_DIR / "postgres_runtime_report.md"
@@ -162,8 +167,7 @@ def build_report(run_upgrade: bool = True) -> dict[str, Any]:
         return report
     except Exception as exc:
         secret = make_url(database_url).password or ""
-        error_text = str(exc).replace(secret, "******") if secret else str(exc)
-        report.update({"status": "fail", "error_type": type(exc).__name__, "error": error_text})
+        report.update({"status": "fail", "error": safe_exception_summary(exc, extra_secrets=(secret,))})
         return report
 
 
@@ -212,6 +216,8 @@ def write_markdown(report: dict[str, Any], output: Path) -> None:
             ]
         )
         if report.get("error"):
+            error = report.get("error") or {}
+            report = {**report, "error_type": error.get("error_type"), "error": error.get("message")}
             lines.extend(["", "## 错误", f"- {report.get('error_type')}: {report.get('error')}"])
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

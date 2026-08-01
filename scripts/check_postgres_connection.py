@@ -12,6 +12,10 @@ from sqlalchemy.engine import make_url
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from backend.app.core.redaction import safe_exception_summary
 
 
 def _build_database_url() -> str:
@@ -38,6 +42,13 @@ def _masked_info(database_url: str) -> dict[str, Any]:
         "db": url.database or "",
         "password": "******" if url.password else "",
     }
+
+
+def _safe_masked_info(database_url: str) -> dict[str, Any]:
+    try:
+        return _masked_info(database_url)
+    except Exception:
+        return {"driver": "unparsed", "host": "", "port": "", "user": "", "db": "", "password": ""}
 
 
 def check_connection(database_url: str) -> dict[str, Any]:
@@ -70,15 +81,16 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
         return 0
     except Exception as exc:
-        secret = os.environ.get("POSTGRES_PASSWORD", "")
-        error_text = str(exc).replace(secret, "******") if secret else str(exc)
+        try:
+            secret = make_url(database_url).password or ""
+        except Exception:
+            secret = os.environ.get("POSTGRES_PASSWORD", "")
         print(
             json.dumps(
                 {
                     "status": "failed",
-                    "connection": _masked_info(database_url),
-                    "error_type": type(exc).__name__,
-                    "error": error_text,
+                    "connection": _safe_masked_info(database_url),
+                    "error": safe_exception_summary(exc, extra_secrets=(secret,)),
                 },
                 ensure_ascii=False,
                 indent=2,
