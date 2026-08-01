@@ -21,7 +21,7 @@ from backend.app.core.redaction import mask_secret_fields, safe_exception_summar
 
 
 ConnectFactory = Callable[..., Any]
-SOURCE_TABLES = ("raw_market_data", "raw_load_data", "raw_weather_data", "raw_renewable_data")
+SOURCE_TABLES = ("raw_market", "raw_load", "raw_weather", "raw_renewable")
 TIME_COLUMNS = ("datetime", "timestamp", "data_time", "forecast_time", "date_time")
 
 
