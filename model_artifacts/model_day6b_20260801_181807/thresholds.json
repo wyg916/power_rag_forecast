@@ -1,0 +1,6 @@
+{
+  "rmse_max": 31.719127000863885,
+  "peak_rmse_max": 32.220275721433865,
+  "extreme_price_rmse_max": 71.0931875670982,
+  "source": "model_ops.model_comparator repository switch rule"
+}

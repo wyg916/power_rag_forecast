@@ -1,0 +1,98 @@
+{
+  "model_version": "model_day6b_20260801_181807",
+  "feature_version": "features_online_safe_289a51530a13",
+  "random_seed": 20260801,
+  "target": "da_price",
+  "timezone": "America/New_York",
+  "split_method": "fixed_chronological_windows_no_shuffle",
+  "splits": {
+    "train": {
+      "rows": 15472,
+      "start": "2024-07-13T06:00:00",
+      "end": "2026-04-18T23:00:00",
+      "missing_feature_cells": 0
+    },
+    "validation": {
+      "rows": 720,
+      "start": "2026-04-19T00:00:00",
+      "end": "2026-05-18T23:00:00",
+      "missing_feature_cells": 0
+    },
+    "test": {
+      "rows": 720,
+      "start": "2026-05-19T00:00:00",
+      "end": "2026-06-17T23:00:00",
+      "missing_feature_cells": 0
+    }
+  },
+  "model_selection": "validation_rmse_only_test_unopened_until_selection",
+  "selected_model": "extra_trees",
+  "candidate_models": {
+    "hist_gradient_boosting": {
+      "categorical_features": "from_dtype",
+      "early_stopping": "auto",
+      "interaction_cst": null,
+      "l2_regularization": 1.0,
+      "learning_rate": 0.05,
+      "loss": "squared_error",
+      "max_bins": 255,
+      "max_depth": null,
+      "max_features": 1.0,
+      "max_iter": 400,
+      "max_leaf_nodes": 31,
+      "min_samples_leaf": 20,
+      "monotonic_cst": null,
+      "n_iter_no_change": 10,
+      "quantile": null,
+      "random_state": 20260801,
+      "scoring": "loss",
+      "tol": 1e-07,
+      "validation_fraction": 0.1,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "extra_trees": {
+      "bootstrap": false,
+      "ccp_alpha": 0.0,
+      "criterion": "squared_error",
+      "max_depth": null,
+      "max_features": 1.0,
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 2,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 400,
+      "n_jobs": -1,
+      "oob_score": false,
+      "random_state": 20260801,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "random_forest": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "criterion": "squared_error",
+      "max_depth": null,
+      "max_features": 0.8,
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 2,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 300,
+      "n_jobs": -1,
+      "oob_score": false,
+      "random_state": 20260801,
+      "verbose": 0,
+      "warm_start": false
+    }
+  },
+  "source_sha256": "3055498473d86a45121408168989966da0809f4cbd4707259c7e564df489424f",
+  "day6a_matrix_sha256": "fc5790a4c525342d398f7dc1d86d27f9147d2ecafdc8de3f54ca42fdf1cdb563",
+  "command": "python -B scripts/day6b_train_online_safe_candidate.py --source <frozen_master_table.xlsx> --active-artifact <active_artifact_dir> --day6a-matrix docs/codex/day6a/FEATURE_AVAILABILITY_MATRIX.csv"
+}

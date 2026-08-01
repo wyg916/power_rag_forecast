@@ -1,0 +1,536 @@
+{
+  "feature_version": "features_online_safe_289a51530a13",
+  "feature_count": 52,
+  "order_locked": true,
+  "dtype_locked": true,
+  "features": [
+    {
+      "feature_name": "hour",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "day_of_week",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "month",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "day",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "day_of_year",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "week_of_year",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "is_weekend",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "is_holiday",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "is_morning_peak",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "is_evening_peak",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "is_peak_hour",
+      "dtype": "int64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "hour_sin",
+      "dtype": "float64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "hour_cos",
+      "dtype": "float64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "dow_sin",
+      "dtype": "float64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "dow_cos",
+      "dtype": "float64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "month_sin",
+      "dtype": "float64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "month_cos",
+      "dtype": "float64",
+      "source_system": "target_calendar",
+      "availability_latency": "0h",
+      "max_source_offset_hours": null,
+      "derivation": "deterministic_from_target_datetime",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_lag_24",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -24,
+      "derivation": "strict_lag_24h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_lag_48",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -48,
+      "derivation": "strict_lag_48h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_lag_168",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -168,
+      "derivation": "strict_lag_168h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_anchor_mean_24",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -24,
+      "derivation": "shift_24h_then_trailing_24h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_anchor_std_24",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -24,
+      "derivation": "shift_24h_then_trailing_24h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_anchor_mean_168",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -24,
+      "derivation": "shift_24h_then_trailing_168h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_anchor_std_168",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -24,
+      "derivation": "shift_24h_then_trailing_168h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_lag_25",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "strict_lag_25h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_lag_48",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -48,
+      "derivation": "strict_lag_48h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_lag_168",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -168,
+      "derivation": "strict_lag_168h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_anchor_mean_24",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_anchor_std_24",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_anchor_mean_168",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_anchor_std_168",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "temperature_lag_48",
+      "dtype": "float64",
+      "source_system": "historical_temperature",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -48,
+      "derivation": "strict_lag_48h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "temperature_lag_168",
+      "dtype": "float64",
+      "source_system": "historical_temperature",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -168,
+      "derivation": "strict_lag_168h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "temperature_anchor_mean_24",
+      "dtype": "float64",
+      "source_system": "historical_temperature",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "temperature_anchor_std_24",
+      "dtype": "float64",
+      "source_system": "historical_temperature",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "temperature_anchor_mean_168",
+      "dtype": "float64",
+      "source_system": "historical_temperature",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "temperature_anchor_std_168",
+      "dtype": "float64",
+      "source_system": "historical_temperature",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "wind_speed_lag_48",
+      "dtype": "float64",
+      "source_system": "historical_wind_speed",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -48,
+      "derivation": "strict_lag_48h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "wind_speed_lag_168",
+      "dtype": "float64",
+      "source_system": "historical_wind_speed",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -168,
+      "derivation": "strict_lag_168h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "wind_speed_anchor_mean_24",
+      "dtype": "float64",
+      "source_system": "historical_wind_speed",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "wind_speed_anchor_std_24",
+      "dtype": "float64",
+      "source_system": "historical_wind_speed",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "wind_speed_anchor_mean_168",
+      "dtype": "float64",
+      "source_system": "historical_wind_speed",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "wind_speed_anchor_std_168",
+      "dtype": "float64",
+      "source_system": "historical_wind_speed",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "precipitation_lag_48",
+      "dtype": "float64",
+      "source_system": "historical_precipitation",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -48,
+      "derivation": "strict_lag_48h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "precipitation_lag_168",
+      "dtype": "float64",
+      "source_system": "historical_precipitation",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -168,
+      "derivation": "strict_lag_168h_relative_to_target",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "precipitation_anchor_mean_24",
+      "dtype": "float64",
+      "source_system": "historical_precipitation",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "precipitation_anchor_std_24",
+      "dtype": "float64",
+      "source_system": "historical_precipitation",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_24h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "precipitation_anchor_mean_168",
+      "dtype": "float64",
+      "source_system": "historical_precipitation",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_mean",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "precipitation_anchor_std_168",
+      "dtype": "float64",
+      "source_system": "historical_precipitation",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -25,
+      "derivation": "shift_25h_then_trailing_168h_std",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_same_hour_mean_7d",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -24,
+      "derivation": "previous_7_same_hour_values_ending_target_minus_24h",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "da_price_same_hour_std_7d",
+      "dtype": "float64",
+      "source_system": "historical_da_price",
+      "availability_latency": "published_day_ahead",
+      "max_source_offset_hours": -24,
+      "derivation": "previous_7_same_hour_values_ending_target_minus_24h",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    },
+    {
+      "feature_name": "actual_load_same_hour_mean_7d",
+      "dtype": "float64",
+      "source_system": "historical_actual_load",
+      "availability_latency": "1h_reporting_guard",
+      "max_source_offset_hours": -48,
+      "derivation": "previous_7_same_hour_values_ending_target_minus_48h",
+      "online_available_at_prediction_time": true,
+      "leakage_risk": "none_after_anchor_cutoff"
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "feature_count": 52,
+    "duplicate_names": [],
+    "unsafe_offsets": [],
+    "banned_features": [],
+    "feature_version": "features_online_safe_289a51530a13"
+  }
+}

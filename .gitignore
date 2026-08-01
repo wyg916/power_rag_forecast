@@ -76,6 +76,7 @@ model_artifacts/*/*
 !model_artifacts/*/model_card.md
 !model_artifacts/*/thresholds.json
 !model_artifacts/*/training_config.json
+/model_artifacts/model_day6b_*/
 *.db
 *.sqlite
 *.sqlite3

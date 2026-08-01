@@ -1,0 +1,31 @@
+{
+  "model_version": "model_day6b_20260801_181807",
+  "feature_version": "features_online_safe_289a51530a13",
+  "status": "candidate_not_registered_not_active",
+  "artifact_id": "artifact_104b64781fe17d36cfdd9634",
+  "model_sha256": "104b64781fe17d36cfdd96349f78055d84408c6179b4b1b065161eb1e1371c60",
+  "feature_contract_sha256": "63d13be2a8bf0b19dc71b33776bfef5176ffb178f1b54e75d15929ee26838bde",
+  "files": {
+    "candidate_gate.json": "ed651b04fa9051e11ae4f30d955a1a8f1f7ec30afc7d8b7b1ac2c1ab7a0f521b",
+    "data_lineage.json": "ca63a271ac359f4f5fe0230ba6388b245eb0a0b910e550eb236404e0b6a7f9cf",
+    "evaluation_report.json": "c057e3d401139353d1114ac8074e783d62322933148b5751d4be0cc95ff1a00b",
+    "evaluation_report.md": "f289b17cabb12fc7a2a589904f525986c996cabfe249580644c4a3039f8433a9",
+    "feature_cols.json": "c1e133cbc5887706973f9a96b370c182fcb4f79e0322e2065557a4a53842eddc",
+    "feature_manifest.json": "814c0b4c29a70185cf6115038904f408887b7a7a7acc7a340aa561b50c262b0a",
+    "input_schema.json": "814c0b4c29a70185cf6115038904f408887b7a7a7acc7a340aa561b50c262b0a",
+    "leakage_audit.json": "38e4621e6cb7a073365b52d1d07ffdd0e62f8016965e13b9c027e8ff1e843920",
+    "metrics.json": "c057e3d401139353d1114ac8074e783d62322933148b5751d4be0cc95ff1a00b",
+    "model.joblib": "104b64781fe17d36cfdd96349f78055d84408c6179b4b1b065161eb1e1371c60",
+    "model_card.md": "105c6e881c47479b812719ba968371ffa0c26b3fda0a079704e0a28e642886fb",
+    "thresholds.json": "fed51560067af571209124f1db7597af117dabd72f51264ff7c86678caa5ec7b",
+    "training_config.json": "58d5e6316bd04923a23f1aa665ef0c1ed080952d76892c2daf6719ad5626fc58",
+    "training_manifest.json": "58d5e6316bd04923a23f1aa665ef0c1ed080952d76892c2daf6719ad5626fc58"
+  },
+  "runtime": {
+    "python": "3.11.9",
+    "numpy": "2.4.6",
+    "pandas": "2.3.3",
+    "scikit_learn": "1.9.0",
+    "joblib": "1.5.3"
+  }
+}
