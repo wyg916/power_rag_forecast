@@ -1,0 +1,20 @@
+{
+  "model_version": "model_day6_operational_20260801_143802",
+  "model_id": "model_day6_operational_20260801_143802",
+  "model_role": "operational_candidate",
+  "status": "validated",
+  "is_active": false,
+  "domain": "price",
+  "target_name": "da_price",
+  "artifact_id": "artifact_afd8a9ca98c7d6b97e28846c",
+  "artifact_hash": "afd8a9ca98c7d6b97e28846c6c1257835cddf6e1d7413e66d038040b9f91db6d",
+  "artifact_path": "model_artifacts\\model_day6_operational_20260801_143802\\model.joblib",
+  "feature_version": "features_day6_operational_589ede956c04",
+  "schema_hash": "589ede956c041de58194c7864043b32453e82c715956e41b735cf4f1c6ad3114",
+  "feature_count": 31,
+  "business_timezone": "America/New_York",
+  "selected_model": "hist_gradient_boosting",
+  "created_at": "2026-08-01T14:38:02.421487+00:00",
+  "runtime_identity": "beta10d_forecast_login",
+  "development_demo_only": true
+}

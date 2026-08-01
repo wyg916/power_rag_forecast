@@ -141,9 +141,15 @@ def postgres_engine():
     engine = create_engine(url, future=True)
     with engine.connect() as conn:
         revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    if revision != "0014_t003_run_transaction":
+    compatible_revisions = {
+        "0014_t003_run_transaction",
+        "0015_phase5d_strategy",
+        "0016_strategy_runtime",
+        "0017_day6_operational",
+    }
+    if revision not in compatible_revisions:
         engine.dispose()
-        pytest.skip("PHASE5-C integration database is not at 0014")
+        pytest.skip("PHASE5-C integration database is not at a compatible revision")
     yield engine
     engine.dispose()
 

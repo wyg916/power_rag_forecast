@@ -1,0 +1,288 @@
+{
+  "feature_version": "features_day6_operational_589ede956c04",
+  "schema_hash": "589ede956c041de58194c7864043b32453e82c715956e41b735cf4f1c6ad3114",
+  "timezone": "America/New_York",
+  "features": [
+    {
+      "feature_name": "hour",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "day_of_week",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "month",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "day",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "day_of_year",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "week_of_year",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "is_weekend",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "is_holiday",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "is_morning_peak",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "is_evening_peak",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "is_peak_hour",
+      "dtype": "int64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "hour_sin",
+      "dtype": "float64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "cyclic_target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "hour_cos",
+      "dtype": "float64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "cyclic_target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "dow_sin",
+      "dtype": "float64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "cyclic_target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "dow_cos",
+      "dtype": "float64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "cyclic_target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "month_sin",
+      "dtype": "float64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "cyclic_target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "month_cos",
+      "dtype": "float64",
+      "source_system": "deterministic_calendar",
+      "availability_at_prediction_time": "0h",
+      "derivation": "cyclic_target_datetime",
+      "online_safe": true
+    },
+    {
+      "feature_name": "forecast_load",
+      "dtype": "float64",
+      "source_system": "PJM_load_frcstd_7_day",
+      "availability_at_prediction_time": "issued_before_anchor",
+      "derivation": "published_load_forecast",
+      "online_safe": true
+    },
+    {
+      "feature_name": "temperature_forecast",
+      "dtype": "float64",
+      "source_system": "Open-Meteo",
+      "availability_at_prediction_time": "issued_before_anchor",
+      "derivation": "temperature_2m",
+      "online_safe": true
+    },
+    {
+      "feature_name": "humidity_forecast",
+      "dtype": "float64",
+      "source_system": "Open-Meteo",
+      "availability_at_prediction_time": "issued_before_anchor",
+      "derivation": "relative_humidity_2m",
+      "online_safe": true
+    },
+    {
+      "feature_name": "wind_speed_forecast",
+      "dtype": "float64",
+      "source_system": "Open-Meteo",
+      "availability_at_prediction_time": "issued_before_anchor",
+      "derivation": "wind_speed_10m",
+      "online_safe": true
+    },
+    {
+      "feature_name": "precipitation_forecast",
+      "dtype": "float64",
+      "source_system": "Open-Meteo",
+      "availability_at_prediction_time": "issued_before_anchor",
+      "derivation": "precipitation",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_lag_24",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "exact_target_minus_24h",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_lag_48",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "exact_target_minus_48h",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_lag_168",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "exact_target_minus_168h",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_anchor_mean_24",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "window_ending_target_minus_24h_mean",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_anchor_std_24",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "window_ending_target_minus_24h_std",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_anchor_mean_168",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "window_ending_target_minus_24h_mean",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_anchor_std_168",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "window_ending_target_minus_24h_std",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_same_hour_mean_7d",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "seven_prior_days_same_hour_mean",
+      "online_safe": true
+    },
+    {
+      "feature_name": "da_price_same_hour_std_7d",
+      "dtype": "float64",
+      "source_system": "PJM_da_hrl_lmps",
+      "availability_at_prediction_time": "published_before_anchor",
+      "derivation": "seven_prior_days_same_hour_std",
+      "online_safe": true
+    }
+  ],
+  "strict_order": [
+    "hour",
+    "day_of_week",
+    "month",
+    "day",
+    "day_of_year",
+    "week_of_year",
+    "is_weekend",
+    "is_holiday",
+    "is_morning_peak",
+    "is_evening_peak",
+    "is_peak_hour",
+    "hour_sin",
+    "hour_cos",
+    "dow_sin",
+    "dow_cos",
+    "month_sin",
+    "month_cos",
+    "forecast_load",
+    "temperature_forecast",
+    "humidity_forecast",
+    "wind_speed_forecast",
+    "precipitation_forecast",
+    "da_price_lag_24",
+    "da_price_lag_48",
+    "da_price_lag_168",
+    "da_price_anchor_mean_24",
+    "da_price_anchor_std_24",
+    "da_price_anchor_mean_168",
+    "da_price_anchor_std_168",
+    "da_price_same_hour_mean_7d",
+    "da_price_same_hour_std_7d"
+  ]
+}

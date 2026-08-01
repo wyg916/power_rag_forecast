@@ -1,0 +1,13 @@
+{
+  "algorithm": "SHA-256",
+  "files": {
+    "feature_cols.json": "3c66b8272fbe2d4289eed7ba9300ff1577142f22ba80c01e9ba9a4b8629291a3",
+    "input_schema.json": "14c60febaed03a38e43ca50b50c73652dd46ef9a5284e469027aa1d2aedab920",
+    "manifest.json": "e2b4d4c76fb25fa617d4f61b373ce472d1bfc8ca3bb22fb50c42efe218d869a6",
+    "metrics.json": "dab3b7413c6458681d2bae1ed49baebe678d6d577c4483cf01fbe33a6dff51d3",
+    "model.joblib": "afd8a9ca98c7d6b97e28846c6c1257835cddf6e1d7413e66d038040b9f91db6d",
+    "model_card.md": "c6d3289974a4f53d8ea1f3385fb93a7d0bbce614800087eb6d59036bbb08e4f4",
+    "thresholds.json": "a68173dc1aea3b9a1ec60d21660861986601a34a619a60f9df522b12742dfe39",
+    "training_config.json": "5e7ee4c90bdc87755c85a396093672b23853ef7b5d9a9d0dc1494243e683f289"
+  }
+}

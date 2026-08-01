@@ -1,0 +1,28 @@
+{
+  "random_seed": 20260801,
+  "train": [
+    "2024-07-13 06:00:00",
+    "2026-04-18 23:00:00"
+  ],
+  "validation": [
+    "2026-04-19 00:00:00",
+    "2026-05-18 23:00:00"
+  ],
+  "test": [
+    "2026-05-19 00:00:00",
+    "2026-06-17 23:00:00"
+  ],
+  "split_rows": {
+    "train": 15136,
+    "validation": 720,
+    "test": 720
+  },
+  "model_candidates": [
+    "ridge",
+    "hist_gradient_boosting",
+    "extra_trees",
+    "random_forest"
+  ],
+  "selection_metric": "validation_rmse",
+  "test_not_used_for_selection": true
+}

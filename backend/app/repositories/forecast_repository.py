@@ -47,7 +47,8 @@ _RUN_SELECT = """
     model_id, model_version, artifact_id, artifact_hash,
     feature_version, schema_hash, input_hash, result_hash,
     source_type, created_at, started_at, finished_at,
-    error_code, error_message, retry_of_run_id, environment_hash, record_count
+    error_code, error_message, retry_of_run_id, environment_hash, record_count,
+    input_batch_id, source_metadata_json, freshness_status, development_mode
 """
 
 
@@ -114,7 +115,8 @@ def load_forecast_results(run_id: str, *, engine=None) -> list[dict[str, Any]]:
                            model_version, feature_version, generated_at,
                            base_prediction, peak_prediction, classifier_prediction,
                            spike_risk_prob, p90_prediction, blend_weight,
-                           adjustment, component_outputs, source_type, source_row
+                           adjustment, component_outputs, source_type, source_row,
+                           input_batch_id, forecast_load, risk_level
                     FROM forecast_results
                     WHERE run_id = :run_id
                     ORDER BY forecast_time, source_row, id

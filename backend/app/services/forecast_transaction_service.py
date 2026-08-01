@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import re
 from dataclasses import dataclass
@@ -52,6 +53,10 @@ class ForecastRunRequest:
     source_type: str = "model_inference"
     retry_of_run_id: str | None = None
     expected_result_hash: str | None = None
+    input_batch_id: str | None = None
+    source_metadata: dict[str, Any] | None = None
+    freshness_status: str | None = None
+    development_mode: bool = False
 
 
 @dataclass(frozen=True)
@@ -204,13 +209,15 @@ class ForecastTransactionService:
                         model_id, model_version, artifact_id, artifact_hash,
                         feature_version, schema_hash, input_hash, source_type,
                         created_at, started_at, retry_of_run_id, environment_hash,
-                        record_count, row_count
+                        record_count, row_count, input_batch_id, source_metadata_json,
+                        freshness_status, development_mode
                     ) VALUES (
                         :run_id, 'created', :domain, :target_name, :input_start_at, :input_end_at,
                         :model_id, :model_version, :artifact_id, :artifact_hash,
                         :feature_version, :schema_hash, :input_hash, :source_type,
                         :created_at, :started_at, :retry_of_run_id, :environment_hash,
-                        0, 0
+                        0, 0, :input_batch_id, CAST(:source_metadata_json AS jsonb),
+                        :freshness_status, :development_mode
                     )
                     """
                 ),
@@ -226,6 +233,10 @@ class ForecastTransactionService:
                     "started_at": now,
                     "retry_of_run_id": request.retry_of_run_id,
                     "environment_hash": request.environment_hash,
+                    "input_batch_id": request.input_batch_id,
+                    "source_metadata_json": json.dumps(request.source_metadata or {}, ensure_ascii=False, default=str),
+                    "freshness_status": request.freshness_status,
+                    "development_mode": bool(request.development_mode),
                     **{field: model[field] for field in REQUIRED_IDENTITY_FIELDS},
                 },
             )
@@ -263,14 +274,16 @@ class ForecastTransactionService:
                             model_version, feature_version, generated_at,
                             base_prediction, peak_prediction, classifier_prediction,
                             spike_risk_prob, p90_prediction, blend_weight,
-                            component_outputs, source_type, source_row, raw_json
+                            component_outputs, source_type, source_row, raw_json,
+                            input_batch_id, forecast_load, risk_level
                         ) VALUES (
                             :run_id, :forecast_time, :forecast_datetime, :predicted_price,
                             :model_version, :feature_version, :generated_at,
                             :base_prediction, :peak_prediction, :classifier_prediction,
                             :spike_probability, :p90_prediction, :blend_weight,
                             CAST(:component_outputs AS jsonb), :source_type, :source_row,
-                            CAST(:component_outputs AS jsonb)
+                            CAST(:component_outputs AS jsonb), :input_batch_id,
+                            :forecast_load, :risk_level
                         )
                         """
                     ),
@@ -291,6 +304,9 @@ class ForecastTransactionService:
                         "component_outputs": pd.Series(component_outputs).to_json(),
                         "source_type": request.source_type,
                         "source_row": index + 1,
+                        "input_batch_id": request.input_batch_id,
+                        "forecast_load": float(row["forecast_load"]) if "forecast_load" in row and pd.notna(row["forecast_load"]) else None,
+                        "risk_level": str(row["risk_level"]) if "risk_level" in row else None,
                     },
                 )
 
