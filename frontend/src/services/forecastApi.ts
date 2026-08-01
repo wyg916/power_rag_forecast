@@ -262,7 +262,9 @@ export async function getForecastCenterData() {
 
   const { series, derivedFields } = buildSeries(forecast24h, latest);
   const currentRunId = forecast24h?.run_id || latest?.run_id || forecast24h?.meta?.run_id || '';
-  const previousRun = (forecastRuns?.items || []).find((item: any) => item.run_id !== currentRunId && item.status === 'success' && Number(item.record_count) === 24);
+  const forecastRunItems = Array.isArray(forecastRuns?.items) ? forecastRuns.items : [];
+  const currentRun = forecastRunItems.find((item: any) => item.run_id === currentRunId) || null;
+  const previousRun = forecastRunItems.find((item: any) => item.run_id !== currentRunId && item.status === 'success' && Number(item.record_count) === 24);
   const previousForecast = previousRun
     ? await safe('previousForecastResults', () => api.forecastRunResults(previousRun.run_id))
     : null;
@@ -297,6 +299,14 @@ export async function getForecastCenterData() {
 
   const activeModel = { ...(models?.active || {}), ...(modelExplain?.active_model || {}) };
   const sourceMeta = forecast24h?.meta || latest?.meta || prediction?.meta || {};
+  const modelVersion = currentRun?.model_version || sourceMeta.model_version || forecast24h?.model_version || latest?.model_version || '';
+  const featureVersion = currentRun?.feature_version || sourceMeta.feature_version || forecast24h?.feature_version || latest?.feature_version || '';
+  const inferenceModel = {
+    ...(currentRun || {}),
+    model_version: modelVersion,
+    feature_version: featureVersion,
+    artifact_id: currentRun?.artifact_id || forecast24h?.artifact_id || latest?.artifact_id || ''
+  };
   const freshnessStatus = sourceMeta.freshness_status
     || (sourceMeta.availability === 'unavailable' ? 'unavailable' : sourceMeta.is_stale ? 'stale' : series.length ? 'current' : 'unavailable');
   const forecastBatchLabel = freshnessStatus === 'unavailable'
@@ -324,11 +334,13 @@ export async function getForecastCenterData() {
     available: Boolean(series.length && freshnessStatus !== 'unavailable'),
     date: dateText(sourceMeta.valid_from || forecast24h?.summary?.forecast_start || summary.maxHour),
     region: forecast24h?.region || forecast24h?.market || prediction?.market || '',
-    modelVersion: activeModel.model_version || activeModel.version || sourceMeta.model_version || '',
-    featureVersion: activeModel.feature_version || sourceMeta.feature_version || featureSchema?.feature_version || '',
+    modelVersion,
+    featureVersion,
     dataSource: sourceMeta.source_type || latest?.source_type || 'unavailable',
     unit: forecast24h?.unit || '元/kWh',
     runId: currentRunId,
+    inputBatchId: currentRun?.input_batch_id || '',
+    developmentMode: Boolean(currentRun?.development_mode),
     generatedAt: forecast24h?.generated_at || latest?.generated_at || sourceMeta.generated_at || '',
     updatedAt: sourceMeta.updated_at || forecast24h?.generated_at || latest?.generated_at || '',
     validFrom: sourceMeta.valid_from || forecast24h?.summary?.forecast_start || '',
@@ -353,6 +365,7 @@ export async function getForecastCenterData() {
     strategy,
     dataHealth,
     activeModel,
+    inferenceModel,
     modelExplain,
     backtestSummary,
     featureSchema,

@@ -229,6 +229,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       <PageHeader
         title="预测中心"
         subtitle={subtitle}
+        className="forecast-page-header"
         navigation={<PageTabs items={forecastTabs} activeKey={activeSubKey} onChange={onSubNavigate} />}
         metadata={<ForecastContextBar data={data} />}
         actions={actions}

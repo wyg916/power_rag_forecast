@@ -1,4 +1,11 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const AUTH_REQUIRED = String(import.meta.env.VITE_AUTH_REQUIRED ?? '1') !== '0';
+const DEVELOPMENT_IDENTITY_HEADERS: Record<string, string> = AUTH_REQUIRED
+  ? {}
+  : {
+      'X-User': String(import.meta.env.VITE_DEV_USERNAME || 'frontend-development-reader'),
+      'X-Role': 'developer'
+    };
 export const ACCESS_TOKEN_KEY = 'power_trading_access_token';
 
 export function getStoredAccessToken() {
@@ -72,6 +79,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getStoredAccessToken();
   const headers = {
     'Content-Type': 'application/json',
+    ...DEVELOPMENT_IDENTITY_HEADERS,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options?.headers || {})
   };
@@ -95,7 +103,10 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
   const token = getStoredAccessToken();
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    headers: {
+      ...DEVELOPMENT_IDENTITY_HEADERS,
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
     body: formData
   });
   if (!response.ok) {
@@ -115,6 +126,7 @@ async function requestBinaryResponse(path: string, options?: RequestInit): Promi
   const response = await fetch(`${API_BASE}${path}`, {
     ...(options || {}),
     headers: {
+      ...DEVELOPMENT_IDENTITY_HEADERS,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options?.headers || {})
     }

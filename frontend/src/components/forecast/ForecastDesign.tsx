@@ -52,11 +52,13 @@ export function ForecastContextBar({ data }: { data: any }) {
   return (
     <div className="forecast-context-bar">
       <div className="forecast-filter-items">
-        <span>预测日期 <strong>{data?.date || '--'}</strong></span>
-        <span>区域 <strong>{data?.region || '--'}</strong></span>
-        <span>模型版本 <strong>{data?.modelVersion || '--'}</strong>{data?.modelVersion ? <Tag color="success">接口返回</Tag> : null}</span>
-        <span>适用窗口 <strong>{data?.validFrom && data?.validTo ? `${String(data.validFrom).slice(0, 16)} 至 ${String(data.validTo).slice(0, 16)}` : '--'}</strong></span>
-        <span>批次状态 <Tag color={unavailable ? 'default' : data?.isStale ? 'warning' : 'success'}>{unavailable ? '暂不可用' : data?.isStale ? '历史窗口已结束' : '当前可用'}</Tag></span>
+        <span className="forecast-meta-date">预测日期 <strong>{data?.date || '--'}</strong></span>
+        <span className="forecast-meta-region">区域 <strong>{data?.region || '--'}</strong></span>
+        <span className="forecast-meta-model">推理模型 <strong title={data?.modelVersion || undefined}>{data?.modelVersion || '--'}</strong></span>
+        <span className="forecast-meta-feature">特征版本 <strong title={data?.featureVersion || undefined}>{data?.featureVersion || '--'}</strong></span>
+        <span className="forecast-meta-window">适用窗口 <strong title={data?.validFrom && data?.validTo ? `${data.validFrom} 至 ${data.validTo}` : undefined}>{data?.validFrom && data?.validTo ? `${String(data.validFrom).slice(0, 16)} 至 ${String(data.validTo).slice(0, 16)}` : '--'}</strong></span>
+        <span className="forecast-meta-status">批次状态 <Tag color={unavailable ? 'default' : data?.isStale ? 'warning' : 'success'}>{unavailable ? '暂不可用' : data?.isStale ? '历史窗口已结束' : '当前可用'}</Tag></span>
+        {data?.developmentMode ? <span className="forecast-meta-boundary">运行边界 <Tag color="warning">开发/演示闭环（非生产）</Tag></span> : null}
       </div>
     </div>
   );
@@ -194,10 +196,10 @@ export function ForecastDetailTable({ rows, compact = false, onExplain }: { rows
 }
 
 export function ForecastSummaryCards({ data }: { data: any }) {
-  const active = data?.activeModel || {};
+  const inferenceModel = data?.inferenceModel || {};
   return (
     <div className="forecast-bottom-summary">
-      <ModelStatusCard model={active} data={data} />
+      <ModelStatusCard model={inferenceModel} data={data} />
       <PeakSummaryCard data={data} />
       <DataHealthCard health={data?.dataHealth} />
     </div>
@@ -205,15 +207,19 @@ export function ForecastSummaryCards({ data }: { data: any }) {
 }
 
 function ModelStatusCard({ model, data }: { model: any; data: any }) {
+  const activeVersion = data?.activeModel?.model_version || data?.activeModel?.version || '';
+  const inferenceVersion = model?.model_version || data?.modelVersion || '';
+  const isActive = Boolean(inferenceVersion && activeVersion && inferenceVersion === activeVersion && !data?.developmentMode);
+  const statusLabel = data?.developmentMode ? 'Candidate · 开发演示' : isActive ? 'Active' : inferenceVersion ? '本次推理模型' : '待接入';
   return (
     <div className="forecast-card compact-card">
-      <div className="forecast-card-head"><h2>模型状态摘要</h2><Tag color={model?.model_version ? 'success' : 'warning'}>{model?.model_version ? 'Active' : '待接入'}</Tag></div>
+      <div className="forecast-card-head"><h2>本次推理模型</h2><Tag color={data?.developmentMode ? 'warning' : inferenceVersion ? 'success' : 'default'}>{statusLabel}</Tag></div>
       <dl className="kv-list">
-        <dt>模型</dt><dd>{model?.model_name || model?.name || '名称待接入'} {model?.model_version || data?.modelVersion || ''}</dd>
+        <dt>模型版本</dt><dd>{inferenceVersion || '--'}</dd>
         <dt>特征版本</dt><dd>{model?.feature_version || data?.featureVersion || '--'}</dd>
-        <dt>MAE</dt><dd>{fmt(model?.test_mae || model?.mae)}</dd>
-        <dt>RMSE</dt><dd>{fmt(model?.test_rmse || model?.rmse)}</dd>
-        <dt>训练时间</dt><dd>{String(model?.activated_at || model?.created_at || data?.generatedAt || '--').slice(0, 16)}</dd>
+        <dt>输入批次</dt><dd title={data?.inputBatchId || undefined}>{data?.inputBatchId || '--'}</dd>
+        <dt>run_id</dt><dd title={data?.runId || undefined}>{data?.runId || '--'}</dd>
+        <dt>生成时间</dt><dd>{String(data?.generatedAt || '--').slice(0, 16)}</dd>
       </dl>
     </div>
   );

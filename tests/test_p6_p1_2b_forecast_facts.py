@@ -91,6 +91,7 @@ def test_model_and_history_empty_semantics_do_not_use_success_defaults():
     page = _read("frontend/src/pages/forecast/ForecastCenterPage.tsx")
     design = _read("frontend/src/components/forecast/ForecastDesign.tsx")
     assert "上一成功批次不可用" in page
-    assert "名称待接入" in design
+    assert "本次推理模型" in design
+    assert "inferenceVersion || '--'" in design
     assert "模型解释接口未返回主要因素" in design
     assert "['负荷预期抬升', '新能源出力变化', '气温因素']" not in design
