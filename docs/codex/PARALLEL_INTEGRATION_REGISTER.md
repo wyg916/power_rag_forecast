@@ -10,6 +10,7 @@
 | beta10d/day6a-forecast-input-pipeline | Day 6A Active 特征可用性门禁 | 凭据事件收口、脱敏检查点、170 项特征矩阵、NOT PASS 证据 | Day 6 基线 92a1989；安全修复 49201c4 / 6a55cd1 / d04af4a | Active 170 项 schema、预测时点语义、来源/时效、最小权限；未创建迁移或输入批次 | 本行所在文档收口提交 | 170/170 契约审计；15 项结构性阻断；18 项防泄露、7 项 schema/泄漏测试 | 否（停在阶段 A） | RAG 两支线 HEAD 不变、clean、非 Day 6A 祖先；共享 Router、权限、配置、迁移和数据库均未触碰 | 逆序 git revert Day 6A 提交；数据库无业务变更；凭据不回退 |
 | `beta10d/day6b-online-safe-model` | Day 6B online-safe 契约与 Candidate 重训 | 170 项对照、52 项 Candidate 契约、可复现训练/评估、独立 artifact、NOT PASS 证据 | Day 6A `669436d…`；Active 只读基线 | target-24h/25h 历史截止、固定顺序/dtype、无未来 actual/RT spread/补零、Candidate 不自动激活 | `7602c20d7dc102ceb4e66b5932c4d8f043b4da83`；收口见本文件所在提交 | 6 项专项、38 项相关回归、24 项凭据复验、artifact 15/15 hash；性能门禁失败 | 否（Candidate 未注册、未激活） | RAG ingestion/runtime/R1 HEAD 不变且 clean；merge/cherry-pick/复制/数据库写入均为 0 | 逆序 revert 收口与实现提交；本地 Candidate 未激活，无数据库回滚 |
 | `beta10d/day6c-lineage-data-model-recovery` | Day 6C 阶段一受限 PostgreSQL 谱系恢复 | 受限身份/ACL、Day4 白名单、源表双指纹、冻结快照对账、NOT PASS 证据 | Day 6B `55c2c53…` | 只读受限身份、固定查询模板、冻结 Candidate 不激活 | 收口见本文件所在提交 | 身份/ACL 基础子门禁 PASS；快照完整等价和只读角色 ACL 门禁 NOT PASS；脱敏 18 passed | 否（阶段一失败，未进入后续阶段） | RAG 三线 HEAD/clean 不变；merge/cherry-pick/复制/数据库写入 0 | `git revert` Day 6C 收口提交；数据库和模型无回滚动作 |
+| `beta10d/day6-final-delivery` | Day 6 最终 operational 闭环 | 专用角色、0017 迁移、31 项 online-safe 契约、Candidate 训练、24 小时输入/预测、报告、策略、审核、API、预测中心和证据 | Day 6C `abcde0e…`；Day 6 最终任务授权 | 统一 `run_id`/`input_batch_id`、Provider 来源/时效、Candidate 非 Active、默认认证 fail-closed | `3e41d2c9a1b3e6a5d271fc77a19876e0ff73b273`、`68a94eae48b8e4badb41c707bc742d674287b2fb`；收口见本文件所在提交 | 20 项最终隔离、55 项权限/静态、70 项核心、71 项 Phase5、迁移往返、API、三视口、TypeScript/Vite、敏感扫描、DB 指纹均 PASS | 是（仅 Day 6 final 分支原子提交） | RAG 三线 HEAD 不变且 clean，Day 6 变更中 RAG 路径 0；未 merge/cherry-pick/复制 | 逆序 `git revert`；精确删除本轮 ID；0017 降级至 0016；专用角色脚本回滚 |
 | `codex/rag-enterprise-ingestion` | RAG ingestion 支线 | 未收到正式交付清单，本轮只读核验、不集成 | 未声明 | 不得修改正式迁移、公共配置、权限矩阵、Router、数据库 ACL；后续需适配 Day5 真实性元数据 | `4cce50bf40fe1b50ddbe3bdd62e2c33aaf657227` | worktree clean；无主线可核验交付 | 否 | 潜在来源元数据/公共配置/Router/数据库冲突仅登记 | 不 cherry-pick；无主线变更 |
 | `codex/rag-enterprise-runtime` | RAG runtime 支线 | 未收到正式交付清单，本轮只读核验、不集成 | 未声明 | 不得覆盖 Day4 白名单、运行身份、权限矩阵、正式 Router；后续需适配 Day5 freshness/run 契约 | `c79671c82b2b2cd6deedc0f9cb136349fc3d0b1d` | worktree clean；无主线可核验交付 | 否 | 潜在 AI/来源分类/时效契约冲突仅登记 | 不 cherry-pick；无主线变更 |
 
@@ -47,6 +48,14 @@
 - RAG Ingestion `4cce50bf40fe1b50ddbe3bdd62e2c33aaf657227`、Runtime `c79671c82b2b2cd6deedc0f9cb136349fc3d0b1d`、旧 RAG-R1 `7eaf8d3152f8ffe5bd983068a99145c9693b4925` 均 clean 且未修改。
 - Day 6C 对 RAG merge、cherry-pick、文件复制、Router/权限/迁移/公共配置变更和 RAG 数据库写入均为 0。
 - Active/Candidate 未反序列化、未注册、未激活、未覆盖；Day6A/原 Day6/Day7 均为 NO。
+
+## Day 6 最终闭环隔离复核
+
+- Day 6 final 从 Day 6C 最终 HEAD `abcde0e8310aa618ce9b1dc3a8391fefad04ef99` 创建独立工作树和分支。
+- RAG Ingestion `4cce50bf40fe1b50ddbe3bdd62e2c33aaf657227`、Runtime `c79671c82b2b2cd6deedc0f9cb136349fc3d0b1d`、旧 RAG-R1 `7eaf8d3152f8ffe5bd983068a99145c9693b4925` 均 HEAD 不变、worktree clean。
+- Day 6 变更路径中 RAG/knowledge/kb 相关为 0；未 merge、cherry-pick、复制、修改 Router 或写入 RAG 数据。
+- 原 Active `model_20260620_063015` 未覆盖；operational Candidate 仅 `validated/is_active=false`，生产切换 0。
+- 本轮开发/演示业务闭环为 CONDITIONAL PASS；只有用户另行授权后才允许进入 Day 7 开发，生产切换仍为 NO。
 
 ## 集成门禁
 
