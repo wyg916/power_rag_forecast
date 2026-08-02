@@ -667,7 +667,7 @@ def upload_collection(
     alias_before = _aliases(client).get(ALIAS)
     if alias_before == COLLECTION:
         raise CandidateCollectionError("candidate_collection_already_aliased")
-    disposition = _create_or_validate_collection(client, len(chunks))
+    _create_or_validate_collection(client, len(chunks))
     existing = _scroll_payloads(client)
     _validate_payload_facts(existing, set(payloads))
     _create_payload_indexes(client)
@@ -739,7 +739,7 @@ def upload_collection(
         "alias": ALIAS,
         "alias_before": alias_before,
         "alias_after": alias_after,
-        "collection_disposition": disposition,
+        "collection_state": "ready",
         "point_count": len(chunks),
         "dense": {
             "name": "dense",

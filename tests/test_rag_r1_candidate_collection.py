@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 
 from scripts.rag_r1_candidate_collection import (
     EMBEDDING_VERSION,
@@ -130,3 +131,14 @@ def test_qdrant_point_id_is_uuid_stable_and_release_scoped():
     assert first == _point_id("chk_1")
     assert first != _point_id("chk_2")
     assert len(first) == 36
+
+
+def test_candidate_report_uses_rerun_stable_collection_state():
+    source = (
+        Path(__file__).parents[1]
+        / "scripts"
+        / "rag_r1_candidate_collection.py"
+    ).read_text(encoding="utf-8")
+
+    assert '"collection_state": "ready"' in source
+    assert '"collection_disposition": disposition' not in source

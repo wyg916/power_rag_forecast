@@ -35,5 +35,6 @@
 | 29 | 83 文件 Candidate Corpus 构建 | 集成分支正式运行 I2/I3/I5 | 7 个代码/测试文件 +529/-10，另 2 个证据文件 | 45 documents / 8,339 chunks / 14 duplicates / 24 isolations；36 passed；二次运行 unchanged | Git 外新增 2 个 Candidate 文件；源/DB/Qdrant/alias 写入 0 | 本提交 |
 | 30 | Candidate Collection 可续跑构建器与 handoff 冲突收口 | 集成分支新增 | 4 个代码/测试文件 +955/-5，另 2 个状态文档 | handoff/collection/candidate 33 passed；真实 8.6 MB envelope 校验 PASS | Qdrant collection/alias/snapshot 写入 0；模型仅基准读取 | `36d1c4e7…` |
 | 31 | BM25 无词项 chunk 边界修复 | 正式 prepare 首轮 fail-closed 后最小修复 | 2 个代码/测试文件 | 16 passed；真实 profile 8,339 chunks / 41 empty sparse / 50,844 vocab | 首轮在写盘前停止；Qdrant/alias/snapshot 写入 0 | 本提交 |
+| 32 | Candidate Embedding 全量准备与报告幂等修复 | 正式 prepare + 上传前最小修复 | 2 个代码/测试文件；Git 外 66 个不可变分片 | 8,339/8,339；1024 维归一化；二次 prepare 全部 unchanged；定向 20 passed | Qdrant/alias/snapshot/PostgreSQL 写入 0；报告不再记录首次/重跑瞬态 | 本提交 |
 
-下一阶段：正式生成 8,339 条 BGE/BM25 向量分片 → Candidate Collection 与 payload indexes → PostgreSQL Candidate 元数据 → snapshot → API/认证/AI/UI → 评测与发布回滚。
+下一阶段：Candidate Collection 与 payload indexes → PostgreSQL Candidate 元数据 → snapshot → API/认证/AI/UI → 评测与发布回滚。
