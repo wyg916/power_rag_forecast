@@ -28,5 +28,6 @@
 | 22 | M6 Qdrant 安全契约与 strict-mode 发布门禁 | `ec08c5af…` 安全核心，拒绝候选 `.env`/公共 Compose/Router | 7 个代码/测试文件，约 +280 | Qdrant/runtime/release/adapter/hybrid 75 passed | Qdrant 连接/写入 0；配置覆盖 0 | 本提交 |
 | 23 | Qdrant 1.18.2 私有部署叠加层与 E 盘预检 | 集成分支新增，参考 `a902e5fc…` 门禁但不接收公共 Compose | 4 个部署/脚本/测试文件，约 +290 | 部署门禁相关 58 passed；占位配置 fail-closed | 镜像拉取 0；容器 0；E 盘资产写入 0 | 本提交 |
 | 24 | Qdrant 1.18.2 固定镜像、本地 TLS 与角色权限实测 | 集成分支新增；用户确认外网拉取和 E 盘资产 | 5 个部署/脚本/测试/证据文件，约 +390 | bootstrap/preflight PASS；权限探针 9/9 PASS；静态测试 10 passed | E 盘新建运行资产；独立容器运行；Candidate/alias 写入 0 | 本提交 |
+| 25 | BGE Embedding/Reranker 静态准入与全量哈希 | 集成分支新增 | 2 个脚本/测试文件，约 +300 | profile/license/manifest PASS；单测 3 passed | 网络 0；模型目录写入 0；权重反序列化 0 | 本提交 |
 
 下一阶段：Qdrant 1.18.2 安全契约与本地私有部署叠加层 → 双模型准入 → 83 文件正式处理 → Candidate Corpus/Collection → API/认证/AI/UI。
