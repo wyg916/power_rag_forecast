@@ -42,5 +42,6 @@
 | 36 | Candidate 既有 payload index 幂等门禁 | 重跑 read-lock 超时根因后的最小修复 | 2 个代码/测试文件 +38 | 既有 21/21 索引类型真实一致；定向 22 passed；py_compile PASS | 精确停止初始审计进程；重跑只校验既有类型、不再重复 PUT index；alias/snapshot/PostgreSQL 写入 0 | 本提交 |
 | 37 | Candidate 确定性审计进度可观测性 | 全量 ID 探针通过后的最小日志补强 | 1 个代码文件 +1 | 真实只读审计 8,339/8,339 PASS；定向 8 passed；py_compile PASS | 仅输出累计审计数；请求、报告和 Candidate 数据不变 | 本提交 |
 | 38 | Candidate 不可变报告双 schema 兼容与第 22 索引收口 | 全量二次审计通过后的冲突修复 | 2 个代码/测试文件 +58/-1 | upsert 8,339/8,339；最终 ID 审计 8,339/8,339；既有报告核心事实一致；定向 23 passed | 保留既有报告 SHA-256 `6158284c…e39e`，不覆盖；事实差异继续 fail-closed；alias/snapshot/PostgreSQL 写入 0 | 本提交 |
+| 39 | Candidate Collection 正式全量构建与幂等复跑 | 当前脚本在既有不可变报告上正式执行 | 2 个证据文件 + 状态登记 | 初审 8,339/8,339；upsert 8,339/8,339；终审 8,339/8,339；dense/BM25 smoke PASS；脚本最终 PASS | Qdrant Candidate 写入完成；报告未覆盖；alias 0、snapshot 0、PostgreSQL 0、外网 0 | 本提交 |
 
-下一阶段：Candidate Collection 与 payload indexes → PostgreSQL Candidate 元数据 → snapshot → API/认证/AI/UI → 评测与发布回滚。
+下一阶段：PostgreSQL Candidate 元数据 → API/认证/AI/UI → 评测与全量回归 → PostgreSQL/Qdrant snapshot → alias 原子切换与发布回滚演练。

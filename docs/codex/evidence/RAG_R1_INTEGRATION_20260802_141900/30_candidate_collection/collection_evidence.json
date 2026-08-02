@@ -1,0 +1,100 @@
+{
+  "status": "PASS",
+  "scope": "candidate_collection_only",
+  "release_id": "RAG-R1",
+  "tenant_id": "default",
+  "collection": "rag_chunks_RAG-R1",
+  "alias": "rag_chunks_current",
+  "alias_before": null,
+  "alias_after": null,
+  "snapshot_count": 0,
+  "qdrant": {
+    "version": "1.18.2",
+    "image": "qdrant/qdrant:v1.18.2@sha256:75eab8c4ba42096724fdcfde8b4de0b5713d529dde32f285a1f86fdcb2c9e50c",
+    "image_id": "sha256:e13294053db80229932ca53f6ace97c3da1ae2581b770373e187a15707244eb5",
+    "status": "green",
+    "optimizer_status": "ok",
+    "segments_count": 6,
+    "points_count": 8339,
+    "indexed_vectors_count": 8298,
+    "strict_mode_enabled": true
+  },
+  "dense": {
+    "name": "dense",
+    "dimension": 1024,
+    "distance": "Cosine",
+    "provider": "sentence_transformers",
+    "model": "BAAI/bge-large-zh-v1.5",
+    "model_manifest_sha256": "a6854a4b265bc6c7159d02927ece3548e63e7b57cf49deee2a77b94bbb0ec3fa",
+    "normalized": true
+  },
+  "sparse": {
+    "name": "bm25",
+    "profile": "bm25-zh-v1",
+    "profile_sha256": "591f331717eb29b56a74a35d67ba88101046bae09d6e024a0bd5793d70edf6b0",
+    "vocabulary_size": 50844,
+    "point_count": 8298,
+    "empty_point_count": 41
+  },
+  "payload_indexes": [
+    "acl_fingerprint",
+    "acl_public",
+    "acl_roles",
+    "acl_user_ids",
+    "candidate_file_sha256",
+    "chunk_id",
+    "content_hash",
+    "document_id",
+    "domain",
+    "embedding_dimension",
+    "embedding_model",
+    "embedding_provider",
+    "embedding_version",
+    "parent_chunk_id",
+    "release_id",
+    "source_type",
+    "sparse_profile",
+    "status",
+    "tenant_id",
+    "valid_from",
+    "valid_to",
+    "version_id"
+  ],
+  "inputs": {
+    "candidate_file_sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7",
+    "candidate_release_envelope_sha256": "fd421477cee67f5b373a113741dbd9b16a87d6a63ddf6c5220720dcbf020ddfa",
+    "bm25_profile_file_sha256": "4f266825b56adba835e5b76dedbeaf5bec8f2bc2ba0340ba05fa2cf8e88cec16",
+    "embedding_manifest_file_sha256": "21c0b28bb7887b9bb96f857e81f8c227ecb5bf06738d63855b2ce1268eb2e3cd",
+    "embedding_manifest_sha256": "09a00a33f7ea0e859a1237ccdc6353a3e3cb5c6e311c25ff920a51dd416e39c0",
+    "embedding_shards": 66,
+    "embedding_shard_bytes": 35124700,
+    "collection_input_sha256": "8cec3d8630dd5ce3693dddc261b5926d174b1522b49c7cae053326f408b96be7"
+  },
+  "immutable_report": {
+    "path": "E:/智能运营分析项目/.runtime/rag/releases/RAG-R1/candidate_collection_report.json",
+    "size": 2043,
+    "sha256": "6158284cb08e9e7b95248c1ba2cea2f974c2d53349db394531b5dd382061e39e",
+    "overwritten": false,
+    "facts_validated": true
+  },
+  "verification": {
+    "initial_identity_count": 8339,
+    "upsert_count": 8339,
+    "final_identity_count": 8339,
+    "dense_query_smoke": true,
+    "bm25_query_smoke": true,
+    "tests_passed": 23,
+    "py_compile": "PASS",
+    "diff_check": "PASS",
+    "external_network_calls": 0,
+    "postgresql_writes": 0
+  },
+  "release_boundaries": {
+    "candidate_ready": true,
+    "published": false,
+    "alias_switched": false,
+    "snapshot_created": false,
+    "production_switched": false
+  },
+  "risk": "PASS_WITH_RISK: Docker Desktop E-drive bind filesystem warning; snapshot and restore proof required before publication"
+}
