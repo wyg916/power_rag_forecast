@@ -1,7 +1,11 @@
+import json
 from pathlib import Path
 
 import openpyxl
+from jsonschema import Draft202012Validator
 
+from knowledge_pipeline.enterprise.chunking import build_candidate
+from knowledge_pipeline.enterprise.frozen_export import export_frozen_records
 from knowledge_pipeline.enterprise.orchestrator import parse_document
 from knowledge_pipeline.enterprise.parsed_contracts import ParseStatus
 from knowledge_pipeline.enterprise.parsers.base import ParserLimits
@@ -33,6 +37,20 @@ def test_xlsx_streams_every_sheet_without_500_row_truncation(tmp_path: Path, mon
     assert len(result.tables[0].rows) == 502
     assert result.tables[0].rows[-1] == ("502", "row-502")
     assert result.to_dict() == repeated.to_dict()
+
+    build = build_candidate(result, token_counter=len, max_tokens=400)
+    frozen = export_frozen_records(build)
+    assert build.assets == ()
+    assert {parent.section_path for parent in build.parents} == {("明细",), ("第二页",)}
+    assert all(chunk.citation.asset_ids == () for chunk in build.chunks)
+    assert all(chunk["citation"]["asset_id"] is None for chunk in frozen["chunks"])
+    schema_path = Path(__file__).parents[1] / "docs/codex/contracts/rag_candidate_corpus_v1.schema.json"
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    chunk_validator = Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/chunk"})
+    citation_validator = Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/citation"})
+    for chunk in frozen["chunks"]:
+        chunk_validator.validate(chunk)
+        citation_validator.validate(chunk["citation"])
 
 
 def test_xlsx_resource_limit_is_quarantined(tmp_path: Path) -> None:
