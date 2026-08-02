@@ -9,8 +9,8 @@ def test_current_migration_graph_is_static_linear_and_not_reserved():
     assert result["database_connected"] is False
     assert result["revision_created"] is False
     assert result["linear"] is True
-    assert result["current_heads"] == ["0017_day6_operational"]
-    assert result["planned_down_revision"] == "0017_day6_operational"
+    assert result["current_heads"] == ["0018_rag_enterprise_r1"]
+    assert result["planned_down_revision"] == "0018_rag_enterprise_r1"
     assert result["planned_revision"] is None
     assert "rag_r1_revision_not_created" in result["blockers"]
     assert "migration_execution_confirmation_required" in result["blockers"]
