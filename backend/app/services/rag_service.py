@@ -865,6 +865,21 @@ def _enterprise_unavailable(query: str, reason: str, *, release_id: str = "") ->
     }
 
 
+_ENTERPRISE_PHYSICAL_DOMAINS = {
+    "energy-policy",
+    "energy-storage",
+    "green-power",
+    "grid-regulation",
+    "power-market",
+    "renewable-development",
+}
+
+
+def _enterprise_domain_filter(domain: str) -> str:
+    value = str(domain or "").strip()
+    return value if value in _ENTERPRISE_PHYSICAL_DOMAINS else ""
+
+
 def _enterprise_rag_search(
     query: str,
     top_k: int,
@@ -901,7 +916,10 @@ def _enterprise_rag_search(
         or metadata.get("fallback")
     ):
         return _enterprise_unavailable(query, "query_embedding_profile_mismatch", release_id=release_id)
-    filters = {"domain": domain, "source_types": source_types or []}
+    filters = {
+        "domain": _enterprise_domain_filter(domain),
+        "source_types": source_types or [],
+    }
     result = hybrid_retrieve(
         store=store,
         context=context,

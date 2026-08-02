@@ -7,6 +7,10 @@ from pathlib import Path
 import pytest
 
 from scripts import rag_r1_candidate_acceptance as module
+from scripts.rag_r1_candidate_ai_acceptance import (
+    formal_gate,
+    immutable_citation_validator,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,3 +80,72 @@ def test_golden_set_is_fixed_50_and_does_not_claim_human_verification() -> None:
     assert sum(item["critical"] for item in items) >= 10
     assert all(item["expected_document_ids"] for item in items)
     assert all(item["evidence_chunk_id"].startswith("chk_") for item in items)
+
+
+def test_ai_formal_gate_uses_rag_r1_thresholds() -> None:
+    results = [
+        {
+            "question_id": f"Q-{index:03d}",
+            "question": "依据知识库说明规则",
+            "answer": "依据已引用规则回答",
+            "citations": [{"quote": "已引用规则"}],
+            "evidence": [],
+            "business_tool_names": [],
+            "tool_fact_errors": [],
+        }
+        for index in range(100)
+    ]
+    report = {
+        "summary": {
+            "total": 100,
+            "passed": 97,
+            "critical_total": 30,
+            "critical_passed": 30,
+            "citation_integrity": 1.0,
+            "grounding_rate": 0.98,
+            "hallucination_rate": 0.0,
+            "refusal_accuracy": 1.0,
+            "unavailable_precision": 1.0,
+            "tool_success_rate": 1.0,
+            "tool_fact_mismatch_count": 0,
+        },
+        "results": results,
+    }
+
+    assert formal_gate(report)["status"] == "PASS"
+    report["summary"]["passed"] = 96
+    assert formal_gate(report)["status"] == "FAIL"
+
+
+def test_ai_candidate_citations_use_immutable_citation_payload() -> None:
+    citation = {
+        "document_id": "doc-1",
+        "chunk_id": "chunk-1",
+        "version_id": "version-1",
+        "page": 3,
+        "section_path": ["section"],
+        "char_start": 0,
+        "char_end": 4,
+        "bbox": None,
+        "asset_id": None,
+        "quote": "正文",
+        "content_hash": "citation-hash",
+    }
+    chunks = {
+        "chunk-1": {
+            "document_id": "doc-1",
+            "version_id": "version-1",
+            "content": "标题路径：section\n正文",
+            "content_hash": "chunk-hash",
+            "citation": {
+                key: value
+                for key, value in citation.items()
+                if key not in {"document_id", "chunk_id"}
+            },
+        }
+    }
+    validate = immutable_citation_validator(chunks)
+
+    assert validate([citation]) == (True, [])
+    invalid = {**citation, "quote": "伪造正文"}
+    assert validate([invalid]) == (False, ["quote_mismatch"])

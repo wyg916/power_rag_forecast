@@ -1261,7 +1261,7 @@ def answer_chat_accurate(
             rag_result = rag_search(
                 clean_question,
                 top_k=_rag_top_k(),
-                domain=_rag_domain_hint(clean_question) if decision.intent == "knowledge_search" else "",
+                domain=_rag_domain_hint(clean_question),
                 context=rag_context,
                 enterprise_store=enterprise_store,
             )

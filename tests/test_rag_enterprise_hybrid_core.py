@@ -21,6 +21,12 @@ from backend.app.services.rag_runtime_contract import (
 VALID_DENSE = [0.25] + [0.0] * 1023
 
 
+def test_logical_ai_domains_are_not_misused_as_physical_filters():
+    assert rag_service._enterprise_domain_filter("price_forecast") == ""
+    assert rag_service._enterprise_domain_filter("system_knowledge") == ""
+    assert rag_service._enterprise_domain_filter("power-market") == "power-market"
+
+
 def _profile():
     return EmbeddingProfile(
         provider="sentence_transformers", model="bge-large-zh-v1.5",
