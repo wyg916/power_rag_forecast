@@ -1,0 +1,160 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import re
+import ssl
+import unicodedata
+from pathlib import Path
+from typing import Any, Mapping
+from urllib.error import HTTPError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
+
+from backend.app.core.security import CurrentUser
+from backend.app.services.qdrant_security_contract import qdrant_security_status
+from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
+from backend.app.services.rag_runtime_contract import RetrievalContext, runtime_contract_status
+
+
+EXPECTED_RELEASE_ROOT = Path("E:/智能运营分析项目/.runtime/rag/releases/RAG-R1").resolve()
+TOKEN_RE = re.compile(r"[\u3400-\u9fff]+|[a-z0-9]+(?:[._-][a-z0-9]+)*")
+
+
+class QdrantReadError(RuntimeError):
+    pass
+
+
+def _canonical(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _tokens(text: str) -> tuple[str, ...]:
+    normalized = unicodedata.normalize("NFKC", text).lower()
+    values: list[str] = []
+    for match in TOKEN_RE.finditer(normalized):
+        token = match.group(0)
+        if "\u3400" <= token[0] <= "\u9fff":
+            values.extend(token)
+            values.extend(token[index : index + 2] for index in range(len(token) - 1))
+        else:
+            values.append(token)
+    return tuple(values)
+
+
+def _load_bm25(root: Path = EXPECTED_RELEASE_ROOT) -> dict[str, Any]:
+    if root.resolve() != EXPECTED_RELEASE_ROOT:
+        raise QdrantReadError("release_root_rejected")
+    try:
+        value = json.loads((root / "bm25_profile.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise QdrantReadError("bm25_profile_unavailable") from exc
+    base = dict(value)
+    stored = str(base.pop("profile_sha256", ""))
+    if stored != hashlib.sha256(_canonical(base)).hexdigest() or value.get("chunk_count") != 8339:
+        raise QdrantReadError("bm25_profile_invalid")
+    return value
+
+
+def sparse_query(text_value: str, profile: Mapping[str, Any]) -> dict[str, list[Any]]:
+    frequencies: dict[str, int] = {}
+    for token in _tokens(text_value):
+        frequencies[token] = frequencies.get(token, 0) + 1
+    vocabulary = profile.get("vocabulary")
+    idf = profile.get("idf")
+    if not isinstance(vocabulary, Mapping) or not isinstance(idf, list):
+        raise QdrantReadError("bm25_profile_invalid")
+    weighted: list[tuple[int, float]] = []
+    for token, frequency in frequencies.items():
+        index = vocabulary.get(token)
+        if isinstance(index, int) and 0 <= index < len(idf):
+            weighted.append((index, float(idf[index]) * (1.0 + math.log(frequency))))
+    weighted.sort(key=lambda item: item[0])
+    return {
+        "indices": [item[0] for item in weighted],
+        "values": [round(item[1], 8) for item in weighted],
+    }
+
+
+class QdrantHttpsReadOnlyTransport:
+    def __init__(self) -> None:
+        profile = qdrant_security_status()
+        if profile.issues or profile.access_mode != "read_only" or profile.process_role not in {"api", "worker"}:
+            raise QdrantReadError(profile.issues[0] if profile.issues else "qdrant_reader_role_invalid")
+        ca_path = os.environ.get("RAG_QDRANT_TLS_CA_PATH", "").strip()
+        api_key = os.environ.get("RAG_QDRANT_API_KEY", "").strip()
+        self.endpoint = profile.endpoint.rstrip("/")
+        self.context = ssl.create_default_context(cafile=ca_path)
+        self.api_key = api_key
+        self.bm25 = _load_bm25()
+
+    def _request(self, path: str, payload: Mapping[str, Any]) -> Mapping[str, Any]:
+        request = Request(
+            self.endpoint + path,
+            data=_canonical(payload),
+            headers={"accept": "application/json", "content-type": "application/json", "api-key": self.api_key},
+            method="POST",
+        )
+        try:
+            with urlopen(request, context=self.context, timeout=30) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError, HTTPError) as exc:
+            raise QdrantReadError("qdrant_read_unavailable") from exc
+        points = body.get("result", {}).get("points")
+        if not isinstance(points, list):
+            raise QdrantReadError("qdrant_response_invalid")
+        return {"points": points}
+
+    def query(self, *, collection: str, request: Mapping[str, Any]) -> Mapping[str, Any]:
+        if collection != "rag_chunks_RAG-R1":
+            raise QdrantReadError("collection_rejected")
+        mode = str(request.get("mode") or "")
+        common = {
+            "filter": request.get("filter"),
+            "limit": max(1, min(int(request.get("limit") or 20), 100)),
+            "with_payload": True,
+            "with_vector": False,
+        }
+        if mode == "dense":
+            payload = {**common, "query": request.get("query"), "using": "dense"}
+            return self._request(f"/collections/{quote(collection)}/points/query", payload)
+        if mode == "sparse":
+            source = request.get("query")
+            query_text = str(source.get("text") or "") if isinstance(source, Mapping) else ""
+            sparse = sparse_query(query_text, self.bm25)
+            if not sparse["indices"]:
+                return {"points": []}
+            payload = {**common, "query": sparse, "using": "bm25"}
+            return self._request(f"/collections/{quote(collection)}/points/query", payload)
+        if mode == "structured":
+            payload = {**common, "limit": common["limit"]}
+            return self._request(f"/collections/{quote(collection)}/points/scroll", payload)
+        raise QdrantReadError("query_mode_invalid")
+
+
+def enterprise_runtime_for_user(
+    user: CurrentUser,
+) -> tuple[RetrievalContext, QdrantReadOnlyStore]:
+    contract = runtime_contract_status()
+    contract.require_available()
+    roles = (user.role,) if user.role else ()
+    acl_value = {
+        "tenant_id": "default",
+        "user_id": user.user_id,
+        "roles": sorted(roles),
+        "permissions": sorted(user.permissions),
+    }
+    context = RetrievalContext(
+        tenant_id="default",
+        user_id=user.user_id,
+        roles=roles,
+        acl_fingerprint=hashlib.sha256(_canonical(acl_value)).hexdigest(),
+        release_id=contract.release.release_id,
+    )
+    context.require_valid()
+    store = QdrantReadOnlyStore(
+        QdrantHttpsReadOnlyTransport(), contract.release, contract.embedding
+    )
+    return context, store

@@ -152,6 +152,8 @@ def required_permission(method: str, path: str) -> str:
             return "strategy:manage"
         return "strategy:read"
     if path.startswith("/api/knowledge/"):
+        if path.endswith("/health/diagnostics"):
+            return "knowledge:diagnose"
         if path.endswith("/export"):
             return "knowledge:export"
         if path.endswith(("/batch-validate", "/embedding-refresh", "/index-local", "/upload")):

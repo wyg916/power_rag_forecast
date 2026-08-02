@@ -25,6 +25,8 @@ from ....repositories.knowledge_repository import (
     upsert_document,
 )
 from ....services.rag_health_service import rag_health
+from ....services.rag_qdrant_transport import enterprise_runtime_for_user
+from ....services.rag_runtime_contract import enterprise_mode
 from ....services.rag_service import rag_search
 from ....workers.dispatcher import enqueue_task
 
@@ -48,6 +50,8 @@ def _safe_filename(filename: str | None) -> str:
 
 def _search_payload(payload: dict[str, Any] | None) -> tuple[str, int, dict[str, Any]]:
     data = payload or {}
+    if "tenant_id" in data or "tenantId" in data:
+        raise HTTPException(status_code=400, detail="tenant_override_forbidden")
     query = str(data.get("q") or data.get("query") or data.get("question") or "").strip()
     top_k = int(data.get("top_k") or data.get("topK") or 5)
     source_types = data.get("source_types") or data.get("sourceTypes") or []
@@ -64,8 +68,28 @@ def _search_payload(payload: dict[str, Any] | None) -> tuple[str, int, dict[str,
         },
     )
 
-def _run_search(query: str, top_k: int, options: dict[str, Any] | None = None) -> dict:
+def _run_search(
+    query: str,
+    top_k: int,
+    options: dict[str, Any] | None = None,
+    user: CurrentUser | None = None,
+) -> dict:
     normalized = options or {}
+    runtime: dict[str, Any] = {}
+    if enterprise_mode():
+        if user is None:
+            raise HTTPException(status_code=503, detail="enterprise_user_context_missing")
+        try:
+            context, store = enterprise_runtime_for_user(user)
+        except Exception as exc:
+            return {
+                "available": False,
+                "items": [],
+                "citations": [],
+                "release_id": None,
+                "retrieval": {"enabled": True, "mode": "enterprise_qdrant_hybrid", "reason": str(exc).split(":", 1)[0]},
+            }
+        runtime = {"context": context, "enterprise_store": store}
     if not any(
         (
             normalized.get("domain"),
@@ -74,8 +98,8 @@ def _run_search(query: str, top_k: int, options: dict[str, Any] | None = None) -
             normalized.get("include_demo"),
         )
     ):
-        return rag_search(query, top_k=top_k)
-    return rag_search(query, top_k=top_k, **normalized)
+        return rag_search(query, top_k=top_k, **runtime)
+    return rag_search(query, top_k=top_k, **normalized, **runtime)
 
 
 @router.get("/api/knowledge/stats")
@@ -128,9 +152,16 @@ def get_rag_health(
     return rag_health()
 
 
+@router.get("/api/knowledge/health/diagnostics")
+def get_rag_health_diagnostics(
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:diagnose"))],
+) -> dict:
+    return rag_health(diagnostic=True)
+
+
 @router.get("/api/knowledge/search")
 def search_knowledge(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     q: str = Query(default="", max_length=500),
     top_k: int = Query(default=5, ge=1, le=20),
     domain: str = Query(default="", max_length=64),
@@ -147,34 +178,35 @@ def search_knowledge(
             "include_historical": include_historical,
             "include_demo": include_demo,
         },
+        user,
     )
 
 
 @router.post("/api/knowledge/search")
 def search_knowledge_post(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
     query, top_k, options = _search_payload(payload)
-    return _run_search(query, top_k, options)
+    return _run_search(query, top_k, options, user)
 
 
 @router.post("/api/knowledge/qa-test")
 def qa_test_knowledge(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
     query, top_k, options = _search_payload(payload)
     if not query:
         raise HTTPException(status_code=400, detail="问题不能为空")
     started = time.perf_counter()
-    result = _run_search(query, top_k, options)
+    result = _run_search(query, top_k, options, user)
     return run_qa_from_search(query, top_k, result, started)
 
 
 @router.post("/api/knowledge/batch-validate")
 def batch_validate_knowledge(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
     questions = payload.get("questions") if isinstance(payload, dict) else None
@@ -183,7 +215,7 @@ def batch_validate_knowledge(
     items: list[dict[str, Any]] = []
     for question in values[:20]:
         started = time.perf_counter()
-        result = rag_search(question, top_k=top_k)
+        result = _run_search(question, top_k, user=user)
         qa = run_qa_from_search(question, top_k, result, started)
         items.append(
             {

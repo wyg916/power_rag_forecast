@@ -77,12 +77,18 @@ def test_knowledge_upload_requires_write_permission(monkeypatch):
         headers={"X-User": "viewer1", "X-Role": "viewer"},
         files={"file": ("policy.md", b"# test", "text/markdown")},
     )
-    allowed = client.post(
+    analyst_denied = client.post(
         "/api/knowledge/upload",
         headers={"X-User": "analyst1", "X-Role": "analyst"},
         files={"file": ("policy.md", b"# test", "text/markdown")},
     )
+    allowed = client.post(
+        "/api/knowledge/upload",
+        headers={"X-User": "reviewer1", "X-Role": "reviewer"},
+        files={"file": ("policy.md", b"# test", "text/markdown")},
+    )
 
     assert denied.status_code == 403
+    assert analyst_denied.status_code == 403
     assert allowed.status_code == 200
     assert allowed.json()["doc_id"] == "kb_uploaded"
