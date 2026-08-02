@@ -226,7 +226,7 @@ class ReleasePublisher:
             ReleaseFact(record.tenant_id, record.release_id, event, reason, details or None)
         )
 
-    def _preflight(self, record: ReleaseRecord) -> str:
+    def _record_gate(self, record: ReleaseRecord) -> str:
         if record.tenant_id != "default":
             return "tenant_invalid"
         if identity_issues := ReleaseIdentity(
@@ -246,6 +246,11 @@ class ReleasePublisher:
             return "release_gate_failed"
         if not record.snapshot_id:
             return "snapshot_id_missing"
+        return ""
+
+    def _preflight(self, record: ReleaseRecord) -> str:
+        if reason := self._record_gate(record):
+            return reason
         try:
             inspection = self.qdrant.inspect_collection(record.collection)
             snapshot_exists = self.qdrant.snapshot_exists(record.collection, record.snapshot_id)
@@ -282,6 +287,8 @@ class ReleasePublisher:
         started = self.clock()
         record = self._load(tenant_id, release_id)
         if record.status is ReleaseStatus.VALIDATED:
+            if reason := self._record_gate(record):
+                return self._result(started, record, False, reason)
             return self._result(started, record, True, idempotent=True)
         if record.status is not ReleaseStatus.CANDIDATE:
             return self._result(started, record, False, "release_state_invalid")
@@ -298,6 +305,8 @@ class ReleasePublisher:
         started = self.clock()
         record = self._load(tenant_id, release_id)
         if record.status is ReleaseStatus.PUBLISHED:
+            if reason := self._record_gate(record):
+                return self._result(started, record, False, reason)
             consistent = (
                 self.store.current_release_id(tenant_id) == release_id
                 and self.qdrant.current_alias(record.alias) == record.collection
@@ -441,9 +450,13 @@ class ReleasePublisher:
             )
         if record.status is not ReleaseStatus.PUBLISHED or not record.previous_release_id:
             return self._result(started, record, False, "rollback_target_missing")
+        if self._record_gate(record):
+            return self._result(started, record, False, "rollback_target_fact_invalid")
         previous = self._load(tenant_id, record.previous_release_id)
         if previous.status is not ReleaseStatus.SUPERSEDED:
             return self._result(started, record, False, "rollback_previous_invalid")
+        if self._record_gate(previous):
+            return self._result(started, record, False, "rollback_previous_fact_invalid")
         if (
             self.store.current_release_id(tenant_id) != record.release_id
             or self.qdrant.current_alias(record.alias) != record.collection

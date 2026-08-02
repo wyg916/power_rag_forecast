@@ -72,6 +72,7 @@ _KNOWN_FAILURES = frozenset(
         "rollback_postgres_failed", "rollback_compensation_failed", "rollback_smoke_failed",
         "rollback_atomic_restore_failed", "rollback_finalize_failed",
         "rollback_finalize_compensation_failed",
+        "rollback_target_fact_invalid", "rollback_previous_fact_invalid",
     }
 )
 
@@ -208,7 +209,12 @@ class StrictReleasePublisherAdapter:
             raise EnterpriseKnowledgeUnavailable(f"release_{action}_rto_failed")
         return value
 
-    def _record(self, context: EnterpriseRequestContext, release_id: str) -> ReleaseRecord:
+    def _record(
+        self,
+        context: EnterpriseRequestContext,
+        release_id: str,
+        expected_profile: EmbeddingProfileContract,
+    ) -> ReleaseRecord:
         try:
             record = self.facts.get_release(context.tenant_id, release_id)
         except Exception as exc:
@@ -217,6 +223,32 @@ class StrictReleasePublisherAdapter:
             raise EnterpriseKnowledgeUnavailable("release_record_missing_or_invalid")
         if record.tenant_id != context.tenant_id or record.release_id != release_id:
             raise EnterpriseKnowledgeUnavailable("release_record_identity_mismatch")
+        gates = tuple(record.gates)
+        profile = record.embedding_profile
+        if (
+            ReleaseIdentity(record.release_id, record.collection, record.alias).issues()
+            or not SHA256_PATTERN.fullmatch(record.manifest_sha256)
+            or profile.issues()
+            or (
+                profile.provider,
+                profile.model,
+                profile.version,
+                profile.dimension,
+                profile.sparse_profile,
+            )
+            != (
+                expected_profile.provider,
+                expected_profile.model,
+                expected_profile.version,
+                expected_profile.dimension,
+                expected_profile.sparse_profile,
+            )
+            or not record.snapshot_id
+            or len({gate.gate for gate in gates}) != len(gates)
+            or {gate.gate for gate in gates} != REQUIRED_RELEASE_GATES
+            or any(gate.passed is not True or gate.reason for gate in gates)
+        ):
+            raise EnterpriseKnowledgeUnavailable("release_record_basic_gate_failed")
         return record
 
     def _operation_fact(
@@ -254,7 +286,11 @@ class StrictReleasePublisherAdapter:
         return fact
 
     def _current_and_alias(
-        self, action: str, context: EnterpriseRequestContext, record: ReleaseRecord
+        self,
+        action: str,
+        context: EnterpriseRequestContext,
+        record: ReleaseRecord,
+        expected_profile: EmbeddingProfileContract,
     ) -> str | None:
         try:
             current_id = self.facts.current_release_id(context.tenant_id)
@@ -266,7 +302,9 @@ class StrictReleasePublisherAdapter:
         elif action == "rollback":
             if not record.previous_release_id:
                 raise EnterpriseKnowledgeUnavailable("rollback_previous_fact_missing")
-            previous = self._record(context, record.previous_release_id)
+            previous = self._record(
+                context, record.previous_release_id, expected_profile
+            )
             if previous.status is not ReleaseStatus.PUBLISHED:
                 raise EnterpriseKnowledgeUnavailable("rollback_previous_fact_invalid")
             expected_id, expected_collection = previous.release_id, previous.collection
@@ -274,7 +312,7 @@ class StrictReleasePublisherAdapter:
             if current_id == record.release_id:
                 raise EnterpriseKnowledgeUnavailable("validated_release_is_current")
             if current_id:
-                current = self._record(context, current_id)
+                current = self._record(context, current_id, expected_profile)
                 if current.status is not ReleaseStatus.PUBLISHED:
                     raise EnterpriseKnowledgeUnavailable("current_release_fact_invalid")
                 expected_collection = current.collection
@@ -406,10 +444,12 @@ class StrictReleasePublisherAdapter:
             self._check_context(context, release_id)
             seed = self._seed(context, release_id)
             operation = self._operation(action, context, release_id)
-            record = self._record(context, release_id)
+            record = self._record(context, release_id, seed.embedding_profile)
             if operation.status is not record.status:
                 raise EnterpriseKnowledgeUnavailable("release_operation_record_mismatch")
-            expected_collection = self._current_and_alias(action, context, record)
+            expected_collection = self._current_and_alias(
+                action, context, record, seed.embedding_profile
+            )
             self._operation_fact(action, context, release_id, expected_collection)
             contract = self._contract(action, context, seed, record)
             self._persist_trace(action, context, operation, contract)

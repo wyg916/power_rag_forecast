@@ -14,6 +14,7 @@ from backend.app.services.knowledge_enterprise_service import (
     EnterpriseKnowledgeConflict,
     EnterpriseKnowledgeUnavailable,
     EnterpriseRequestContext,
+    get_enterprise_knowledge_application,
 )
 from backend.app.services.rag_release_application_adapter import (
     StrictReleasePublisherAdapter,
@@ -26,6 +27,7 @@ from backend.app.services.rag_release_service import (
     GateResult,
     ReleaseEmbeddingProfile,
     ReleaseFact,
+    ReleaseOperation,
     ReleasePublisher,
     ReleaseRecord,
     ReleaseStatus,
@@ -271,6 +273,17 @@ class StepClock:
         return next(self.values)
 
 
+class FixedRuntime:
+    def __init__(self, operation: ReleaseOperation):
+        self.operation = operation
+
+    def validate(self, tenant_id: str, release_id: str) -> ReleaseOperation:
+        return self.operation
+
+    publish = validate
+    rollback = validate
+
+
 def _setup():
     previous = _record("RAG-R1", ReleaseStatus.PUBLISHED)
     candidate = _record("RAG-R2", ReleaseStatus.CANDIDATE)
@@ -353,6 +366,49 @@ def test_known_release_state_conflict_is_not_collapsed_to_unavailable():
         adapter.publish(context=_context(), release_id="RAG-R2")
 
 
+def test_unknown_runtime_reason_is_normalized_without_leaking_details():
+    adapter, _, _, _, _, _ = _setup()
+    adapter.service = FixedRuntime(
+        ReleaseOperation(
+            False, "secret_backend_detail", ReleaseStatus.CANDIDATE, False, 1, True
+        )
+    )
+
+    with pytest.raises(EnterpriseKnowledgeUnavailable) as caught:
+        adapter.validate(context=_context(), release_id="RAG-R2")
+
+    assert str(caught.value) == "release_validate_failed:unknown"
+    assert "secret_backend_detail" not in str(caught.value)
+
+
+def test_release_identifier_is_rejected_before_runtime_or_fact_access():
+    adapter, _, _, facts, _, _ = _setup()
+
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match="context_invalid"):
+        adapter.validate(context=_context(), release_id="bad/id")
+
+    assert facts.get_calls == 0 and facts.facts == []
+
+
+@pytest.mark.parametrize("tamper", ["manifest", "passed_gate_reason"])
+def test_tampered_rt4_record_cannot_be_converted_to_m5(tamper: str):
+    adapter, _, _, facts, _, _ = _setup()
+    candidate = facts.records[("default", "RAG-R2")]
+    if tamper == "manifest":
+        candidate = replace(candidate, manifest_sha256="b" * 64)
+    else:
+        candidate = replace(
+            candidate,
+            gates=(replace(candidate.gates[0], reason="unexpected"),)
+            + candidate.gates[1:],
+        )
+    facts.records[("default", "RAG-R2")] = candidate
+
+    expected = "contract_mismatch" if tamper == "manifest" else "basic_gate_failed"
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match=expected):
+        adapter.validate(context=_context(), release_id="RAG-R2")
+
+
 def test_rollback_rto_failure_never_returns_a_rolled_back_contract():
     adapter, _, control, facts, cache, contracts = _validated()
     adapter.publish(context=_context(), release_id="RAG-R2")
@@ -368,3 +424,73 @@ def test_rollback_rto_failure_never_returns_a_rolled_back_contract():
 
     assert facts.records[("default", "RAG-R2")].status is ReleaseStatus.ROLLED_BACK
     assert facts.latest_fact("default", "RAG-R2", "enterprise_rollback_completed") is None
+
+
+def test_cross_tenant_record_and_missing_trace_fail_closed():
+    adapter, _, _, facts, _, _ = _setup()
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match="context_invalid"):
+        adapter.validate(context=_context(trace=""), release_id="RAG-R2")
+    assert facts.records[("default", "RAG-R2")].status is ReleaseStatus.CANDIDATE
+
+    facts.cross_tenant_on_get = 2
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match="record_identity_mismatch"):
+        adapter.validate(context=_context(), release_id="RAG-R2")
+
+
+@pytest.mark.parametrize("fault", ["operation_fact", "trace_fact"])
+def test_fact_fault_after_publish_is_unavailable_and_never_fakes_success(fault: str):
+    adapter, _, _, facts, _, _ = _validated()
+    if fault == "operation_fact":
+        facts.missing_events = {"published"}
+    else:
+        facts.fail_trace_append = True
+
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match="fact"):
+        adapter.publish(context=_context(), release_id="RAG-R2")
+
+    assert facts.records[("default", "RAG-R2")].status is ReleaseStatus.PUBLISHED
+    assert facts.latest_fact("default", "RAG-R2", "enterprise_publish_completed") is None
+
+
+def test_final_operation_fact_alias_must_match_the_published_collection():
+    adapter, _, _, facts, _, _ = _validated()
+    facts.alias_overrides["published"] = "rag_chunks_RAG-R1"
+
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match="fact_alias_mismatch"):
+        adapter.publish(context=_context(), release_id="RAG-R2")
+
+
+@pytest.mark.parametrize("fault", ["clock", "trace_details"])
+def test_clock_and_trace_shape_failures_are_stable_unavailable(fault: str):
+    adapter, service, control, facts, _, contracts = _validated()
+    if fault == "clock":
+        def broken_clock() -> datetime:
+            raise RuntimeError("secret_clock_failure")
+
+        adapter = StrictReleasePublisherAdapter(
+            service, facts, contracts, control, clock=broken_clock
+        )
+        expected = "release_contract_conversion_failed"
+    else:
+        facts.corrupt_trace_details = True
+        expected = "release_trace_fact_mismatch"
+
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match=expected) as caught:
+        adapter.publish(context=_context(), release_id="RAG-R2")
+
+    assert "secret_clock_failure" not in str(caught.value)
+
+
+def test_final_alias_drift_after_successful_smoke_is_unavailable():
+    adapter, _, control, facts, _, _ = _validated()
+    control.drift_after_smoke = True
+
+    with pytest.raises(EnterpriseKnowledgeUnavailable, match="alias_fact_mismatch"):
+        adapter.publish(context=_context(), release_id="RAG-R2")
+
+    assert facts.current == "RAG-R2"
+    assert control.alias == "rag_chunks_RAG-R1"
+
+
+def test_default_production_application_is_still_unavailable():
+    assert get_enterprise_knowledge_application().available is False
