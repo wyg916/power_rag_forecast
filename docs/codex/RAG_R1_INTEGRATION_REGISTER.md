@@ -15,5 +15,6 @@
 | 9 | Runtime RT1 企业运行 profile | `0efc44d3…` + `0bc7a444…` | 7 / +724/-23 | runtime/health 一致性测试 25 passed | DB 0；模型加载 0；fallback 启用 0 | 本提交 |
 | 10 | Runtime RT2 release-aware 混合检索 | `beeccbfe…` + `edbee654…` | 7 / +910 | hybrid/Qdrant adapter 测试 17 passed | DB 0；Qdrant 连接/写入 0 | 本提交 |
 | 11 | Runtime RT3 Claim grounding 与内容安全 | `fe29c8bd…` | 9 / +620/-11 | grounding/content/hybrid 测试 35 passed | DB 0；正式检索/生成 0 | 本提交 |
+| 12 | Runtime RT4 原子发布协议 | `a51b21ab…` | 3 / +823 | release service 测试 10 passed | DB 0；Qdrant alias 写入 0 | 本提交 |
 
 待接收顺序：I2 → I3 → I4/I4A → I5/I5A → I6 → RT1 → RT2 → RT3 → RT4/RT4A/RT4B → RT5/RT5A → RT6/RT6A → 公共冲突统一。
