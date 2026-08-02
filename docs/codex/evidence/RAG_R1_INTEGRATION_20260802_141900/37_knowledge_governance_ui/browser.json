@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "page": "/#/knowledge/knowledge-base",
+  "reference": "docs/ui-reference/08_knowledge_base.png",
+  "actual_viewport": {
+    "width": 1280,
+    "height": 720,
+    "document_width": 1265,
+    "document_height": 999,
+    "horizontal_overflow": false,
+    "workspace_horizontal_overflow": false
+  },
+  "responsive_coverage": {
+    "low_height_desktop": "max-height 820px and min-width 1181px",
+    "same_branch_target": "1366x768",
+    "larger_desktop_targets": ["1440x900", "1672x941", "1920x1080"],
+    "contract_test": "tests/test_knowledge_frontend_layout_contract.py"
+  },
+  "release_projection": {
+    "release_label": "RAG-R1",
+    "status": "候选版本",
+    "gate": "待准入校验",
+    "published_release_present": false,
+    "service_label": "暂不可用"
+  },
+  "fail_closed_qa": {
+    "result_rows": 0,
+    "refusal_visible": true,
+    "safe_evidence_label_visible": true,
+    "raw_provenance_visible": false
+  },
+  "console_errors_or_warnings": [],
+  "screenshots": {
+    "governance": {
+      "path": "screenshots/knowledge_governance_1280x720.png",
+      "sha256": "986888a03624ae32632ecc954beb5ef96d4320a76db9428cdf34ebf192a08f0d"
+    },
+    "fail_closed": {
+      "path": "screenshots/knowledge_fail_closed_1280x720.png",
+      "sha256": "98db2d56ce020d13a76b5bba00376b72482f7e3f60c8cf818cc0fe6ad605ac82"
+    }
+  }
+}

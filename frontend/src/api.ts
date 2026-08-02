@@ -379,6 +379,14 @@ export const api = {
   localModelStatus: () => request<any>('/api/ai/local-model/status'),
   knowledgeStats: () => request<any>('/api/knowledge/stats'),
   knowledgeHealth: () => request<any>('/api/knowledge/health'),
+  knowledgeDiagnostics: () => request<any>('/api/knowledge/health/diagnostics'),
+  knowledgeReleases: () => request<any>('/api/knowledge/releases'),
+  knowledgeReleaseValidate: (releaseId: string) =>
+    request<any>(`/api/knowledge/releases/${encodeURIComponent(releaseId)}/validate`, { method: 'POST', body: '{}' }),
+  knowledgeReleasePublish: (releaseId: string) =>
+    request<any>(`/api/knowledge/releases/${encodeURIComponent(releaseId)}/publish`, { method: 'POST', body: '{}' }),
+  knowledgeReleaseRollback: (releaseId: string) =>
+    request<any>(`/api/knowledge/releases/${encodeURIComponent(releaseId)}/rollback`, { method: 'POST', body: '{}' }),
   knowledgeDocuments: (params: Record<string, any> = {}) => {
     const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
