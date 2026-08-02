@@ -105,6 +105,10 @@ class FakeReleaseStore:
         self.manifests: list[AliasManifest] = []
         self.set_current_count = 0
         self.fail_set_current_calls = set()
+        self.finalize_publish_count = 0
+        self.finalize_rollback_count = 0
+        self.fail_finalize_publish_calls = set()
+        self.fail_finalize_rollback_calls = set()
         self.events = []
 
     def get_release(self, tenant_id, release_id):
@@ -133,6 +137,44 @@ class FakeReleaseStore:
 
     def append_fact(self, fact):
         self.facts.append(fact)
+
+    def finalize_publish(self, published, *, previous_release_id):
+        self.finalize_publish_count += 1
+        if self.finalize_publish_count in self.fail_finalize_publish_calls:
+            raise RuntimeError("injected publish finalize failure")
+        target = self.records[(published.tenant_id, published.release_id)]
+        if target.status is not ReleaseStatus.VALIDATED:
+            raise RuntimeError("publish finalize target state invalid")
+        previous = None
+        if previous_release_id:
+            previous = self.records[(published.tenant_id, previous_release_id)]
+            if previous.status is not ReleaseStatus.PUBLISHED:
+                raise RuntimeError("publish finalize previous state invalid")
+        updates = {(published.tenant_id, published.release_id): published}
+        if previous is not None:
+            updates[(previous.tenant_id, previous.release_id)] = replace(
+                previous, status=ReleaseStatus.SUPERSEDED
+            )
+        self.records.update(updates)
+
+    def finalize_rollback(self, rolled_back, *, previous_release_id):
+        self.finalize_rollback_count += 1
+        if self.finalize_rollback_count in self.fail_finalize_rollback_calls:
+            raise RuntimeError("injected rollback finalize failure")
+        target = self.records[(rolled_back.tenant_id, rolled_back.release_id)]
+        previous = self.records[(rolled_back.tenant_id, previous_release_id)]
+        if target.status is not ReleaseStatus.PUBLISHED:
+            raise RuntimeError("rollback finalize target state invalid")
+        if previous.status is not ReleaseStatus.SUPERSEDED:
+            raise RuntimeError("rollback finalize previous state invalid")
+        self.records.update(
+            {
+                (rolled_back.tenant_id, rolled_back.release_id): rolled_back,
+                (previous.tenant_id, previous.release_id): replace(
+                    previous, status=ReleaseStatus.PUBLISHED
+                ),
+            }
+        )
 
 
 class FakeCache:
@@ -307,6 +349,70 @@ def test_rollback_alias_failure_preserves_published_state_and_failure_fact():
     assert store.current["default"] == "RAG-R2"
     assert store.get_release("default", "RAG-R2").status is ReleaseStatus.PUBLISHED
     assert store.facts[-1].event == "rollback_failed"
+
+
+def test_publish_finalize_failure_compensates_and_can_be_retried():
+    service, qdrant, store, cache = _validated()
+    store.fail_finalize_publish_calls = {1}
+
+    failed = service.publish("default", "RAG-R2")
+
+    assert failed.reason == "publish_finalize_failed"
+    assert failed.consistency_restored is True
+    assert qdrant.current_alias(CURRENT_ALIAS) == "rag_chunks_RAG-R1"
+    assert store.current["default"] == "RAG-R1"
+    assert store.get_release("default", "RAG-R2").status is ReleaseStatus.VALIDATED
+    assert store.get_release("default", "RAG-R1").status is ReleaseStatus.PUBLISHED
+    assert store.facts[-1].reason == "publish_finalize_failed"
+    assert service.publish("default", "RAG-R2").succeeded is True
+
+
+def test_publish_finalize_compensation_failure_is_explicit():
+    service, qdrant, store, _ = _validated()
+    store.fail_finalize_publish_calls = {1}
+    qdrant.fail_switch_calls = {2}
+
+    result = service.publish("default", "RAG-R2")
+
+    assert result.reason == "publish_finalize_compensation_failed"
+    assert result.consistency_restored is False
+    assert store.get_release("default", "RAG-R2").status is ReleaseStatus.VALIDATED
+    assert store.get_release("default", "RAG-R1").status is ReleaseStatus.PUBLISHED
+    assert qdrant.current_alias(CURRENT_ALIAS) == "rag_chunks_RAG-R2"
+    assert store.current["default"] == "RAG-R2"
+
+
+def test_rollback_finalize_failure_compensates_and_can_be_retried():
+    service, qdrant, store, cache = _validated()
+    assert service.publish("default", "RAG-R2").succeeded is True
+    store.fail_finalize_rollback_calls = {1}
+
+    failed = service.rollback("default", "RAG-R2")
+
+    assert failed.reason == "rollback_finalize_failed"
+    assert failed.consistency_restored is True
+    assert qdrant.current_alias(CURRENT_ALIAS) == "rag_chunks_RAG-R2"
+    assert store.current["default"] == "RAG-R2"
+    assert store.get_release("default", "RAG-R2").status is ReleaseStatus.PUBLISHED
+    assert store.get_release("default", "RAG-R1").status is ReleaseStatus.SUPERSEDED
+    assert store.facts[-1].reason == "rollback_finalize_failed"
+    assert service.rollback("default", "RAG-R2").succeeded is True
+
+
+def test_rollback_finalize_compensation_failure_is_explicit():
+    service, qdrant, store, _ = _validated()
+    assert service.publish("default", "RAG-R2").succeeded is True
+    store.fail_finalize_rollback_calls = {1}
+    qdrant.fail_switch_calls = {qdrant.switch_count + 2}
+
+    result = service.rollback("default", "RAG-R2")
+
+    assert result.reason == "rollback_finalize_compensation_failed"
+    assert result.consistency_restored is False
+    assert store.get_release("default", "RAG-R2").status is ReleaseStatus.PUBLISHED
+    assert store.get_release("default", "RAG-R1").status is ReleaseStatus.SUPERSEDED
+    assert qdrant.current_alias(CURRENT_ALIAS) == "rag_chunks_RAG-R1"
+    assert store.current["default"] == "RAG-R1"
 
 
 def test_rollback_reports_five_minute_rto_protocol():

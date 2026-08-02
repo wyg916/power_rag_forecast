@@ -152,6 +152,24 @@ class ReleaseFactStore(Protocol):
         expected_previous: str | None,
     ) -> None: ...
 
+    def finalize_publish(
+        self,
+        published: ReleaseRecord,
+        *,
+        previous_release_id: str | None,
+    ) -> None:
+        """Atomically publish target and supersede previous, or change neither."""
+        ...
+
+    def finalize_rollback(
+        self,
+        rolled_back: ReleaseRecord,
+        *,
+        previous_release_id: str,
+    ) -> None:
+        """Atomically roll back target and republish previous, or change neither."""
+        ...
+
     def save_alias_manifest(self, manifest: AliasManifest) -> None: ...
 
     def append_fact(self, fact: ReleaseFact) -> None: ...
@@ -346,11 +364,21 @@ class ReleasePublisher:
             record, status=ReleaseStatus.PUBLISHED,
             previous_release_id=previous_release_id or "",
         )
-        self.store.update_release(published, expected_status=ReleaseStatus.VALIDATED)
-        if previous is not None:
-            self.store.update_release(
-                replace(previous, status=ReleaseStatus.SUPERSEDED),
-                expected_status=ReleaseStatus.PUBLISHED,
+        try:
+            self.store.finalize_publish(
+                published, previous_release_id=previous_release_id
+            )
+        except Exception:
+            restored = self._restore_publish(record, previous_release_id, before_collection)
+            self._invalidate(record, previous_release_id)
+            reason = (
+                "publish_finalize_failed"
+                if restored
+                else "publish_finalize_compensation_failed"
+            )
+            self._fact(record, "publish_failed", reason)
+            return self._result(
+                started, record, False, reason, consistency_restored=restored
             )
         self._invalidate(published, previous_release_id)
         self._fact(published, "published", alias_before=before_collection, alias_after=record.collection)
@@ -445,11 +473,22 @@ class ReleasePublisher:
             self._fact(record, "rollback_failed", reason)
             return self._result(started, record, False, reason, consistency_restored=restored)
         rolled_back = replace(record, status=ReleaseStatus.ROLLED_BACK)
-        self.store.update_release(rolled_back, expected_status=ReleaseStatus.PUBLISHED)
-        self.store.update_release(
-            replace(previous, status=ReleaseStatus.PUBLISHED),
-            expected_status=ReleaseStatus.SUPERSEDED,
-        )
+        try:
+            self.store.finalize_rollback(
+                rolled_back, previous_release_id=previous.release_id
+            )
+        except Exception:
+            restored = self._restore_rollback(record, previous)
+            self._invalidate(record, previous.release_id)
+            reason = (
+                "rollback_finalize_failed"
+                if restored
+                else "rollback_finalize_compensation_failed"
+            )
+            self._fact(record, "rollback_failed", reason)
+            return self._result(
+                started, record, False, reason, consistency_restored=restored
+            )
         self._invalidate(rolled_back, previous.release_id)
         self._fact(rolled_back, "rolled_back", alias_after=previous.collection)
         return self._result(started, rolled_back, True)
