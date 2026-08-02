@@ -1,0 +1,228 @@
+{
+  "status": "PASS",
+  "admitted_at": "2026-08-02T07:53:33.847852+00:00",
+  "models": {
+    "embedding": {
+      "status": "PASS",
+      "role": "embedding",
+      "model": "BAAI/bge-large-zh-v1.5",
+      "directory_name": "bge-large-zh-v1.5",
+      "license": "mit",
+      "license_evidence": "README.md front matter",
+      "license_evidence_sha256": "5f4b73469fc5e2076f75ef6d380d48c6fd84bd99ae01631db4732e58f70e28a6",
+      "architecture": "BertModel",
+      "hidden_size": 1024,
+      "embedding_dimension": 1024,
+      "max_length": 512,
+      "checks": {
+        "model_type": true,
+        "hidden_size": true,
+        "layers": true,
+        "heads": true,
+        "float32_declared": true,
+        "max_length": true,
+        "pooling_dimension": true,
+        "cls_pooling": true,
+        "normalized_output": true
+      },
+      "weight": {
+        "path": "pytorch_model.bin",
+        "bytes": 1302220525,
+        "sha256": "bf84a56fb045c24e090495195584a3922c3e4204107f0bba8b79c11f67a207f2"
+      },
+      "file_count": 14,
+      "total_bytes": 1302802803,
+      "manifest_sha256": "a6854a4b265bc6c7159d02927ece3548e63e7b57cf49deee2a77b94bbb0ec3fa",
+      "version": "sha256:a6854a4b265bc6c7159d02927ece3548e63e7b57cf49deee2a77b94bbb0ec3fa",
+      "files": [
+        {
+          "path": ".msc",
+          "bytes": 891,
+          "sha256": "967428b612bc981bc19731d530da51f175cfebeabc6c9848af4c23fa37c9a9f9"
+        },
+        {
+          "path": ".mv",
+          "bytes": 36,
+          "sha256": "21181b2621cd83db6b6ea049de0df7b8dd6629703b8e40790f51ae6a7bcba398"
+        },
+        {
+          "path": "1_Pooling/config.json",
+          "bytes": 191,
+          "sha256": "e54c164a07274f2eb45bb724f54a79d1efcc90c41573887cd9a29aeee0597352"
+        },
+        {
+          "path": "config.json",
+          "bytes": 1000,
+          "sha256": "2d4f53504b43a856f982dad647835c0ae98f91a73c8ff0db95ab89e3e4806fa9"
+        },
+        {
+          "path": "config_sentence_transformers.json",
+          "bytes": 124,
+          "sha256": "940d5f50db195fa6e5e6a4f122c095f77880de259d74b14a65779ed48bdd7c56"
+        },
+        {
+          "path": "configuration.json",
+          "bytes": 76,
+          "sha256": "6bc26d64eb5024b4d1dab5a52371958b429256d6c9d59787f1f5294a54e0cebd"
+        },
+        {
+          "path": "modules.json",
+          "bytes": 349,
+          "sha256": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf"
+        },
+        {
+          "path": "pytorch_model.bin",
+          "bytes": 1302220525,
+          "sha256": "bf84a56fb045c24e090495195584a3922c3e4204107f0bba8b79c11f67a207f2"
+        },
+        {
+          "path": "README.md",
+          "bytes": 30376,
+          "sha256": "5f4b73469fc5e2076f75ef6d380d48c6fd84bd99ae01631db4732e58f70e28a6"
+        },
+        {
+          "path": "sentence_bert_config.json",
+          "bytes": 52,
+          "sha256": "84e39fda68ccbff05bfa723ae9c0e70e23e2ec373b76e0f8c6e71af72a693cbf"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 125,
+          "sha256": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 439124,
+          "sha256": "7dfbf1966ebf99d471c3796e9b457329d2b2182b817e144f1e904b957745c839"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 394,
+          "sha256": "e1790949631401af1bfb6c9c7aeec7fcf612e274d73579d99f704faea40c8ba7"
+        },
+        {
+          "path": "vocab.txt",
+          "bytes": 109540,
+          "sha256": "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c"
+        }
+      ],
+      "network_calls": 0,
+      "weight_deserializations": 0
+    },
+    "reranker": {
+      "status": "PASS",
+      "role": "reranker",
+      "model": "BAAI/bge-reranker-v2-m3",
+      "directory_name": "bge-reranker-v2-m3",
+      "license": "apache-2.0",
+      "license_evidence": "README.md front matter",
+      "license_evidence_sha256": "c887aa6dd2598f908bf0582ca7068cc816585c7a1b6a07df305b631ede0cb174",
+      "architecture": "XLMRobertaForSequenceClassification",
+      "hidden_size": 1024,
+      "embedding_dimension": null,
+      "max_length": 8192,
+      "checks": {
+        "model_type": true,
+        "hidden_size": true,
+        "layers": true,
+        "heads": true,
+        "float32_declared": true,
+        "max_length": true,
+        "classification_head": true,
+        "safe_weight_format": true
+      },
+      "weight": {
+        "path": "model.safetensors",
+        "bytes": 2271071852,
+        "sha256": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286"
+      },
+      "file_count": 15,
+      "total_bytes": 2293567037,
+      "manifest_sha256": "2a581f058542bd175695f8f92097b7aa4fbdac637ad486739f26e4cbc11ca159",
+      "version": "sha256:2a581f058542bd175695f8f92097b7aa4fbdac637ad486739f26e4cbc11ca159",
+      "files": [
+        {
+          "path": ".msc",
+          "bytes": 1005,
+          "sha256": "4314853fa0e0fd4637fe2c468b3b189e3007e5be08e05993956489a5b763b592"
+        },
+        {
+          "path": ".mv",
+          "bytes": 36,
+          "sha256": "5eed1028a10f7f8f04c1339fbf82feb316499d03cc793ab2705efba8bf0ea176"
+        },
+        {
+          "path": "assets/BEIR-bge-en-v1.5.png",
+          "bytes": 56374,
+          "sha256": "c1e57bfc0bb87408ac0d5084acce36a26914a2ea19f2f9f3560e71be9d4daef6"
+        },
+        {
+          "path": "assets/BEIR-e5-mistral.png",
+          "bytes": 40223,
+          "sha256": "5119f2d1b364f79eaa2954bd5efb4a7e56364ee8748571964d800f85683280c4"
+        },
+        {
+          "path": "assets/CMTEB-retrieval-bge-zh-v1.5.png",
+          "bytes": 51484,
+          "sha256": "ce02a58c566da5f733b6928cc968865e4d472c8a276546bfce5d0f4452050ed4"
+        },
+        {
+          "path": "assets/llama-index.png",
+          "bytes": 106473,
+          "sha256": "62c4fbdeeb44296da80bdd2f0a7a6b5e44f3492072af84fdf3ed99d01a53e596"
+        },
+        {
+          "path": "assets/miracl-bge-m3.png",
+          "bytes": 52028,
+          "sha256": "98f40bf0ba104f3efa52ef76da1434fb776834cdc732e6b29d2550672ea2df1b"
+        },
+        {
+          "path": "config.json",
+          "bytes": 795,
+          "sha256": "13dcd6c31d9fec9d1d8e158702072f62d7fa7d312a64b9fe057bec9a08cfe41a"
+        },
+        {
+          "path": "configuration.json",
+          "bytes": 77,
+          "sha256": "90dccac936e44dcb4567017a5dbb807b583604032fd53bfe2372a15881ed47e1"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 2271071852,
+          "sha256": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286"
+        },
+        {
+          "path": "README.md",
+          "bytes": 17229,
+          "sha256": "c887aa6dd2598f908bf0582ca7068cc816585c7a1b6a07df305b631ede0cb174"
+        },
+        {
+          "path": "sentencepiece.bpe.model",
+          "bytes": 5069051,
+          "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 964,
+          "sha256": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 17098273,
+          "sha256": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 1173,
+          "sha256": "7e4c1cc848840aeccdd763458c18dd525eb0f795c992e00ebe9c28554e7db2d4"
+        }
+      ],
+      "network_calls": 0,
+      "weight_deserializations": 0
+    }
+  },
+  "embedding_dimension": 1024,
+  "fallbacks_enabled": false,
+  "network_calls": 0,
+  "weight_deserializations": 0
+}
