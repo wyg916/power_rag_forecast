@@ -2,8 +2,10 @@ import hashlib
 from pathlib import Path
 
 from scripts.rag_r1_candidate_collection import (
+    CandidateCollectionError,
     EMBEDDING_VERSION,
     PAYLOAD_INDEXES,
+    _create_payload_indexes,
     _point_id,
     _parent_contents,
     _retrieve_payloads,
@@ -169,3 +171,29 @@ def test_retrieve_splits_server_timeout_batch_and_preserves_identity():
     assert set(result) == expected
     assert [len(item[2]["ids"]) for item in client.requests] == [128, 64, 64]
     assert all(item[0].endswith("/points") for item in client.requests)
+
+
+def test_existing_payload_indexes_are_validated_without_recreating_them():
+    class StubClient:
+        def __init__(self, schema):
+            self.schema = schema
+            self.requests = []
+
+        def request(self, path, *, method="GET", payload=None):
+            self.requests.append((path, method, payload))
+            return 200, {"result": {"payload_schema": self.schema}}
+
+    schema = {name: {"data_type": value} for name, value in PAYLOAD_INDEXES}
+    client = StubClient(schema)
+    _create_payload_indexes(client)
+
+    assert len(client.requests) == 1
+    assert client.requests[0][1] == "GET"
+
+    schema["tenant_id"] = {"data_type": "integer"}
+    try:
+        _create_payload_indexes(StubClient(schema))
+    except CandidateCollectionError as exc:
+        assert str(exc) == "qdrant_payload_index_mismatch:tenant_id"
+    else:
+        raise AssertionError("mismatched existing payload index must fail closed")

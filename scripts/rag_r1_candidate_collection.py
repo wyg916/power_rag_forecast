@@ -548,7 +548,17 @@ def _create_or_validate_collection(client: QdrantHttp, expected_count: int) -> s
 
 
 def _create_payload_indexes(client: QdrantHttp) -> None:
+    result = _collection_result(client)
+    if result is None:
+        raise CandidateCollectionError("qdrant_collection_missing_before_indexes")
+    existing = result.get("payload_schema", {})
     for field_name, field_schema in PAYLOAD_INDEXES:
+        current = existing.get(field_name)
+        if current is not None:
+            current_type = current.get("data_type") if isinstance(current, Mapping) else current
+            if current_type != field_schema:
+                raise CandidateCollectionError(f"qdrant_payload_index_mismatch:{field_name}")
+            continue
         status, _ = client.request(
             f"/collections/{quote(COLLECTION)}/index?wait=true",
             method="PUT",
