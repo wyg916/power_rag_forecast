@@ -100,6 +100,7 @@ def _inspection(record: ReleaseRecord) -> CollectionInspection:
     return CollectionInspection(
         collection=record.collection,
         point_count=83,
+        strict_mode_enabled=True,
         embedding_profile=record.embedding_profile,
         payload_embedding_profiles=(record.embedding_profile,),
         payload_release_ids=frozenset({record.release_id}),

@@ -81,6 +81,7 @@ class ReleaseRecord:
 class CollectionInspection:
     collection: str
     point_count: int
+    strict_mode_enabled: bool
     embedding_profile: ReleaseEmbeddingProfile
     payload_embedding_profiles: tuple[ReleaseEmbeddingProfile, ...]
     payload_release_ids: frozenset[str]
@@ -258,6 +259,8 @@ class ReleasePublisher:
             return "qdrant_preflight_unavailable"
         if inspection.collection != record.collection or inspection.point_count < 1:
             return "collection_identity_invalid"
+        if inspection.strict_mode_enabled is not True:
+            return "collection_strict_mode_required"
         if inspection.embedding_profile != self.expected_profile:
             return "collection_embedding_profile_mismatch"
         if inspection.payload_embedding_profiles != (self.expected_profile,):

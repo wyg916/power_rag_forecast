@@ -25,5 +25,6 @@
 | 19 | Runtime RT6A adapter 失败边界 | `c79671c8…` | 5 / +246/-7 | adapter/release 测试 40 passed | DB 0；Qdrant 0；正式发布 0 | 本提交 |
 | 20 | PostgreSQL 0018 migration 实现与只读检查点 | 集成分支新增 | 6 个代码/测试文件，约 953 行 | 静态/目标守卫 13 passed；public 只读快照 PASS | DB 写入 0；public upgrade 0 | 本提交 |
 | 21 | PostgreSQL 隔离 Schema 迁移回放 | 集成分支新增 | 2 个代码/测试文件，约 440 行 | 静态门禁 16 passed；`upgrade→downgrade→upgrade` PASS；两次 head 结构哈希一致；清理无残留 | public 写入 0；public revision/结构哈希前后一致 | 本提交 |
+| 22 | M6 Qdrant 安全契约与 strict-mode 发布门禁 | `ec08c5af…` 安全核心，拒绝候选 `.env`/公共 Compose/Router | 7 个代码/测试文件，约 +280 | Qdrant/runtime/release/adapter/hybrid 75 passed | Qdrant 连接/写入 0；配置覆盖 0 | 本提交 |
 
 下一阶段：Qdrant 1.18.2 安全契约与本地私有部署叠加层 → 双模型准入 → 83 文件正式处理 → Candidate Corpus/Collection → API/认证/AI/UI。

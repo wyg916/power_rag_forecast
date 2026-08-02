@@ -46,6 +46,7 @@ def _inspection(record, **changes):
     values = {
         "collection": record.collection,
         "point_count": 83,
+        "strict_mode_enabled": True,
         "embedding_profile": record.embedding_profile,
         "payload_embedding_profiles": (record.embedding_profile,),
         "payload_release_ids": frozenset({record.release_id}),
@@ -253,6 +254,13 @@ def test_validate_rejects_incomplete_gate_payload_profile_and_snapshot():
     service, qdrant, _, _ = _setup()
     qdrant.snapshots.clear()
     assert service.validate("default", "RAG-R2").reason == "snapshot_missing"
+
+    service, qdrant, store, _ = _setup()
+    qdrant.inspections["rag_chunks_RAG-R2"] = _inspection(
+        store.get_release("default", "RAG-R2"),
+        strict_mode_enabled=False,
+    )
+    assert service.validate("default", "RAG-R2").reason == "collection_strict_mode_required"
 
 
 def test_invalid_manifest_fails_before_control_plane_or_store_writes():
