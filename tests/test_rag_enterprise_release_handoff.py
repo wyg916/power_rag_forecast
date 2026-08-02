@@ -39,14 +39,15 @@ def _hash(value) -> str:
 
 def _ledger() -> list[SourceLedgerEntry]:
     source_hash = hashlib.sha256(b"ready-source").hexdigest()
+    quarantined_hash = hashlib.sha256(b"quarantined").hexdigest()
     entries = [
         SourceLedgerEntry("src_000", "fixtures/000.docx", "000.docx", 10, source_hash, "docx", "docx", AdmissionStatus.READY),
         SourceLedgerEntry(
-            "src_001", "fixtures/001.docx", "001.docx", 10, source_hash, "docx", "docx",
-            AdmissionStatus.DUPLICATE, "duplicate_content", "src_000", "fixtures/000.docx",
+            "src_001", "fixtures/001.wps", "001.wps", 10, quarantined_hash, "wps", "wps",
+            AdmissionStatus.DUPLICATE, "duplicate_content", "src_002", "fixtures/002.wps",
         ),
         SourceLedgerEntry(
-            "src_002", "fixtures/002.wps", "002.wps", 10, hashlib.sha256(b"quarantined").hexdigest(),
+            "src_002", "fixtures/002.wps", "002.wps", 10, quarantined_hash,
             "wps", "wps", AdmissionStatus.QUARANTINED, "conversion_required",
         ),
     ]

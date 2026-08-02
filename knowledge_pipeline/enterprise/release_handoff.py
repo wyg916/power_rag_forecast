@@ -199,7 +199,8 @@ def _validate_counts_and_relations(value: dict[str, Any], ledger: dict[str, dict
             set(duplicate) != {"source_id", "canonical_source_id", "source_sha256"}
             or row["admission_status"] != AdmissionStatus.DUPLICATE.value
             or canonical is None
-            or canonical["admission_status"] != AdmissionStatus.READY.value
+            or canonical["admission_status"]
+            not in {AdmissionStatus.READY.value, AdmissionStatus.QUARANTINED.value}
             or duplicate["canonical_source_id"] != row["duplicate_of_source_id"]
             or not (duplicate["source_sha256"] == row["sha256"] == canonical["sha256"])
         ):
