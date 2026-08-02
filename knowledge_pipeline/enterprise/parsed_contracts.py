@@ -54,6 +54,7 @@ class ParsedAsset:
     bbox: BoundingBox | None = None
     source_ref: str = ""
     alt_text: str = ""
+    content_hash: str = ""
 
 
 @dataclass(frozen=True)
