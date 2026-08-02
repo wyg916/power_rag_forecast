@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:smart-operations:rag:candidate-corpus:v1",
+  "title": "RAG Candidate Corpus Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "candidate_release_id",
+    "tenant_id",
+    "release_status",
+    "created_at",
+    "embedding_profile",
+    "ledger_summary",
+    "documents",
+    "chunks",
+    "assets",
+    "corpus_sha256"
+  ],
+  "properties": {
+    "manifest_version": {
+      "const": "rag-candidate-corpus/v1"
+    },
+    "candidate_release_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "tenant_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "release_status": {
+      "const": "candidate"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "embedding_profile": {
+      "$ref": "#/$defs/embeddingProfile"
+    },
+    "ledger_summary": {
+      "$ref": "#/$defs/ledgerSummary"
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/document"
+      }
+    },
+    "chunks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/chunk"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/asset"
+      }
+    },
+    "corpus_sha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "embeddingProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "model",
+        "dimension",
+        "model_sha256",
+        "sparse_profile"
+      ],
+      "properties": {
+        "provider": {
+          "const": "sentence_transformers"
+        },
+        "model": {
+          "const": "BAAI/bge-large-zh-v1.5"
+        },
+        "dimension": {
+          "const": 1024
+        },
+        "model_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sparse_profile": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "ledgerSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "ready",
+        "quarantined",
+        "duplicate",
+        "corrupt"
+      ],
+      "properties": {
+        "total": {
+          "const": 83
+        },
+        "ready": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "quarantined": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "corrupt": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_id",
+        "version_id",
+        "source_id",
+        "source_sha256",
+        "title",
+        "domain",
+        "status",
+        "effective_from",
+        "acl"
+      ],
+      "properties": {
+        "document_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "version_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "source_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "source_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "const": "ready"
+        },
+        "effective_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_to": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "acl": {
+          "$ref": "#/$defs/acl"
+        }
+      }
+    },
+    "acl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "visibility",
+        "roles",
+        "users"
+      ],
+      "properties": {
+        "visibility": {
+          "enum": [
+            "tenant",
+            "restricted"
+          ]
+        },
+        "roles": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "users": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "bbox": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "number"
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version_id",
+        "section_path",
+        "char_start",
+        "char_end",
+        "quote",
+        "content_hash"
+      ],
+      "properties": {
+        "version_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "section_path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "char_start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "char_end": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/bbox"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "asset_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_hash": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "chunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chunk_id",
+        "document_id",
+        "version_id",
+        "parent_chunk_id",
+        "content",
+        "content_hash",
+        "token_count",
+        "citation"
+      ],
+      "properties": {
+        "chunk_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "document_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "version_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "parent_chunk_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_hash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "token_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "citation": {
+          "$ref": "#/$defs/citation"
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "version_id",
+        "asset_type",
+        "content_hash",
+        "page",
+        "bbox"
+      ],
+      "properties": {
+        "asset_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "version_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "asset_type": {
+          "enum": [
+            "image",
+            "table",
+            "formula",
+            "chart"
+          ]
+        },
+        "content_hash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bbox": {
+          "$ref": "#/$defs/bbox"
+        }
+      }
+    }
+  }
+}
