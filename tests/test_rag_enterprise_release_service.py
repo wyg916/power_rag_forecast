@@ -485,3 +485,32 @@ def test_rollback_reports_five_minute_rto_protocol():
     assert result.succeeded is True
     assert result.elapsed_ms == 301_000
     assert result.rto_met is False
+
+
+@pytest.mark.parametrize("target", ["published", "previous"])
+def test_rollback_tampered_record_fails_before_alias_or_store_write(target):
+    service, qdrant, store, _ = _validated()
+    assert service.publish("default", "RAG-R2").succeeded is True
+    if target == "published":
+        record = store.records[("default", "RAG-R2")]
+        store.records[("default", "RAG-R2")] = replace(record, manifest_sha256="")
+        expected = "rollback_target_fact_invalid"
+    else:
+        record = store.records[("default", "RAG-R1")]
+        store.records[("default", "RAG-R1")] = replace(
+            record, embedding_profile=_profile("drifted")
+        )
+        expected = "rollback_previous_fact_invalid"
+    before = (
+        qdrant.switch_count, store.set_current_count, store.finalize_rollback_count,
+        len(store.facts), qdrant.current_alias(CURRENT_ALIAS), store.current["default"],
+    )
+
+    result = service.rollback("default", "RAG-R2")
+
+    after = (
+        qdrant.switch_count, store.set_current_count, store.finalize_rollback_count,
+        len(store.facts), qdrant.current_alias(CURRENT_ALIAS), store.current["default"],
+    )
+    assert result.reason == expected
+    assert after == before

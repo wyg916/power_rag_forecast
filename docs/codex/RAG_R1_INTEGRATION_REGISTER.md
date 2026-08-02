@@ -22,5 +22,6 @@
 | 16 | Runtime RT5 企业应用编排 | `834ef45e…` | 3 / +854 | application orchestrator 测试 10 passed | DB 0；Qdrant 0；正式事实写入 0 | 本提交 |
 | 17 | Runtime RT5A 并发幂等修复 | `ab8df256…` | 3 / +164/-23 | orchestrator 测试 14 passed | DB 0；Qdrant 0；正式事实写入 0 | 本提交 |
 | 18 | Runtime RT6 verified release adapter | `40d7e4c1…` + 1 行前序 schema 适配 | 5 / +840/-2 | adapter/release 测试 26 passed | DB 0；Qdrant 0；正式发布 0 | 本提交 |
+| 19 | Runtime RT6A adapter 失败边界 | `c79671c8…` | 5 / +246/-7 | adapter/release 测试 40 passed | DB 0；Qdrant 0；正式发布 0 | 本提交 |
 
 待接收顺序：I2 → I3 → I4/I4A → I5/I5A → I6 → RT1 → RT2 → RT3 → RT4/RT4A/RT4B → RT5/RT5A → RT6/RT6A → 公共冲突统一。
