@@ -116,8 +116,6 @@ def build_bm25_profile(chunks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     lengths: list[int] = []
     for chunk in chunks:
         tokens = tokenize_zh(str(chunk["content"]))
-        if not tokens:
-            raise CandidateCollectionError("bm25_chunk_tokens_empty")
         lengths.append(len(tokens))
         document_frequency.update(set(tokens))
     count = len(chunks)
@@ -132,6 +130,7 @@ def build_bm25_profile(chunks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "k1": 1.2,
         "b": 0.75,
         "chunk_count": count,
+        "empty_sparse_chunks": sum(length == 0 for length in lengths),
         "average_document_length": round(sum(lengths) / count, 8),
         "vocabulary": vocabulary,
         "idf": idf,
@@ -147,7 +146,7 @@ def sparse_vector(text: str, profile: Mapping[str, Any]) -> dict[str, list[Any]]
     counts = Counter(token for token in tokenize_zh(text) if token in lookup)
     length = sum(counts.values())
     if not counts or length < 1:
-        raise CandidateCollectionError("bm25_sparse_vector_empty")
+        return {"indices": [], "values": []}
     denominator_scale = float(profile["k1"]) * (
         1.0 - float(profile["b"])
         + float(profile["b"]) * length / float(profile["average_document_length"])
@@ -674,7 +673,8 @@ def upload_collection(
     _create_payload_indexes(client)
 
     input_hash = hashlib.sha256()
-    first_sparse: dict[str, Any] | None = None
+    first_sparse: tuple[Mapping[str, Any], dict[str, Any]] | None = None
+    sparse_point_count = 0
     for start in range(0, len(chunks), UPSERT_BATCH_SIZE):
         batch = chunks[start : start + UPSERT_BATCH_SIZE]
         points = []
@@ -682,21 +682,20 @@ def upload_collection(
             chunk_id = str(chunk["chunk_id"])
             vector = dense[chunk_id]
             sparse = sparse_vector(str(chunk["content"]), bm25)
-            if first_sparse is None:
-                first_sparse = sparse
+            if sparse["indices"]:
+                sparse_point_count += 1
+                if first_sparse is None:
+                    first_sparse = (chunk, sparse)
             payload = payloads[chunk_id]
             input_hash.update(chunk_id.encode("utf-8"))
             input_hash.update(vector.astype("<f4", copy=False).tobytes())
             input_hash.update(np.asarray(sparse["indices"], dtype="<u4").tobytes())
             input_hash.update(np.asarray(sparse["values"], dtype="<f4").tobytes())
             input_hash.update(_canonical_bytes(payload))
-            points.append(
-                {
-                    "id": _point_id(chunk_id),
-                    "vector": {"dense": vector.tolist(), "bm25": sparse},
-                    "payload": payload,
-                }
-            )
+            named_vectors: dict[str, Any] = {"dense": vector.tolist()}
+            if sparse["indices"]:
+                named_vectors["bm25"] = sparse
+            points.append({"id": _point_id(chunk_id), "vector": named_vectors, "payload": payload})
         status, _ = client.request(
             f"/collections/{quote(COLLECTION)}/points?wait=true",
             method="PUT",
@@ -727,7 +726,10 @@ def upload_collection(
         raise CandidateCollectionError("candidate_alias_mutated")
     if first_sparse is None:
         raise CandidateCollectionError("candidate_first_sparse_missing")
-    smoke = _query_smoke(client, chunks[0], dense[chunks[0]["chunk_id"]], first_sparse)
+    sparse_chunk, sparse_query = first_sparse
+    smoke = _query_smoke(
+        client, sparse_chunk, dense[sparse_chunk["chunk_id"]], sparse_query
+    )
     report = {
         "status": "PASS",
         "scope": "candidate_collection_only",
@@ -753,6 +755,8 @@ def upload_collection(
             "profile": "bm25-zh-v1",
             "profile_sha256": bm25["profile_sha256"],
             "vocabulary_size": len(bm25["vocabulary"]),
+            "point_count": sparse_point_count,
+            "empty_point_count": len(chunks) - sparse_point_count,
         },
         "strict_mode_enabled": True,
         "payload_indexes": [name for name, _ in PAYLOAD_INDEXES],

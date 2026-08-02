@@ -85,6 +85,13 @@ def test_chinese_bm25_profile_and_sparse_vector_are_deterministic():
     assert all(value > 0 for value in vector["values"])
 
 
+def test_nonempty_symbol_only_chunk_keeps_dense_path_without_fake_sparse_terms():
+    profile = build_bm25_profile([{"content": "——"}, {"content": "电力市场"}])
+
+    assert profile["empty_sparse_chunks"] == 1
+    assert sparse_vector("——", profile) == {"indices": [], "values": []}
+
+
 def test_parent_reconstruction_and_payload_preserve_acl_release_and_citation():
     artifact = _artifact()
     parents = _parent_contents(artifact["candidate_manifest"]["chunks"])
