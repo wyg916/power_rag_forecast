@@ -1,0 +1,141 @@
+{
+  "mode": "apply",
+  "status": "PASS",
+  "before": {
+    "role": {
+      "rolname": "beta10d_forecast_login",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true,
+      "group_member": true,
+      "schema_usage": true,
+      "schema_create": false
+    },
+    "table_privileges": {
+      "kb_documents": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_document_versions": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_chunks": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_releases": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_release_items": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_retrieval_runs": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false
+      },
+      "kb_citations": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false
+      },
+      "kb_rag_audit_events": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false
+      }
+    },
+    "assessment": {
+      "status": "PASS",
+      "issues": []
+    }
+  },
+  "after": {
+    "role": {
+      "rolname": "beta10d_forecast_login",
+      "rolsuper": false,
+      "rolcreatedb": false,
+      "rolcreaterole": false,
+      "rolreplication": false,
+      "rolbypassrls": false,
+      "rolcanlogin": true,
+      "group_member": true,
+      "schema_usage": true,
+      "schema_create": false
+    },
+    "table_privileges": {
+      "kb_documents": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_document_versions": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_chunks": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_releases": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_release_items": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      "kb_retrieval_runs": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false
+      },
+      "kb_citations": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false
+      },
+      "kb_rag_audit_events": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false
+      }
+    },
+    "assessment": {
+      "status": "PASS",
+      "issues": []
+    }
+  },
+  "database_privilege_changes": 0
+}

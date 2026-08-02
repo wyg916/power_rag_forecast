@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "alembic_equal": true,
+  "structure_before": "15d4fd97a193c57b6b3bc0b6ad484902be2463cce3048fd3cb8fecd7b7e208be",
+  "structure_after": "15d4fd97a193c57b6b3bc0b6ad484902be2463cce3048fd3cb8fecd7b7e208be",
+  "structure_equal": true,
+  "rag_counts_equal": true,
+  "table_fingerprints_equal": true,
+  "changed_tables": [],
+  "business_row_writes": 0,
+  "privilege_changes": 6
+}

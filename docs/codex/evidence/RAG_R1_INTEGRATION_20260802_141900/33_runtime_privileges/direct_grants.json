@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "runtime_login_direct_grants": [],
+  "runtime_group": "beta10d_forecast_runtime",
+  "runtime_group_grants": {
+    "kb_documents": ["SELECT"],
+    "kb_document_versions": ["SELECT"],
+    "kb_chunks": ["SELECT"],
+    "kb_releases": ["SELECT"],
+    "kb_release_items": ["SELECT"],
+    "kb_retrieval_runs": ["SELECT", "INSERT"],
+    "kb_citations": ["SELECT", "INSERT"],
+    "kb_rag_audit_events": ["SELECT", "INSERT"]
+  },
+  "update_grants": [],
+  "delete_grants": [],
+  "source": "information_schema.role_table_grants in a READ ONLY transaction"
+}

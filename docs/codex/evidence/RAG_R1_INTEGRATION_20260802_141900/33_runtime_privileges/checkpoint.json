@@ -1,0 +1,9 @@
+{
+  "created_at": "2026-08-02T22:44:00+08:00",
+  "branch": "beta10d/rag-r1-integration",
+  "head": "e1da4e40f9d3c43ed7b514c7f17057247510886d",
+  "tracked_changes_at_start": 0,
+  "untracked_files_at_start": 0,
+  "database_change": "仅变更 beta10d_forecast_runtime 对三张 RAG 追加事实表的 SELECT/INSERT ACL。",
+  "rollback": "运行 rag_r1_runtime_privileges.py --mode revoke；该模式仅撤销本包三张表的 SELECT/INSERT。"
+}
