@@ -185,6 +185,7 @@ class ReleasePublisher:
         qdrant: QdrantAdminControl,
         store: ReleaseFactStore,
         cache: CacheInvalidator,
+        expected_profile: ReleaseEmbeddingProfile,
         *,
         clock: Callable[[], float] = time.monotonic,
         required_gates: Sequence[str] = tuple(REQUIRED_RELEASE_GATES),
@@ -192,6 +193,9 @@ class ReleasePublisher:
         self.qdrant = qdrant
         self.store = store
         self.cache = cache
+        if issues := expected_profile.issues():
+            raise ValueError("expected_embedding_profile_invalid:" + issues[0])
+        self.expected_profile = expected_profile
         self.clock = clock
         self.required_gates = frozenset(required_gates)
 
@@ -228,8 +232,8 @@ class ReleasePublisher:
             record.release_id, record.collection, record.alias
         ).issues():
             return identity_issues[0]
-        if issues := record.embedding_profile.issues():
-            return issues[0]
+        if record.embedding_profile != self.expected_profile:
+            return "candidate_embedding_profile_mismatch"
         gates = {gate.gate: gate for gate in record.gates}
         if len(gates) != len(record.gates):
             return "release_gates_duplicate"
@@ -246,9 +250,9 @@ class ReleasePublisher:
             return "qdrant_preflight_unavailable"
         if inspection.collection != record.collection or inspection.point_count < 1:
             return "collection_identity_invalid"
-        if inspection.embedding_profile != record.embedding_profile:
+        if inspection.embedding_profile != self.expected_profile:
             return "collection_embedding_profile_mismatch"
-        if inspection.payload_embedding_profiles != (record.embedding_profile,):
+        if inspection.payload_embedding_profiles != (self.expected_profile,):
             return "payload_embedding_profile_mismatch"
         if inspection.payload_release_ids != frozenset({record.release_id}):
             return "payload_release_mismatch"

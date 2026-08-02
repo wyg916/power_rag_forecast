@@ -17,9 +17,9 @@ from backend.app.services.rag_release_service import (
 )
 
 
-def _profile(version="bge-v1"):
+def _profile(version="bge-v1", sparse_profile="bm25-zh-v1"):
     return ReleaseEmbeddingProfile(
-        "sentence_transformers", "BAAI/bge-large-zh-v1.5", version, 1024, "bm25-zh-v1"
+        "sentence_transformers", "BAAI/bge-large-zh-v1.5", version, 1024, sparse_profile
     )
 
 
@@ -202,13 +202,19 @@ def _setup():
     qdrant.events = events
     store.events = events
     cache = FakeCache()
-    return ReleasePublisher(qdrant, store, cache), qdrant, store, cache
+    return ReleasePublisher(qdrant, store, cache, _profile()), qdrant, store, cache
 
 
 def _validated():
     service, qdrant, store, cache = _setup()
     assert service.validate("default", "RAG-R2").succeeded is True
     return service, qdrant, store, cache
+
+
+def test_expected_profile_is_a_required_constructor_fact():
+    _, qdrant, store, cache = _setup()
+    with pytest.raises(TypeError):
+        ReleasePublisher(qdrant, store, cache)  # type: ignore[call-arg]
 
 
 def test_validate_is_complete_and_idempotent_without_alias_mutation():
@@ -246,6 +252,43 @@ def test_validate_rejects_incomplete_gate_payload_profile_and_snapshot():
     service, qdrant, _, _ = _setup()
     qdrant.snapshots.clear()
     assert service.validate("default", "RAG-R2").reason == "snapshot_missing"
+
+
+@pytest.mark.parametrize(
+    "drifted",
+    (_profile("bge-v2"), _profile(sparse_profile="bm25-zh-v2")),
+)
+def test_candidate_version_or_sparse_profile_drift_is_fail_closed(drifted):
+    service, _, store, _ = _setup()
+    candidate = store.get_release("default", "RAG-R2")
+    store.records[("default", "RAG-R2")] = replace(
+        candidate, embedding_profile=drifted
+    )
+
+    result = service.validate("default", "RAG-R2")
+
+    assert result.reason == "candidate_embedding_profile_mismatch"
+    assert store.get_release("default", "RAG-R2").status is ReleaseStatus.CANDIDATE
+
+
+@pytest.mark.parametrize(
+    "drifted",
+    (_profile("bge-v2"), _profile(sparse_profile="bm25-zh-v2")),
+)
+def test_collection_and_payload_profiles_must_equal_deployment_expected(drifted):
+    service, qdrant, store, _ = _setup()
+    candidate = store.get_release("default", "RAG-R2")
+    qdrant.inspections[candidate.collection] = _inspection(
+        candidate, embedding_profile=drifted
+    )
+    assert service.validate("default", "RAG-R2").reason == "collection_embedding_profile_mismatch"
+
+    service, qdrant, store, _ = _setup()
+    candidate = store.get_release("default", "RAG-R2")
+    qdrant.inspections[candidate.collection] = _inspection(
+        candidate, payload_embedding_profiles=(drifted,)
+    )
+    assert service.validate("default", "RAG-R2").reason == "payload_embedding_profile_mismatch"
 
 
 def test_publish_switches_alias_before_pg_saves_manifest_and_is_idempotent():
@@ -418,7 +461,9 @@ def test_rollback_finalize_compensation_failure_is_explicit():
 def test_rollback_reports_five_minute_rto_protocol():
     service, qdrant, store, cache = _validated()
     assert service.publish("default", "RAG-R2").succeeded is True
-    timed = ReleasePublisher(qdrant, store, cache, clock=StepClock(0.0, 301.0))
+    timed = ReleasePublisher(
+        qdrant, store, cache, _profile(), clock=StepClock(0.0, 301.0)
+    )
 
     result = timed.rollback("default", "RAG-R2")
 

@@ -17,5 +17,6 @@
 | 11 | Runtime RT3 Claim grounding 与内容安全 | `fe29c8bd…` | 9 / +620/-11 | grounding/content/hybrid 测试 35 passed | DB 0；正式检索/生成 0 | 本提交 |
 | 12 | Runtime RT4 原子发布协议 | `a51b21ab…` | 3 / +823 | release service 测试 10 passed | DB 0；Qdrant alias 写入 0 | 本提交 |
 | 13 | Runtime RT4A 事务终结修复 | `ed5f16f2…` | 3 / +183/-10 | release service 测试 14 passed | DB 0；Qdrant alias 写入 0 | 本提交 |
+| 14 | Runtime RT4B embedding profile 准入 | `e0a437de…` | 3 / +86/-8 | release service 测试 19 passed | DB 0；模型加载 0 | 本提交 |
 
 待接收顺序：I2 → I3 → I4/I4A → I5/I5A → I6 → RT1 → RT2 → RT3 → RT4/RT4A/RT4B → RT5/RT5A → RT6/RT6A → 公共冲突统一。
