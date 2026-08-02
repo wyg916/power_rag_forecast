@@ -1,0 +1,24 @@
+{
+  "available": false,
+  "issues": [
+    "qdrant_admin_key_unavailable",
+    "qdrant_read_only_key_unavailable",
+    "qdrant_image_digest_invalid"
+  ],
+  "image": "qdrant/qdrant:v1.18.2",
+  "digest_configured": false,
+  "keys_configured": false,
+  "keys_distinct": true,
+  "bind": "127.0.0.1:6333",
+  "runtime_root": "E:\\智能运营分析项目_运行资产\\rag-r1\\qdrant",
+  "runtime_root_drive": "E:",
+  "assets": {
+    "storage": false,
+    "snapshots": false,
+    "ca_cert": false,
+    "server_cert": false,
+    "server_key": false
+  },
+  "container_runtime": "docker",
+  "secret_values_emitted": false
+}
