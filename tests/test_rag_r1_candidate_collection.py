@@ -168,5 +168,5 @@ def test_scroll_retries_server_timeout_with_smaller_same_offset_page():
 
     client = StubClient()
     assert _scroll_payloads(client) == {"chk_1": {"chunk_id": "chk_1"}}
-    assert [item[2]["limit"] for item in client.requests] == [32, 16]
+    assert [item[2]["limit"] for item in client.requests] == [256, 128]
     assert all("offset" not in item[2] for item in client.requests)
