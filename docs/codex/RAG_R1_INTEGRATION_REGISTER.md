@@ -9,5 +9,6 @@
 | 3 | Ingestion I2 结构化解析 | `249662a4…` | 13 / +626 | PDF/DOCX/HTML/XLSX 测试 8 passed；diff check PASS | DB 0；Qdrant 0；OCR 0；Corpus 写入 0 | 本提交 |
 | 4 | Ingestion I3 父子分块与引用定位 | `56b6575a…` + `792ee536…` | 11 / +768 | 分块/引用/质量/XLSX 测试 11 passed | DB 0；Qdrant 0；资产写入 0 | 本提交 |
 | 5 | 公共 DTO 与迁移准备契约 M4 | `799f8dfa…` + Day 7A 最小适配 | 5 / +511，另 2 文件各 1–3 行适配 | DTO/静态迁移图测试 9 passed | DB 0；revision 0 | 本提交 |
+| 6 | Ingestion I4/I4A 受控转换与 OCR 协议 | `4f913819…` + `ea056b82…` | 8 / +931 | 转换/OCR fail-closed 测试 15 passed | DB 0；OCR 模型加载 0；资产写入 0 | 本提交 |
 
 待接收顺序：I2 → I3 → I4/I4A → I5/I5A → I6 → RT1 → RT2 → RT3 → RT4/RT4A/RT4B → RT5/RT5A → RT6/RT6A → 公共冲突统一。
