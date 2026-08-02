@@ -68,6 +68,8 @@ def answer_chat(
     answer_style: str = "analysis",
     model_provider: str = "auto",
     debug: bool = False,
+    rag_context: Any = None,
+    enterprise_store: Any = None,
 ) -> dict[str, Any]:
     clean_question = (question or "").strip()
     return answer_chat_accurate(
@@ -82,6 +84,8 @@ def answer_chat(
         answer_style=answer_style,
         model_provider=model_provider,
         debug=debug,
+        rag_context=rag_context,
+        enterprise_store=enterprise_store,
     )
 
     session_id = session_id or "chat_" + uuid.uuid4().hex[:12]

@@ -34,6 +34,44 @@ def test_ai_chat_reuses_answer_chat(monkeypatch):
     assert captured["question"] == "测试问答链路"
 
 
+def test_enterprise_ai_chat_injects_authenticated_rag_runtime(monkeypatch):
+    captured: dict[str, object] = {}
+    context, store = object(), object()
+
+    monkeypatch.setattr(assistant_endpoint, "enterprise_mode", lambda: True)
+    monkeypatch.setattr(
+        assistant_endpoint,
+        "enterprise_runtime_for_user",
+        lambda user: (context, store),
+    )
+
+    def fake_answer_chat(question, **kwargs):
+        captured.update(question=question, **kwargs)
+        return {"session_id": "chat_enterprise", "answer": "已接入企业知识库。"}
+
+    monkeypatch.setattr(assistant_endpoint, "answer_chat", fake_answer_chat)
+    response = client.post(
+        "/api/ai/chat",
+        headers={"X-User": "analyst1", "X-Role": "analyst"},
+        json={"question": "电力市场规则是什么？"},
+    )
+
+    assert response.status_code == 200
+    assert captured["rag_context"] is context
+    assert captured["enterprise_store"] is store
+
+
+def test_ai_rag_answer_rejects_tenant_override():
+    response = client.post(
+        "/api/ai/rag-answer",
+        headers={"X-User": "analyst1", "X-Role": "analyst"},
+        json={"question": "电力市场规则是什么？", "tenant_id": "other"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "tenant_override_forbidden"
+
+
 def test_ai_chat_stream_reuses_answer_chat(monkeypatch):
     captured: dict[str, object] = {}
 

@@ -17,6 +17,9 @@ from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
 from ....repositories.knowledge_repository import build_qa_answer
 from ....services.rag_service import rag_search
+from ....services.rag_qdrant_transport import enterprise_runtime_for_user
+from ....services.rag_runtime_contract import enterprise_mode
+from ....services.rag_grounding_service import validate_claim_bindings
 from ....platform_services import answer_chat, generate_ai_insights, get_chat_session, list_chat_sessions
 from ....schemas import AgentAnalyzeRequest, AnswerFeedbackRequest, ChatFeedbackRequest, ChatRequest
 from backend.app.ai_assistant.service import answer_chat_accurate
@@ -84,8 +87,65 @@ def _build_conversation_docx(payload: dict[str, Any]) -> bytes:
     return buffer.getvalue()
 
 
-def _answer_chat_from_payload(payload: ChatRequest, debug_allowed: bool) -> dict:
-    return answer_chat(
+def _enterprise_runtime(user: CurrentUser) -> dict[str, Any]:
+    if not enterprise_mode():
+        return {}
+    try:
+        context, store = enterprise_runtime_for_user(user)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503, detail="enterprise_rag_runtime_unavailable"
+        ) from exc
+    return {"rag_context": context, "enterprise_store": store}
+
+
+def _answer_contract(
+    payload: dict[str, Any], *, release_id: str | None = None,
+    retrieval: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    response = dict(payload)
+    citations = list(response.get("citations") or [])
+    claims = list(response.get("claims") or [])
+    if citations and not claims and all(item.get("citation_id") for item in citations):
+        claims = [{
+            "claim_id": "claim-" + uuid.uuid4().hex[:24],
+            "text": str(response.get("answer") or "").strip(),
+            "citation_ids": [str(item["citation_id"]) for item in citations],
+        }]
+    grounding = validate_claim_bindings(claims, citations)
+    refused = bool(response.get("refused") or not response.get("available", True))
+    response.update(
+        claims=grounding.claims if grounding.available else [],
+        grounding_status=(
+            grounding.grounding_status
+            if grounding.available
+            else "unavailable" if refused or enterprise_mode() else "not_required"
+        ),
+        refusal_reason=(
+            str(
+                response.get("refusal_reason")
+                or response.get("security_reason")
+                or response.get("unavailable_reason")
+                or grounding.refusal_reason
+            )
+            if refused or (citations and not grounding.available)
+            else ""
+        ),
+        release_id=response.get("release_id") or release_id,
+        trace_id=response.get("trace_id") or "trace_" + uuid.uuid4().hex[:24],
+        degraded_components=list(
+            response.get("degraded_components")
+            or (retrieval or {}).get("degraded_components")
+            or []
+        ),
+    )
+    return response
+
+
+def _answer_chat_from_payload(
+    payload: ChatRequest, debug_allowed: bool, user: CurrentUser
+) -> dict:
+    return _answer_contract(answer_chat(
         payload.question,
         session_id=payload.session_id,
         run_id=payload.run_id,
@@ -97,17 +157,20 @@ def _answer_chat_from_payload(payload: ChatRequest, debug_allowed: bool) -> dict
         answer_style=payload.answer_style,
         model_provider=payload.model_provider,
         debug=debug_allowed,
-    )
+        **_enterprise_runtime(user),
+    ))
 
 
 @router.post("/api/ai/rag-answer")
 def ai_rag_answer_read_only(
-    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
     question = str(payload.get("question") or "").strip()
     if not question:
         raise HTTPException(status_code=400, detail="问题不能为空")
+    if "tenant_id" in payload or "tenantId" in payload:
+        raise HTTPException(status_code=400, detail="tenant_override_forbidden")
     top_k = max(1, min(int(payload.get("top_k") or 5), 20))
     source_types = payload.get("source_types") or []
     if isinstance(source_types, str):
@@ -119,12 +182,26 @@ def ai_rag_answer_read_only(
         source_types=[str(item).strip() for item in source_types if str(item).strip()],
         include_historical=bool(payload.get("include_historical", False)),
         include_demo=bool(payload.get("include_demo", False)),
+        **(
+            {
+                "context": runtime["rag_context"],
+                "enterprise_store": runtime["enterprise_store"],
+            }
+            if (runtime := _enterprise_runtime(user))
+            else {}
+        ),
     )
-    return {
-        **build_qa_answer(question, result),
-        "retrieval": result.get("retrieval") or {},
-        "read_only": True,
-    }
+    return _answer_contract(
+        {
+            **build_qa_answer(question, result),
+            "citations": result.get("citations") or [],
+            "evidence": result.get("citations") or [],
+            "retrieval": result.get("retrieval") or {},
+            "read_only": True,
+        },
+        release_id=result.get("release_id"),
+        retrieval=result.get("retrieval") or {},
+    )
 
 
 @router.post("/api/ai/chat")
@@ -143,7 +220,7 @@ def ai_chat(
             ip_address=request.client.host if request.client else "",
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
-    return _answer_chat_from_payload(payload, debug_allowed)
+    return _answer_chat_from_payload(payload, debug_allowed, user)
 
 
 @router.post("/api/ai/chat/stream")
@@ -167,7 +244,7 @@ def ai_chat_stream(
         yield _stream_event("intent", {"message": "已接收问题，正在识别业务意图。"})
         yield _stream_event("tool_start", {"name": "AI/RAG/业务工具链", "message": "正在复用主问答链路生成结果。"})
         try:
-            response = _answer_chat_from_payload(payload, debug_allowed)
+            response = _answer_chat_from_payload(payload, debug_allowed, user)
             for item in response.get("evidence_summary") or []:
                 yield _stream_event("rag_result", {"source": item})
             for item in response.get("knowledge_evidence_summary") or []:
@@ -269,7 +346,7 @@ def ai_agent_analyze(
             ip_address=request.client.host if request.client else "",
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
-    return answer_chat_accurate(
+    return _answer_contract(answer_chat_accurate(
         payload.question,
         session_id=payload.session_id,
         run_id=payload.run_id,
@@ -281,7 +358,8 @@ def ai_agent_analyze(
         answer_style=payload.answer_style,
         model_provider=payload.model_provider,
         debug=debug_allowed,
-    )
+        **_enterprise_runtime(user),
+    ))
 
 
 @router.post("/api/ai/chat/feedback")

@@ -5,12 +5,26 @@ from typing import Any
 from ...data_access import jsonable
 
 
-def search_business_knowledge(keyword: str = "", question: str = "", top_k: int = 5, domain: str = "", **_: Any) -> dict[str, Any]:
+def search_business_knowledge(
+    keyword: str = "",
+    question: str = "",
+    top_k: int = 5,
+    domain: str = "",
+    _rag_context: Any = None,
+    _enterprise_store: Any = None,
+    **_: Any,
+) -> dict[str, Any]:
     query = (keyword or question or "").strip()
     try:
         from ...services.rag_service import rag_search
 
-        rag = rag_search(query, top_k=top_k, domain=domain)
+        rag = rag_search(
+            query,
+            top_k=top_k,
+            domain=domain,
+            context=_rag_context,
+            enterprise_store=_enterprise_store,
+        )
         items = [
             {
                 "chunk_id": item.get("chunk_id"),

@@ -304,6 +304,8 @@ def answer_chat(
     answer_style: str = "analysis",
     model_provider: str = "auto",
     debug: bool = False,
+    rag_context: Any = None,
+    enterprise_store: Any = None,
 ) -> dict[str, Any]:
     from .ai.assistant_service import answer_chat as answer_chat_v2
 
@@ -319,6 +321,8 @@ def answer_chat(
         answer_style=answer_style,
         model_provider=model_provider,
         debug=debug,
+        rag_context=rag_context,
+        enterprise_store=enterprise_store,
     )
 
     session_id = session_id or "chat_" + uuid.uuid4().hex[:12]

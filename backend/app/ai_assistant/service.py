@@ -25,6 +25,7 @@ from .prompts import build_expert_messages
 from .schemas import ConversationState, IntentDecision, ToolResult
 from ..services.core_data_sync import save_ai_trace_record
 from ..services.rag_service import rag_enabled, rag_search
+from ..services.rag_grounding_service import validate_claim_bindings
 from .templates.deterministic_answers import answer_current_date, answer_data_freshness, answer_data_sql_query, answer_forecast_metric, answer_prediction_window
 from .templates.fallback_answers import (
     answer_high_price_reason,
@@ -95,6 +96,12 @@ def _security_refusal_payload(
         "generated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
         "confidence": "high",
         "citations": [],
+        "claims": [],
+        "grounding_status": "unavailable",
+        "refusal_reason": reason,
+        "release_id": None,
+        "trace_id": "",
+        "degraded_components": [],
         "evidence": [],
         "answer_style": "professional_brief",
         "model_provider_used": "deterministic",
@@ -129,6 +136,12 @@ def _unavailable_payload(*, session_id: str, model_provider: str, debug: bool, r
         "generated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
         "confidence": "none",
         "citations": [],
+        "claims": [],
+        "grounding_status": "unavailable",
+        "refusal_reason": reason,
+        "release_id": None,
+        "trace_id": "",
+        "degraded_components": [],
         "evidence": [],
         "answer_style": "professional_brief",
         "model_provider_used": "deterministic",
@@ -706,12 +719,25 @@ def _tool_args(name: str, decision: IntentDecision, run_id: str, question: str) 
     return args
 
 
-def _execute_tools(decision: IntentDecision, run_id: str, question: str) -> list[ToolResult]:
+def _execute_tools(
+    decision: IntentDecision,
+    run_id: str,
+    question: str,
+    *,
+    rag_context: Any = None,
+    enterprise_store: Any = None,
+) -> list[ToolResult]:
     results: list[ToolResult] = []
     for name in tools_for_intent(decision.intent):
         args = _tool_args(name, decision, run_id, question)
         try:
-            output = execute_tool(name, **args)
+            call_args = dict(args)
+            if name == "search_business_knowledge":
+                call_args.update(
+                    _rag_context=rag_context,
+                    _enterprise_store=enterprise_store,
+                )
+            output = execute_tool(name, **call_args)
             success = bool(output.get("available", True)) and not bool(output.get("empty"))
             results.append(ToolResult(name, args, output, success))
         except Exception as exc:
@@ -1146,6 +1172,8 @@ def answer_chat_accurate(
     model_provider: str = "auto",
     debug: bool = False,
     persist: bool = True,
+    rag_context: Any = None,
+    enterprise_store: Any = None,
 ) -> dict[str, Any]:
     total_started = time.perf_counter()
     timings_ms: dict[str, float] = {}
@@ -1205,7 +1233,13 @@ def answer_chat_accurate(
     if fast_payload is not None:
         return fast_payload
     stage_started = time.perf_counter()
-    tool_results = _execute_tools(decision, run_id, clean_question)
+    tool_results = _execute_tools(
+        decision,
+        run_id,
+        clean_question,
+        rag_context=rag_context,
+        enterprise_store=enterprise_store,
+    )
     timings_ms["tool_executor_ms"] = _timing_ms(stage_started)
     trace.step(
         "tool_executor",
@@ -1228,6 +1262,8 @@ def answer_chat_accurate(
                 clean_question,
                 top_k=_rag_top_k(),
                 domain=_rag_domain_hint(clean_question) if decision.intent == "knowledge_search" else "",
+                context=rag_context,
+                enterprise_store=enterprise_store,
             )
             timings_ms["rag_total_ms"] = _timing_ms(stage_started)
             evidence.extend(_rag_evidence(rag_result))
@@ -1373,6 +1409,21 @@ def answer_chat_accurate(
     if rag_result.get("items"):
         data_used["knowledge"] = True
     rag_citations = list(rag_result.get("citations") or [])
+    claim_seed = (
+        [
+            {
+                "claim_id": "claim-" + trace.trace_id.removeprefix("trace_")[:24],
+                "text": answer.strip(),
+                "citation_ids": [str(item.get("citation_id") or "") for item in rag_citations],
+            }
+        ]
+        if rag_citations and answer.strip()
+        else []
+    )
+    grounding = validate_claim_bindings(claim_seed, rag_citations)
+    if rag_citations and not grounding.available:
+        answer = "当前证据未通过 Claim-Citation 完整性校验，无法据此回答该问题。"
+        rag_citations = []
     top_rag_score = max(
         [float(item.get("score") or 0.0) for item in rag_citations],
         default=0.0,
@@ -1419,6 +1470,24 @@ def answer_chat_accurate(
         "generated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
         "confidence": rag_confidence,
         "citations": rag_citations,
+        "claims": grounding.claims if grounding.available else [],
+        "grounding_status": (
+            grounding.grounding_status
+            if grounding.available
+            else "unavailable"
+            if use_rag
+            else "not_required"
+        ),
+        "refusal_reason": (
+            grounding.refusal_reason
+            if use_rag and not grounding.available
+            else ""
+        ),
+        "release_id": rag_result.get("release_id"),
+        "trace_id": trace.trace_id,
+        "degraded_components": list(
+            (rag_result.get("retrieval") or {}).get("degraded_components") or []
+        ),
         "evidence": evidence,
         "answer_style": normalize_answer_style(answer_style),
         "model_provider_used": model_status.get("provider") or "",
