@@ -238,6 +238,11 @@ def rag_health(*, diagnostic: bool = False) -> dict[str, Any]:
     fallback_reasons = list(provider.get("fallback_reasons") or [])
     if knowledge.get("sample_fallback_embedding_count"):
         fallback_reasons.append(f"fallback_embeddings_in_recent_sample={knowledge['sample_fallback_embedding_count']}")
+    effective_fallback_reasons = [
+        item
+        for item in fallback_reasons
+        if not item.endswith("error=RuntimeContractError")
+    ]
     embedded = int(knowledge.get("embedded_chunk_count") or 0)
     chunks = int(knowledge.get("kb_chunk_count") or 0)
     documents = int(knowledge.get("kb_document_count") or 0)
@@ -269,13 +274,15 @@ def rag_health(*, diagnostic: bool = False) -> dict[str, Any]:
     contract_issues = list(contract.issues)
     degraded_components: list[str] = []
     if _component_issues(contract_issues, "embedding_") or any(
-        item.startswith("embedding_") for item in fallback_reasons
+        item.startswith("embedding_") for item in effective_fallback_reasons
     ):
         degraded_components.append("embedding")
     if _component_issues(contract_issues, "rerank_") or any(
-        item.startswith("rerank_") for item in fallback_reasons
+        item.startswith("rerank_") for item in effective_fallback_reasons
     ):
         degraded_components.append("reranker")
+    if _component_issues(contract_issues, "qdrant_"):
+        degraded_components.append("qdrant")
     if _component_issues(contract_issues, "release_"):
         degraded_components.append("release")
     if any(item.startswith("file_fallback_") for item in contract_issues):
@@ -305,9 +312,12 @@ def rag_health(*, diagnostic: bool = False) -> dict[str, Any]:
             "release": {
                 "available": "release" not in degraded_components,
             },
+            "qdrant": {
+                "available": "qdrant" not in degraded_components,
+            },
         },
         "degraded_components": degraded_components,
-        "fallback_enabled": bool(fallback_reasons)
+        "fallback_enabled": bool(effective_fallback_reasons)
         or any(item.endswith("_fallback_forbidden") for item in contract_issues),
         "fallback_reasons": [
             f"{component}_unavailable" for component in degraded_components
