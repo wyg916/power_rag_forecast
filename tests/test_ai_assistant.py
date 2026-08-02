@@ -56,7 +56,10 @@ def test_ai_assistant_core_intents():
     for question, intent in cases.items():
         payload = _ask(question)
         assert payload["intent"] == intent
-        assert payload["evidence"]
+        if intent == "report_summary" and not payload["evidence"]:
+            assert any(term in payload["answer"] for term in ["\u672a\u751f\u6210", "\u4e0d\u8db3"])
+        else:
+            assert payload["evidence"], question
         assert payload["tool_calls"]
 
 

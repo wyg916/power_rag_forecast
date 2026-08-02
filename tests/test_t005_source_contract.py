@@ -163,6 +163,10 @@ def test_source_type_enum_and_timezone_contract():
 
 @pytest.mark.integration
 def test_api_web_ai_share_run_and_all_read_paths_are_side_effect_free(monkeypatch):
+    if os.environ.get("BETA10D_TEST_ISOLATION_ACTIVE") != "1" and not os.environ.get(
+        "DATABASE_URL"
+    ):
+        pytest.skip("requires an isolated T005 database")
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("AUTH_REQUIRED", "0")
     monkeypatch.setenv("DATABASE_ALLOW_LEGACY_FALLBACK", "0")

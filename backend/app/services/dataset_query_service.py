@@ -200,9 +200,6 @@ def query_dataset_rows(
     sort_direction = str(direction or spec.default_sort_direction).strip().lower()
     if sort_direction not in {"asc", "desc"}:
         raise DatasetQueryError("sort_direction_not_allowed", "排序方向只允许 asc 或 desc。")
-    active_engine = engine or database_engine()
-    if active_engine is None:
-        raise DatasetQueryError("database_unavailable", "数据库连接不可用。", status_code=503)
     source = _sa_table(spec)
     selected = [source.c[field.column_name].label(field.field_id) for field in spec.fields]
     clauses = []
@@ -216,6 +213,9 @@ def query_dataset_rows(
     if search_clause is not None:
         clauses.append(search_clause)
         params.update(search_params)
+    active_engine = engine or database_engine()
+    if active_engine is None:
+        raise DatasetQueryError("database_unavailable", "数据库连接不可用。", status_code=503)
     where_clause = and_(*clauses) if clauses else None
     count_stmt = select(func.count()).select_from(source)
     data_stmt = select(*selected).select_from(source)

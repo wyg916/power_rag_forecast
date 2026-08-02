@@ -7,6 +7,8 @@ from backend.app.workers import tasks
 
 
 def _set_bge_env(monkeypatch, embedding_path: Path, rerank_path: Path) -> None:
+    ca_path = embedding_path.parent / "ca-cert.pem"
+    ca_path.write_text("unit-test-ca", encoding="utf-8")
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("RAG_PROFILE", "enterprise")
     monkeypatch.setenv("RAG_ENABLED", "1")
@@ -32,6 +34,15 @@ def _set_bge_env(monkeypatch, embedding_path: Path, rerank_path: Path) -> None:
     monkeypatch.setenv("RAG_RELEASE_ID", "RAG-R1")
     monkeypatch.setenv("RAG_QDRANT_COLLECTION", "rag_chunks_RAG-R1")
     monkeypatch.setenv("RAG_QDRANT_ALIAS", "rag_chunks_current")
+    monkeypatch.setenv("RAG_PROCESS_ROLE", "api")
+    monkeypatch.setenv("RAG_QDRANT_ACCESS_MODE", "read_only")
+    monkeypatch.setenv("RAG_QDRANT_URL", "https://127.0.0.1:6333")
+    monkeypatch.setenv("RAG_QDRANT_TLS_ENABLED", "1")
+    monkeypatch.setenv("RAG_QDRANT_STRICT_MODE", "1")
+    monkeypatch.setenv("RAG_QDRANT_TLS_CA_PATH", str(ca_path))
+    monkeypatch.setenv("RAG_QDRANT_API_KEY", "a" * 32)
+    monkeypatch.setenv("RAG_QDRANT_IMAGE_VERSION", "1.18.2")
+    monkeypatch.setenv("RAG_QDRANT_IMAGE_DIGEST", "sha256:" + "b" * 64)
 
 
 def test_rag_health_public_view_is_safe_and_diagnostics_are_redacted(monkeypatch, tmp_path):

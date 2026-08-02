@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from backend.app.core.config import SecurityConfigurationError, get_settings, reset_settings_cache
+from backend.app.data_access import database_engine
 from backend.app.data_registry import DATASET_REGISTRY
 from backend.app.main import app
 
@@ -71,6 +72,8 @@ def test_query_enums_and_pagination_are_server_bounded():
 
 
 def test_injection_text_is_bound_as_data_not_executed():
+    if database_engine() is None:
+        pytest.skip("requires an isolated database to prove bound execution")
     response = client.get(
         "/api/data/datasets/market_price_history/rows",
         params={"search": "%' OR 1=1 --", "page_size": 5},

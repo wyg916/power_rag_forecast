@@ -22,7 +22,7 @@ def test_knowledge_documents_endpoint_contract(monkeypatch):
         },
     )
 
-    response = client.get("/api/knowledge/documents", headers={"X-User": "viewer1", "X-Role": "viewer"})
+    response = client.get("/api/knowledge/documents", headers={"X-User": "analyst1", "X-Role": "analyst"})
 
     assert response.status_code == 200
     payload = response.json()
@@ -57,7 +57,7 @@ def test_knowledge_qa_test_uses_rag_and_returns_answer(monkeypatch):
 
     response = client.post(
         "/api/knowledge/qa-test",
-        headers={"X-User": "viewer1", "X-Role": "viewer"},
+        headers={"X-User": "analyst1", "X-Role": "analyst"},
         json={"question": "分时电价规则是什么？", "top_k": 5},
     )
 
@@ -79,7 +79,7 @@ def test_knowledge_upload_requires_write_permission(monkeypatch):
     )
     allowed = client.post(
         "/api/knowledge/upload",
-        headers={"X-User": "analyst1", "X-Role": "analyst"},
+        headers={"X-User": "reviewer1", "X-Role": "reviewer"},
         files={"file": ("policy.md", b"# test", "text/markdown")},
     )
 

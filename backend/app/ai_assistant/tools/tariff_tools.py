@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from datetime import date
 from pathlib import Path
@@ -11,8 +12,9 @@ from ...config import PROJECT_ROOT
 from ...data_access import jsonable, query_dataframe
 
 
-DATA_DIR = PROJECT_ROOT / "electricity_tariff_output" / "02_processed_data"
-POLICY_DIR = PROJECT_ROOT / "electricity_tariff_output" / "04_knowledge_base_tariff_policy"
+ASSET_ROOT = Path(os.environ.get("TARIFF_ASSET_ROOT", str(PROJECT_ROOT))).resolve()
+DATA_DIR = ASSET_ROOT / "electricity_tariff_output" / "02_processed_data"
+POLICY_DIR = ASSET_ROOT / "electricity_tariff_output" / "04_knowledge_base_tariff_policy"
 COMMON_PROVINCES = [
     "北京市", "天津市", "河北省", "山西省", "内蒙古自治区", "辽宁省", "吉林省", "黑龙江省",
     "上海市", "江苏省", "浙江省", "安徽省", "福建省", "江西省", "山东省", "河南省",

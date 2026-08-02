@@ -17,7 +17,7 @@ def test_frontend_user_management_contract():
     assert "Input.Password" in page
     assert "user:write" in page
     assert "user:read" in settings
-    assert "UserManagementPage" in settings
+    assert "usersLoading" in settings and "dataSource={users}" in settings
     assert "Dropdown" in header and "登录正式账号" in header
     assert "VITE_AUTH_REQUIRED ?? '1'" in auth_context
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import os
 from pathlib import Path
 
 import numpy as np
@@ -22,12 +23,22 @@ from model_ops.safe_model_contract import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "model_artifacts" / "model_20260620_063015"
-FIXED_INPUT = ROOT / "结果-3" / "结果表" / "18_未来24小时预测输入特征_正式版.xlsx"
+ARTIFACT = Path(
+    os.environ.get("T002_ARTIFACT_DIR", ROOT / "model_artifacts" / "model_20260620_063015")
+).resolve()
+FIXED_INPUT = Path(
+    os.environ.get(
+        "T002_FIXED_INPUT",
+        ROOT / "结果-3" / "结果表" / "18_未来24小时预测输入特征_正式版.xlsx",
+    )
+).resolve()
 
 
 @pytest.fixture(scope="module")
 def frozen_batch():
+    required = {"base_model.joblib", "peak_model.joblib", "spike_classifier.joblib"}
+    if not FIXED_INPUT.is_file() or not all((ARTIFACT / name).is_file() for name in required):
+        pytest.skip("requires Git-external T002 model and frozen input assets")
     manifest = build_artifact_manifest(ARTIFACT)
     contract = build_feature_contract(ARTIFACT)
     contract["artifact_id"] = manifest["artifact_id"]

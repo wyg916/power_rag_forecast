@@ -95,6 +95,8 @@ assert postgres_engine() is None
 
 
 def test_active_pytest_database_is_restricted_and_not_public():
+    if os.environ.get(ISOLATION_FLAG) != "1":
+        pytest.skip("requires the Day 3 isolated database runner")
     assert os.environ.get(ISOLATION_FLAG) == "1"
     schema = os.environ[SCHEMA_ENV]
     role = os.environ[ROLE_ENV]
@@ -115,6 +117,8 @@ def test_active_pytest_database_is_restricted_and_not_public():
 
 
 def test_restricted_role_cannot_write_public():
+    if os.environ.get(ISOLATION_FLAG) != "1":
+        pytest.skip("requires the Day 3 isolated database runner")
     engine = create_engine(os.environ["DATABASE_URL"], pool_pre_ping=True, future=True)
     try:
         with engine.begin() as connection:

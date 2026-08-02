@@ -263,7 +263,7 @@ def get_model_error_summary(days: int = 30, **_: Any) -> dict[str, Any]:
         """
         SELECT model_version, COUNT(*) AS sample_count, AVG(abs_error) AS mae, SQRT(AVG(POWER(abs_error, 2))) AS rmse, MAX(created_at) AS latest_record
         FROM prediction_tracking
-        WHERE actual_price IS NOT NULL AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL :days DAY)
+        WHERE actual_price IS NOT NULL AND created_at >= CURRENT_TIMESTAMP - (:days * INTERVAL '1 day')
         GROUP BY model_version
         ORDER BY latest_record DESC
         LIMIT 5

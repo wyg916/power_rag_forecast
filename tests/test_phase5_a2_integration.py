@@ -31,7 +31,8 @@ REQUIRED_CHUNK_FIELDS = {
 
 def _engine():
     engine = postgres_engine()
-    assert engine is not None
+    if engine is None:
+        pytest.skip("requires isolated intelligent_ops_phase5_ab_test database")
     with engine.connect() as conn:
         assert conn.execute(text("select current_database()" )).scalar() == TARGET_DATABASE
     return engine
@@ -191,6 +192,7 @@ def test_a2_1_no_active_content_duplicates_and_stable_order():
 
 
 def test_a2_1_explicit_import_failure_rolls_back_without_half_product():
+    _engine()
     token = uuid.uuid4().hex[:12]
     doc_id = f"phase5_fail_doc_{token}"
     chunk_ok = f"phase5_fail_chunk_{token}_ok"
@@ -275,6 +277,7 @@ def test_a2_1_get_and_search_100_times_have_no_database_side_effects(monkeypatch
 
 
 def test_a2_2_all_active_chunks_have_stable_finite_embeddings():
+    _engine()
     rows = get_vector_index_rows()
     assert rows
     assert len(rows) == _active_ready_embedding_count()
@@ -285,6 +288,7 @@ def test_a2_2_all_active_chunks_have_stable_finite_embeddings():
 
 
 def test_a2_2_persisted_vector_index_returns_real_filtered_chunks():
+    _engine()
     row = get_vector_index_rows()[0]
     result = query_vector_index(row["embedding"], top_k=5)
     assert result["available"] is True
@@ -298,6 +302,7 @@ def test_a2_2_persisted_vector_index_returns_real_filtered_chunks():
 
 
 def test_a2_2_vector_index_fail_closed_for_missing_index_and_wrong_dimension(monkeypatch, tmp_path):
+    _engine()
     wrong_dim = query_vector_index([0.1, 0.2], top_k=5)
     assert wrong_dim == {"available": False, "reason": "vector_dimension_mismatch", "items": []}
     monkeypatch.setenv("RAG_VECTOR_INDEX_PATH", str(tmp_path / "missing.npz"))

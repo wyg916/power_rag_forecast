@@ -21,8 +21,10 @@ def test_local_embedding_is_nonempty_and_stable(monkeypatch):
 
 def test_rag_search_merges_keyword_vector_and_reranks(monkeypatch):
     monkeypatch.setenv("RAG_ENABLED", "1")
+    monkeypatch.setenv("RAG_PROFILE", "legacy")
     monkeypatch.setenv("RAG_RERANK_ENABLED", "1")
     monkeypatch.setenv("RAG_RERANK_PROVIDER", "local")
+    monkeypatch.setenv("RAG_SCORE_THRESHOLD", "0")
     monkeypatch.setattr(
         rag_service,
         "search_keyword_chunks",
@@ -33,6 +35,8 @@ def test_rag_search_merges_keyword_vector_and_reranks(monkeypatch):
                 "title": "尖峰风险解释",
                 "source": "knowledge_base/peak.md",
                 "content": "尖峰概率高表示需要重点监控，不代表价格一定暴涨。",
+                "domain": "forecast_explanation",
+                "evidence_source_type": "real",
                 "keyword_score": 3.0,
                 "vector_score": 0.0,
             }
@@ -53,6 +57,8 @@ def test_rag_search_merges_keyword_vector_and_reranks(monkeypatch):
                 "title": "负荷天气关系",
                 "source": "knowledge_base/load_weather.md",
                 "content": "负荷预测偏高通常会抬高边际供电压力。",
+                "domain": "forecast_explanation",
+                "evidence_source_type": "real",
                 "embedding": [1.0, 0.0],
                 "keyword_score": 0.0,
                 "vector_score": 0.0,

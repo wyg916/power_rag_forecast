@@ -29,7 +29,9 @@ SECURITY_ENV_KEYS = (
     "JWT_SECRET_KEY",
     "JWT_ALGORITHM",
     "ADMIN_INITIALIZED",
+    "DATABASE_URL",
     "SECURITY_DATABASE_URL",
+    "MIGRATION_DATABASE_URL",
 )
 STRONG_TEST_SECRET = "t004-isolated-test-secret-0123456789abcdef"
 
@@ -51,6 +53,14 @@ def _isolated_security_env(monkeypatch):
 
 def _production_env(monkeypatch, *, secret: str | None = STRONG_TEST_SECRET, auth: str | None = "1", admin: str | None = "1") -> None:
     monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://t004_runtime:unit-test-only@127.0.0.1:1/t004_runtime",
+    )
+    monkeypatch.setenv(
+        "SECURITY_DATABASE_URL",
+        "postgresql+psycopg://t004_security:unit-test-only@127.0.0.1:1/t004_security",
+    )
     for name, value in (("JWT_SECRET_KEY", secret), ("AUTH_REQUIRED", auth), ("ADMIN_INITIALIZED", admin)):
         if value is None:
             monkeypatch.delenv(name, raising=False)
@@ -223,7 +233,7 @@ def test_day2_preflight_static_gates_pass():
 
     assert config_failures == []
     assert migration_failures == []
-    assert migration_result["files_scanned"] == 16
+    assert migration_result["files_scanned"] == 18
 
     env_py = (ROOT / "migrations/env.py").read_text(encoding="utf-8")
     assert "ALEMBIC_TARGET_SCHEMA" in env_py
