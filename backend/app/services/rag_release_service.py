@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any, Callable, Mapping, Protocol, Sequence
 
-from backend.app.services.rag_runtime_contract import ReleaseIdentity
+from backend.app.services.rag_runtime_contract import ReleaseIdentity, SHA256_PATTERN
 
 
 CURRENT_ALIAS = "rag_chunks_current"
@@ -74,6 +74,7 @@ class ReleaseRecord:
     gates: tuple[GateResult, ...]
     snapshot_id: str
     previous_release_id: str = ""
+    manifest_sha256: str = ""
 
 
 @dataclass(frozen=True)
@@ -232,6 +233,8 @@ class ReleasePublisher:
             record.release_id, record.collection, record.alias
         ).issues():
             return identity_issues[0]
+        if not SHA256_PATTERN.fullmatch(record.manifest_sha256):
+            return "release_manifest_invalid"
         if record.embedding_profile != self.expected_profile:
             return "candidate_embedding_profile_mismatch"
         gates = {gate.gate: gate for gate in record.gates}
@@ -283,7 +286,8 @@ class ReleasePublisher:
         if record.status is not ReleaseStatus.CANDIDATE:
             return self._result(started, record, False, "release_state_invalid")
         if reason := self._preflight(record):
-            self._fact(record, "validation_failed", reason)
+            if reason != "release_manifest_invalid":
+                self._fact(record, "validation_failed", reason)
             return self._result(started, record, False, reason)
         validated = replace(record, status=ReleaseStatus.VALIDATED)
         self.store.update_release(validated, expected_status=ReleaseStatus.CANDIDATE)
