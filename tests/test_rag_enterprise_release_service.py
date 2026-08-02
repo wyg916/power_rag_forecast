@@ -38,6 +38,7 @@ def _release(release_id, status, *, previous=""):
         gates=_gates(),
         snapshot_id=f"snap-{release_id.lower()}",
         previous_release_id=previous,
+        manifest_sha256="a" * 64,
     )
 
 
@@ -252,6 +253,20 @@ def test_validate_rejects_incomplete_gate_payload_profile_and_snapshot():
     service, qdrant, _, _ = _setup()
     qdrant.snapshots.clear()
     assert service.validate("default", "RAG-R2").reason == "snapshot_missing"
+
+
+def test_invalid_manifest_fails_before_control_plane_or_store_writes():
+    service, qdrant, store, cache = _setup()
+    candidate = store.get_release("default", "RAG-R2")
+    store.records[("default", "RAG-R2")] = replace(candidate, manifest_sha256="")
+
+    result = service.validate("default", "RAG-R2")
+
+    assert result.reason == "release_manifest_invalid"
+    assert qdrant.inspect_count == 0 and qdrant.switch_count == 0
+    assert store.facts == [] and store.manifests == []
+    assert store.get_release("default", "RAG-R2").status is ReleaseStatus.CANDIDATE
+    assert cache.invalidated == []
 
 
 @pytest.mark.parametrize(
