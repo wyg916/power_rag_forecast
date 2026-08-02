@@ -31,5 +31,6 @@
 | 25 | BGE Embedding/Reranker 静态准入与全量哈希 | 集成分支新增 | 2 个脚本/测试文件，约 +300 | profile/license/manifest PASS；单测 3 passed | 网络 0；模型目录写入 0；权重反序列化 0 | 本提交 |
 | 26 | 双模型离线数值烟测与企业 Runtime Profile | 集成分支新增 | 6 个脚本/测试/证据文件，约 +450 | Embedding/Reranker smoke PASS；Runtime contract issues 0；单测 13 passed | 网络 0；fallback 0；Git 外新增 model-profile.env | 本提交 |
 | 27 | RAG-R1 旧旁路封口与本地模型加载加固 | 集成分支新增 | 3 个服务/测试文件，约 +120 | enterprise bypass/contract/hybrid 38 passed | 网络 0；Hash/heuristic/file fallback 触达 0 | 本提交 |
+| 28 | 83 文件正式不可变源台账复核 | 集成分支运行 I1 | 1 个 ledger + 1 个证据摘要 | 83/83；SHA-256 与接管基线一致；I1 tests 7 passed | 源目录写入 0；DB/Qdrant/模型写入 0 | 本提交 |
 
 下一阶段：Qdrant 1.18.2 安全契约与本地私有部署叠加层 → 双模型准入 → 83 文件正式处理 → Candidate Corpus/Collection → API/认证/AI/UI。
