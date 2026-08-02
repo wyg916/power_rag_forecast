@@ -611,6 +611,7 @@ def _retrieve_payloads(client: QdrantHttp, expected_ids: set[str]) -> dict[str, 
             if not chunk_id or chunk_id in output or chunk_ids_by_point_id.get(point_id) != chunk_id:
                 raise CandidateCollectionError("qdrant_point_identity_invalid")
             output[chunk_id] = payload
+        print(json.dumps({"stage": "qdrant_retrieve_audit", "processed": len(output), "total": len(expected_ids)}), flush=True)
     return output
 
 

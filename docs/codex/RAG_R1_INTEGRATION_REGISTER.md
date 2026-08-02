@@ -40,5 +40,6 @@
 | 34 | Candidate 审计 scroll 自适应性能收口 | 小页真实吞吐复核后的最小修复 | 2 个代码/测试文件 | 32 条真实分页耗时 6–39 秒；256 条稳定态探针 HTTP 200 / 0.265 秒；定向 21 passed | 写入前安全中断低效重跑；保留 8,339 点；alias/snapshot/PostgreSQL 写入 0 | 本提交 |
 | 35 | Candidate 确定性 ID 批量审计 | E 盘顺序 scroll 持续超时后的最小替换 | 2 个代码/测试文件 +53/-50 | 256/512/1,024 ID 真实 retrieve 均完整返回；1,024 条 21.77 秒；定向 21 passed | 写入前安全中断 scroll；集合点数与全部已知 ID 联合拒绝未知点；alias/snapshot/PostgreSQL 写入 0 | 本提交 |
 | 36 | Candidate 既有 payload index 幂等门禁 | 重跑 read-lock 超时根因后的最小修复 | 2 个代码/测试文件 +38 | 既有 21/21 索引类型真实一致；定向 22 passed；py_compile PASS | 精确停止初始审计进程；重跑只校验既有类型、不再重复 PUT index；alias/snapshot/PostgreSQL 写入 0 | 本提交 |
+| 37 | Candidate 确定性审计进度可观测性 | 全量 ID 探针通过后的最小日志补强 | 1 个代码文件 +1 | 真实只读审计 8,339/8,339 PASS；定向 8 passed；py_compile PASS | 仅输出累计审计数；请求、报告和 Candidate 数据不变 | 本提交 |
 
 下一阶段：Candidate Collection 与 payload indexes → PostgreSQL Candidate 元数据 → snapshot → API/认证/AI/UI → 评测与发布回滚。
