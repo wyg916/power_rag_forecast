@@ -1,0 +1,74 @@
+{
+  "schema_version": "rag-r1-acceptance-preflight/v1",
+  "release_id": "RAG-R1",
+  "checked_at": "2026-08-02T18:03:34.503597+00:00",
+  "status": "BLOCKED",
+  "publish_allowed": false,
+  "scope": "input_preflight_only_metrics_not_executed",
+  "candidate_gates": {
+    "ledger_terminal": {
+      "passed": true,
+      "issues": [],
+      "terminal_total": 83,
+      "published_candidate_items": 45,
+      "isolated_items": 24,
+      "duplicate_items": 14,
+      "damaged_items": 0
+    },
+    "corpus_quality": {
+      "passed": true,
+      "issues": [],
+      "document_count": 45,
+      "chunk_count": 8339,
+      "asset_count": 0,
+      "candidate_sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7"
+    }
+  },
+  "evaluation_inputs": {
+    "ocr_vlm": {
+      "path": "E:\\智能运营分析项目_worktrees\\beta10d_rag_r1_integration\\tests\\evaluation\\rag_r1_ocr_gold.json",
+      "exists": false,
+      "input_ready": false,
+      "issues": [
+        "ocr_gold_missing"
+      ],
+      "page_count": 0
+    },
+    "retrieval": {
+      "path": "E:\\智能运营分析项目_worktrees\\beta10d_rag_r1_integration\\tests\\evaluation\\rag_r1_retrieval_gold.json",
+      "exists": false,
+      "input_ready": false,
+      "issues": [
+        "retrieval_gold_missing"
+      ],
+      "question_count": 0
+    },
+    "ai": {
+      "path": "E:\\智能运营分析项目_worktrees\\beta10d_rag_r1_integration\\tests\\evaluation\\rag_r1_ai_gold.json",
+      "exists": false,
+      "input_ready": false,
+      "issues": [
+        "ai_gold_missing"
+      ],
+      "question_count": 0,
+      "critical_count": 0
+    }
+  },
+  "metric_gate_inputs_ready": {
+    "ocr_vlm_quality": false,
+    "retrieval_quality": false,
+    "ai_grounding": false
+  },
+  "remaining_gates": {
+    "security": "not_run",
+    "consistency": "not_run",
+    "reliability": "not_run",
+    "regression": "not_run"
+  },
+  "legacy_assets_rejected": {
+    "tests/evaluation/ai_assistant_eval_questions.json": "legacy_title_based_contract_without_rag_r1_citation_identity",
+    "tests/evaluation/phase5_base_30_questions.json": "legacy_30_question_set_with_pre_rag_r1_document_ids",
+    "tests/evaluation/rag_expected_hits.json": "legacy_title_hints_not_50_question_gold_set",
+    "tests/evaluation/run_phase5_rag_acceptance.py": "dynamic_32_case_self_query_and_legacy_thresholds"
+  }
+}

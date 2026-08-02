@@ -1,0 +1,14 @@
+tests/test_rag_r1_acceptance_preflight.py
+4 passed in 1.37s
+
+python -m py_compile knowledge_pipeline/enterprise/acceptance_preflight.py scripts/rag_r1_acceptance_preflight.py
+PASS
+
+git diff --check
+PASS
+
+scripts/rag_r1_acceptance_preflight.py
+exit_code=1 (expected fail-closed result)
+status=BLOCKED
+publish_allowed=false
+
