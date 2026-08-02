@@ -18,5 +18,6 @@
 | 12 | Runtime RT4 原子发布协议 | `a51b21ab…` | 3 / +823 | release service 测试 10 passed | DB 0；Qdrant alias 写入 0 | 本提交 |
 | 13 | Runtime RT4A 事务终结修复 | `ed5f16f2…` | 3 / +183/-10 | release service 测试 14 passed | DB 0；Qdrant alias 写入 0 | 本提交 |
 | 14 | Runtime RT4B embedding profile 准入 | `e0a437de…` | 3 / +86/-8 | release service 测试 19 passed | DB 0；模型加载 0 | 本提交 |
+| 15 | 公共 M5 fail-closed 服务缝合 | 从 `948700f2…` 仅提取 service，拒绝 Router | 2 / +145 | 服务 seam 测试 9 passed | DB 0；Router 变更 0 | 本提交 |
 
 待接收顺序：I2 → I3 → I4/I4A → I5/I5A → I6 → RT1 → RT2 → RT3 → RT4/RT4A/RT4B → RT5/RT5A → RT6/RT6A → 公共冲突统一。
