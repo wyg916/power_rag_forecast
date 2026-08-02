@@ -13,6 +13,7 @@ from sqlalchemy import text
 from backend.app.config import PROJECT_ROOT
 from backend.app.repositories.base import postgres_engine
 from backend.app.repositories.knowledge_repository import get_vector_index_rows
+from backend.app.services.rag_runtime_contract import enterprise_mode
 
 
 DEFAULT_INDEX_PATH = PROJECT_ROOT / "knowledge_pipeline" / "output" / "rag_vector_index.npz"
@@ -35,6 +36,8 @@ def _digest(chunk_ids: list[str], matrix: np.ndarray) -> str:
 
 
 def build_vector_index(expected_dim: int = 1024) -> dict[str, Any]:
+    if enterprise_mode():
+        return {"available": False, "indexed": 0, "reason": "enterprise_npz_forbidden"}
     rows = get_vector_index_rows()
     if not rows:
         return {"available": False, "indexed": 0, "reason": "no_ready_embeddings"}
@@ -96,6 +99,8 @@ def build_vector_index(expected_dim: int = 1024) -> dict[str, Any]:
 
 
 def query_vector_index(query_embedding: list[float], top_k: int = 50) -> dict[str, Any]:
+    if enterprise_mode():
+        return {"available": False, "reason": "enterprise_npz_forbidden", "items": []}
     index_path, metadata_path = _paths()
     if not index_path.is_file() or not metadata_path.is_file():
         return {"available": False, "reason": "vector_index_unavailable", "items": []}

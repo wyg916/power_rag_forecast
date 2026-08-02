@@ -26,6 +26,13 @@ from backend.app.repositories.knowledge_repository import (
     upsert_document,
 )
 from backend.app.services.embedding_service import cosine_similarity, embed_text_with_metadata, get_embedding_provider
+from backend.app.services.hybrid_retrieval_service import hybrid_retrieve
+from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
+from backend.app.services.rag_runtime_contract import (
+    RetrievalContext,
+    enterprise_mode,
+    runtime_contract_status,
+)
 from backend.app.services.rerank_service import rerank_candidates
 from backend.app.services.rag_query_rewriter import rewrite_rag_query
 from backend.app.services.vector_index_service import build_vector_index, query_vector_index
@@ -842,6 +849,105 @@ def _explicit_no_evidence_query(query: str) -> bool:
     return future_exact or nonexistent_citation or missing_constraints
 
 
+def _enterprise_unavailable(query: str, reason: str, *, release_id: str = "") -> dict[str, Any]:
+    return {
+        "available": False,
+        "source_type": "unavailable",
+        "query": query,
+        "items": [],
+        "citations": [],
+        "evidence": [],
+        "release_id": release_id or None,
+        "retrieval": {"enabled": True, "mode": "enterprise_qdrant_hybrid", "reason": reason},
+        "timings_ms": {},
+    }
+
+
+def _enterprise_rag_search(
+    query: str,
+    top_k: int,
+    *,
+    context: RetrievalContext | None,
+    store: QdrantReadOnlyStore | None,
+    domain: str,
+    source_types: list[str] | None,
+    include_historical: bool,
+    include_demo: bool,
+) -> dict[str, Any]:
+    contract = runtime_contract_status()
+    release_id = contract.release.release_id
+    if contract.issues:
+        return _enterprise_unavailable(query, contract.issues[0], release_id=release_id)
+    if context is None:
+        return _enterprise_unavailable(query, "retrieval_context_missing", release_id=release_id)
+    if context.issues():
+        return _enterprise_unavailable(query, context.issues()[0], release_id=release_id)
+    if store is None:
+        return _enterprise_unavailable(query, "qdrant_store_unavailable", release_id=release_id)
+    if include_historical or include_demo:
+        return _enterprise_unavailable(query, "unpublished_content_forbidden", release_id=release_id)
+    if store.release != contract.release or store.embedding_profile != contract.embedding:
+        return _enterprise_unavailable(query, "runtime_store_contract_mismatch", release_id=release_id)
+    embedding = embed_text_with_metadata(query)
+    vector = list(embedding.get("embedding") or [])
+    metadata = embedding.get("metadata") or {}
+    if (
+        len(vector) != 1024
+        or metadata.get("provider") != contract.embedding.provider
+        or metadata.get("model") != contract.embedding.model
+        or metadata.get("version") != contract.embedding.version
+        or metadata.get("fallback")
+    ):
+        return _enterprise_unavailable(query, "query_embedding_profile_mismatch", release_id=release_id)
+    filters = {"domain": domain, "source_types": source_types or []}
+    result = hybrid_retrieve(
+        store=store,
+        context=context,
+        query=query,
+        dense_vector=vector,
+        sparse_query={"text": query},
+        structured_filter={key: value for key, value in filters.items() if value},
+        requested_top_k=top_k,
+    )
+    if not result.available:
+        return _enterprise_unavailable(query, result.reason, release_id=release_id)
+    prepared = [
+        {
+            **item,
+            "doc_id": item.get("document_id"),
+            "section_title": item.get("section_title") or "/".join(item.get("section_path") or []),
+        }
+        for item in result.items
+    ]
+    reranked, reranker_name, rerank_error = rerank_candidates(query, prepared)
+    if rerank_error or reranker_name == "unavailable" or not reranked:
+        return _enterprise_unavailable(query, "reranker_unavailable", release_id=release_id)
+    items = reranked[: result.top_k]
+    citations = _citations_from_items(items)
+    if len(citations) != len(items):
+        return _enterprise_unavailable(query, "citation_contract_incomplete", release_id=release_id)
+    return {
+        "available": True,
+        "source_type": "published_knowledge",
+        "domain": domain or str(items[0].get("domain") or ""),
+        "query": query,
+        "items": items,
+        "citations": citations,
+        "evidence": citations,
+        "release_id": release_id,
+        "retrieval": {
+            "enabled": True,
+            "mode": "enterprise_qdrant_hybrid",
+            "candidate_counts": result.candidate_counts,
+            "dynamic_top_k": result.top_k,
+            "cache_key": result.cache_key,
+            "cache_hit": False,
+            "reranker": reranker_name,
+        },
+        "timings_ms": {},
+    }
+
+
 def _rag_search_impl(
     query: str,
     top_k: int = 5,
@@ -1107,7 +1213,20 @@ def rag_search(
     source_types: list[str] | None = None,
     include_historical: bool = False,
     include_demo: bool = False,
+    context: RetrievalContext | None = None,
+    enterprise_store: QdrantReadOnlyStore | None = None,
 ) -> dict[str, Any]:
+    if enterprise_mode():
+        return _enterprise_rag_search(
+            query,
+            top_k,
+            context=context,
+            store=enterprise_store,
+            domain=domain,
+            source_types=source_types,
+            include_historical=include_historical,
+            include_demo=include_demo,
+        )
     cache_enabled = (_env("RAG_CACHE_ENABLED", "1") or "1").lower() not in {"0", "false", "no", "off"}
     if not cache_enabled or _contains_sensitive_text(query):
         result = _rag_search_impl(
