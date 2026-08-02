@@ -13,5 +13,6 @@
 | 7 | Ingestion I5/I5A Candidate 调度 | `8ed99cae…` + `0d24fdc3…` | 4 / +863 | Candidate 调度测试 17 passed | DB 0；Qdrant 0；正式 Candidate 写入 0 | 本提交 |
 | 8 | Ingestion I6 Candidate 发布交接 | `4cce50bf…` | 4 / +630 | release envelope/handoff 测试 11 passed | DB 0；Qdrant 0；正式 sink 写入 0 | 本提交 |
 | 9 | Runtime RT1 企业运行 profile | `0efc44d3…` + `0bc7a444…` | 7 / +724/-23 | runtime/health 一致性测试 25 passed | DB 0；模型加载 0；fallback 启用 0 | 本提交 |
+| 10 | Runtime RT2 release-aware 混合检索 | `beeccbfe…` + `edbee654…` | 7 / +910 | hybrid/Qdrant adapter 测试 17 passed | DB 0；Qdrant 连接/写入 0 | 本提交 |
 
 待接收顺序：I2 → I3 → I4/I4A → I5/I5A → I6 → RT1 → RT2 → RT3 → RT4/RT4A/RT4B → RT5/RT5A → RT6/RT6A → 公共冲突统一。
