@@ -293,14 +293,14 @@ class ReleasePublisher:
             if reason := self._record_gate(record):
                 return self._result(started, record, False, reason)
             return self._result(started, record, True, idempotent=True)
-        if record.status is not ReleaseStatus.CANDIDATE:
+        if record.status not in {ReleaseStatus.CANDIDATE, ReleaseStatus.ROLLED_BACK}:
             return self._result(started, record, False, "release_state_invalid")
         if reason := self._preflight(record):
             if reason != "release_manifest_invalid":
                 self._fact(record, "validation_failed", reason)
             return self._result(started, record, False, reason)
         validated = replace(record, status=ReleaseStatus.VALIDATED)
-        self.store.update_release(validated, expected_status=ReleaseStatus.CANDIDATE)
+        self.store.update_release(validated, expected_status=record.status)
         self._fact(validated, "validated")
         return self._result(started, validated, True)
 

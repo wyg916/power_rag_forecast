@@ -422,6 +422,13 @@ def test_first_release_can_rollback_to_no_current_alias_and_is_idempotent():
     assert second.succeeded is True and second.idempotent is True
     assert qdrant.switch_count == switch_count and store.set_current_count == current_count
 
+    revalidated = service.validate("default", "RAG-R1")
+    republished = service.publish("default", "RAG-R1")
+    assert revalidated.succeeded is True
+    assert republished.succeeded is True
+    assert qdrant.current_alias(CURRENT_ALIAS) == "rag_chunks_RAG-R1"
+    assert store.current["default"] == "RAG-R1"
+
 
 def test_rollback_alias_failure_preserves_published_state_and_failure_fact():
     service, qdrant, store, _ = _validated()
