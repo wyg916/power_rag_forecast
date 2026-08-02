@@ -19,6 +19,8 @@ def _set_enterprise_env(monkeypatch, tmp_path: Path) -> None:
     rerank_path = tmp_path / "bge-reranker-v2-m3"
     embedding_path.mkdir(exist_ok=True)
     rerank_path.mkdir(exist_ok=True)
+    qdrant_ca_path = tmp_path / "qdrant-ca.pem"
+    qdrant_ca_path.write_text("test-ca-only", encoding="utf-8")
     values = {
         "APP_ENV": "test",
         "RAG_PROFILE": "enterprise",
@@ -45,6 +47,15 @@ def _set_enterprise_env(monkeypatch, tmp_path: Path) -> None:
         "RAG_RELEASE_ID": "RAG-R1",
         "RAG_QDRANT_COLLECTION": "rag_chunks_RAG-R1",
         "RAG_QDRANT_ALIAS": "rag_chunks_current",
+        "RAG_QDRANT_URL": "https://qdrant:6333",
+        "RAG_PROCESS_ROLE": "api",
+        "RAG_QDRANT_ACCESS_MODE": "read_only",
+        "RAG_QDRANT_API_KEY": "readonly-test-key-" + "a" * 32,
+        "RAG_QDRANT_TLS_ENABLED": "1",
+        "RAG_QDRANT_STRICT_MODE": "1",
+        "RAG_QDRANT_TLS_CA_PATH": str(qdrant_ca_path),
+        "RAG_QDRANT_IMAGE_VERSION": "1.18.2",
+        "RAG_QDRANT_IMAGE_DIGEST": "sha256:" + "b" * 64,
     }
     for key, value in values.items():
         monkeypatch.setenv(key, value)
@@ -59,6 +70,8 @@ def test_enterprise_runtime_contract_accepts_only_complete_known_profile(monkeyp
     assert status.available is True
     assert status.embedding.dimensions == 1024
     assert status.release.release_id == "RAG-R1"
+    assert status.qdrant.available is True
+    assert "readonly-test-key" not in repr(status)
 
 
 def test_production_always_activates_enterprise_contract(monkeypatch):
@@ -87,6 +100,13 @@ def test_production_always_activates_enterprise_contract(monkeypatch):
         ("RAG_FILE_FALLBACK_ENABLED", "1", "file_fallback_forbidden"),
         ("RAG_RELEASE_ID", "", "release_id_invalid"),
         ("RAG_QDRANT_ALIAS", "other_alias", "release_alias_invalid"),
+        ("RAG_QDRANT_URL", "http://qdrant:6333", "qdrant_https_endpoint_required"),
+        ("RAG_QDRANT_ACCESS_MODE", "admin", "qdrant_access_mode_invalid"),
+        ("RAG_QDRANT_TLS_ENABLED", "0", "qdrant_tls_required"),
+        ("RAG_QDRANT_STRICT_MODE", "0", "qdrant_strict_mode_required"),
+        ("RAG_QDRANT_API_KEY", "replace_me", "qdrant_api_key_unavailable"),
+        ("RAG_QDRANT_IMAGE_VERSION", "latest", "qdrant_image_version_invalid"),
+        ("RAG_QDRANT_IMAGE_DIGEST", "sha256:unset", "qdrant_image_digest_invalid"),
     ],
 )
 def test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration(

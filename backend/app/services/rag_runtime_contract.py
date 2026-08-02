@@ -6,6 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
 
+from backend.app.services.qdrant_security_contract import (
+    QdrantSecurityProfile,
+    qdrant_security_status,
+)
+
 
 ENTERPRISE_PROFILES = {"enterprise", "enterprise_r1", "rag-r1", "rag_r1"}
 ENTERPRISE_EMBEDDING_PROVIDERS = {"bge", "sentence_transformers", "sentence_transformer"}
@@ -168,6 +173,7 @@ class RuntimeContractStatus:
     embedding: EmbeddingProfile
     reranker: RerankProfile
     release: ReleaseIdentity
+    qdrant: QdrantSecurityProfile
     issues: tuple[str, ...]
 
     @property
@@ -253,6 +259,7 @@ def runtime_contract_status(env: Mapping[str, str] | None = None) -> RuntimeCont
         collection=str(values.get("RAG_QDRANT_COLLECTION", "")).strip(),
         alias=str(values.get("RAG_QDRANT_ALIAS", "")).strip(),
     )
+    qdrant = qdrant_security_status(values)
 
     issues: list[str] = []
     if enterprise:
@@ -309,11 +316,13 @@ def runtime_contract_status(env: Mapping[str, str] | None = None) -> RuntimeCont
         if not file_fallback_valid or file_fallback:
             issues.append("file_fallback_forbidden")
         issues.extend(release.issues())
+        issues.extend(qdrant.issues)
 
     return RuntimeContractStatus(
         enterprise=enterprise,
         embedding=embedding,
         reranker=reranker,
         release=release,
+        qdrant=qdrant,
         issues=tuple(dict.fromkeys(issues)),
     )
