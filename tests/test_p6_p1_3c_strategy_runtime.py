@@ -67,7 +67,7 @@ def test_unique_database_target_and_migration_head() -> None:
     assert (url.username or "") == "postgres"
     with create_app_engine().connect() as conn:
         assert conn.execute(text("SELECT current_database()")).scalar_one() == "postgres"
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0016_strategy_runtime"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0018_rag_enterprise_r1"
 
 
 def test_controlled_seed_is_idempotent_and_traceable() -> None:

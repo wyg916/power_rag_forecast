@@ -14,10 +14,11 @@ from backend.app.main import app
 from backend.app.repositories.base import postgres_engine
 from backend.app.repositories.knowledge_repository import get_chunks_by_ids, get_vector_index_rows
 from backend.app.services.vector_index_service import query_vector_index
+from backend.app.services.vector_index_service import build_vector_index
 from knowledge_pipeline import import_chunks_to_kb as importer
 
 
-TARGET_DATABASE = "intelligent_ops_phase5_ab_test"
+TARGET_DATABASE = "postgres"
 REQUIRED_DOCUMENT_FIELDS = {
     "document_id", "document_version", "title", "domain", "evidence_source_type",
     "source_name", "effective_at", "expires_at", "generated_at", "content_hash",
@@ -34,6 +35,8 @@ def _engine():
     assert engine is not None
     with engine.connect() as conn:
         assert conn.execute(text("select current_database()" )).scalar() == TARGET_DATABASE
+        if os.environ.get("BETA10D_TEST_ISOLATION_ACTIVE") == "1":
+            assert conn.execute(text("select current_schema()" )).scalar() == os.environ["BETA10D_TEST_SCHEMA"]
     return engine
 
 
@@ -91,7 +94,7 @@ def _fixture_doc(doc_id: str, source_path: str, status: str = "active") -> dict:
     return {
         "doc_id": doc_id,
         "title": "PHASE5 事务测试文档",
-        "source_type": "phase5_integration_fixture",
+        "source_type": importer.SOURCE_TYPE,
         "source_path": source_path,
         "checksum": "fixture-checksum-" + doc_id,
         "metadata": {
@@ -99,13 +102,15 @@ def _fixture_doc(doc_id: str, source_path: str, status: str = "active") -> dict:
             "document_version": "fixture-v1",
             "title": "PHASE5 事务测试文档",
             "domain": "phase5_test",
-            "evidence_source_type": "demo",
+            "evidence_source_type": "real",
+            "data_origin": "official",
             "source_name": "PHASE5 integration fixture",
             "source_uri": "",
             "source_path": source_path,
             "effective_at": None,
             "expires_at": None,
             "generated_at": "2026-07-18T00:00:00",
+            "applicability_scope": "isolated_test_fixture",
             "content_hash": "fixture-content-hash-" + doc_id,
             "language": "zh-CN",
             "status": status,
@@ -115,15 +120,17 @@ def _fixture_doc(doc_id: str, source_path: str, status: str = "active") -> dict:
     }
 
 
-def _fixture_chunk(chunk_id: str, doc_id: str, index: int = 0) -> dict:
-    content = "PHASE5 隔离数据库事务回滚测试内容。"
+def _fixture_chunk(
+    chunk_id: str, doc_id: str, index: int = 0, *, embedding: list[float] | None = None
+) -> dict:
+    content = f"PHASE5 隔离数据库事务回滚测试内容：{chunk_id}。"
     return {
         "chunk_id": chunk_id,
         "doc_id": doc_id,
         "chunk_index": index,
         "content": content,
         "keywords": ["PHASE5", "rollback"],
-        "embedding": None,
+        "embedding": embedding,
         "metadata": {
             "db_chunk_id": chunk_id,
             "chunk_index": index,
@@ -131,12 +138,72 @@ def _fixture_chunk(chunk_id: str, doc_id: str, index: int = 0) -> dict:
             "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
             "token_count": len(content),
             "domain": "phase5_test",
-            "source_type": "demo",
-            "embedding_status": "pending",
-            "embedding_version": "",
+            "source_type": "real",
+            "embedding_status": "ready" if embedding else "pending",
+            "embedding_version": "bge-large-zh-v1.5-v1" if embedding else "",
+            "embedding": {
+                "provider": "sentence_transformers",
+                "model": "bge-large-zh-v1.5",
+                "version": "bge-large-zh-v1.5-v1",
+                "dim": 1024,
+                "fallback": False,
+            } if embedding else {},
             "status": "active",
         },
     }
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _isolated_phase5_a2_facts():
+    if os.environ.get("BETA10D_TEST_ISOLATION_ACTIVE") != "1":
+        pytest.fail("PHASE5 A2 tests require the restricted isolated-schema runner")
+    previous_runtime_profile = {
+        name: os.environ.get(name) for name in ("RAG_PROFILE", "APP_ENV")
+    }
+    os.environ["RAG_PROFILE"] = "legacy-isolated-test"
+    os.environ["APP_ENV"] = "test"
+    docs = {
+        f"phase5_a2_doc_{index:03d}": _fixture_doc(
+            f"phase5_a2_doc_{index:03d}", f"fixture://phase5-a2/{index:03d}"
+        )
+        for index in range(36)
+    }
+    records = []
+    for index in range(240):
+        document_id = f"phase5_a2_doc_{index % 36:03d}"
+        vector = [0.0] * 1024
+        vector[index] = 1.0
+        records.append(
+            _fixture_chunk(
+                f"phase5_a2_chunk_{index:04d}",
+                document_id,
+                index // 36,
+                embedding=vector,
+            )
+        )
+    inserted_documents, inserted_chunks, skipped = importer.upsert_records(
+        mode="append",
+        docs=docs,
+        records=records,
+        resume=False,
+        import_batch="phase5_a2_isolated_fixture_v1",
+    )
+    assert (inserted_documents, inserted_chunks, skipped) == (36, 240, 0)
+    root = os.path.join(
+        os.path.dirname(__file__), "..", ".codex_tmp", os.environ["BETA10D_TEST_SCHEMA"]
+    )
+    os.environ["RAG_VECTOR_INDEX_PATH"] = root + ".npz"
+    os.environ["RAG_VECTOR_INDEX_METADATA_PATH"] = root + ".json"
+    index = build_vector_index()
+    assert index["available"] is True and index["indexed"] == 240
+    try:
+        yield
+    finally:
+        for name, value in previous_runtime_profile.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
 
 def test_a2_1_database_metadata_and_pending_embeddings():
