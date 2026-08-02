@@ -45,6 +45,18 @@ class ReleaseIdempotencyFact:
     contract: ReleaseContract
 
 
+@dataclass(frozen=True)
+class IngestionAtomicCreateResult:
+    created: bool
+    fact: IngestionIdempotencyFact
+
+
+@dataclass(frozen=True)
+class ReleaseAtomicCreateResult:
+    created: bool
+    fact: ReleaseIdempotencyFact
+
+
 class ImmutableContentStore(Protocol):
     def put_immutable(
         self, *, tenant_id: str, content_sha256: str, content: bytes
@@ -63,7 +75,7 @@ class IngestionFactStore(Protocol):
         request: IngestionCreateRequest,
         stored_content: StoredContent,
         now: datetime,
-    ) -> IngestionIdempotencyFact: ...
+    ) -> IngestionAtomicCreateResult: ...
 
     def get_ingestion(
         self, *, tenant_id: str, ingestion_id: str
@@ -82,7 +94,7 @@ class ApplicationReleaseFactStore(Protocol):
         request: ReleaseCreateRequest,
         request_sha256: str,
         now: datetime,
-    ) -> ReleaseIdempotencyFact: ...
+    ) -> ReleaseAtomicCreateResult: ...
 
     def get_release(
         self, *, tenant_id: str, release_id: str
@@ -241,7 +253,7 @@ class EnterpriseKnowledgeOrchestrator:
         ):
             raise EnterpriseKnowledgeUnavailable("immutable_content_contract_invalid")
         try:
-            fact = self.ingestion_store.create_draft_atomic(
+            result = self.ingestion_store.create_draft_atomic(
                 context=context,
                 request=request,
                 stored_content=stored,
@@ -251,16 +263,22 @@ class EnterpriseKnowledgeOrchestrator:
             raise
         except Exception as exc:
             raise EnterpriseKnowledgeUnavailable("ingestion_draft_write_failed") from exc
-        if not isinstance(fact, IngestionIdempotencyFact) or (
-            fact.content_sha256 != actual_hash
-            or fact.idempotency_key != request.idempotency_key
+        if not isinstance(result, IngestionAtomicCreateResult) or not isinstance(
+            result.created, bool
         ):
+            raise EnterpriseKnowledgeUnavailable("ingestion_atomic_result_invalid")
+        fact = result.fact
+        if not isinstance(fact, IngestionIdempotencyFact):
             raise EnterpriseKnowledgeUnavailable("ingestion_idempotency_fact_invalid")
+        if fact.idempotency_key != request.idempotency_key:
+            raise EnterpriseKnowledgeUnavailable("ingestion_idempotency_fact_invalid")
+        if fact.content_sha256 != actual_hash:
+            raise EnterpriseKnowledgeConflict("ingestion_idempotency_hash_conflict")
         contract = self._ingestion_contract(
             fact.contract,
             context=context,
             expected_status=IngestionState.DRAFT,
-            require_action_trace=True,
+            require_action_trace=result.created,
         )
         if contract.source_id != stored.content_id:
             raise EnterpriseKnowledgeUnavailable("ingestion_content_fact_mismatch")
@@ -321,7 +339,7 @@ class EnterpriseKnowledgeOrchestrator:
                 expected_status=ReleaseState.CANDIDATE,
             )
         try:
-            fact = self.release_store.create_candidate_atomic(
+            result = self.release_store.create_candidate_atomic(
                 context=context,
                 request=request,
                 request_sha256=request_hash,
@@ -331,17 +349,23 @@ class EnterpriseKnowledgeOrchestrator:
             raise
         except Exception as exc:
             raise EnterpriseKnowledgeUnavailable("release_candidate_write_failed") from exc
-        if not isinstance(fact, ReleaseIdempotencyFact) or (
-            fact.idempotency_key != request.idempotency_key
-            or fact.request_sha256 != request_hash
+        if not isinstance(result, ReleaseAtomicCreateResult) or not isinstance(
+            result.created, bool
         ):
+            raise EnterpriseKnowledgeUnavailable("release_atomic_result_invalid")
+        fact = result.fact
+        if not isinstance(fact, ReleaseIdempotencyFact):
             raise EnterpriseKnowledgeUnavailable("release_idempotency_fact_invalid")
+        if fact.idempotency_key != request.idempotency_key:
+            raise EnterpriseKnowledgeUnavailable("release_idempotency_fact_invalid")
+        if fact.request_sha256 != request_hash:
+            raise EnterpriseKnowledgeConflict("release_idempotency_hash_conflict")
         contract = self._release_contract(
             fact.contract,
             context=context,
             expected_id=request.release_id,
             expected_status=ReleaseState.CANDIDATE,
-            require_action_trace=True,
+            require_action_trace=result.created,
         )
         if (
             contract.manifest_sha256 != request.candidate_manifest_sha256
