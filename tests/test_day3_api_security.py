@@ -79,8 +79,8 @@ def test_permission_matrix_exactly_covers_runtime_routes_and_is_reproducible():
     matrix_keys = {(row["Method"], row["Path"]) for row in rows}
     runtime_keys = app_route_keys(app)
 
-    assert len(rows) == 196
-    assert len({row["Path"] for row in rows}) == 184
+    assert len(rows) == 202
+    assert len({row["Path"] for row in rows}) == 189
     assert matrix_keys == runtime_keys
     assert rows == build_rows()
     validate_app_route_coverage(app)

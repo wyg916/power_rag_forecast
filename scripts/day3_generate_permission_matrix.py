@@ -156,6 +156,10 @@ def required_permission(method: str, path: str) -> str:
             return "knowledge:diagnose"
         if path.endswith("/export"):
             return "knowledge:export"
+        if path.startswith("/api/knowledge/releases") and method != "GET":
+            return "knowledge:publish"
+        if path.startswith("/api/knowledge/ingestions/"):
+            return "knowledge:write"
         if path.endswith(("/batch-validate", "/embedding-refresh", "/index-local", "/upload")):
             return "knowledge:write"
         return "knowledge:read"

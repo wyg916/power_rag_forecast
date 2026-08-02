@@ -26,6 +26,16 @@ from ....repositories.knowledge_repository import (
 )
 from ....services.rag_health_service import rag_health
 from ....services.rag_qdrant_transport import enterprise_runtime_for_user
+from ....services.rag_release_api_service import (
+    EnterpriseKnowledgeNotFound,
+    release_control,
+)
+from ....services.knowledge_enterprise_service import (
+    EnterpriseKnowledgeConflict,
+    EnterpriseKnowledgeUnavailable,
+    EnterpriseRequestContext,
+)
+from ....knowledge_enterprise_contracts import ReleaseCreateRequest
 from ....services.rag_runtime_contract import enterprise_mode
 from ....services.rag_service import rag_search
 from ....workers.dispatcher import enqueue_task
@@ -40,6 +50,94 @@ DEFAULT_BATCH_QUESTIONS = [
     "晚高峰供需缺口风险如何识别？",
     "新能源出力回落会怎样影响购电策略？",
 ]
+
+
+def _release_context(request: Request, user: CurrentUser) -> EnterpriseRequestContext:
+    trace_id = str(request.headers.get("X-Trace-Id") or f"trace_{uuid.uuid4().hex}")[:128]
+    run_id = str(request.headers.get("X-Run-Id") or f"run_{uuid.uuid4().hex}")[:128]
+    return EnterpriseRequestContext("default", user.user_id, run_id, trace_id)
+
+
+def _release_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, EnterpriseKnowledgeNotFound):
+        return HTTPException(status_code=404, detail=str(exc))
+    if isinstance(exc, EnterpriseKnowledgeConflict):
+        return HTTPException(status_code=409, detail=str(exc))
+    return HTTPException(status_code=503, detail=str(exc))
+
+
+@router.get("/api/knowledge/ingestions/{ingestion_id}")
+def get_knowledge_ingestion(
+    ingestion_id: str,
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:write"))],
+) -> dict:
+    try:
+        return release_control.get_ingestion(tenant_id="default", ingestion_id=ingestion_id)
+    except (EnterpriseKnowledgeNotFound, EnterpriseKnowledgeUnavailable) as exc:
+        raise _release_error(exc) from exc
+
+
+@router.get("/api/knowledge/releases")
+def get_knowledge_releases(
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+) -> dict:
+    try:
+        items = release_control.list_releases(tenant_id="default")
+    except EnterpriseKnowledgeUnavailable as exc:
+        raise _release_error(exc) from exc
+    return {"items": items, "total": len(items)}
+
+
+@router.post("/api/knowledge/releases")
+def create_knowledge_release(
+    payload: ReleaseCreateRequest,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+) -> dict:
+    try:
+        return release_control.create_release(
+            context=_release_context(request, user), request=payload
+        )
+    except (EnterpriseKnowledgeConflict, EnterpriseKnowledgeUnavailable) as exc:
+        raise _release_error(exc) from exc
+
+
+def _act_release(action: str, release_id: str, request: Request, user: CurrentUser) -> dict:
+    try:
+        return release_control.act(
+            action=action,
+            context=_release_context(request, user),
+            release_id=release_id,
+        )
+    except (EnterpriseKnowledgeConflict, EnterpriseKnowledgeUnavailable) as exc:
+        raise _release_error(exc) from exc
+
+
+@router.post("/api/knowledge/releases/{release_id}/validate")
+def validate_knowledge_release(
+    release_id: str,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+) -> dict:
+    return _act_release("validate", release_id, request, user)
+
+
+@router.post("/api/knowledge/releases/{release_id}/publish")
+def publish_knowledge_release(
+    release_id: str,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+) -> dict:
+    return _act_release("publish", release_id, request, user)
+
+
+@router.post("/api/knowledge/releases/{release_id}/rollback")
+def rollback_knowledge_release(
+    release_id: str,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+) -> dict:
+    return _act_release("rollback", release_id, request, user)
 
 
 def _safe_filename(filename: str | None) -> str:

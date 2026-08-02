@@ -1,8 +1,8 @@
 # Day 3 API 权限矩阵
 
-- 方法+路径总数：196
-- 唯一路径数：184
-- 风险分布：{'admin': 31, 'business': 100, 'public': 7, 'sensitive': 58}
+- 方法+路径总数：202
+- 唯一路径数：189
+- 风险分布：{'admin': 31, 'business': 106, 'public': 7, 'sensitive': 58}
 - 公共白名单：7
 - 规范：CSV 为机器可读事实源；本文件由脚本同步生成。
 
@@ -76,7 +76,13 @@
 | GET | /api/knowledge/health | backend.app.api.v1.endpoints.knowledge | get_rag_health | get_rag_health | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:read | authenticated+permission:knowledge:read | knowledge:read | admin\|analyst\|viewer\|reviewer\|developer | no | no | frontend/src/api.ts:381 | none |
 | GET | /api/knowledge/health/diagnostics | backend.app.api.v1.endpoints.knowledge | get_rag_health_diagnostics | get_rag_health_diagnostics | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:diagnose | authenticated+permission:knowledge:diagnose | knowledge:diagnose | admin\|developer | no | no | none | none |
 | POST | /api/knowledge/index-local | backend.app.api.v1.endpoints.knowledge | index_knowledge | index_knowledge | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:write | authenticated+permission:knowledge:write | knowledge:write | admin\|reviewer | no | yes | frontend/src/api.ts:402 | none |
+| GET | /api/knowledge/ingestions/{ingestion_id} | backend.app.api.v1.endpoints.knowledge | get_knowledge_ingestion | get_knowledge_ingestion | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:write | authenticated+permission:knowledge:write | knowledge:write | admin\|reviewer | no | no | none | none |
 | POST | /api/knowledge/qa-test | backend.app.api.v1.endpoints.knowledge | qa_test_knowledge | qa_test_knowledge | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:read | authenticated+permission:knowledge:read | knowledge:read | admin\|analyst\|viewer\|reviewer\|developer | no | yes | frontend/src/api.ts:394 | none |
+| GET | /api/knowledge/releases | backend.app.api.v1.endpoints.knowledge | get_knowledge_releases | get_knowledge_releases | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:read | authenticated+permission:knowledge:read | knowledge:read | admin\|analyst\|viewer\|reviewer\|developer | no | no | none | same-path methods=GET\|POST |
+| POST | /api/knowledge/releases | backend.app.api.v1.endpoints.knowledge | create_knowledge_release | create_knowledge_release | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:publish | authenticated+permission:knowledge:publish | knowledge:publish | admin\|reviewer | no | yes | none | same-path methods=GET\|POST |
+| POST | /api/knowledge/releases/{release_id}/publish | backend.app.api.v1.endpoints.knowledge | publish_knowledge_release | publish_knowledge_release | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:publish | authenticated+permission:knowledge:publish | knowledge:publish | admin\|reviewer | no | yes | none | none |
+| POST | /api/knowledge/releases/{release_id}/rollback | backend.app.api.v1.endpoints.knowledge | rollback_knowledge_release | rollback_knowledge_release | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:publish | authenticated+permission:knowledge:publish | knowledge:publish | admin\|reviewer | no | yes | none | none |
+| POST | /api/knowledge/releases/{release_id}/validate | backend.app.api.v1.endpoints.knowledge | validate_knowledge_release | validate_knowledge_release | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:publish | authenticated+permission:knowledge:publish | knowledge:publish | admin\|reviewer | no | yes | none | none |
 | GET | /api/knowledge/search | backend.app.api.v1.endpoints.knowledge | search_knowledge | search_knowledge | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:read | authenticated+permission:knowledge:read | knowledge:read | admin\|analyst\|viewer\|reviewer\|developer | no | no | frontend/src/api.ts:391;frontend/src/api.ts:393 | same-path methods=GET\|POST |
 | POST | /api/knowledge/search | backend.app.api.v1.endpoints.knowledge | search_knowledge_post | search_knowledge_post | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:read | authenticated+permission:knowledge:read | knowledge:read | admin\|analyst\|viewer\|reviewer\|developer | no | yes | frontend/src/api.ts:391;frontend/src/api.ts:393 | same-path methods=GET\|POST |
 | GET | /api/knowledge/stats | backend.app.api.v1.endpoints.knowledge | get_knowledge_stats | get_knowledge_stats | <class 'dict'> | business | auth:get_current_user\|permission:knowledge:read | authenticated+permission:knowledge:read | knowledge:read | admin\|analyst\|viewer\|reviewer\|developer | no | no | frontend/src/api.ts:380 | none |
