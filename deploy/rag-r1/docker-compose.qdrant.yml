@@ -1,0 +1,68 @@
+name: power-trading-ai-rag-r1
+
+services:
+  qdrant:
+    profiles: ["rag-r1"]
+    image: "qdrant/qdrant:v1.18.2@${QDRANT_IMAGE_DIGEST:?QDRANT_IMAGE_DIGEST is required}"
+    restart: unless-stopped
+    environment:
+      QDRANT__SERVICE__ENABLE_TLS: "true"
+      QDRANT__SERVICE__API_KEY: ${QDRANT_ADMIN_API_KEY:?QDRANT_ADMIN_API_KEY is required}
+      QDRANT__SERVICE__READ_ONLY_API_KEY: ${QDRANT_READ_ONLY_API_KEY:?QDRANT_READ_ONLY_API_KEY is required}
+      QDRANT__TLS__CERT: /qdrant/tls/server-cert.pem
+      QDRANT__TLS__KEY: /qdrant/tls/server-key.pem
+      QDRANT__TLS__CA_CERT: /qdrant/tls/ca-cert.pem
+      QDRANT__STORAGE__SNAPSHOTS_PATH: /qdrant/snapshots
+      QDRANT__STORAGE__STRICT_MODE_CONFIG__ENABLED: "true"
+    ports:
+      - "127.0.0.1:${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - ${RAG_R1_QDRANT_ROOT:?RAG_R1_QDRANT_ROOT is required}/storage:/qdrant/storage
+      - ${RAG_R1_QDRANT_ROOT:?RAG_R1_QDRANT_ROOT is required}/snapshots:/qdrant/snapshots
+      - ${RAG_R1_QDRANT_ROOT:?RAG_R1_QDRANT_ROOT is required}/tls:/qdrant/tls:ro
+
+  backend:
+    profiles: ["rag-r1"]
+    environment:
+      RAG_ENABLED: ${RAG_ENABLED:-0}
+      RAG_PROFILE: enterprise
+      RAG_QDRANT_URL: https://qdrant:6333
+      RAG_PROCESS_ROLE: api
+      RAG_QDRANT_ACCESS_MODE: read_only
+      RAG_QDRANT_API_KEY: ${QDRANT_READ_ONLY_API_KEY:?QDRANT_READ_ONLY_API_KEY is required}
+      RAG_QDRANT_TLS_ENABLED: "1"
+      RAG_QDRANT_STRICT_MODE: "1"
+      RAG_QDRANT_TLS_CA_PATH: /app/qdrant-tls/ca-cert.pem
+      RAG_QDRANT_IMAGE_VERSION: "1.18.2"
+      RAG_QDRANT_IMAGE_DIGEST: ${QDRANT_IMAGE_DIGEST:?QDRANT_IMAGE_DIGEST is required}
+      RAG_EMBEDDING_EXPECTED_DIM: "1024"
+      RAG_EMBEDDING_VERSION: ${RAG_EMBEDDING_VERSION:?RAG_EMBEDDING_VERSION is required}
+      RAG_EMBEDDING_EXPECTED_VERSION: ${RAG_EMBEDDING_VERSION:?RAG_EMBEDDING_VERSION is required}
+      RAG_RERANK_ENABLED: "1"
+      RAG_RERANK_VERSION: ${RAG_RERANK_VERSION:?RAG_RERANK_VERSION is required}
+      RAG_RERANK_EXPECTED_VERSION: ${RAG_RERANK_VERSION:?RAG_RERANK_VERSION is required}
+    volumes:
+      - ${RAG_R1_QDRANT_ROOT:?RAG_R1_QDRANT_ROOT is required}/tls/ca-cert.pem:/app/qdrant-tls/ca-cert.pem:ro
+
+  celery_worker:
+    profiles: ["rag-r1"]
+    environment:
+      RAG_ENABLED: ${RAG_ENABLED:-0}
+      RAG_PROFILE: enterprise
+      RAG_QDRANT_URL: https://qdrant:6333
+      RAG_PROCESS_ROLE: worker
+      RAG_QDRANT_ACCESS_MODE: read_only
+      RAG_QDRANT_API_KEY: ${QDRANT_READ_ONLY_API_KEY:?QDRANT_READ_ONLY_API_KEY is required}
+      RAG_QDRANT_TLS_ENABLED: "1"
+      RAG_QDRANT_STRICT_MODE: "1"
+      RAG_QDRANT_TLS_CA_PATH: /app/qdrant-tls/ca-cert.pem
+      RAG_QDRANT_IMAGE_VERSION: "1.18.2"
+      RAG_QDRANT_IMAGE_DIGEST: ${QDRANT_IMAGE_DIGEST:?QDRANT_IMAGE_DIGEST is required}
+      RAG_EMBEDDING_EXPECTED_DIM: "1024"
+      RAG_EMBEDDING_VERSION: ${RAG_EMBEDDING_VERSION:?RAG_EMBEDDING_VERSION is required}
+      RAG_EMBEDDING_EXPECTED_VERSION: ${RAG_EMBEDDING_VERSION:?RAG_EMBEDDING_VERSION is required}
+      RAG_RERANK_ENABLED: "1"
+      RAG_RERANK_VERSION: ${RAG_RERANK_VERSION:?RAG_RERANK_VERSION is required}
+      RAG_RERANK_EXPECTED_VERSION: ${RAG_RERANK_VERSION:?RAG_RERANK_VERSION is required}
+    volumes:
+      - ${RAG_R1_QDRANT_ROOT:?RAG_R1_QDRANT_ROOT is required}/tls/ca-cert.pem:/app/qdrant-tls/ca-cert.pem:ro
