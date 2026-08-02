@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import re
 import time
@@ -12,6 +13,7 @@ from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, 
 from fastapi.responses import Response
 
 from ....core.security import CurrentUser, require_permission
+from ....knowledge_enterprise_contracts import ReleaseContract, ReleaseCreateRequest
 from ....repositories.audit_repository import write_audit_log
 from ....repositories.knowledge_repository import (
     ensure_seed_knowledge,
@@ -25,6 +27,13 @@ from ....repositories.knowledge_repository import (
     upsert_document,
 )
 from ....services.rag_health_service import rag_health
+from ....services.knowledge_enterprise_service import (
+    EnterpriseKnowledgeApplication,
+    EnterpriseKnowledgeConflict,
+    EnterpriseKnowledgeUnavailable,
+    EnterpriseRequestContext,
+    get_enterprise_knowledge_application,
+)
 from ....services.rag_service import rag_search
 from ....workers.dispatcher import enqueue_task
 
@@ -38,6 +47,49 @@ DEFAULT_BATCH_QUESTIONS = [
     "晚高峰供需缺口风险如何识别？",
     "新能源出力回落会怎样影响购电策略？",
 ]
+ENTERPRISE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+
+
+def enterprise_knowledge_application() -> EnterpriseKnowledgeApplication:
+    return get_enterprise_knowledge_application()
+
+
+def _request_identifier(request: Request, header: str, prefix: str) -> str:
+    value = str(request.headers.get(header) or "").strip()
+    if value:
+        if not ENTERPRISE_ID_RE.fullmatch(value):
+            raise HTTPException(status_code=400, detail=f"{header} 格式无效")
+        return value
+    return f"{prefix}-{uuid.uuid4().hex}"
+
+
+def _enterprise_context(request: Request, user: CurrentUser) -> EnterpriseRequestContext:
+    if request.headers.get("X-Tenant-ID") or "tenant_id" in request.query_params:
+        raise HTTPException(status_code=400, detail="tenant_id 只能来自认证上下文")
+    actor = str(user.user_id or user.username).strip()
+    if not ENTERPRISE_ID_RE.fullmatch(actor):
+        actor = "actor-" + hashlib.sha256(actor.encode("utf-8")).hexdigest()[:24]
+    return EnterpriseRequestContext(
+        tenant_id="default",
+        actor_id=actor,
+        run_id=_request_identifier(request, "X-Run-ID", "run"),
+        trace_id=_request_identifier(request, "X-Trace-ID", "trace"),
+    )
+
+
+def _public_release(value: ReleaseContract) -> dict[str, Any]:
+    return {
+        "release_id": value.release_id,
+        "status": value.status.value,
+        "created_at": value.created_at.isoformat(),
+        "updated_at": value.updated_at.isoformat(),
+    }
+
+
+def _enterprise_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, EnterpriseKnowledgeConflict):
+        return HTTPException(status_code=409, detail=str(exc))
+    return HTTPException(status_code=503, detail=str(exc))
 
 
 def _safe_filename(filename: str | None) -> str:
@@ -126,6 +178,98 @@ def get_rag_health(
     _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> dict:
     return rag_health()
+
+
+@router.get("/api/knowledge/health/diagnostics")
+def get_rag_diagnostics(
+    _: Annotated[CurrentUser, Depends(require_permission("knowledge:diagnose"))],
+) -> dict:
+    return rag_health(diagnostic=True)
+
+
+@router.get("/api/knowledge/releases")
+def get_enterprise_releases(
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    application: Annotated[
+        EnterpriseKnowledgeApplication, Depends(enterprise_knowledge_application)
+    ],
+) -> dict:
+    try:
+        values = application.list_releases(context=_enterprise_context(request, user))
+    except (EnterpriseKnowledgeUnavailable, EnterpriseKnowledgeConflict) as exc:
+        raise _enterprise_error(exc) from exc
+    return {"items": [_public_release(value) for value in values], "total": len(values)}
+
+
+@router.post("/api/knowledge/releases", status_code=202)
+def create_enterprise_release(
+    payload: ReleaseCreateRequest,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+    application: Annotated[
+        EnterpriseKnowledgeApplication, Depends(enterprise_knowledge_application)
+    ],
+) -> dict:
+    try:
+        value = application.create_release(
+            context=_enterprise_context(request, user), request=payload
+        )
+    except (EnterpriseKnowledgeUnavailable, EnterpriseKnowledgeConflict) as exc:
+        raise _enterprise_error(exc) from exc
+    return _public_release(value)
+
+
+def _release_action(
+    action: str,
+    release_id: str,
+    request: Request,
+    user: CurrentUser,
+    application: EnterpriseKnowledgeApplication,
+) -> dict:
+    try:
+        value = getattr(application, f"{action}_release")(
+            context=_enterprise_context(request, user), release_id=release_id
+        )
+    except (EnterpriseKnowledgeUnavailable, EnterpriseKnowledgeConflict) as exc:
+        raise _enterprise_error(exc) from exc
+    return _public_release(value)
+
+
+@router.post("/api/knowledge/releases/{release_id}/validate")
+def validate_enterprise_release(
+    release_id: str,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+    application: Annotated[
+        EnterpriseKnowledgeApplication, Depends(enterprise_knowledge_application)
+    ],
+) -> dict:
+    return _release_action("validate", release_id, request, user, application)
+
+
+@router.post("/api/knowledge/releases/{release_id}/publish")
+def publish_enterprise_release(
+    release_id: str,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+    application: Annotated[
+        EnterpriseKnowledgeApplication, Depends(enterprise_knowledge_application)
+    ],
+) -> dict:
+    return _release_action("publish", release_id, request, user, application)
+
+
+@router.post("/api/knowledge/releases/{release_id}/rollback")
+def rollback_enterprise_release(
+    release_id: str,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:publish"))],
+    application: Annotated[
+        EnterpriseKnowledgeApplication, Depends(enterprise_knowledge_application)
+    ],
+) -> dict:
+    return _release_action("rollback", release_id, request, user, application)
 
 
 @router.get("/api/knowledge/search")

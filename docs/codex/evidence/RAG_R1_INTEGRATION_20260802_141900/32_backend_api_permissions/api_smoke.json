@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "database_role": "beta10d_forecast_login",
+  "release_list": {
+    "http_status": 200,
+    "total": 1,
+    "release_id": "RAG-R1",
+    "status": "candidate",
+    "forbidden_technical_fields": []
+  },
+  "publish_attempt": {
+    "role": "reviewer",
+    "http_status": 503,
+    "reason_code": "enterprise_release_write_control_not_configured"
+  },
+  "database_after": {
+    "release_id": "RAG-R1",
+    "status": "candidate",
+    "is_current": false
+  },
+  "database_writes": 0
+}

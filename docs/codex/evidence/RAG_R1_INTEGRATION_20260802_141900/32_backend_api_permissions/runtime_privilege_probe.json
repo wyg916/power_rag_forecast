@@ -1,0 +1,32 @@
+{
+  "status": "PASS_WITH_FOLLOW_UP",
+  "transaction": "READ ONLY",
+  "target": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "postgres",
+    "current_user": "beta10d_forecast_login"
+  },
+  "role_attributes": {
+    "superuser": false,
+    "create_database": false,
+    "create_role": false,
+    "replication": false,
+    "bypass_rls": false
+  },
+  "select_allowed": [
+    "kb_documents",
+    "kb_document_versions",
+    "kb_chunks",
+    "kb_releases",
+    "kb_release_items"
+  ],
+  "write_allowed": [],
+  "missing_future_write_privileges": [
+    "kb_retrieval_runs:INSERT",
+    "kb_citations:INSERT",
+    "kb_rag_audit_events:INSERT"
+  ],
+  "database_writes": 0,
+  "note": "发布列表只读接入可用；检索运行、引用与审计持久化必须在后续最小权限包中单独授权。"
+}

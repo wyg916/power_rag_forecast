@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "python_compile": "PASS",
+  "permission_matrix_check": {
+    "status": "PASS",
+    "route_method_count": 201,
+    "unique_path_count": 188,
+    "public_count": 7,
+    "protected_count": 194
+  },
+  "pytest": {
+    "status": "PASS",
+    "passed": 83,
+    "failed": 0,
+    "duration_seconds": 4.91,
+    "targets": [
+      "tests/test_rag_r1_api_integration.py",
+      "tests/test_rag_enterprise_service_seam.py",
+      "tests/test_rag_enterprise_dto_contracts.py",
+      "tests/test_rag_enterprise_orchestrator.py",
+      "tests/test_day3_api_security.py"
+    ]
+  },
+  "git_diff_check": "PASS",
+  "sensitive_scan": {
+    "status": "PASS",
+    "findings": 0
+  }
+}
