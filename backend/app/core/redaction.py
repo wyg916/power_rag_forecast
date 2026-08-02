@@ -21,15 +21,17 @@ SECRET_FIELD_HINTS = {
 }
 
 REDACTION_MASK = "******"
+ASSIGNMENT_REDACTION_MASK = "[REDACTED]"
 _URL_CREDENTIAL_RE = re.compile(
     r"(?P<prefix>\b(?:postgres(?:ql)?(?:\+[A-Za-z0-9_]+)?|redis(?:s)?|amqp(?:s)?):"
     r"//[^\s/:@]+:)(?P<secret>[^@\s/]+)(?P<suffix>@)",
     flags=re.IGNORECASE,
 )
 _SECRET_ASSIGNMENT_RE = re.compile(
-    r"(?P<prefix>\b(?:password|passwd|pwd|token|access[_-]?token|refresh[_-]?token|"
-    r"api[_-]?key|secret|authorization)\b\s*[:=]\s*)"
-    r"(?P<quote>['\"]?)(?P<secret>[^\s,'\";}&]+)(?P=quote)",
+    r"(?P<prefix>(?<![A-Za-z0-9_])(?P<key_quote>['\"]?)(?:password|passwd|pwd|token|"
+    r"access[_-]?token|refresh[_-]?token|api[_-]?key|secret|authorization|"
+    r"jwt[_-]?secret[_-]?key)(?P=key_quote)\s*[:=]\s*)"
+    r"(?P<value_quote>['\"]?)(?P<secret>[^\s,'\";}&]+)(?P=value_quote)",
     flags=re.IGNORECASE,
 )
 _SECRET_QUERY_RE = re.compile(
@@ -50,7 +52,10 @@ def redact_text(value: object, *, extra_secrets: Iterable[str] = ()) -> str:
     text = _SECRET_QUERY_RE.sub(rf"\g<prefix>{REDACTION_MASK}", text)
     text = _BEARER_RE.sub(rf"\g<prefix>{REDACTION_MASK}", text)
     text = _SECRET_ASSIGNMENT_RE.sub(
-        lambda match: f"{match.group('prefix')}{match.group('quote')}{REDACTION_MASK}{match.group('quote')}",
+        lambda match: (
+            f"{match.group('prefix')}{match.group('value_quote')}"
+            f"{ASSIGNMENT_REDACTION_MASK}{match.group('value_quote')}"
+        ),
         text,
     )
     return text

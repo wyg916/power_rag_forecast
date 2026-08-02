@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
+import sys
 
 import pytest
 
@@ -36,7 +37,102 @@ def assert_secret_absent(value: object) -> None:
 def test_redact_text_covers_supported_secret_shapes(value: str) -> None:
     redacted = redact_text(value, extra_secrets=(SENTINEL,))
     assert_secret_absent(redacted)
-    assert "******" in redacted
+    assert "[REDACTED]" in redacted or "******" in redacted
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (f"JWT_SECRET_KEY={SENTINEL}", "JWT_SECRET_KEY=[REDACTED]"),
+        (f"JWT_SECRET_KEY = {SENTINEL}", "JWT_SECRET_KEY = [REDACTED]"),
+        (f'JWT_SECRET_KEY="{SENTINEL}"', 'JWT_SECRET_KEY="[REDACTED]"'),
+        (f"JWT_SECRET_KEY='{SENTINEL}'", "JWT_SECRET_KEY='[REDACTED]'"),
+        (f"jwt_secret_key={SENTINEL}", "jwt_secret_key=[REDACTED]"),
+        (f'"JWT_SECRET_KEY": "{SENTINEL}"', '"JWT_SECRET_KEY": "[REDACTED]"'),
+        (f"JWT_SECRET_KEY: {SENTINEL}", "JWT_SECRET_KEY: [REDACTED]"),
+        (f"jwt-secret-key={SENTINEL}", "jwt-secret-key=[REDACTED]"),
+    ],
+    ids=(
+        "environment",
+        "spaces",
+        "double_quoted_value",
+        "single_quoted_value",
+        "lowercase",
+        "json",
+        "plain_text_colon",
+        "hyphenated_key",
+    ),
+)
+def test_redact_text_covers_jwt_secret_key_assignments(value: str, expected: str) -> None:
+    redacted = redact_text(value)
+    assert redacted == expected
+    assert_secret_absent(redacted)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        f"password={SENTINEL}",
+        f"token={SENTINEL}",
+        f"api_key={SENTINEL}",
+        f"secret={SENTINEL}",
+        f"Authorization: Bearer {SENTINEL}",
+        DATABASE_URL,
+    ],
+    ids=("password", "token", "api_key", "secret", "authorization", "database_url"),
+)
+def test_redact_text_legacy_shapes_without_extra_secrets(value: str) -> None:
+    assert_secret_absent(redact_text(value))
+
+
+def test_jwt_secret_key_redaction_is_idempotent() -> None:
+    once = redact_text(f'"JWT_SECRET_KEY": "{SENTINEL}"')
+    assert once == '"JWT_SECRET_KEY": "[REDACTED]"'
+    assert redact_text(once) == once
+    assert redact_text("JWT_SECRET_KEY=[REDACTED]") == "JWT_SECRET_KEY=[REDACTED]"
+
+
+def test_jwt_secret_key_stdout_stderr_and_logs_do_not_leak(capsys, caplog) -> None:
+    redacted = redact_text(f"JWT_SECRET_KEY={SENTINEL}")
+    with caplog.at_level(logging.ERROR):
+        logging.getLogger("t004-hotfix-test").error("%s", redacted)
+    print(redacted)
+    print(redacted, file=sys.stderr)
+    captured = capsys.readouterr()
+    assert_secret_absent(captured.out)
+    assert_secret_absent(captured.err)
+    assert_secret_absent(caplog.text)
+
+
+def test_jwt_secret_key_exception_chain_is_redacted() -> None:
+    try:
+        try:
+            raise RuntimeError(f"JWT_SECRET_KEY={SENTINEL}")
+        except RuntimeError as exc:
+            raise ValueError(f'configuration failed: "JWT_SECRET_KEY": "{SENTINEL}"') from exc
+    except ValueError as exc:
+        report = safe_exception_summary(exc)
+    serialized = json.dumps(report, ensure_ascii=False)
+    assert_secret_absent(serialized)
+    assert len(report["chain"]) == 2
+    assert "[REDACTED]" in serialized
+
+
+def test_jwt_secret_key_json_markdown_and_txt_evidence_are_redacted(tmp_path) -> None:
+    report = {
+        "status": "failed",
+        "error": {"message": f"JWT_SECRET_KEY={SENTINEL}"},
+    }
+    json_path = tmp_path / "t004_hotfix.json"
+    markdown_path = tmp_path / "t004_hotfix.md"
+    txt_path = tmp_path / "t004_hotfix.txt"
+    write_json(report, json_path)
+    write_markdown(report, markdown_path)
+    txt_path.write_text(redact_text(f"JWT_SECRET_KEY={SENTINEL}"), encoding="utf-8")
+    for path in (json_path, markdown_path, txt_path):
+        content = path.read_text(encoding="utf-8")
+        assert_secret_absent(content)
+        assert "[REDACTED]" in content
 
 
 def test_sqlalchemy_dsn_parse_failure_is_safe() -> None:
