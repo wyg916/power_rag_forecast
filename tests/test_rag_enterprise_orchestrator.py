@@ -23,7 +23,9 @@ from backend.app.services.knowledge_enterprise_service import (
 )
 from backend.app.services.rag_enterprise_application import (
     EnterpriseKnowledgeOrchestrator,
+    IngestionAtomicCreateResult,
     IngestionIdempotencyFact,
+    ReleaseAtomicCreateResult,
     ReleaseIdempotencyFact,
     StoredContent,
 )
@@ -80,22 +82,31 @@ class FakeContentStore:
     def __init__(self, events: list[str]):
         self.events = events
         self.writes = 0
+        self.attempts = 0
         self.fail = False
         self.bad_contract = False
+        self.by_key: dict[tuple[str, str], StoredContent] = {}
 
     def put_immutable(
         self, *, tenant_id: str, content_sha256: str, content: bytes
     ) -> StoredContent:
         self.events.append("content")
-        self.writes += 1
+        self.attempts += 1
         if self.fail:
             raise RuntimeError("injected_content_failure")
-        return StoredContent(
+        stored = StoredContent(
             tenant_id="other" if self.bad_contract else tenant_id,
             content_id=f"content-{content_sha256[:12]}",
             content_sha256=content_sha256,
             size_bytes=len(content),
         )
+        if self.bad_contract:
+            return stored
+        key = (tenant_id, content_sha256)
+        if key not in self.by_key:
+            self.by_key[key] = stored
+            self.writes += 1
+        return self.by_key[key]
 
 
 class FakeIngestionStore:
@@ -104,21 +115,26 @@ class FakeIngestionStore:
         self.by_key: dict[tuple[str, str], IngestionIdempotencyFact] = {}
         self.by_id: dict[tuple[str, str], IngestionContract] = {}
         self.writes = 0
+        self.attempts = 0
         self.reads = 0
         self.fail_create = False
         self.bad_contract = False
+        self.miss_next_find = False
 
     def find_idempotency(
         self, *, tenant_id: str, idempotency_key: str
     ) -> IngestionIdempotencyFact | None:
         self.reads += 1
+        if self.miss_next_find:
+            self.miss_next_find = False
+            return None
         return self.by_key.get((tenant_id, idempotency_key))
 
     def create_draft_atomic(
         self, *, context, request, stored_content, now
-    ) -> IngestionIdempotencyFact:
+    ) -> IngestionAtomicCreateResult:
         self.events.append("draft")
-        self.writes += 1
+        self.attempts += 1
         if self.fail_create:
             raise RuntimeError("injected_fact_failure")
         key = (context.tenant_id, request.idempotency_key)
@@ -126,7 +142,7 @@ class FakeIngestionStore:
         if existing is not None:
             if existing.content_sha256 != request.content_sha256:
                 raise EnterpriseKnowledgeConflict("ingestion_idempotency_hash_conflict")
-            return existing
+            return IngestionAtomicCreateResult(created=False, fact=existing)
         ingestion_id = f"ing-{request.content_sha256[:12]}"
         contract = IngestionContract(
             ingestion_id=ingestion_id,
@@ -145,7 +161,8 @@ class FakeIngestionStore:
         )
         self.by_key[key] = fact
         self.by_id[(context.tenant_id, ingestion_id)] = contract
-        return fact
+        self.writes += 1
+        return IngestionAtomicCreateResult(created=True, fact=fact)
 
     def get_ingestion(
         self, *, tenant_id: str, ingestion_id: str
@@ -160,25 +177,30 @@ class FakeReleaseStore:
         self.by_key: dict[tuple[str, str], ReleaseIdempotencyFact] = {}
         self.by_id: dict[tuple[str, str], ReleaseContract] = {}
         self.writes = 0
+        self.attempts = 0
         self.reads = 0
+        self.miss_next_find = False
 
     def find_idempotency(
         self, *, tenant_id: str, idempotency_key: str
     ) -> ReleaseIdempotencyFact | None:
         self.reads += 1
+        if self.miss_next_find:
+            self.miss_next_find = False
+            return None
         return self.by_key.get((tenant_id, idempotency_key))
 
     def create_candidate_atomic(
         self, *, context, request, request_sha256, now
-    ) -> ReleaseIdempotencyFact:
+    ) -> ReleaseAtomicCreateResult:
         self.events.append("candidate")
-        self.writes += 1
+        self.attempts += 1
         key = (context.tenant_id, request.idempotency_key)
         existing = self.by_key.get(key)
         if existing is not None:
             if existing.request_sha256 != request_sha256:
                 raise EnterpriseKnowledgeConflict("release_idempotency_hash_conflict")
-            return existing
+            return ReleaseAtomicCreateResult(created=False, fact=existing)
         contract = ReleaseContract(
             release_id=request.release_id,
             tenant_id="default",
@@ -199,7 +221,8 @@ class FakeReleaseStore:
         )
         self.by_key[key] = fact
         self.by_id[(context.tenant_id, request.release_id)] = contract
-        return fact
+        self.writes += 1
+        return ReleaseAtomicCreateResult(created=True, fact=fact)
 
     def get_release(
         self, *, tenant_id: str, release_id: str
@@ -305,7 +328,7 @@ def test_ingestion_same_key_different_hash_conflicts_before_content_write(wired)
     ("failure", "reason", "fact_writes"),
     [
         ("content", "immutable_content_write_failed", 0),
-        ("fact", "ingestion_draft_write_failed", 1),
+        ("fact", "ingestion_draft_write_failed", 0),
     ],
 )
 def test_ingestion_failure_injection_never_returns_a_draft(
@@ -348,6 +371,42 @@ def test_ingestion_rejects_cross_tenant_and_abnormal_store_contracts(wired):
         )
 
 
+def test_ingestion_atomic_race_returns_stable_existing_fact_without_duplicate(wired):
+    app, content, ingestions, _, _, _ = wired
+    request = _ingestion_request()
+    first = app.create_ingestion(context=_context(), request=request, content=CONTENT)
+    ingestions.miss_next_find = True
+
+    raced = app.create_ingestion(
+        context=_context(run_id="run-race", trace_id="trace-race"),
+        request=request,
+        content=CONTENT,
+    )
+
+    assert raced == first
+    assert raced.trace_id == "trace-1"
+    assert (content.attempts, content.writes) == (2, 1)
+    assert (ingestions.attempts, ingestions.writes) == (2, 1)
+
+
+def test_ingestion_atomic_race_with_different_hash_remains_conflict(wired):
+    app, _, ingestions, _, _, _ = wired
+    app.create_ingestion(
+        context=_context(), request=_ingestion_request(), content=CONTENT
+    )
+    ingestions.miss_next_find = True
+    changed = b"different-content"
+
+    with pytest.raises(EnterpriseKnowledgeConflict, match="hash_conflict"):
+        app.create_ingestion(
+            context=_context(run_id="run-race", trace_id="trace-race"),
+            request=_ingestion_request(changed),
+            content=changed,
+        )
+
+    assert ingestions.writes == 1
+
+
 def test_ingestion_status_and_release_list_are_read_only(wired):
     app, _, ingestions, releases, _, _ = wired
     ingestion = app.create_ingestion(
@@ -380,6 +439,35 @@ def test_release_create_is_idempotent_and_conflicts_on_request_hash(wired):
         app.create_release(
             context=_context(), request=_release_request(manifest="c" * 64)
         )
+
+
+def test_release_atomic_race_returns_stable_existing_fact_without_duplicate(wired):
+    app, _, _, releases, _, _ = wired
+    request = _release_request()
+    first = app.create_release(context=_context(), request=request)
+    releases.miss_next_find = True
+
+    raced = app.create_release(
+        context=_context(run_id="run-race", trace_id="trace-race"), request=request
+    )
+
+    assert raced == first
+    assert raced.trace_id == "trace-1"
+    assert (releases.attempts, releases.writes) == (2, 1)
+
+
+def test_release_atomic_race_with_different_hash_remains_conflict(wired):
+    app, _, _, releases, _, _ = wired
+    app.create_release(context=_context(), request=_release_request())
+    releases.miss_next_find = True
+
+    with pytest.raises(EnterpriseKnowledgeConflict, match="hash_conflict"):
+        app.create_release(
+            context=_context(run_id="run-race", trace_id="trace-race"),
+            request=_release_request(manifest="c" * 64),
+        )
+
+    assert releases.writes == 1
 
 
 def test_release_lifecycle_enforces_state_and_action_trace(wired):
