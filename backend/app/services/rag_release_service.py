@@ -167,9 +167,9 @@ class ReleaseFactStore(Protocol):
         self,
         rolled_back: ReleaseRecord,
         *,
-        previous_release_id: str,
+        previous_release_id: str | None,
     ) -> None:
-        """Atomically roll back target and republish previous, or change neither."""
+        """Atomically roll back target and optionally republish previous, or change neither."""
         ...
 
     def save_alias_manifest(self, manifest: AliasManifest) -> None: ...
@@ -439,11 +439,12 @@ class ReleasePublisher:
         started = self.clock()
         record = self._load(tenant_id, release_id)
         if record.status is ReleaseStatus.ROLLED_BACK:
+            expected_previous_id = record.previous_release_id or None
             previous_collection = (
                 f"rag_chunks_{record.previous_release_id}" if record.previous_release_id else None
             )
             consistent = (
-                self.store.current_release_id(tenant_id) == record.previous_release_id
+                self.store.current_release_id(tenant_id) == expected_previous_id
                 and self.qdrant.current_alias(record.alias) == previous_collection
             )
             return self._result(
@@ -451,15 +452,20 @@ class ReleasePublisher:
                 "" if consistent else "rolled_back_state_inconsistent",
                 idempotent=consistent, consistency_restored=consistent,
             )
-        if record.status is not ReleaseStatus.PUBLISHED or not record.previous_release_id:
+        if record.status is not ReleaseStatus.PUBLISHED:
             return self._result(started, record, False, "rollback_target_missing")
         if self._record_gate(record):
             return self._result(started, record, False, "rollback_target_fact_invalid")
-        previous = self._load(tenant_id, record.previous_release_id)
-        if previous.status is not ReleaseStatus.SUPERSEDED:
-            return self._result(started, record, False, "rollback_previous_invalid")
-        if self._record_gate(previous):
-            return self._result(started, record, False, "rollback_previous_fact_invalid")
+        previous = (
+            self._load(tenant_id, record.previous_release_id)
+            if record.previous_release_id
+            else None
+        )
+        if previous is not None:
+            if previous.status is not ReleaseStatus.SUPERSEDED:
+                return self._result(started, record, False, "rollback_previous_invalid")
+            if self._record_gate(previous):
+                return self._result(started, record, False, "rollback_previous_fact_invalid")
         if (
             self.store.current_release_id(tenant_id) != record.release_id
             or self.qdrant.current_alias(record.alias) != record.collection
@@ -470,26 +476,33 @@ class ReleasePublisher:
             )
         try:
             self.qdrant.switch_alias(
-                record.alias, previous.collection, expected_collection=record.collection
+                record.alias,
+                previous.collection if previous else None,
+                expected_collection=record.collection,
             )
         except Exception:
             self._fact(record, "rollback_failed", "rollback_alias_failed")
             return self._result(started, record, False, "rollback_alias_failed")
         try:
             self.store.set_current_release(
-                tenant_id, previous.release_id, expected_previous=record.release_id
+                tenant_id,
+                previous.release_id if previous else None,
+                expected_previous=record.release_id,
             )
         except Exception:
-            restored = self._restore_alias(previous, record.collection)
-            self._invalidate(record, previous.release_id)
+            restored = self._restore_alias(record, record.collection)
+            self._invalidate(record, previous.release_id if previous else None)
             reason = "rollback_postgres_failed" if restored else "rollback_compensation_failed"
             self._fact(record, "rollback_failed", reason)
             return self._result(started, record, False, reason, consistency_restored=restored)
-        smoke_ok = False
-        try:
-            smoke_ok = self.qdrant.smoke(record.alias, previous.release_id, previous.collection)
-        except Exception:
-            smoke_ok = False
+        smoke_ok = previous is None
+        if previous is not None:
+            try:
+                smoke_ok = self.qdrant.smoke(
+                    record.alias, previous.release_id, previous.collection
+                )
+            except Exception:
+                smoke_ok = False
         if not smoke_ok:
             restored = self._restore_rollback(record, previous)
             self._invalidate(record, previous.release_id)
@@ -499,7 +512,8 @@ class ReleasePublisher:
         rolled_back = replace(record, status=ReleaseStatus.ROLLED_BACK)
         try:
             self.store.finalize_rollback(
-                rolled_back, previous_release_id=previous.release_id
+                rolled_back,
+                previous_release_id=previous.release_id if previous else None,
             )
         except Exception:
             restored = self._restore_rollback(record, previous)
@@ -513,17 +527,27 @@ class ReleasePublisher:
             return self._result(
                 started, record, False, reason, consistency_restored=restored
             )
-        self._invalidate(rolled_back, previous.release_id)
-        self._fact(rolled_back, "rolled_back", alias_after=previous.collection)
+        self._invalidate(rolled_back, previous.release_id if previous else None)
+        self._fact(
+            rolled_back,
+            "rolled_back",
+            alias_after=previous.collection if previous else None,
+        )
         return self._result(started, rolled_back, True)
 
-    def _restore_rollback(self, record: ReleaseRecord, previous: ReleaseRecord) -> bool:
+    def _restore_rollback(
+        self, record: ReleaseRecord, previous: ReleaseRecord | None
+    ) -> bool:
         try:
             self.qdrant.switch_alias(
-                record.alias, record.collection, expected_collection=previous.collection
+                record.alias,
+                record.collection,
+                expected_collection=previous.collection if previous else None,
             )
             self.store.set_current_release(
-                record.tenant_id, record.release_id, expected_previous=previous.release_id
+                record.tenant_id,
+                record.release_id,
+                expected_previous=previous.release_id if previous else None,
             )
             return True
         except Exception:

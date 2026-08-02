@@ -300,14 +300,15 @@ class StrictReleasePublisherAdapter:
         if action == "publish":
             expected_id, expected_collection = record.release_id, record.collection
         elif action == "rollback":
-            if not record.previous_release_id:
-                raise EnterpriseKnowledgeUnavailable("rollback_previous_fact_missing")
-            previous = self._record(
-                context, record.previous_release_id, expected_profile
-            )
-            if previous.status is not ReleaseStatus.PUBLISHED:
-                raise EnterpriseKnowledgeUnavailable("rollback_previous_fact_invalid")
-            expected_id, expected_collection = previous.release_id, previous.collection
+            if record.previous_release_id:
+                previous = self._record(
+                    context, record.previous_release_id, expected_profile
+                )
+                if previous.status is not ReleaseStatus.PUBLISHED:
+                    raise EnterpriseKnowledgeUnavailable("rollback_previous_fact_invalid")
+                expected_id, expected_collection = previous.release_id, previous.collection
+            else:
+                expected_id, expected_collection = None, None
         else:
             if current_id == record.release_id:
                 raise EnterpriseKnowledgeUnavailable("validated_release_is_current")
@@ -321,7 +322,7 @@ class StrictReleasePublisherAdapter:
             expected_id = current_id
         if current_id != expected_id or alias_collection != expected_collection:
             raise EnterpriseKnowledgeUnavailable("release_current_alias_fact_mismatch")
-        if action in {"publish", "rollback"}:
+        if action == "publish" or (action == "rollback" and expected_collection):
             try:
                 smoke_ok = self.control_plane.smoke(
                     CURRENT_ALIAS, expected_id, expected_collection

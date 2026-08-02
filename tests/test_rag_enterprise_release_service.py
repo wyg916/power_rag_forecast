@@ -164,19 +164,17 @@ class FakeReleaseStore:
         if self.finalize_rollback_count in self.fail_finalize_rollback_calls:
             raise RuntimeError("injected rollback finalize failure")
         target = self.records[(rolled_back.tenant_id, rolled_back.release_id)]
-        previous = self.records[(rolled_back.tenant_id, previous_release_id)]
         if target.status is not ReleaseStatus.PUBLISHED:
             raise RuntimeError("rollback finalize target state invalid")
-        if previous.status is not ReleaseStatus.SUPERSEDED:
-            raise RuntimeError("rollback finalize previous state invalid")
-        self.records.update(
-            {
-                (rolled_back.tenant_id, rolled_back.release_id): rolled_back,
-                (previous.tenant_id, previous.release_id): replace(
-                    previous, status=ReleaseStatus.PUBLISHED
-                ),
-            }
-        )
+        updates = {(rolled_back.tenant_id, rolled_back.release_id): rolled_back}
+        if previous_release_id:
+            previous = self.records[(rolled_back.tenant_id, previous_release_id)]
+            if previous.status is not ReleaseStatus.SUPERSEDED:
+                raise RuntimeError("rollback finalize previous state invalid")
+            updates[(previous.tenant_id, previous.release_id)] = replace(
+                previous, status=ReleaseStatus.PUBLISHED
+            )
+        self.records.update(updates)
 
 
 class FakeCache:
@@ -400,6 +398,27 @@ def test_rollback_is_atomic_idempotent_and_keeps_old_collection():
     assert store.get_release("default", "RAG-R1").status is ReleaseStatus.PUBLISHED
     assert set(cache.invalidated) == {("default", "RAG-R1"), ("default", "RAG-R2")}
     assert qdrant.deleted_collections == []
+    assert second.succeeded is True and second.idempotent is True
+    assert qdrant.switch_count == switch_count and store.set_current_count == current_count
+
+
+def test_first_release_can_rollback_to_no_current_alias_and_is_idempotent():
+    candidate = _release("RAG-R1", ReleaseStatus.CANDIDATE)
+    qdrant = FakeQdrantAdmin(candidate, None)
+    store = FakeReleaseStore(candidate, None)
+    cache = FakeCache()
+    service = ReleasePublisher(qdrant, store, cache, _profile())
+
+    assert service.validate("default", "RAG-R1").succeeded is True
+    assert service.publish("default", "RAG-R1").succeeded is True
+    first = service.rollback("default", "RAG-R1")
+    switch_count, current_count = qdrant.switch_count, store.set_current_count
+    second = service.rollback("default", "RAG-R1")
+
+    assert first.succeeded is True and first.status is ReleaseStatus.ROLLED_BACK
+    assert qdrant.current_alias(CURRENT_ALIAS) is None
+    assert store.current["default"] is None
+    assert store.get_release("default", "RAG-R1").status is ReleaseStatus.ROLLED_BACK
     assert second.succeeded is True and second.idempotent is True
     assert qdrant.switch_count == switch_count and store.set_current_count == current_count
 
