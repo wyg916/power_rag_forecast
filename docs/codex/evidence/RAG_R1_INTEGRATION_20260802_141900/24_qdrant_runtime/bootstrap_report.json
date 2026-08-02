@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "created_at": "2026-08-02T07:45:08.463839+00:00",
+  "root": "E:\\智能运营分析项目_运行资产\\rag-r1\\qdrant",
+  "image": {
+    "image_id": "sha256:e13294053db80229932ca53f6ace97c3da1ae2581b770373e187a15707244eb5",
+    "platform": "linux/amd64",
+    "digest": "sha256:75eab8c4ba42096724fdcfde8b4de0b5713d529dde32f285a1f86fdcb2c9e50c"
+  },
+  "bind": "127.0.0.1:6333",
+  "keys_distinct": true,
+  "key_values_emitted": false,
+  "acl_applied": true,
+  "principal_sid_sha256": "d0ee92d0ce84ced04aec3172fb98f25ffec8214542b1497cde841fd6264d0268",
+  "certificates": {
+    "ca-cert.pem": "3407d5bffa8e1b417c76d1e42f1ff1559968b050d5259df9f5571bf3edb59aae",
+    "server-cert.pem": "d01e2e92c1f1e20a94d44c50648f6b4f7f3d6baa86c0d0ec1dc288f99d335f55"
+  },
+  "private_files": [
+    "secrets/runtime.env",
+    "secrets/ca-key.pem",
+    "tls/server-key.pem"
+  ]
+}
