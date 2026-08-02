@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "target": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "postgres",
+    "user": "postgres"
+  },
+  "schema": "beta10d_rag_r1_20260802_071138_17420",
+  "role": "beta10d_rag_r1_20260802_071138_17420_role",
+  "public_write_count": 0,
+  "commands": [
+    {
+      "arguments": [
+        "upgrade",
+        "head"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\nINFO  [alembic.runtime.migration] Running upgrade  -> 0001_initial_postgres_schema, initial PostgreSQL schema for core fact tables\nINFO  [alembic.runtime.migration] Running upgrade 0001_initial_postgres_schema -> 0002_rag_rbac_audit, add basic RAG, RBAC and audit tables\nINFO  [alembic.runtime.migration] Running upgrade 0002_rag_rbac_audit -> 0003_stage1_raw_data, add Stage1 raw data tables\nINFO  [alembic.runtime.migration] Running upgrade 0003_stage1_raw_data -> 0004_task_center_enterprise, extend task center enterprise fields\nINFO  [alembic.runtime.migration] Running upgrade 0004_task_center_enterprise -> 0005_task_runtime_observability, add task runtime observability fields\nINFO  [alembic.runtime.migration] Running upgrade 0005_task_runtime_observability -> 0006_auth_users, add JWT login user fields\nINFO  [alembic.runtime.migration] Running upgrade 0006_auth_users -> 0007_task_runtime, productionize task runtime fields\nINFO  [alembic.runtime.migration] Running upgrade 0007_task_runtime -> 0008_knowledge_business, knowledge page business closure tables\nINFO  [alembic.runtime.migration] Running upgrade 0008_knowledge_business -> 0009_model_center_governance, model center governance events\nINFO  [alembic.runtime.migration] Running upgrade 0009_model_center_governance -> 0010_model_pred_points, model prediction comparison points\nINFO  [alembic.runtime.migration] Running upgrade 0010_model_pred_points -> 0011_settings_center_closure, settings center business closure tables\nINFO  [alembic.runtime.migration] Running upgrade 0011_settings_center_closure -> 0012_backend_legacy_tables, add PostgreSQL compatibility tables for legacy backend workflows\nINFO  [alembic.runtime.migration] Running upgrade 0012_backend_legacy_tables -> 0013_t001_model_fact, add T001 model fact identity and unique-active constraints\nINFO  [alembic.runtime.migration] Running upgrade 0013_t001_model_fact -> 0014_t003_run_transaction, add T003 forecast run identity and atomic transaction constraints\nINFO  [alembic.runtime.migration] Running upgrade 0014_t003_run_transaction -> 0015_phase5d_strategy, add PHASE5-D strategy governance and immutable review trail\nINFO  [alembic.runtime.migration] Running upgrade 0015_phase5d_strategy -> 0016_strategy_runtime, add P6 strategy runtime device, SOC and execution facts\nINFO  [alembic.runtime.migration] Running upgrade 0016_strategy_runtime -> 0017_day6_operational, add Day 6 operational input batches and runtime lineage\nINFO  [alembic.runtime.migration] Running upgrade 0017_day6_operational -> 0018_rag_enterprise_r1, add RAG-R1 enterprise persistence and release governance\n"
+    },
+    {
+      "arguments": [
+        "downgrade",
+        "0017_day6_operational"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\nINFO  [alembic.runtime.migration] Running downgrade 0018_rag_enterprise_r1 -> 0017_day6_operational, add RAG-R1 enterprise persistence and release governance\n"
+    },
+    {
+      "arguments": [
+        "upgrade",
+        "head"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\nINFO  [alembic.runtime.migration] Running upgrade 0017_day6_operational -> 0018_rag_enterprise_r1, add RAG-R1 enterprise persistence and release governance\n"
+    }
+  ],
+  "public_before": {
+    "revision": "0017_day6_operational",
+    "structure_sha256": "99e6c492722ad47985a6b3452233ce286b25c4c98636f143546c3d59bb5d4bd2"
+  },
+  "public_after": {
+    "revision": "0017_day6_operational",
+    "structure_sha256": "99e6c492722ad47985a6b3452233ce286b25c4c98636f143546c3d59bb5d4bd2"
+  },
+  "head_first_sha256": "da429eb82a09c94a9cd8ab6b8e0dc463ac38e6772e132f1346684ec7704830b0",
+  "down_sha256": "17ab1b80aed1c3bb753b56b335e1c3662497c93b7a140f033ad6ff54a51bb988",
+  "head_second_sha256": "da429eb82a09c94a9cd8ab6b8e0dc463ac38e6772e132f1346684ec7704830b0",
+  "enterprise_table_count": 9,
+  "completed_at": "2026-08-02T07:12:14.293649+00:00",
+  "cleanup": {
+    "schema_removed": true,
+    "role_removed": true
+  }
+}
