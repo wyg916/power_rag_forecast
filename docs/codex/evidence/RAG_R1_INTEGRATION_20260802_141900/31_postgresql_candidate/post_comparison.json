@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "pre_snapshot_sha256": "55b5dd7b13d3146fe7517cf2f6fb89560f0dfc0ce70e604cb04b23daaea4b846",
+  "post_snapshot_sha256": "cd1193906e0e0546148469b3b980100c9170807cb2e6d5a804a77c52945f4a5a",
+  "structure": {
+    "before_sha256": "15d4fd97a193c57b6b3bc0b6ad484902be2463cce3048fd3cb8fecd7b7e208be",
+    "after_sha256": "15d4fd97a193c57b6b3bc0b6ad484902be2463cce3048fd3cb8fecd7b7e208be",
+    "matches": true
+  },
+  "changed_tables": [
+    {
+      "table": "kb_releases",
+      "before_count": 1,
+      "after_count": 1,
+      "before_content_md5": "b5f9040d75956305b0de7b262ea0d982",
+      "after_content_md5": "2bdb1a5513b1081a2c0ec22e5bf7ab49",
+      "expected_change": "single manifest_sha256 compare-and-swap plus updated_at"
+    },
+    {
+      "table": "kb_rag_audit_events",
+      "before_count": 1,
+      "after_count": 2,
+      "before_content_md5": "d97a43b3d261b2e012fd87566db17a2a",
+      "after_content_md5": "bdbc5aa0cc54143c4726be7499e138cb",
+      "expected_change": "one candidate_manifest_reconciled audit event"
+    }
+  ],
+  "unexpected_changed_tables": [],
+  "post_rag_row_counts": {
+    "kb_documents": 85,
+    "kb_document_versions": 45,
+    "kb_chunks": 8384,
+    "kb_assets": 0,
+    "kb_access_policies": 0,
+    "kb_releases": 1,
+    "kb_release_items": 83,
+    "kb_retrieval_runs": 0,
+    "kb_citations": 0,
+    "kb_qa_evaluations": 0,
+    "kb_rag_audit_events": 2,
+    "kb_search_results": 0,
+    "kb_qa_tests": 0,
+    "audit_logs": 41
+  }
+}

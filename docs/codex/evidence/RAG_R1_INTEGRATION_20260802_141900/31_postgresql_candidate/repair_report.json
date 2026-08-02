@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "target": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "postgres",
+    "user": "postgres",
+    "alembic_head": "0018_rag_enterprise_r1"
+  },
+  "candidate": {
+    "tenant_id": "default",
+    "release_id": "RAG-R1",
+    "status": "candidate",
+    "is_current": false,
+    "collection": "rag_chunks_RAG-R1"
+  },
+  "rollback_probe": {
+    "status": "PASS",
+    "transaction_rolled_back": true,
+    "restored_manifest_sha256": "f74a29af786e03a945dd7955757c5ac352ebb4a15baae7138f14281886ad8426",
+    "database_write_count": 0
+  },
+  "apply": {
+    "status": "PASS",
+    "release_rows_updated": 1,
+    "audit_rows_inserted": 1,
+    "database_write_count": 2,
+    "before_manifest_sha256": "f74a29af786e03a945dd7955757c5ac352ebb4a15baae7138f14281886ad8426",
+    "after_manifest_sha256": "2aeaeb8325a192a8acceeee2dd81c631c313c40b0d7be6333bfd512fd52a0282"
+  },
+  "idempotent_replay": {
+    "status": "PASS",
+    "release_rows_updated": 0,
+    "audit_rows_inserted": 0,
+    "database_write_count": 0,
+    "idempotent": true
+  },
+  "final_verification": {
+    "status": "PASS",
+    "issues": [],
+    "documents": {"expected": 45, "actual": 45, "missing": 0, "extra": 0, "field_mismatches": 0},
+    "versions": {"expected": 45, "actual": 45, "missing": 0, "extra": 0, "field_mismatches": 0},
+    "chunks": {"expected": 8339, "actual": 8339, "missing": 0, "extra": 0, "field_mismatches": 0},
+    "release_items": {"expected": 83, "actual": 83, "missing": 0, "extra": 0, "field_mismatches": 0}
+  },
+  "tests": {
+    "targeted": "31 passed",
+    "py_compile": "PASS",
+    "diff_check": "PASS",
+    "sensitive_scan": "PASS_NO_MATCH"
+  },
+  "boundaries": {
+    "qdrant_mutated": false,
+    "alias_mutated": false,
+    "qdrant_snapshot_created": false,
+    "release_published": false,
+    "production_switched": false
+  }
+}
