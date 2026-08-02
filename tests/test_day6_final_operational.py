@@ -20,6 +20,8 @@ from prediction_engine.day6_operational import (
 )
 from scripts.day6_provision_runtime import (
     GROUP_ROLE,
+    KNOWLEDGE_COLUMN_READS,
+    KNOWLEDGE_READ_TABLES,
     LOGIN_ROLE,
     MODEL_TABLES,
     READ_TABLES,
@@ -113,6 +115,16 @@ def test_runtime_role_contract_is_least_privilege() -> None:
     assert LOGIN_ROLE == "beta10d_forecast_login"
     assert READ_TABLES == ("raw_market", "raw_load", "raw_weather")
     assert MODEL_TABLES == ("model_registry",)
+    assert {"kb_documents", "kb_chunks", "kb_document_versions", "kb_releases", "kb_release_items"} == set(
+        KNOWLEDGE_READ_TABLES
+    )
+    assert KNOWLEDGE_COLUMN_READS["kb_rag_audit_events"] == (
+        "tenant_id",
+        "release_id",
+        "event_type",
+        "details_json",
+        "created_at",
+    )
     assert WRITE_TABLES["audit_logs"] == ("INSERT",)
     assert "DELETE" not in {privilege for privileges in WRITE_TABLES.values() for privilege in privileges}
 

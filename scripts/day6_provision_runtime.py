@@ -17,6 +17,22 @@ GROUP_ROLE = "beta10d_forecast_runtime"
 LOGIN_ROLE = "beta10d_forecast_login"
 READ_TABLES = ("raw_market", "raw_load", "raw_weather")
 MODEL_TABLES = ("model_registry",)
+KNOWLEDGE_READ_TABLES = (
+    "kb_documents",
+    "kb_chunks",
+    "kb_document_versions",
+    "kb_releases",
+    "kb_release_items",
+)
+KNOWLEDGE_COLUMN_READS = {
+    "kb_rag_audit_events": (
+        "tenant_id",
+        "release_id",
+        "event_type",
+        "details_json",
+        "created_at",
+    ),
+}
 WRITE_TABLES = {
     "forecast_input_batches": ("SELECT", "INSERT", "UPDATE"),
     "forecast_input_snapshots": ("SELECT", "INSERT"),
@@ -124,6 +140,17 @@ def provision(admin_url: str, password: str) -> dict[str, object]:
         for table in READ_TABLES:
             if table in existing:
                 conn.execute(text(f"GRANT SELECT ON TABLE public.{table} TO {GROUP_ROLE}"))
+        for table in KNOWLEDGE_READ_TABLES:
+            if table in existing:
+                conn.execute(text(f"GRANT SELECT ON TABLE public.{table} TO {GROUP_ROLE}"))
+        for table, columns in KNOWLEDGE_COLUMN_READS.items():
+            if table in existing:
+                conn.execute(
+                    text(
+                        f"GRANT SELECT ({','.join(columns)}) "
+                        f"ON TABLE public.{table} TO {GROUP_ROLE}"
+                    )
+                )
         for table in MODEL_TABLES:
             if table in existing:
                 conn.execute(text(f"GRANT SELECT, INSERT ON TABLE public.{table} TO {GROUP_ROLE}"))
@@ -158,10 +185,22 @@ def provision(admin_url: str, password: str) -> dict[str, object]:
             ).mappings().one()
         )
         privileges = {}
-        for table in (*READ_TABLES, *MODEL_TABLES, *WRITE_TABLES):
+        for table in (*READ_TABLES, *MODEL_TABLES, *KNOWLEDGE_READ_TABLES, *WRITE_TABLES):
             privileges[table] = {
                 privilege: bool(conn.execute(text("SELECT has_table_privilege(current_user,:table,:privilege)"), {"table": f"public.{table}", "privilege": privilege}).scalar_one())
                 for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE")
+            }
+        for table, columns in KNOWLEDGE_COLUMN_READS.items():
+            privileges[table] = {
+                column: bool(
+                    conn.execute(
+                        text(
+                            "SELECT has_column_privilege(current_user,:table,:column,'SELECT')"
+                        ),
+                        {"table": f"public.{table}", "column": column},
+                    ).scalar_one()
+                )
+                for column in columns
             }
     dangerous = any(identity[name] for name in ("rolsuper", "rolcreatedb", "rolcreaterole", "rolreplication", "rolbypassrls"))
     if identity["current_user"] != LOGIN_ROLE or dangerous:
