@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "focused_regression": {
+    "command": "E:\\智能运营分析项目\\.venv\\Scripts\\python.exe -m pytest -q tests/test_ai_frontend_display_contract.py tests/test_assistant_copy_contract.py tests/test_frontend_auth_contract.py tests/test_rag_r1_ai_integration.py",
+    "result": "14 passed in 0.85s"
+  },
+  "frontend_build": {
+    "command": "npm.cmd run build",
+    "result": "PASS",
+    "typescript": "PASS",
+    "vite_modules": 3675,
+    "duration": "34.98s"
+  },
+  "diff_check": "PASS",
+  "sensitive_scan": {"status": "PASS", "findings": 0},
+  "database_read_only_check": {
+    "role": "beta10d_forecast_login",
+    "release_status": "candidate",
+    "is_current": false,
+    "audit_counts": [0, 0, 2],
+    "matches_pre_ui_smoke": true,
+    "persistent_writes": 0
+  },
+  "qdrant_alias_or_snapshot_changes": 0,
+  "production_switch": false
+}

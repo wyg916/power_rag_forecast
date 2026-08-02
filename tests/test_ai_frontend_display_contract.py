@@ -54,3 +54,29 @@ def test_assistant_page_wires_real_interactions() -> None:
     assert "exportConversation('docx')" in content
     assert "exportConversation('pdf')" in content
     assert "assistant-context-tags" in content
+
+
+def test_assistant_page_consumes_grounded_claim_and_citation_contract() -> None:
+    content = ASSISTANT_PAGE.read_text(encoding="utf-8")
+
+    assert "claims: Array.isArray(response.claims)" in content
+    assert "citations: Array.isArray(response.citations)" in content
+    assert "groundingStatus: response.grounding_status" in content
+    assert "refusalReason: response.refusal_reason" in content
+    assert "buildGroundedClaimLines" in content
+    assert "buildCitationItems" in content
+    assert "[知识依据 ${value}]" in content
+
+
+def test_normal_user_evidence_view_is_business_safe_and_fail_closed() -> None:
+    content = ASSISTANT_PAGE.read_text(encoding="utf-8")
+
+    assert "当前没有可验证且已发布的知识内容，未据此生成知识主张。" in content
+    assert "知识证据已核验" in content
+    assert "知识证据暂不可用" in content
+    assert "本次回答暂无已核验知识引用" in content
+    assert 'className="assistant-citation-quote"' in content
+    assert "businessSafeWarning" in content
+    assert "回答生成服务发生降级，本次未采用不可用模型生成的内容。" in content
+    assert "来自本次受控业务查询结果" in content
+    assert "trace?.refs" not in content

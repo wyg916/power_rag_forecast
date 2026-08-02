@@ -119,12 +119,44 @@ type AnswerState = {
   focusPeriods?: string[];
   warnings?: string[];
   rag?: any;
+  claims?: GroundedClaim[];
+  citations?: GroundedCitation[];
+  groundingStatus?: string;
+  refusalReason?: string;
+  generatedAt?: string;
+  degradedComponents?: string[];
+  confidence?: string;
   debugPayload?: any;
   error?: string;
   degraded?: boolean;
   attachments?: AssistantAttachment[];
   references?: AssistantReference[];
   streamEvents?: Array<{ event: string; message: string }>;
+};
+
+type GroundedClaim = {
+  claim_id: string;
+  text: string;
+  citation_ids: string[];
+};
+
+type GroundedCitation = {
+  citation_id: string;
+  title?: string;
+  page?: number | null;
+  section_path?: string[];
+  quote: string;
+  score?: number | null;
+};
+
+type CitationView = {
+  key: string;
+  reference: number;
+  title: string;
+  locator: string;
+  quote: string;
+  relevance?: string;
+  claimCount: number;
 };
 
 type AssistantAttachment = {
@@ -181,6 +213,30 @@ function sanitizeEvidenceLabel(value: string) {
 
 function compactEvidenceItems(items?: string[]) {
   return Array.from(new Set((items || []).map(sanitizeEvidenceLabel).filter(Boolean))).slice(0, 8);
+}
+
+function groundingReasonText(reason?: string) {
+  const labels: Record<string, string> = {
+    no_evidence: '未检索到可核验的知识内容，未据此生成知识主张。',
+    release_unavailable: '当前没有可验证且已发布的知识内容，未据此生成知识主张。',
+    retrieval_runtime_unavailable: '知识检索服务暂不可用，未据此生成知识主张。',
+    unpublished_content_forbidden: '检索结果尚未发布，未用于本次回答。',
+    content_security_quarantined: '检索内容未通过安全校验，未用于本次回答。',
+    grounding_evidence_missing: '知识证据不完整，未据此生成知识主张。',
+    claim_contract_invalid: '知识主张未通过一致性校验，已停止展示。',
+    claim_citation_missing: '知识主张缺少引用依据，已停止展示。',
+    claim_citation_invalid: '知识引用未通过一致性校验，已停止展示。'
+  };
+  return labels[String(reason || '')] || '知识证据未通过核验，未据此生成知识主张。';
+}
+
+function businessSafeWarning(value: unknown) {
+  const warning = String(value || '').trim();
+  if (!warning) return '';
+  if (/(api[_ -]?key|ollama|deepseek|trace|exception|stack|localhost|\b[A-Z_]{4,}\b|\\|\/)/i.test(warning)) {
+    return '回答生成服务发生降级，本次未采用不可用模型生成的内容。';
+  }
+  return warning.length > 180 ? `${warning.slice(0, 177)}...` : warning;
 }
 
 function asList(value: any): string[] {
@@ -273,9 +329,76 @@ function normalizeAnswerState(response: any): AnswerState {
     focusPeriods: response.focus_periods || [],
     warnings: response.warnings || [],
     rag: response.rag,
+    claims: Array.isArray(response.claims) ? response.claims : [],
+    citations: Array.isArray(response.citations) ? response.citations : [],
+    groundingStatus: response.grounding_status,
+    refusalReason: response.refusal_reason,
+    generatedAt: response.generated_at,
+    degradedComponents: Array.isArray(response.degraded_components) ? response.degraded_components : [],
+    confidence: response.confidence,
     debugPayload: response,
-    degraded: Boolean(response.model_fallback || response.warnings?.length)
+    degraded: Boolean(response.model_fallback || response.warnings?.length || response.degraded_components?.length)
   };
+}
+
+function groundingPresentation(message?: AssistantMessage) {
+  if (!message || message.status === 'pending' || message.status === 'streaming') {
+    return { label: '等待核验', tone: 'info', description: '回答完成后展示本次业务数据与知识证据的核验状态。' };
+  }
+  if (message.status === 'error') {
+    return { label: '回答不可用', tone: 'danger', description: '本次请求未取得后端可信结果，请重试后再进行业务判断。' };
+  }
+  const state = message.answerState || {};
+  const status = String(state.groundingStatus || 'not_required');
+  if (status === 'grounded') {
+    return { label: '知识证据已核验', tone: 'success', description: '本次知识主张均已绑定到可核验引用。' };
+  }
+  if (status === 'tool_and_rag_grounded') {
+    return { label: '数据与知识已核验', tone: 'success', description: '业务工具结果与知识引用均通过本次回答的证据校验。' };
+  }
+  if (status === 'tool_grounded') {
+    return { label: '业务数据已核验', tone: 'success', description: '本次结论基于受控业务工具结果，未生成知识库主张。' };
+  }
+  if (status === 'unavailable' || status === 'refused') {
+    return { label: '知识证据暂不可用', tone: 'warning', description: groundingReasonText(state.refusalReason) };
+  }
+  return { label: '未使用知识证据', tone: 'default', description: '本次回答无需知识检索，或未生成需要引用的知识主张。' };
+}
+
+function buildGroundedClaimLines(state: AnswerState) {
+  const citationOrder = new Map(
+    (state.citations || []).map((citation, index) => [String(citation.citation_id || ''), index + 1])
+  );
+  return (state.claims || []).flatMap((claim) => {
+    const references = (claim.citation_ids || [])
+      .map((citationId) => citationOrder.get(String(citationId)))
+      .filter((value): value is number => Boolean(value));
+    if (!String(claim.text || '').trim() || !references.length) return [];
+    return [`${String(claim.text).trim()} ${references.map((value) => `[知识依据 ${value}]`).join('')}`];
+  });
+}
+
+function buildCitationItems(message?: AssistantMessage): CitationView[] {
+  const state = message?.answerState || {};
+  const claims = state.claims || [];
+  const referencedIds = new Set(claims.flatMap((claim) => claim.citation_ids || []).map(String));
+  return (state.citations || []).flatMap((citation, index) => {
+    const citationId = String(citation.citation_id || '');
+    const quote = String(citation.quote || '').trim();
+    if (!citationId || !quote || !referencedIds.has(citationId)) return [];
+    const section = (citation.section_path || []).map(String).filter(Boolean).slice(-2).join(' / ');
+    const page = Number(citation.page) > 0 ? `第 ${Number(citation.page)} 页` : '';
+    const score = Number(citation.score);
+    return [{
+      key: citationId,
+      reference: index + 1,
+      title: sanitizeEvidenceLabel(String(citation.title || '')) || `知识文档 ${index + 1}`,
+      locator: [section, page].filter(Boolean).join(' · ') || '文档定位已核验',
+      quote,
+      relevance: Number.isFinite(score) ? `相关度 ${Math.round(Math.max(0, Math.min(1, score)) * 100)}%` : undefined,
+      claimCount: claims.filter((claim) => (claim.citation_ids || []).map(String).includes(citationId)).length
+    }];
+  });
 }
 
 function fallbackBusinessAnswer(error: unknown) {
@@ -310,6 +433,7 @@ function buildAnswerModules(message?: AssistantMessage) {
   const state = message?.answerState || {};
   const evidenceSummary = compactEvidenceItems(state.evidenceSummary || []);
   const knowledgeSummary = compactEvidenceItems(state.knowledgeEvidenceSummary || []);
+  const groundedClaims = buildGroundedClaimLines(state);
   const streamEvents = state.streamEvents || [];
   if (!answerText && (message?.status === 'pending' || message?.status === 'streaming')) {
     return [
@@ -328,7 +452,10 @@ function buildAnswerModules(message?: AssistantMessage) {
   );
   const warningLines = splitContent(sectionText(answerText, '风险提示'));
   if (state.modelFallback) warningLines.push('模型生成发生降级，建议结合数据依据复核后再用于业务判断。');
-  if (state.warnings?.length) warningLines.push(...state.warnings);
+  if (state.warnings?.length) warningLines.push(...state.warnings.map(businessSafeWarning).filter(Boolean));
+  if (state.groundingStatus === 'unavailable' || state.groundingStatus === 'refused') {
+    warningLines.push(groundingReasonText(state.refusalReason));
+  }
 
   const modules: Array<{ key: string; title: string; icon: any; tone: string; lines: string[] }> = [
     {
@@ -345,8 +472,11 @@ function buildAnswerModules(message?: AssistantMessage) {
       tone: 'info',
       lines: [
         ...splitContent(sectionText(answerText, '数据依据')),
-        ...evidenceSummary.map((item) => `数据摘要：${item}`),
-        ...knowledgeSummary.map((item) => `知识引用：${item}`)
+        ...groundedClaims,
+        ...evidenceSummary.map((_, index) => `业务依据 ${index + 1}：来自本次受控业务查询结果。`),
+        ...(groundedClaims.length || state.groundingStatus === 'unavailable' || state.groundingStatus === 'refused'
+          ? []
+          : knowledgeSummary.map((_, index) => `知识检索摘要 ${index + 1}：已纳入本次回答上下文。`))
       ]
     }
   ];
@@ -397,20 +527,20 @@ function buildEvidenceRows(message?: AssistantMessage) {
   if (meta.tables?.length) {
     rows.push({
       key: 'business-meta',
-      source: meta.tables.join('、'),
+      source: '业务查询结果',
       timeRange: meta.timeRange || '随本次回答返回',
       confidence: meta.available === false ? '需复核' : '已采用',
-      status: meta.querySummary || '业务数据查询'
+      status: meta.querySummary || (meta.rowCount !== undefined ? `返回 ${meta.rowCount} 条业务记录` : '业务数据查询')
     });
   }
 
-  compactEvidenceItems(state.evidenceSummary || []).forEach((item, index) => {
+  compactEvidenceItems(state.evidenceSummary || []).forEach((_, index) => {
     rows.push({
       key: `evidence-${index}`,
-      source: item,
+      source: `业务依据 ${index + 1}`,
       timeRange: '随本次回答返回',
       confidence: '已采用',
-      status: '数据摘要'
+      status: '来自本次受控业务查询结果'
     });
   });
 
@@ -433,20 +563,12 @@ function buildKpiCards(message?: AssistantMessage) {
 }
 
 function buildKnowledgeItems(message?: AssistantMessage) {
-  const state = message?.answerState || {};
-  const returnedItems = compactEvidenceItems([
-    ...(state.knowledgeEvidenceSummary || []),
-    ...(state.businessMeta?.knowledgeEvidence || []),
-    ...(message?.trace?.refs || [])
-  ]);
-  if (returnedItems.length) {
-    return returnedItems.map((item) => ({ title: item, tag: '本次引用', date: '来自回答依据' }));
-  }
-  return [];
+  return buildCitationItems(message);
 }
 
 export function AssistantPage({ onSubNavigate }: PageProps) {
   const { hasPermission, user } = useAuth();
+  const [messageApi, messageContextHolder] = message.useMessage();
   const [assistantData, setAssistantData] = useState<any>({
     conversations: [],
     questions: businessQuestions,
@@ -484,7 +606,19 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const evidenceRows = useMemo(() => buildEvidenceRows(activeAssistant), [activeAssistant]);
   const kpiCards = useMemo(() => buildKpiCards(activeAssistant), [activeAssistant]);
   const knowledgeItems = useMemo(() => buildKnowledgeItems(activeAssistant), [activeAssistant]);
-  const answerModules = useMemo(() => buildAnswerModules(activeAssistant), [activeAssistant]);
+  const groundingView = useMemo(() => groundingPresentation(activeAssistant), [activeAssistant]);
+  const activeBusinessMeta = activeAssistant?.answerState?.businessMeta || {};
+  const querySummary = activeBusinessMeta.querySummary
+    || (activeBusinessMeta.notFoundReason ? '本次业务查询未返回可用记录。' : '');
+  const groundingTagColor = groundingView.tone === 'success'
+    ? 'success'
+    : groundingView.tone === 'warning'
+      ? 'warning'
+      : groundingView.tone === 'danger'
+        ? 'error'
+        : groundingView.tone === 'info'
+          ? 'processing'
+          : 'default';
 
   useEffect(() => {
     let mounted = true;
@@ -623,7 +757,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
         const response = await withAssistantTimeout(askAssistant(text, sessionId, options));
         finalizeAssistantMessage(assistantId, response, { attachments: contextAttachments, references: contextReferences });
         setAttachments([]);
-        message.warning('实时输出暂不可用，已切换普通回答');
+        messageApi.warning('实时输出暂不可用，已切换普通回答');
       } catch (fallbackError) {
         const content = fallbackBusinessAnswer(fallbackError);
         updateAssistantMessage(assistantId, (item) => ({
@@ -639,7 +773,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
           },
           trace: emptyTrace
         }));
-        message.error('AI 助手请求失败，请稍后重试');
+        messageApi.error('AI 助手请求失败，请稍后重试');
       }
     } finally {
       setLoading(false);
@@ -651,7 +785,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     setMessages([]);
     setActiveAssistantId(undefined);
     setInput('');
-    message.success('已创建新会话');
+    messageApi.success('已创建新会话');
   }
 
   function rotateQuestions() {
@@ -669,9 +803,9 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
         uploaded.push(payload);
       }
       setAttachments((current) => [...current, ...uploaded]);
-      message.success(`已上传 ${uploaded.length} 个文件`);
+      messageApi.success(`已上传 ${uploaded.length} 个文件`);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '附件上传失败');
+      messageApi.error(error instanceof Error ? error.message : '附件上传失败');
     } finally {
       setUploadingAttachment(false);
       if (attachmentInputRef.current) attachmentInputRef.current.value = '';
@@ -686,7 +820,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       const options = await getAssistantReferenceOptions(input || activeAssistant?.question || '');
       setReferenceOptions(options);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '引用数据加载失败');
+      messageApi.error(error instanceof Error ? error.message : '引用数据加载失败');
       setReferenceOptions([]);
     } finally {
       setReferenceLoading(false);
@@ -724,10 +858,10 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
-      message.success(`已导出 ${format === 'docx' ? 'Word' : 'PDF'} 文件`);
+      messageApi.success(`已导出 ${format === 'docx' ? 'Word' : 'PDF'} 文件`);
       setExportOpen(false);
     } catch (error) {
-      message.warning(error instanceof Error ? error.message : '导出失败');
+      messageApi.warning(error instanceof Error ? error.message : '导出失败');
     }
   }
 
@@ -742,12 +876,12 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   async function copyText(text?: string) {
     const value = String(text || '').trim();
     if (!value) {
-      message.warning('暂无可复制内容');
+      messageApi.warning('暂无可复制内容');
       return;
     }
     try {
       await navigator.clipboard.writeText(value);
-      message.success('已复制');
+      messageApi.success('已复制');
     } catch {
       const textarea = document.createElement('textarea');
       textarea.value = value;
@@ -758,14 +892,20 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       textarea.select();
       document.execCommand('copy');
       document.body.removeChild(textarea);
-      message.success('已复制');
+      messageApi.success('已复制');
     }
   }
 
   const sessionItems = assistantData.conversations || [];
   const evidenceColumns = [
-    { title: '数据表 / 来源', dataIndex: 'source', key: 'source', ellipsis: true },
-    { title: '时间范围', dataIndex: 'timeRange', key: 'timeRange', width: 148 },
+    {
+      title: '业务依据',
+      dataIndex: 'source',
+      key: 'source',
+      ellipsis: true,
+      render: (value: string, record: any) => <span title={record.status || value}>{value}</span>
+    },
+    { title: '业务时间', dataIndex: 'timeRange', key: 'timeRange', width: 132, ellipsis: true },
     {
       title: '状态',
       dataIndex: 'confidence',
@@ -777,6 +917,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
 
   return (
     <div className="assistant-workspace-page">
+      {messageContextHolder}
       {assistantData.error && (
         <Alert
           className="assistant-business-alert"
@@ -879,7 +1020,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                             <Space size={6}>
                               {item.status === 'streaming' && <Tag color="processing">实时输出</Tag>}
                               {item.status === 'error' && <Tag color="error">请求失败</Tag>}
-                              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => copyText(item.content)}>复制</Button>
+                              <Button type="text" size="small" icon={<CopyOutlined />} aria-label="复制回答" title="复制回答" onClick={() => copyText(item.content)}>复制</Button>
                             </Space>
                           </div>
                           {buildAnswerModules(item).map((module) => (
@@ -967,11 +1108,23 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
 
         <aside className="assistant-right-rail">
           <SectionCard
-            title="数据依据"
+            title="回答依据"
             className="assistant-evidence-card"
-            extra={<Button type="link" size="small" disabled={!evidenceRows.length} onClick={() => setDetailPanel('evidence')}>查看全部</Button>}
+            extra={<Tag color={groundingTagColor}>{groundingView.label}</Tag>}
           >
-            <div className="assistant-card-subtitle">本次回答引用</div>
+            <div className={`assistant-grounding-summary tone-${groundingView.tone}`}>
+              {groundingView.tone === 'success' ? <CheckCircleOutlined /> : groundingView.tone === 'danger' || groundingView.tone === 'warning' ? <ExclamationCircleOutlined /> : <InfoCircleOutlined />}
+              <div>
+                <strong>{groundingView.label}</strong>
+                <p>{groundingView.description}</p>
+              </div>
+            </div>
+            {(querySummary || activeAssistant?.answerState?.generatedAt) && (
+              <div className="assistant-query-summary">
+                {querySummary && <p><strong>查询摘要：</strong>{querySummary}</p>}
+                {activeAssistant?.answerState?.generatedAt && <small>回答时间：{String(activeAssistant.answerState.generatedAt).replace('T', ' ').slice(0, 19)}</small>}
+              </div>
+            )}
             <Table
               size="small"
               pagination={false}
@@ -980,7 +1133,8 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
               columns={evidenceColumns}
               locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="提问后展示本次回答采用的数据依据" /> }}
             />
-            <p className="assistant-evidence-note">置信度由模型质量、数据完整性与时效性综合评估；本栏仅展示本次回答可追溯的业务依据。</p>
+            <Button className="assistant-view-evidence" type="link" size="small" disabled={!evidenceRows.length} onClick={() => setDetailPanel('evidence')}>查看全部业务依据</Button>
+            <p className="assistant-evidence-note">本栏仅展示本次回答可追溯的业务依据；知识证据不可用时不会生成或展示知识主张。</p>
           </SectionCard>
 
           <SectionCard title="关键指标摘要" className="assistant-kpi-card">
@@ -998,22 +1152,29 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
           </SectionCard>
 
           <SectionCard
-            title="相关知识与策略建议"
+            title="知识引用"
             className="assistant-knowledge-card"
             extra={<Button type="link" size="small" disabled={!knowledgeItems.length} onClick={() => setDetailPanel('knowledge')}>查看全部</Button>}
           >
-            <div className="knowledge-suggestion-list assistant-knowledge-list">
+            <div className="assistant-knowledge-list assistant-citation-list">
               {knowledgeItems.length ? (
                 knowledgeItems.map((item) => (
-                  <div key={item.title}>
-                    <FileTextOutlined />
-                    <span>{item.title}</span>
-                    <Tag color={item.tag === '本次引用' ? 'blue' : 'default'}>{item.tag}</Tag>
-                    <small>{item.date}</small>
-                  </div>
+                  <article key={item.key} className="assistant-citation-item">
+                    <header>
+                      <span className="assistant-citation-index">{item.reference}</span>
+                      <strong>{item.title}</strong>
+                      <Tag color="success">已核验</Tag>
+                    </header>
+                    <small>{item.locator}</small>
+                    <p className="assistant-citation-quote">“{item.quote}”</p>
+                    <footer>
+                      <span>{item.claimCount} 条主张已绑定</span>
+                      {item.relevance && <span>{item.relevance}</span>}
+                    </footer>
+                  </article>
                 ))
               ) : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="本次回答暂无知识引用" />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={groundingView.tone === 'warning' ? groundingView.description : '本次回答暂无已核验知识引用'} />
               )}
             </div>
             <div className="assistant-side-actions">
@@ -1136,7 +1297,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       </Modal>
 
       <Drawer
-        title={detailPanel === 'evidence' ? '全部数据依据' : '相关知识与策略建议'}
+        title={detailPanel === 'evidence' ? '全部业务依据' : '全部已核验知识引用'}
         placement="right"
         width={560}
         open={Boolean(detailPanel)}
@@ -1146,19 +1307,23 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
         {detailPanel === 'evidence' ? (
           <Table size="small" pagination={false} rowKey="key" dataSource={evidenceRows} columns={evidenceColumns} />
         ) : (
-          <List
-            dataSource={knowledgeItems}
-            locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="本次回答暂无知识引用" /> }}
-            renderItem={(item) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={<FileTextOutlined />}
-                  title={item.title}
-                  description={`${item.tag} · ${item.date}`}
-                />
-              </List.Item>
-            )}
-          />
+          <div className="assistant-citation-list assistant-citation-drawer">
+            {knowledgeItems.length ? knowledgeItems.map((item) => (
+              <article key={item.key} className="assistant-citation-item">
+                <header>
+                  <span className="assistant-citation-index">{item.reference}</span>
+                  <strong>{item.title}</strong>
+                  <Tag color="success">已核验</Tag>
+                </header>
+                <small>{item.locator}</small>
+                <p className="assistant-citation-quote">“{item.quote}”</p>
+                <footer>
+                  <span>{item.claimCount} 条主张已绑定</span>
+                  {item.relevance && <span>{item.relevance}</span>}
+                </footer>
+              </article>
+            )) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="本次回答暂无已核验知识引用" />}
+          </div>
         )}
       </Drawer>
     </div>

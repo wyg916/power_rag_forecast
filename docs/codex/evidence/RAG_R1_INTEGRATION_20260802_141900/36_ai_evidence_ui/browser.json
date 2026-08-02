@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "page": "/assistant/assistant-chat",
+  "reference": "docs/ui-reference/05_ai_assistant.png",
+  "viewports": {
+    "1920x1080": {"document_width": 1905, "columns": [272, 927, 410], "horizontal_overflow": false, "workspace_overflow": false},
+    "1672x941": {"document_width": 1657, "columns": [272, 679, 410], "horizontal_overflow": false, "workspace_overflow": false},
+    "1440x900": {"document_width": 1425, "columns": [240, 569, 320], "horizontal_overflow": false, "workspace_overflow": false},
+    "1366x768": {"document_width": 1366, "columns": [240, 534, 320], "horizontal_overflow": false, "workspace_overflow": false},
+    "default_1280x720": {"document_width": 1280, "horizontal_overflow": false, "workspace_overflow": false}
+  },
+  "fail_closed_answer": {
+    "grounding_label": "知识证据暂不可用",
+    "visible_citation_count": 0,
+    "visible_action_count": 4,
+    "all_actions_visible_at_1672": true,
+    "all_actions_visible_at_1366": true,
+    "raw_trace_visible": false,
+    "internal_model_or_secret_diagnostic_visible": false
+  },
+  "console_errors_or_warnings": [],
+  "screenshots": {
+    "final_fail_closed_1672": "screenshots/ai_1672x941.png",
+    "final_actions_1366": "screenshots/ai_actions_1366x768.png"
+  }
+}

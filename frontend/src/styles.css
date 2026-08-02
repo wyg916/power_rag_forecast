@@ -3074,6 +3074,75 @@ a {
   font-size: 12px;
 }
 
+.assistant-grounding-summary {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 11px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  background: var(--color-info-bg);
+}
+
+.assistant-grounding-summary > .anticon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--color-info);
+}
+
+.assistant-grounding-summary strong {
+  display: block;
+  color: var(--color-title);
+  font-size: 13px;
+}
+
+.assistant-grounding-summary p,
+.assistant-query-summary p {
+  margin: 3px 0 0;
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.assistant-grounding-summary.tone-success {
+  border-color: rgba(0, 184, 148, 0.24);
+  background: var(--color-primary-light);
+}
+
+.assistant-grounding-summary.tone-success > .anticon { color: var(--color-primary-dark); }
+.assistant-grounding-summary.tone-warning { background: var(--color-warning-bg); }
+.assistant-grounding-summary.tone-warning > .anticon { color: #d48806; }
+.assistant-grounding-summary.tone-danger { background: var(--color-danger-bg); }
+.assistant-grounding-summary.tone-danger > .anticon { color: var(--color-danger); }
+.assistant-grounding-summary.tone-default { background: var(--color-bg-soft); }
+.assistant-grounding-summary.tone-default > .anticon { color: var(--color-secondary); }
+
+.assistant-query-summary {
+  padding: 8px 2px 0;
+}
+
+.assistant-query-summary small {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-secondary);
+  font-size: 11px;
+}
+
+.assistant-evidence-card .ant-table-wrapper {
+  min-height: 0;
+  margin-top: 8px;
+  overflow: auto;
+}
+
+.assistant-view-evidence {
+  align-self: flex-start;
+  padding-inline: 0;
+}
+
 .assistant-evidence-note {
   margin: 8px 0 0;
   color: var(--color-secondary);
@@ -3108,6 +3177,118 @@ a {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+}
+
+.assistant-citation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.assistant-citation-item {
+  padding: 10px 11px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  background: var(--color-bg-soft);
+}
+
+.assistant-citation-item header {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.assistant-citation-item header strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-title);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant-citation-item .ant-tag {
+  margin-inline-end: 0;
+}
+
+.assistant-citation-index {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.assistant-citation-item > small {
+  display: block;
+  margin: 6px 0 0 29px;
+  overflow: hidden;
+  color: var(--color-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant-citation-quote {
+  display: -webkit-box;
+  margin: 7px 0 0 29px;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.assistant-citation-item footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 7px 0 0 29px;
+  color: var(--color-secondary);
+  font-size: 11px;
+}
+
+.assistant-citation-drawer {
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+.assistant-citation-drawer .assistant-citation-quote {
+  display: block;
+  overflow: visible;
+}
+
+.assistant-knowledge-card .assistant-side-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.assistant-knowledge-card .assistant-side-actions .ant-btn {
+  min-width: 0;
+  padding-inline: 6px;
+  font-size: 12px;
+}
+
+.assistant-knowledge-card .assistant-citation-list > .ant-empty {
+  margin-block: 4px;
+}
+
+.assistant-knowledge-card .assistant-citation-list > .ant-empty .ant-empty-image {
+  height: 36px;
+  margin-bottom: 4px;
+}
+
+.assistant-knowledge-card .assistant-citation-list > .ant-empty .ant-empty-description {
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .assistant-knowledge-list > div {
