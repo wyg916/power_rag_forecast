@@ -2,6 +2,7 @@
 
 | 任务 | 状态 | 开始时间 | 完成时间 | 分支/提交 | 证据目录 | 阻塞项 |
 |---|---|---|---|---|---|---|
+| BETA10D Day 8 正式知识库与 AI 助手证据链收口 | PASS（本地开发验收） | 2026-08-02 14:08 | 2026-08-02 15:53 | beta10d/day8-execution / 本行所在收口提交 | E:\智能运营分析项目_worktrees\beta10d_day8_execution\docs\codex\evidence\DAY8_20260802 | 正式语料 34 文档/39 Chunk，39/39 为 BGE 1024 维且 fallback 0；知识库 20/20、AI 助手 30/30、来源展示/拒答/未授权拦截均 100%，工具成功率 95.65%；后端干净矩阵 96 passed、前端契约 14 passed、TypeScript/Vite 3675 modules PASS。Seed 语料保留但从正式链路隔离，QA 评测只读未落库；Active/Candidate 未变、生产切换 0、迁移 0、RAG 支线集成 0。宽回归 7 failed/24 errors 均按历史夹具/独立工作树环境差异保留，详见 `docs/codex/day8/DAY8_FINAL_EXECUTION_REPORT.md`；本 PASS 不代表生产准入。 |
 | Phase 0 基线与规则安装 | 完成（技术验收 PASS） | 2026-07-15 17:40 | 2026-07-15 18:25 | p5-frontend-ai-experience / f8dc0bc9011b5c7cada833a7d4b4851a512eae7e | E:\智能运营分析项目_备份\phase3\20260715_174011867_BASELINE | 无；非阻塞警告：student_python_project/node_modules/ 不存在，未影响退出码、清单一致性或结论 |
 | T004 认证 fail-closed | PASS | 2026-07-15 18:34 | 2026-07-15 20:01 | p5-frontend-ai-experience / f8dc0bc9011b5c7cada833a7d4b4851a512eae7e | E:\智能运营分析项目_备份\phase3\20260715_195313279_T004_1_RESULT | 完整验收 39 passed；passlib 1.7.4 + bcrypt 4.0.1；无阻塞；回滚：20260715_194640816_T004_1_PRECHANGE |
 | T004.1 认证依赖兼容与 Docker fail-closed | PASS | 2026-07-15 19:46 | 2026-07-15 20:01 | p5-frontend-ai-experience / f8dc0bc9011b5c7cada833a7d4b4851a512eae7e | E:\智能运营分析项目_备份\phase3\20260715_195313279_T004_1_RESULT | bcrypt 5.0.0→4.0.1；passlib 保持 1.7.4；原8项失败全部通过；T001 未开始；回滚：20260715_194640816_T004_1_PRECHANGE |
