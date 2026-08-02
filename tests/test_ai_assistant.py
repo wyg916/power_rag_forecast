@@ -1,11 +1,48 @@
 from __future__ import annotations
 
+import json
+import os
+
+import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from backend.app.main import app
+from backend.app.repositories.base import postgres_engine
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _controlled_report_fact_for_isolated_suite():
+    if os.environ.get("BETA10D_TEST_ISOLATION_ACTIVE") != "1":
+        yield
+        return
+    engine = postgres_engine()
+    assert engine is not None
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO report_runs
+                  (report_id,run_id,title,status,report_type,file_path,metadata_json,
+                   content_json,generated_at,created_at,updated_at)
+                VALUES
+                  ('report_ai_core_fixture','run_ai_core_fixture','AI 核心意图受控日报',
+                   'approved','daily','',CAST(:metadata AS jsonb),CAST(:content AS jsonb),
+                   CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """
+            ),
+            {
+                "metadata": json.dumps({"data_origin": "controlled_test_fixture"}),
+                "content": json.dumps(
+                    {"conclusion": "受控日报已生成，核心结论可供意图链路验证。"},
+                    ensure_ascii=False,
+                ),
+            },
+        )
+    yield
 
 
 def _ask(question: str) -> dict:
@@ -56,7 +93,7 @@ def test_ai_assistant_core_intents():
     for question, intent in cases.items():
         payload = _ask(question)
         assert payload["intent"] == intent
-        assert payload["evidence"]
+        assert payload["evidence"], question
         assert payload["tool_calls"]
 
 
