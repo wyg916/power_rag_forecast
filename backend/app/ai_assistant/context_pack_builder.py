@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from backend.app.services.rag_content_security import wrap_untrusted_evidence
+
 from .schemas import IntentDecision, ToolResult
 
 
@@ -62,7 +64,8 @@ def build_context_pack(
                     "source": item.get("source"),
                     "domain": item.get("domain"),
                     "source_type": item.get("evidence_source_type"),
-                    "content": item.get("content"),
+                    "content": item.get("untrusted_evidence")
+                    or wrap_untrusted_evidence(str(item.get("content") or "")),
                     "keyword_score": item.get("keyword_score", 0.0),
                     "vector_score": item.get("vector_score", 0.0),
                     "rerank_score": item.get("rerank_score", 0.0),

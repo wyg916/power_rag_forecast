@@ -42,6 +42,9 @@ def _paragraphs(path: Path) -> list[str]:
 
 
 def search_knowledge(question: str, limit: int = 4) -> list[dict[str, Any]]:
+    from backend.app.services.rag_runtime_contract import enterprise_mode
+
+    strict_enterprise = enterprise_mode()
     try:
         from backend.app.services.rag_service import rag_search
 
@@ -58,7 +61,11 @@ def search_knowledge(question: str, limit: int = 4) -> list[dict[str, Any]]:
                 for item in rag.get("items", [])
             ]
     except Exception:
-        pass
+        if strict_enterprise:
+            return []
+
+    if strict_enterprise:
+        return []
 
     if not KNOWLEDGE_ROOT.exists():
         return []
