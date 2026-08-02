@@ -77,6 +77,7 @@ PAYLOAD_INDEXES: tuple[tuple[str, str], ...] = (
     ("chunk_id", "keyword"),
     ("parent_chunk_id", "keyword"),
     ("content_hash", "keyword"),
+    ("candidate_file_sha256", "keyword"),
 )
 
 
@@ -667,6 +668,27 @@ def _query_smoke(
     return checks
 
 
+def _validate_existing_collection_report(existing: Mapping[str, Any], expected: Mapping[str, Any]) -> None:
+    for key, value in expected.items():
+        if key == "collection_state":
+            continue
+        if key == "payload_indexes":
+            if set(existing.get(key, [])) != set(value):
+                raise CandidateCollectionError("candidate_collection_report_fact_mismatch:payload_indexes")
+            continue
+        if existing.get(key) != value:
+            raise CandidateCollectionError(f"candidate_collection_report_fact_mismatch:{key}")
+    stable_state = existing.get("collection_state") == "ready"
+    verified_legacy_state = (
+        existing.get("collection_disposition") in {"created", "existing"}
+        and existing.get("collection_mutated") is False
+        and existing.get("verification_protocol")
+        == "deterministic-upsert+exact-count+indexed-fact-count+identity-samples/v1"
+    )
+    if not stable_state and not verified_legacy_state:
+        raise CandidateCollectionError("candidate_collection_report_state_invalid")
+
+
 def upload_collection(
     artifact: Mapping[str, Any],
     ledger_rows: Sequence[Mapping[str, Any]],
@@ -797,8 +819,16 @@ def upload_collection(
         "admin_key_emitted": False,
         "network_calls_external": 0,
     }
+    report_path = release_root / "candidate_collection_report.json"
+    if report_path.exists():
+        try:
+            existing_report = json.loads(report_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise CandidateCollectionError("candidate_collection_report_unreadable") from exc
+        _validate_existing_collection_report(existing_report, report)
+        return existing_report
     write_immutable(
-        release_root / "candidate_collection_report.json",
+        report_path,
         (json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8"),
     )
     return report

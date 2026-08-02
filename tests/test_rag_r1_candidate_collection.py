@@ -9,6 +9,7 @@ from scripts.rag_r1_candidate_collection import (
     _point_id,
     _parent_contents,
     _retrieve_payloads,
+    _validate_existing_collection_report,
     build_bm25_profile,
     build_payloads,
     collection_create_payload,
@@ -197,3 +198,29 @@ def test_existing_payload_indexes_are_validated_without_recreating_them():
         assert str(exc) == "qdrant_payload_index_mismatch:tenant_id"
     else:
         raise AssertionError("mismatched existing payload index must fail closed")
+
+
+def test_existing_immutable_report_accepts_verified_legacy_state_only_when_facts_match():
+    expected = {
+        "status": "PASS",
+        "point_count": 8339,
+        "payload_indexes": [name for name, _ in PAYLOAD_INDEXES],
+        "collection_state": "ready",
+    }
+    existing = {
+        "status": "PASS",
+        "point_count": 8339,
+        "payload_indexes": list(reversed(expected["payload_indexes"])),
+        "collection_disposition": "existing",
+        "collection_mutated": False,
+        "verification_protocol": "deterministic-upsert+exact-count+indexed-fact-count+identity-samples/v1",
+    }
+
+    _validate_existing_collection_report(existing, expected)
+    existing["point_count"] = 8338
+    try:
+        _validate_existing_collection_report(existing, expected)
+    except CandidateCollectionError as exc:
+        assert str(exc) == "candidate_collection_report_fact_mismatch:point_count"
+    else:
+        raise AssertionError("immutable report fact mismatch must fail closed")
