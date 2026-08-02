@@ -29,22 +29,19 @@ def test_overlay_is_inert_pinned_local_and_e_drive_persistent():
     compose = yaml.safe_load(OVERLAY.read_text(encoding="utf-8"))
     services = compose["services"]
     qdrant = services["qdrant"]
-    assert qdrant["profiles"] == ["rag-r1"]
+    assert qdrant["profiles"] == ["rag-r1-qdrant"]
     assert qdrant["image"].startswith("qdrant/qdrant:v1.18.2@")
     assert qdrant["ports"] == ["127.0.0.1:${QDRANT_PORT:-6333}:6333"]
     assert qdrant["environment"]["QDRANT__SERVICE__ENABLE_TLS"] == "true"
     assert qdrant["environment"]["QDRANT__STORAGE__STRICT_MODE_CONFIG__ENABLED"] == "true"
+    assert qdrant["environment"]["QDRANT__TELEMETRY_DISABLED"] == "true"
     assert all("RAG_R1_QDRANT_ROOT" in volume for volume in qdrant["volumes"])
     assert all("6334" not in port for port in qdrant["ports"])
 
 
-def test_reader_roles_never_receive_admin_key_and_no_unimplemented_publisher_is_exposed():
+def test_overlay_contains_no_application_or_unimplemented_publisher_services():
     services = yaml.safe_load(OVERLAY.read_text(encoding="utf-8"))["services"]
-    for name in ("backend", "celery_worker"):
-        service = services[name]
-        assert service["environment"]["RAG_QDRANT_ACCESS_MODE"] == "read_only"
-        assert "QDRANT_ADMIN_API_KEY" not in str(service)
-    assert "rag_publisher" not in services
+    assert set(services) == {"qdrant"}
 
 
 def test_example_is_non_runnable_and_default_rag_activation_is_off():

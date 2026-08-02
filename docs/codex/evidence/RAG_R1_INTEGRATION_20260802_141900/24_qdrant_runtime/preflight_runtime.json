@@ -1,0 +1,20 @@
+{
+  "available": true,
+  "issues": [],
+  "image": "qdrant/qdrant:v1.18.2",
+  "digest_configured": true,
+  "keys_configured": true,
+  "keys_distinct": true,
+  "bind": "127.0.0.1:6333",
+  "runtime_root": "E:\\智能运营分析项目_运行资产\\rag-r1\\qdrant",
+  "runtime_root_drive": "E:",
+  "assets": {
+    "storage": true,
+    "snapshots": true,
+    "ca_cert": true,
+    "server_cert": true,
+    "server_key": true
+  },
+  "container_runtime": "docker",
+  "secret_values_emitted": false
+}
