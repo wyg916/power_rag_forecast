@@ -39,11 +39,36 @@ def test_knowledge_page_uses_existing_real_api_boundaries() -> None:
     assert "api.knowledgeUpload(file)" in content
     assert "api.knowledgeBatchValidate" in content
     assert "api.knowledgeExport()" in content
-    assert "postgresql_kb_documents" in content
+    assert "api.knowledgeReleaseAction" in content
+    assert "knowledge:publish" in content
+    assert "const canWriteKnowledge = hasPermission('knowledge:write')" in content
+    assert "const canPublishKnowledge = hasPermission('knowledge:publish')" in content
+    assert "!authRequired || hasPermission('knowledge:publish')" not in content
+    assert "title={!canWriteKnowledge ? '需要 knowledge:write 权限' : undefined}" in content
+    assert "releaseLedgerCount" in content
+    assert "<dt>隔离</dt>" in content
+    assert "<dt>重复</dt>" in content
     assert "CloudUploadOutlined" in content
     assert "DownloadOutlined" in content
     assert "Button disabled" not in content
     assert "knowledgeMock" not in content
+
+
+def test_knowledge_page_hides_technical_provenance_and_model_paths() -> None:
+    content = read_text(KNOWLEDGE_PAGE)
+    service = read_text(Path("frontend/src/services/knowledgeApi.ts"))
+
+    for forbidden in (
+        "postgresql_kb_documents",
+        "embedding_model_path",
+        "rerank_model_path",
+        "embedding_provider",
+        "rerank_provider",
+    ):
+        assert forbidden not in content
+        assert forbidden not in service
+    assert "业务知识库" in content
+    assert "知识版本" in content
 
 
 def test_knowledge_page_does_not_render_frontend_mock_or_placeholder_labels() -> None:

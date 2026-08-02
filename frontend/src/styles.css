@@ -3467,7 +3467,7 @@ a {
   min-height: 0;
   flex-direction: column;
   gap: 12px;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .knowledge-rag-section {
@@ -3524,6 +3524,18 @@ a {
   margin-top: 14px;
   padding: 14px 16px;
   border-radius: 10px;
+}
+
+.knowledge-release-section {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.knowledge-release-actions {
+  margin-top: 10px;
+}
+
+.knowledge-release-actions .ant-btn {
+  border-radius: 7px;
 }
 
 .knowledge-search-form {

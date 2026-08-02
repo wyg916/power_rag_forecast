@@ -6,6 +6,7 @@ export type KnowledgeData = {
   ragHealth: Record<string, any>;
   documents: any[];
   totalDocuments: number;
+  releases: KnowledgeRelease[];
   metrics: Array<{
     key: string;
     title: string;
@@ -18,11 +19,27 @@ export type KnowledgeData = {
   error?: string;
 };
 
+export type KnowledgeRelease = {
+  release_id: string;
+  status: 'candidate' | 'validated' | 'published' | 'superseded' | 'rolled_back' | 'failed';
+  is_current: boolean;
+  documents: number;
+  chunks: number;
+  isolated: number;
+  duplicates: number;
+  gates: { passed: number; total: number; ready: boolean };
+  created_at?: string | null;
+  updated_at?: string | null;
+  published_at?: string | null;
+  rolled_back_at?: string | null;
+};
+
 export async function getKnowledgeBaseData(): Promise<KnowledgeData> {
-  const [statsPayload, documentsPayload, healthPayload] = await Promise.all([
+  const [statsPayload, documentsPayload, healthPayload, releasesPayload] = await Promise.all([
     api.knowledgeStats(),
     api.knowledgeDocuments({ page: 1, page_size: 50 }),
-    api.knowledgeHealth()
+    api.knowledgeHealth(),
+    api.knowledgeReleases()
   ]);
   const stats = statsPayload?.data || statsPayload || {};
   const documents = documentsPayload?.items || documentsPayload?.data?.items || [];
@@ -33,11 +50,12 @@ export async function getKnowledgeBaseData(): Promise<KnowledgeData> {
   const qaRate = stats.qa_pass_rate ?? 0;
 
   return {
-    dataSource: 'postgresql_kb_documents',
+    dataSource: '业务知识库',
     stats,
     ragHealth: health,
     documents,
     totalDocuments: documentsPayload?.total ?? documentCount,
+    releases: releasesPayload?.items || [],
     empty: !Number(documentCount) && !Number(chunkCount),
     metrics: [
       { key: 'documents', title: '文档总数', value: documentCount, unit: '份', trend: '数据库文档', tone: 'info' },

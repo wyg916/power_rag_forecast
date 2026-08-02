@@ -23,7 +23,7 @@ import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { PageHeader } from '../../components/common/PageHeader';
 import { useAuth } from '../../context/AuthContext';
-import { getKnowledgeBaseData, searchKnowledge, type KnowledgeData } from '../../services/knowledgeApi';
+import { getKnowledgeBaseData, searchKnowledge, type KnowledgeData, type KnowledgeRelease } from '../../services/knowledgeApi';
 import type { PageProps } from '../../types/ui';
 
 type KnowledgeMetric = {
@@ -44,14 +44,13 @@ type AnswerBlock = {
   content: string;
 };
 
-const dataSourceOptions = [{ value: 'postgresql_kb_documents', label: 'postgresql_kb_documents' }];
-
 const defaultKnowledgeData: KnowledgeData = {
-  dataSource: 'postgresql_kb_documents',
+  dataSource: '业务知识库',
   stats: {},
   ragHealth: {},
   documents: [],
   totalDocuments: 0,
+  releases: [],
   empty: false,
   metrics: [
     { key: 'documents', title: '文档总数', value: 0, unit: '份', trend: '数据库文档', tone: 'info' },
@@ -80,13 +79,6 @@ function formatDate(value?: string) {
   return String(value).replace('T', ' ').slice(0, 19);
 }
 
-function shortPath(value?: string) {
-  const raw = String(value || '').trim();
-  if (!raw) return '-';
-  if (raw.length <= 42) return raw;
-  return `${raw.slice(0, 18)}...${raw.slice(-18)}`;
-}
-
 function statusLabel(status?: string, fallback?: boolean) {
   const value = String(status || '').toLowerCase();
   if (fallback || value === 'fallback') return { text: '降级', color: 'warning' };
@@ -96,6 +88,15 @@ function statusLabel(status?: string, fallback?: boolean) {
   if (value === 'not_configured') return { text: '需配置', color: 'default' };
   return { text: '运行中', color: 'processing' };
 }
+
+const releaseStatusMeta: Record<KnowledgeRelease['status'], { text: string; color: string }> = {
+  candidate: { text: '候选版本', color: 'gold' },
+  validated: { text: '已校验', color: 'blue' },
+  published: { text: '已发布', color: 'green' },
+  superseded: { text: '历史版本', color: 'default' },
+  rolled_back: { text: '已回滚', color: 'orange' },
+  failed: { text: '发布失败', color: 'red' }
+};
 
 function documentStatusTag(value: string) {
   if (value === '索引中' || value === 'partial') return <Tag color="processing">索引中</Tag>;
@@ -137,8 +138,9 @@ function blockIcon(key: string) {
 export function KnowledgeBasePage(_: PageProps) {
   const [data, setData] = useState<KnowledgeData>(defaultKnowledgeData);
   const [loading, setLoading] = useState(true);
-  const { authRequired, hasPermission } = useAuth();
-  const canWriteKnowledge = !authRequired || hasPermission('knowledge:write');
+  const { hasPermission } = useAuth();
+  const canWriteKnowledge = hasPermission('knowledge:write');
+  const canPublishKnowledge = hasPermission('knowledge:publish');
   const [error, setError] = useState('');
   const [query, setQuery] = useState('分时电价、现货交易风险和购电建议是什么？');
   const [topK, setTopK] = useState(5);
@@ -147,6 +149,7 @@ export function KnowledgeBasePage(_: PageProps) {
   const [answerBlocks, setAnswerBlocks] = useState<AnswerBlock[]>(normalizeAnswerBlocks(null));
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
+  const [releaseActionLoading, setReleaseActionLoading] = useState('');
 
   async function loadData() {
     setLoading(true);
@@ -253,9 +256,25 @@ export function KnowledgeBasePage(_: PageProps) {
     }
   }
 
+  async function runReleaseAction(release: KnowledgeRelease, action: 'validate' | 'publish' | 'rollback') {
+    const actionKey = `${release.release_id}:${action}`;
+    setReleaseActionLoading(actionKey);
+    try {
+      await api.knowledgeReleaseAction(release.release_id, action);
+      const labels = { validate: '校验', publish: '发布', rollback: '回滚' };
+      message.success(`${release.release_id} ${labels[action]}完成`);
+      await loadData();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '版本操作失败');
+    } finally {
+      setReleaseActionLoading('');
+    }
+  }
+
   const ragHealth = data.ragHealth || {};
   const ragStatus = statusLabel(ragHealth.status, Boolean(ragHealth.fallback_enabled));
-  const fallbackReasons = Array.isArray(ragHealth.fallback_reasons) ? ragHealth.fallback_reasons : [];
+  const activeRelease = (data.releases || []).find((item) => item.is_current) || data.releases?.[0];
+  const retrievalAvailable = Boolean(activeRelease?.is_current && activeRelease.status === 'published' && ragHealth.available !== false);
   const documentRows = useMemo(
     () =>
       (data.documents || []).map((row: any, index: number) => ({
@@ -274,6 +293,16 @@ export function KnowledgeBasePage(_: PageProps) {
   const embeddedCount = data.stats.embedded_chunks ?? ragHealth.embedded_chunk_count ?? 0;
   const pendingCount = data.stats.pending_documents ?? 0;
   const qaRate = data.stats.qa_pass_rate ?? 0;
+  const releaseLedgerCount = activeRelease
+    ? activeRelease.documents + activeRelease.isolated + activeRelease.duplicates
+    : docCount;
+  const releaseChunkCount = activeRelease?.chunks ?? chunkCount;
+  const releaseCompletedCount = activeRelease ? releaseLedgerCount : Math.max(0, Number(docCount) - Number(pendingCount));
+  const releasePendingCount = activeRelease ? 0 : pendingCount;
+  const releaseUpdatedAt = activeRelease?.updated_at || ragHealth.last_embedding_refresh_at;
+  const releaseIndexStatus = activeRelease
+    ? releaseStatusMeta[activeRelease.status] || ragStatus
+    : (pendingCount > 0 ? { text: '处理中', color: 'processing' } : { text: '已完成', color: 'success' });
   const metricIcons: Record<string, JSX.Element> = {
     documents: <FileTextOutlined />,
     indexed: <DatabaseOutlined />,
@@ -282,16 +311,25 @@ export function KnowledgeBasePage(_: PageProps) {
   };
   const metrics: KnowledgeMetric[] = data.metrics.map((item) => ({
     ...item,
-    value: item.key === 'qa' ? formatPercent(item.value) : formatNumber(item.value),
+    value: item.key === 'qa'
+      ? formatPercent(item.value)
+      : formatNumber(item.key === 'documents'
+        ? releaseLedgerCount
+        : item.key === 'indexed'
+          ? releaseChunkCount
+          : item.key === 'pending'
+            ? releasePendingCount
+            : item.value),
+    unit: item.key === 'qa' ? undefined : item.unit,
     icon: metricIcons[item.key] || <DatabaseOutlined />
   }));
 
   const flowNodes = [
-    { title: '文档上传', value: `${formatNumber(docCount)} 份文档`, icon: <FileTextOutlined /> },
-    { title: '清洗切块', value: '已完成', icon: <PartitionOutlined /> },
-    { title: '向量化', value: `${formatNumber(embeddedCount)} chunks`, icon: <DeploymentUnitOutlined /> },
-    { title: '建索引', value: pendingCount > 0 ? '运行中' : '已完成', icon: <DatabaseOutlined /> },
-    { title: '检索验证', value: `QA ${formatPercent(qaRate)}`, icon: <SafetyCertificateOutlined /> }
+    { title: '文档台账', value: `${formatNumber(releaseLedgerCount)} 份资料`, icon: <FileTextOutlined /> },
+    { title: '治理终态', value: `${formatNumber(releaseCompletedCount)}/${formatNumber(releaseLedgerCount)} 已确认`, icon: <PartitionOutlined /> },
+    { title: '向量化', value: `${formatNumber(activeRelease ? releaseChunkCount : embeddedCount)} chunks`, icon: <DeploymentUnitOutlined /> },
+    { title: '建索引', value: releaseIndexStatus.text, icon: <DatabaseOutlined /> },
+    { title: '发布门禁', value: activeRelease ? `${activeRelease.gates.passed}/${activeRelease.gates.total}` : `QA ${formatPercent(qaRate)}`, icon: <SafetyCertificateOutlined /> }
   ];
 
   return (
@@ -300,8 +338,8 @@ export function KnowledgeBasePage(_: PageProps) {
         title="知识库"
         subtitle="管理政策文档、RAG 检索、索引状态和 QA 测试"
         filters={<div className="knowledge-source-control">
-          <span>数据源</span>
-          <Select value="postgresql_kb_documents" options={dataSourceOptions} size="small" />
+          <span>知识范围</span>
+          <Tag color="blue">业务知识库</Tag>
         </div>}
         actions={[
           {
@@ -399,7 +437,13 @@ export function KnowledgeBasePage(_: PageProps) {
                 render: (_, record: any) => (
                   <Space size={4}>
                     <Button type="link" size="small" onClick={() => { setDetailData(record.raw || record); setDetailOpen(true); }}>详情</Button>
-                    <Button type="link" size="small" onClick={rebuildIndex}>重新索引</Button>
+                    <Button
+                      type="link"
+                      size="small"
+                      disabled={!canWriteKnowledge}
+                      title={!canWriteKnowledge ? '需要 knowledge:write 权限' : undefined}
+                      onClick={rebuildIndex}
+                    >重新索引</Button>
                   </Space>
                 )
               }
@@ -412,27 +456,79 @@ export function KnowledgeBasePage(_: PageProps) {
             <div className="knowledge-rag-section">
               <div className="knowledge-rag-title">
                 <strong>索引与向量化状态摘要</strong>
-                <Tag color={ragStatus.color as any}>{ragStatus.text}</Tag>
+                <Tag color={releaseIndexStatus.color as any}>{releaseIndexStatus.text}</Tag>
               </div>
               <dl>
-                <div><dt>索引总量</dt><dd>{formatNumber(chunkCount)} chunks</dd></div>
-                <div><dt>已向量化</dt><dd>{formatNumber(embeddedCount)} chunks</dd></div>
-                <div><dt>最近更新时间</dt><dd>{formatDate(ragHealth.last_embedding_refresh_at)}</dd></div>
-                <div><dt>索引状态</dt><dd><Tag color={pendingCount > 0 ? 'processing' : 'success'}>{pendingCount > 0 ? '运行中' : '已完成'}</Tag></dd></div>
+                <div><dt>索引总量</dt><dd>{formatNumber(releaseChunkCount)} chunks</dd></div>
+                <div><dt>已向量化</dt><dd>{formatNumber(activeRelease ? releaseChunkCount : embeddedCount)} chunks</dd></div>
+                <div><dt>最近更新时间</dt><dd>{formatDate(releaseUpdatedAt)}</dd></div>
+                <div><dt>索引状态</dt><dd><Tag color={releaseIndexStatus.color}>{releaseIndexStatus.text}</Tag></dd></div>
               </dl>
             </div>
             <div className="knowledge-rag-section">
               <div className="knowledge-rag-title">
                 <strong>RAG 运行状态</strong>
-                <Tag color={ragStatus.color as any}>{ragStatus.text}</Tag>
+                <Tag color={retrievalAvailable ? 'success' : 'default'}>{retrievalAvailable ? '可用' : '未发布'}</Tag>
               </div>
-              <p>Provider：{ragHealth.embedding_provider || 'unknown'} / {ragHealth.rerank_provider || 'unknown'}</p>
-              <p>Embedding 维度：{ragHealth.embedding_dim || 0}；Chunks：{formatNumber(chunkCount)}；已向量化：{formatNumber(embeddedCount)}</p>
-              <p title={ragHealth.embedding_model_path}>Embedding 路径：{shortPath(ragHealth.embedding_model_path)}（{ragHealth.embedding_model_path_exists ? '存在' : '未找到'}）</p>
-              <p title={ragHealth.rerank_model_path}>Reranker 路径：{shortPath(ragHealth.rerank_model_path)}（{ragHealth.rerank_model_path_exists ? '存在' : '未找到'}）</p>
-              {fallbackReasons.length > 0 && (
-                <Alert type="warning" showIcon message="RAG 当前处于降级模式" description="部分本地模型或向量配置未满足完整运行条件，检索功能仍可使用。" />
+              <p>检索服务：{retrievalAvailable ? '可用' : '暂不可用'}</p>
+              <p>知识片段：{formatNumber(releaseChunkCount)}；已完成处理：{formatNumber(activeRelease ? releaseChunkCount : embeddedCount)}</p>
+              <p>最近更新时间：{formatDate(releaseUpdatedAt)}</p>
+              {!retrievalAvailable && (
+                <Alert type="warning" showIcon message="检索服务暂不可用" description="当前不会返回未经发布的候选知识，请稍后重试或联系管理员。" />
               )}
+            </div>
+            <div className="knowledge-rag-section knowledge-release-section">
+              <div className="knowledge-rag-title">
+                <strong>知识版本</strong>
+                {activeRelease ? (
+                  <Space size={4}>
+                    <Tag color={releaseStatusMeta[activeRelease.status]?.color}>{releaseStatusMeta[activeRelease.status]?.text}</Tag>
+                    {activeRelease.is_current && <Tag color="green">当前版本</Tag>}
+                  </Space>
+                ) : <Tag>暂无版本</Tag>}
+              </div>
+              {activeRelease ? (
+                <>
+                  <dl>
+                    <div><dt>版本</dt><dd>{activeRelease.release_id}</dd></div>
+                    <div><dt>门禁</dt><dd>{activeRelease.gates.passed}/{activeRelease.gates.total}</dd></div>
+                    <div><dt>台账</dt><dd>{formatNumber(releaseLedgerCount)}/{formatNumber(releaseLedgerCount)}</dd></div>
+                    <div><dt>可发布</dt><dd>{formatNumber(activeRelease.documents)}</dd></div>
+                    <div><dt>隔离</dt><dd>{formatNumber(activeRelease.isolated)}</dd></div>
+                    <div><dt>重复</dt><dd>{formatNumber(activeRelease.duplicates)}</dd></div>
+                    <div><dt>知识片段</dt><dd>{formatNumber(activeRelease.chunks)}</dd></div>
+                  </dl>
+                  <Space className="knowledge-release-actions" wrap>
+                    {(activeRelease.status === 'candidate' || activeRelease.status === 'rolled_back') && (
+                      <Button
+                        size="small"
+                        disabled={!canPublishKnowledge || !activeRelease.gates.ready}
+                        loading={releaseActionLoading === `${activeRelease.release_id}:validate`}
+                        title={!canPublishKnowledge ? '需要 knowledge:publish 权限' : !activeRelease.gates.ready ? '全部发布门禁通过后才可校验' : undefined}
+                        onClick={() => runReleaseAction(activeRelease, 'validate')}
+                      >校验版本</Button>
+                    )}
+                    {activeRelease.status === 'validated' && (
+                      <Button
+                        type="primary"
+                        size="small"
+                        disabled={!canPublishKnowledge}
+                        loading={releaseActionLoading === `${activeRelease.release_id}:publish`}
+                        onClick={() => runReleaseAction(activeRelease, 'publish')}
+                      >发布版本</Button>
+                    )}
+                    {activeRelease.status === 'published' && activeRelease.is_current && (
+                      <Button
+                        danger
+                        size="small"
+                        disabled={!canPublishKnowledge}
+                        loading={releaseActionLoading === `${activeRelease.release_id}:rollback`}
+                        onClick={() => runReleaseAction(activeRelease, 'rollback')}
+                      >回滚版本</Button>
+                    )}
+                  </Space>
+                </>
+              ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无可用知识版本" />}
             </div>
           </div>
         </SectionCard>
