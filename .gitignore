@@ -82,6 +82,7 @@ model_artifacts/*/*
 *.sqlite3
 
 # Local generated runtime outputs
+/.runtime/
 /output/
 自动化输出/
 全流程预测结果数据存放/

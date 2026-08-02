@@ -147,6 +147,27 @@ def test_fixture_candidate_manifest_is_frozen_valid_deduplicated_and_byte_stable
     assert corpus_hash == hashlib.sha256(json.dumps(frozen, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def test_duplicate_may_reference_a_quarantined_canonical_without_becoming_a_version() -> None:
+    ledger = _ledger()
+    ledger[0] = replace(
+        ledger[0],
+        admission_status=AdmissionStatus.QUARANTINED,
+        isolation_reason="controlled_conversion_required",
+    )
+    parsed = _parsed_sources(ledger)
+    artifact = _build(
+        ledger,
+        {"src_001": parsed["src_001"]},
+        {"src_001": _metadata("src_001")},
+    )
+
+    assert artifact.value["counts"]["documents"] == 1
+    assert artifact.value["duplicates"] == [
+        {"source_id": "src_002", "canonical_source_id": "src_000", "source_sha256": _sha(0)}
+    ]
+    assert any(item["source_id"] == "src_000" for item in artifact.value["isolations"])
+
+
 def test_actual_i4_fixture_mapping_can_be_injected_into_candidate(tmp_path: Path) -> None:
     image_path = tmp_path / "scan.jpg"
     image_path.write_bytes(b"fixture-scan")

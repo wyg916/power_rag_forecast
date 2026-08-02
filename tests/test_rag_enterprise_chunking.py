@@ -6,7 +6,7 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from knowledge_pipeline.enterprise.chunk_contracts import CHUNK_BUILD_SCHEMA_VERSION
-from knowledge_pipeline.enterprise.chunking import ChunkBuildError, build_candidate
+from knowledge_pipeline.enterprise.chunking import ChunkBuildError, _split_ranges, build_candidate
 from knowledge_pipeline.enterprise.frozen_export import export_frozen_records
 from knowledge_pipeline.enterprise.parsed_contracts import BoundingBox, ParsedAsset, ParsedBlock, ParsedDocument, ParsedTable, ParseStatus
 
@@ -69,6 +69,23 @@ def test_token_counter_is_required_and_fail_closed() -> None:
         build_candidate(document, token_counter=lambda _: 1 / 0, max_tokens=24)
     with pytest.raises(ChunkBuildError, match="token_counter_invalid"):
         build_candidate(document, token_counter=lambda _: 0, max_tokens=24)
+
+
+def test_long_text_split_is_exact_without_quadratic_full_suffix_scans() -> None:
+    content = ("电力市场规则。" * 2_500) + "结束"
+    scanned_characters = 0
+
+    def counter(value: str) -> int:
+        nonlocal scanned_characters
+        scanned_characters += len(value)
+        return len(value)
+
+    ranges = _split_ranges(content, "", 64, counter)
+
+    assert ranges[0][0] == 0 and ranges[-1][1] == len(content)
+    assert all(left[1] == right[0] for left, right in zip(ranges, ranges[1:]))
+    assert all(len(content[start:end]) <= 64 for start, end in ranges)
+    assert scanned_characters < len(content) * 25
 
 
 def test_unfinished_asset_fails_and_layout_table_wins_ambiguous_page_link() -> None:
