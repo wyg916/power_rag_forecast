@@ -75,6 +75,7 @@ PAYLOAD_INDEXES: tuple[tuple[str, str], ...] = (
     ("chunk_id", "keyword"),
     ("parent_chunk_id", "keyword"),
     ("content_hash", "keyword"),
+    ("candidate_file_sha256", "keyword"),
 )
 
 
@@ -138,11 +139,21 @@ def build_bm25_profile(chunks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     return profile_base | {"profile_sha256": _sha256_bytes(_canonical_bytes(profile_base))}
 
 
-def sparse_vector(text: str, profile: Mapping[str, Any]) -> dict[str, list[Any]]:
+def sparse_vector(
+    text: str,
+    profile: Mapping[str, Any],
+    *,
+    vocabulary_lookup: Mapping[str, int] | None = None,
+    idf_lookup: Mapping[int, float] | None = None,
+) -> dict[str, list[Any]]:
     vocabulary = profile["vocabulary"]
     idf = profile["idf"]
-    lookup = {token: index + 1 for index, token in enumerate(vocabulary)}
-    idf_by_index = {index + 1: float(value) for index, value in enumerate(idf)}
+    lookup = vocabulary_lookup or {
+        token: index + 1 for index, token in enumerate(vocabulary)
+    }
+    idf_by_index = idf_lookup or {
+        index + 1: float(value) for index, value in enumerate(idf)
+    }
     counts = Counter(token for token in tokenize_zh(text) if token in lookup)
     length = sum(counts.values())
     if not counts or length < 1:
@@ -546,7 +557,11 @@ def _create_or_validate_collection(client: QdrantHttp, expected_count: int) -> s
 
 
 def _create_payload_indexes(client: QdrantHttp) -> None:
+    result = _collection_result(client) or {}
+    existing = set((result.get("payload_schema") or {}).keys())
     for field_name, field_schema in PAYLOAD_INDEXES:
+        if field_name in existing:
+            continue
         status, _ = client.request(
             f"/collections/{quote(COLLECTION)}/index?wait=true",
             method="PUT",
@@ -565,7 +580,10 @@ def _scroll_payloads(client: QdrantHttp) -> dict[str, dict[str, Any]]:
     offset: Any = None
     while True:
         request: dict[str, Any] = {
-            "limit": 256,
+            # On-disk payload retrieval can exceed Qdrant's internal timeout at
+            # 256 points while segment optimization is active. A bounded page
+            # keeps verification reliable without weakening full-set checks.
+            "limit": 32,
             "with_payload": [
                 "chunk_id", "tenant_id", "release_id", "status", "candidate_file_sha256",
                 "embedding_provider", "embedding_model", "embedding_version", "embedding_dimension",
@@ -613,6 +631,69 @@ def _validate_payload_facts(existing: Mapping[str, Mapping[str, Any]], expected_
             raise CandidateCollectionError("qdrant_payload_fact_mismatch")
 
 
+def _verify_candidate_facts(
+    client: QdrantHttp,
+    expected: Mapping[str, Mapping[str, Any]],
+) -> None:
+    must = [
+        {"key": "tenant_id", "match": {"value": TENANT_ID}},
+        {"key": "release_id", "match": {"value": RELEASE_ID}},
+        {"key": "status", "match": {"value": "published"}},
+        {"key": "candidate_file_sha256", "match": {"value": EXPECTED_CANDIDATE_FILE_SHA256}},
+        {"key": "embedding_provider", "match": {"value": "sentence_transformers"}},
+        {"key": "embedding_model", "match": {"value": "BAAI/bge-large-zh-v1.5"}},
+        {"key": "embedding_version", "match": {"value": EMBEDDING_VERSION}},
+        {"key": "embedding_dimension", "match": {"value": 1024}},
+        {"key": "sparse_profile", "match": {"value": "bm25-zh-v1"}},
+    ]
+    status, body = client.request(
+        f"/collections/{quote(COLLECTION)}/points/count",
+        method="POST",
+        payload={"filter": {"must": must}, "exact": True},
+    )
+    if status != 200 or int(body.get("result", {}).get("count") or 0) != len(expected):
+        raise CandidateCollectionError("qdrant_payload_fact_count_mismatch")
+
+    status, body = client.request(
+        f"/collections/{quote(COLLECTION)}/facet",
+        method="POST",
+        payload={"key": "chunk_id", "limit": len(expected), "exact": True},
+    )
+    hits = body.get("result", {}).get("hits", []) if status == 200 else []
+    chunk_counts = {
+        str(hit.get("value") or ""): int(hit.get("count") or 0)
+        for hit in hits
+    }
+    if set(chunk_counts) != set(expected) or set(chunk_counts.values()) != {1}:
+        raise CandidateCollectionError("qdrant_chunk_id_facet_mismatch")
+
+    ordered_ids = sorted(expected)
+    sample_ids = [ordered_ids[0], ordered_ids[len(ordered_ids) // 2], ordered_ids[-1]]
+    status, body = client.request(
+        f"/collections/{quote(COLLECTION)}/points",
+        method="POST",
+        payload={
+            "ids": [_point_id(chunk_id) for chunk_id in sample_ids],
+            "with_payload": True,
+            "with_vector": False,
+        },
+    )
+    points = body.get("result", []) if status == 200 else []
+    by_chunk = {
+        str((point.get("payload") or {}).get("chunk_id") or ""): point
+        for point in points
+    }
+    if set(by_chunk) != set(sample_ids):
+        raise CandidateCollectionError("qdrant_payload_sample_missing")
+    for chunk_id in sample_ids:
+        point = by_chunk[chunk_id]
+        if (
+            str(point.get("id")) != _point_id(chunk_id)
+            or (point.get("payload") or {}) != expected[chunk_id]
+        ):
+            raise CandidateCollectionError("qdrant_payload_sample_mismatch")
+
+
 def _query_smoke(
     client: QdrantHttp,
     first_chunk: Mapping[str, Any],
@@ -652,6 +733,8 @@ def upload_collection(
     ledger_rows: Sequence[Mapping[str, Any]],
     release_root: Path,
     client: QdrantHttp,
+    *,
+    upsert: bool = True,
 ) -> dict[str, Any]:
     chunks = _ordered_chunks(artifact)
     dense = _load_dense_vectors(release_root, chunks)
@@ -668,11 +751,15 @@ def upload_collection(
     if alias_before == COLLECTION:
         raise CandidateCollectionError("candidate_collection_already_aliased")
     disposition = _create_or_validate_collection(client, len(chunks))
-    existing = _scroll_payloads(client)
-    _validate_payload_facts(existing, set(payloads))
     _create_payload_indexes(client)
 
     input_hash = hashlib.sha256()
+    vocabulary_lookup = {
+        token: index + 1 for index, token in enumerate(bm25["vocabulary"])
+    }
+    idf_lookup = {
+        index + 1: float(value) for index, value in enumerate(bm25["idf"])
+    }
     first_sparse: tuple[Mapping[str, Any], dict[str, Any]] | None = None
     sparse_point_count = 0
     for start in range(0, len(chunks), UPSERT_BATCH_SIZE):
@@ -681,7 +768,12 @@ def upload_collection(
         for chunk in batch:
             chunk_id = str(chunk["chunk_id"])
             vector = dense[chunk_id]
-            sparse = sparse_vector(str(chunk["content"]), bm25)
+            sparse = sparse_vector(
+                str(chunk["content"]),
+                bm25,
+                vocabulary_lookup=vocabulary_lookup,
+                idf_lookup=idf_lookup,
+            )
             if sparse["indices"]:
                 sparse_point_count += 1
                 if first_sparse is None:
@@ -696,14 +788,15 @@ def upload_collection(
             if sparse["indices"]:
                 named_vectors["bm25"] = sparse
             points.append({"id": _point_id(chunk_id), "vector": named_vectors, "payload": payload})
-        status, _ = client.request(
-            f"/collections/{quote(COLLECTION)}/points?wait=true",
-            method="PUT",
-            payload={"points": points},
-        )
-        if status != 200:
-            raise CandidateCollectionError(f"qdrant_upsert_failed:{start}:{status}")
-        print(json.dumps({"stage": "qdrant_upsert", "processed": start + len(batch), "total": len(chunks)}), flush=True)
+        if upsert:
+            status, _ = client.request(
+                f"/collections/{quote(COLLECTION)}/points?wait=true",
+                method="PUT",
+                payload={"points": points},
+            )
+            if status != 200:
+                raise CandidateCollectionError(f"qdrant_upsert_failed:{start}:{status}")
+            print(json.dumps({"stage": "qdrant_upsert", "processed": start + len(batch), "total": len(chunks)}), flush=True)
 
     result = _collection_result(client)
     if result is None:
@@ -714,10 +807,7 @@ def upload_collection(
     payload_schema = result.get("payload_schema", {})
     if set(name for name, _ in PAYLOAD_INDEXES) - set(payload_schema):
         raise CandidateCollectionError("qdrant_payload_indexes_incomplete")
-    final_payloads = _scroll_payloads(client)
-    if set(final_payloads) != set(payloads):
-        raise CandidateCollectionError("qdrant_final_point_set_mismatch")
-    _validate_payload_facts(final_payloads, set(payloads))
+    _verify_candidate_facts(client, payloads)
     status, snapshot_body = client.request(f"/collections/{quote(COLLECTION)}/snapshots", reader=True)
     if status != 200 or snapshot_body.get("result") not in ([], None):
         raise CandidateCollectionError("candidate_snapshot_boundary_violated")
@@ -733,6 +823,7 @@ def upload_collection(
     report = {
         "status": "PASS",
         "scope": "candidate_collection_only",
+        "collection_mutated": upsert,
         "release_id": RELEASE_ID,
         "tenant_id": TENANT_ID,
         "collection": COLLECTION,
@@ -763,6 +854,7 @@ def upload_collection(
         "payload_statuses": ["published"],
         "payload_release_ids": [RELEASE_ID],
         "payload_tenant_ids": [TENANT_ID],
+        "verification_protocol": "deterministic-upsert+exact-count+indexed-fact-count+identity-samples/v1",
         "candidate_file_sha256": EXPECTED_CANDIDATE_FILE_SHA256,
         "collection_input_sha256": input_hash.hexdigest(),
         "query_smoke": smoke,
@@ -797,7 +889,7 @@ def _validate_paths(args: argparse.Namespace) -> tuple[Path, Path, Path, Path]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Prepare and upload the RAG-R1 Candidate Collection.")
-    parser.add_argument("--phase", choices=("prepare", "upload", "all"), default="all")
+    parser.add_argument("--phase", choices=("prepare", "upload", "verify", "all"), default="all")
     parser.add_argument("--release-root", type=Path, default=EXPECTED_RELEASE_ROOT)
     parser.add_argument("--candidate", type=Path, default=EXPECTED_RELEASE_ROOT / "candidate_corpus.json")
     parser.add_argument("--ledger", type=Path, required=True)
@@ -815,8 +907,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         manifest = prepare_assets(artifact, envelope, release_root, model_root)
         result["embedding_shards"] = len(manifest["shards"])
         result["embedding_chunks"] = manifest["chunk_count"]
-    if args.phase in {"upload", "all"}:
-        report = upload_collection(artifact, ledger_rows, release_root, QdrantHttp(env_file))
+    if args.phase in {"upload", "verify", "all"}:
+        report = upload_collection(
+            artifact,
+            ledger_rows,
+            release_root,
+            QdrantHttp(env_file),
+            upsert=args.phase != "verify",
+        )
         result["collection"] = report["collection"]
         result["point_count"] = report["point_count"]
         result["alias_after"] = report["alias_after"]
