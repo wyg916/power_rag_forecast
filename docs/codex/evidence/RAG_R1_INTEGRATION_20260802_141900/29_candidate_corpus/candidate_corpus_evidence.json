@@ -1,0 +1,73 @@
+{
+  "status": "PASS",
+  "scope": "candidate_corpus_only",
+  "release_id": "RAG-R1",
+  "tenant_id": "default",
+  "created_at": "2026-08-02T08:19:10Z",
+  "source_ledger_sha256": "ee61af9a0aa4509b2e7947e37c99004e2029fbfd69a55fe663e8acacafebf7d6",
+  "embedding": {
+    "model": "BAAI/bge-large-zh-v1.5",
+    "dimension": 1024,
+    "manifest_sha256": "a6854a4b265bc6c7159d02927ece3548e63e7b57cf49deee2a77b94bbb0ec3fa",
+    "network_calls": 0,
+    "weight_deserializations": 0
+  },
+  "counts": {
+    "ledger": 83,
+    "documents": 45,
+    "chunks": 8339,
+    "assets": 0,
+    "duplicates": 14,
+    "isolations": 24
+  },
+  "parse_status_counts": {
+    "ready": 47,
+    "ocr_required": 4,
+    "quarantined": 7
+  },
+  "isolation_breakdown": {
+    "ledger_controlled_conversion": 8,
+    "ledger_ocr_required": 2,
+    "ledger_unsupported_or_unknown": 1,
+    "runtime_pdf_ocr_required": 4,
+    "runtime_forbidden_control_character": 4,
+    "runtime_private_use_character": 1,
+    "runtime_empty_html": 2,
+    "candidate_unresolved_html_assets": 2
+  },
+  "chunk_quality": {
+    "minimum_tokens": 3,
+    "maximum_tokens": 480,
+    "over_limit": 0,
+    "empty_content": 0,
+    "empty_quote": 0,
+    "forbidden_control_characters": 0,
+    "unique_chunk_ids": 8339
+  },
+  "citations": {
+    "with_page": 6599,
+    "without_page": 1740
+  },
+  "hashes": {
+    "candidate_corpus_sha256": "2e50d392806dcb4959050ec6baed17ce0a4d071c741f91147a569cad6c357102",
+    "candidate_artifact_sha256": "f74a29af786e03a945dd7955757c5ac352ebb4a15baae7138f14281886ad8426",
+    "candidate_file_sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7",
+    "candidate_report_file_sha256": "b1da669260a326e0dba8063fe4ec12a300fe0adda30500cf096eddcdf87bcbe1"
+  },
+  "idempotency": {
+    "second_artifact_write": "unchanged",
+    "second_report_write": "unchanged"
+  },
+  "tests": {
+    "targeted_passed": 36,
+    "diff_check": "PASS",
+    "sensitive_findings": 0
+  },
+  "writes": {
+    "source": 0,
+    "postgresql": 0,
+    "qdrant": 0,
+    "alias": 0
+  },
+  "release_gate": "CLOSED"
+}

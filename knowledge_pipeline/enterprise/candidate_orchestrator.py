@@ -140,7 +140,7 @@ def _ordered_ledger(entries: Iterable[SourceLedgerEntry]) -> tuple[SourceLedgerE
             canonical = by_id.get(entry.duplicate_of_source_id)
             if (
                 canonical is None
-                or canonical.admission_status is not AdmissionStatus.READY
+                or canonical.admission_status not in {AdmissionStatus.READY, AdmissionStatus.QUARANTINED}
                 or canonical.sha256 != entry.sha256
                 or canonical.relative_path != entry.duplicate_of_path
                 or not entry.isolation_reason

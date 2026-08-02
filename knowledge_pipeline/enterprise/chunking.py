@@ -117,22 +117,39 @@ def _prefix(section_path: tuple[str, ...]) -> str:
     return f"标题路径：{' / '.join(section_path)}\n" if section_path else ""
 
 
-def _split_ranges(content: str, prefix: str, max_tokens: int, counter: TokenCounter) -> tuple[tuple[int, int], ...]:
-    if max_tokens <= 0:
-        raise ChunkBuildError("max_tokens_invalid")
-    ranges: list[tuple[int, int]] = []
-    start = 0
-    while start < len(content):
-        if _count(counter, prefix + content[start:]) <= max_tokens:
-            ranges.append((start, len(content)))
-            break
-        low, high, best = start + 1, len(content), 0
+def _max_fitting_end(content: str, start: int, prefix: str, max_tokens: int, counter: TokenCounter) -> int:
+    """Find the exact fitting boundary without repeatedly tokenizing the full suffix."""
+    best = start
+    width = max(1, max_tokens * 4)
+    probe = min(len(content), start + width)
+    while True:
+        if _count(counter, prefix + content[start:probe]) <= max_tokens:
+            best = probe
+            if probe == len(content):
+                return probe
+            width *= 2
+            probe = min(len(content), start + width)
+            continue
+        low, high = best + 1, probe - 1
         while low <= high:
             middle = (low + high) // 2
             if _count(counter, prefix + content[start:middle]) <= max_tokens:
                 best, low = middle, middle + 1
             else:
                 high = middle - 1
+        return best
+
+
+def _split_ranges(content: str, prefix: str, max_tokens: int, counter: TokenCounter) -> tuple[tuple[int, int], ...]:
+    if max_tokens <= 0:
+        raise ChunkBuildError("max_tokens_invalid")
+    ranges: list[tuple[int, int]] = []
+    start = 0
+    while start < len(content):
+        best = _max_fitting_end(content, start, prefix, max_tokens, counter)
+        if best == len(content):
+            ranges.append((start, len(content)))
+            break
         if best <= start:
             raise ChunkBuildError("token_budget_too_small")
         window = content[start:best]
