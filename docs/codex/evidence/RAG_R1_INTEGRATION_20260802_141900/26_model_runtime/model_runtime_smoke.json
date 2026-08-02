@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "completed_at": "2026-08-02T08:01:28.754406+00:00",
+  "models": {
+    "embedding": {
+      "role": "embedding",
+      "status": "PASS",
+      "shape": [
+        3,
+        1024
+      ],
+      "norms": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "relevant_similarity": 0.83193,
+      "irrelevant_similarity": 0.157897,
+      "semantic_margin": 0.674033,
+      "elapsed_seconds": 12.203,
+      "device": "cpu",
+      "fallback_used": false,
+      "network_calls": 0,
+      "version": "sha256:a6854a4b265bc6c7159d02927ece3548e63e7b57cf49deee2a77b94bbb0ec3fa"
+    },
+    "reranker": {
+      "role": "reranker",
+      "status": "PASS",
+      "scores": [
+        0.998397,
+        1.7e-05
+      ],
+      "semantic_margin": 0.998381,
+      "elapsed_seconds": 5.953,
+      "device": "cpu",
+      "max_length_smoke": 512,
+      "configured_max_length": 8192,
+      "fallback_used": false,
+      "network_calls": 0,
+      "safe_weight_format": true,
+      "version": "sha256:2a581f058542bd175695f8f92097b7aa4fbdac637ad486739f26e4cbc11ca159"
+    }
+  },
+  "execution": "sequential_isolated_processes",
+  "weight_deserializations": 2,
+  "fallbacks_used": false,
+  "network_calls": 0
+}

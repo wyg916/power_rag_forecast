@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "checked_at": "2026-08-02T08:04:02.188097+00:00",
+  "enterprise": true,
+  "issues": [],
+  "embedding": {
+    "provider": "sentence_transformers",
+    "model": "bge-large-zh-v1.5",
+    "version": "sha256:a6854a4b265bc6c7159d02927ece3548e63e7b57cf49deee2a77b94bbb0ec3fa",
+    "dimension": 1024,
+    "fallback_enabled": false
+  },
+  "reranker": {
+    "provider": "bge",
+    "model": "bge-reranker-v2-m3",
+    "version": "sha256:2a581f058542bd175695f8f92097b7aa4fbdac637ad486739f26e4cbc11ca159",
+    "enabled": true,
+    "fallback_enabled": false
+  },
+  "release": {
+    "release_id": "RAG-R1",
+    "collection": "rag_chunks_RAG-R1",
+    "alias": "rag_chunks_current"
+  },
+  "qdrant": {
+    "endpoint": "https://127.0.0.1:6333",
+    "access_mode": "read_only",
+    "tls_enabled": true,
+    "strict_mode": true,
+    "api_key_configured": true,
+    "image_version": "1.18.2",
+    "image_digest_configured": true
+  },
+  "admin_key_available_to_runtime": false,
+  "secret_values_emitted": false
+}
