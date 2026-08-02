@@ -879,7 +879,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                             <Space size={6}>
                               {item.status === 'streaming' && <Tag color="processing">实时输出</Tag>}
                               {item.status === 'error' && <Tag color="error">请求失败</Tag>}
-                              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => copyText(item.content)}>复制</Button>
+                              <Button type="text" size="small" icon={<CopyOutlined />} aria-label="复制回答" title="复制回答" onClick={() => copyText(item.content)}>复制</Button>
                             </Space>
                           </div>
                           {buildAnswerModules(item).map((module) => (

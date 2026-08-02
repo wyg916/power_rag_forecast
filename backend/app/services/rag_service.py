@@ -16,6 +16,8 @@ from backend.app.config import PROJECT_ROOT
 from backend.app.repositories.base import mapping_list, postgres_engine
 from backend.app.repositories.knowledge_repository import (
     backfill_missing_embeddings,
+    checksum,
+    document_id,
     get_chunks_by_ids,
     knowledge_stats,
     list_embedded_chunks,
@@ -26,12 +28,11 @@ from backend.app.repositories.knowledge_repository import (
 from backend.app.services.embedding_service import cosine_similarity, embed_text_with_metadata, get_embedding_provider
 from backend.app.services.rerank_service import rerank_candidates
 from backend.app.services.rag_query_rewriter import rewrite_rag_query
-from backend.app.services.vector_index_service import query_vector_index
+from backend.app.services.vector_index_service import build_vector_index, query_vector_index
 
 
 SEARCH_ROOTS = [
     PROJECT_ROOT / "knowledge_base",
-    PROJECT_ROOT / "electricity_tariff_output" / "04_knowledge_base_tariff_policy",
 ]
 
 
@@ -211,6 +212,7 @@ def _rag_cache_signature() -> tuple[str, ...]:
         _env("RAG_TOP_K", ""),
         _env("RAG_SCORE_THRESHOLD", ""),
         _env("RAG_FILE_FALLBACK_ENABLED", "0"),
+        _env("RAG_STRICT_OFFICIAL", "0"),
         _env("RAG_VECTOR_TOP_K", ""),
         _env("RAG_KEYWORD_TOP_K", ""),
         _env("RAG_CACHE_TTL_SECONDS", ""),
@@ -231,6 +233,10 @@ def _rag_cache_signature() -> tuple[str, ...]:
 
 def rag_enabled() -> bool:
     return (_env("RAG_ENABLED", "1") or "1").lower() not in {"0", "false", "no", "off"}
+
+
+def _strict_official_enabled() -> bool:
+    return (_env("RAG_STRICT_OFFICIAL", "0") or "0").lower() in {"1", "true", "yes", "on"}
 
 
 def _read_text_file(path: Path) -> str:
@@ -267,12 +273,47 @@ def _domain_from_path(path: Path) -> str:
         return "system_knowledge"
     if "trading_strategy" in parts:
         return "trading_strategy"
+    root_document_domains = {
+        "常见问答标准模板": "system_knowledge",
+        "天气与电价关系": "price_forecast",
+        "售电公司交易规则": "trading_strategy",
+        "高峰低谷平段价格解释": "electricity_market",
+        "风险等级定义": "system_knowledge",
+        "预测结果字段说明": "system_knowledge",
+        "预测模型字段说明": "system_knowledge",
+        "负荷与电价关系": "price_forecast",
+        "电力市场基础知识": "electricity_market",
+        "电力交易常见术语": "electricity_market",
+        "电价形成机制": "electricity_market",
+        "日前市场与实时市场说明": "electricity_market",
+        "新能源出力与电价关系": "price_forecast",
+        "phase5_project_knowledge_contracts": "system_knowledge",
+    }
+    if path.stem in root_document_domains:
+        return root_document_domains[path.stem]
     return ""
+
+
+def _existing_official_document_ids() -> set[str]:
+    engine = postgres_engine()
+    if engine is None:
+        return set()
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text("SELECT doc_id FROM kb_documents WHERE metadata_json->>'data_origin'='official'")
+            ).scalars().all()
+        return {str(item) for item in rows}
+    except Exception:
+        return set()
 
 
 def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
     indexed = 0
+    unchanged = 0
+    document_ids: list[str] = []
     failed: list[dict[str, str]] = []
+    existing_document_ids = _existing_official_document_ids()
     for root in SEARCH_ROOTS:
         if not root.exists():
             continue
@@ -282,17 +323,37 @@ def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
         candidates = sorted([*root.rglob("*.md"), *root.rglob("*.txt")])
         for path in candidates[:limit_files]:
             try:
+                relative_path = path.relative_to(root).as_posix()
+                source_path = f"project://{root.name}/{relative_path}"
+                source_updated_at = time.strftime(
+                    "%Y-%m-%dT%H:%M:%S%z",
+                    time.localtime(path.stat().st_mtime),
+                )
+                content = _read_text_file(path)
+                document_version = f"sha256:{checksum(content)[:12]}"
+                expected_doc_id = document_id(source_path, content, document_version)
+                if expected_doc_id in existing_document_ids:
+                    unchanged += 1
+                    document_ids.append(expected_doc_id)
+                    continue
                 result = upsert_document(
                     title=path.stem,
-                    source_type="local_file",
-                    source_path=str(path),
-                    content=_read_text_file(path),
+                    source_type="project_official_knowledge",
+                    source_path=source_path,
+                    content=content,
                     metadata={
-                        "root": str(root),
+                        "data_origin": "official",
+                        "import_batch": "day8-official-v1",
+                        "corpus_version": "day8-official-v1",
+                        "applicability_scope": "智能运营分析项目开发与验收环境的业务解释和辅助决策",
+                        "source_updated_at": source_updated_at,
+                        "document_version": document_version,
+                        "governance_status": "formal_baseline",
                         "file_name": path.name,
                         "domain": _domain_from_path(path),
                         "evidence_source_type": "real",
                         "source_name": path.name,
+                        "source_uri": source_path,
                         "status": "active",
                         "evidence_level": "project_document",
                     },
@@ -300,15 +361,21 @@ def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
                 )
                 if result.get("available"):
                     indexed += 1
+                    if result.get("doc_id"):
+                        document_ids.append(str(result["doc_id"]))
+                        existing_document_ids.add(str(result["doc_id"]))
                 else:
                     message = str(result.get("message") or "")
                     failed.append({"path": str(path), "message": message, "reason": _classify_failure(path, message)})
             except Exception as exc:
                 message = str(exc)
                 failed.append({"path": str(path), "message": message, "reason": _classify_failure(path, message)})
-    indexed += index_policy_rows()
     backfill = backfill_missing_embeddings()
     refresh = refresh_stale_embeddings()
+    try:
+        vector_index = build_vector_index(expected_dim=1024)
+    except Exception as exc:
+        vector_index = {"available": False, "indexed": 0, "reason": str(exc)[:300]}
     try:
         _rag_search_cached.cache_clear()
     except Exception:
@@ -316,10 +383,14 @@ def index_local_knowledge(limit_files: int = 300) -> dict[str, Any]:
     return {
         "available": True,
         "indexed_documents": indexed,
+        "unchanged_documents": unchanged,
+        "processed_documents": indexed + unchanged,
+        "document_ids": sorted(document_ids),
         "failed": failed,
         "failure_summary": _failure_summary(failed),
         "embedding_backfill": backfill,
         "embedding_refresh": refresh,
+        "vector_index": vector_index,
         "stats": knowledge_stats(),
     }
 
@@ -828,11 +899,17 @@ def _rag_search_impl(
         ][:final_top_k]
         items = _domain_consistent_items(items)
         citations = _citations_from_items(items)
+        if len(citations) != len(items):
+            items = []
+            citations = []
+        if _strict_official_enabled():
+            items = []
+            citations = []
         evidence_types = list(dict.fromkeys(str(item.get("evidence_source_type") or "real") for item in items))
         timings["keyword_search_ms"] = _timing_ms(started)
         timings["total_ms"] = _timing_ms(total_started)
         return {
-            "available": bool(items),
+            "available": bool(items and citations),
             "source_type": evidence_types[0] if len(evidence_types) == 1 else "derived" if evidence_types else "unavailable",
             "domain": domain or (str(items[0].get("domain") or "") if items else ""),
             "query": query,
@@ -842,6 +919,7 @@ def _rag_search_impl(
             "retrieval": {
                 "enabled": False,
                 "mode": "keyword_only",
+                "strict_runtime_reasons": ["rag_disabled"] if _strict_official_enabled() else [],
                 "score_threshold": score_threshold,
                 "filters": {
                     "domain": domain,
@@ -911,6 +989,25 @@ def _rag_search_impl(
         items = [item for item in items if str(item.get("domain") or "").strip() == primary_domain]
     items = _domain_consistent_items(items)
     citations = _citations_from_items(items)
+    strict_runtime_reasons: list[str] = []
+    if _strict_official_enabled():
+        if not vector_available:
+            strict_runtime_reasons.append("vector_unavailable")
+        if int(query_embedding_meta.get("dim") or 0) != 1024:
+            strict_runtime_reasons.append("embedding_dim_not_1024")
+        if bool(query_embedding_meta.get("fallback")) or query_embedding_meta.get("error"):
+            strict_runtime_reasons.append("embedding_fallback_or_error")
+        if embedding_provider_name not in {"sentence_transformers", "bge"}:
+            strict_runtime_reasons.append("embedding_provider_not_bge")
+        if rerank_error or reranker_name in {"local_heuristic", "local_heuristic_fallback", "hybrid_score_fallback", "disabled"}:
+            strict_runtime_reasons.append("reranker_fallback_or_error")
+        if file_fallback_enabled:
+            strict_runtime_reasons.append("file_fallback_enabled")
+    if len(citations) != len(items):
+        strict_runtime_reasons.append("citation_incomplete")
+    if strict_runtime_reasons:
+        items = []
+        citations = []
     evidence_types = list(
         dict.fromkeys(
             str(item.get("evidence_source_type") or "real")
@@ -919,7 +1016,7 @@ def _rag_search_impl(
         )
     )
     return {
-        "available": bool(items),
+        "available": bool(items and citations),
         "source_type": evidence_types[0] if len(evidence_types) == 1 else "derived" if evidence_types else "unavailable",
         "domain": domain or (str(items[0].get("domain") or "") if items else ""),
         "query": query,
@@ -961,6 +1058,8 @@ def _rag_search_impl(
             "rerank_error": rerank_error,
             "score_threshold": score_threshold,
             "file_fallback_enabled": file_fallback_enabled,
+            "strict_official": _strict_official_enabled(),
+            "strict_runtime_reasons": strict_runtime_reasons,
             "filters": {
                 "domain": domain,
                 "source_types": source_types or [],

@@ -107,22 +107,54 @@ def _knowledge_state() -> dict[str, Any]:
             "kb_document_count": 0,
             "kb_chunk_count": 0,
             "embedded_chunk_count": 0,
+            "formal_metadata_complete_count": 0,
             "last_embedding_refresh_at": None,
             "embedding_dim_distribution": {},
         }
     try:
         with engine.connect() as conn:
-            documents = int(conn.execute(text("SELECT COUNT(*) FROM kb_documents")).scalar() or 0)
-            chunks = int(conn.execute(text("SELECT COUNT(*) FROM kb_chunks")).scalar() or 0)
+            documents = int(
+                conn.execute(text("SELECT COUNT(*) FROM kb_documents WHERE metadata_json->>'data_origin'='official'")).scalar() or 0
+            )
+            formal_complete = int(
+                conn.execute(
+                    text(
+                        """
+                        SELECT COUNT(*) FROM kb_documents
+                        WHERE metadata_json->>'data_origin'='official'
+                          AND COALESCE(metadata_json->>'source_name','') <> ''
+                          AND COALESCE(metadata_json->>'document_version','') <> ''
+                          AND COALESCE(metadata_json->>'generated_at','') <> ''
+                          AND COALESCE(metadata_json->>'domain','') <> ''
+                          AND COALESCE(metadata_json->>'applicability_scope','') <> ''
+                        """
+                    )
+                ).scalar()
+                or 0
+            )
+            chunks = int(
+                conn.execute(
+                    text(
+                        """
+                        SELECT COUNT(*) FROM kb_chunks c
+                        JOIN kb_documents d ON d.doc_id=c.doc_id
+                        WHERE d.metadata_json->>'data_origin'='official'
+                        """
+                    )
+                ).scalar()
+                or 0
+            )
             embedded = int(
                 conn.execute(
                     text(
                         """
                         SELECT COUNT(*)
-                        FROM kb_chunks
-                        WHERE embedding_json IS NOT NULL
-                          AND jsonb_typeof(embedding_json) = 'array'
-                          AND jsonb_array_length(embedding_json) > 0
+                        FROM kb_chunks c
+                        JOIN kb_documents d ON d.doc_id=c.doc_id
+                        WHERE c.embedding_json IS NOT NULL
+                          AND jsonb_typeof(c.embedding_json) = 'array'
+                          AND jsonb_array_length(c.embedding_json) > 0
+                          AND d.metadata_json->>'data_origin'='official'
                         """
                     )
                 ).scalar()
@@ -131,23 +163,27 @@ def _knowledge_state() -> dict[str, Any]:
             last_refresh = conn.execute(
                 text(
                     """
-                    SELECT MAX(updated_at)
-                    FROM kb_chunks
-                    WHERE embedding_json IS NOT NULL
-                      AND jsonb_typeof(embedding_json) = 'array'
-                      AND jsonb_array_length(embedding_json) > 0
+                    SELECT MAX(c.updated_at)
+                    FROM kb_chunks c
+                    JOIN kb_documents d ON d.doc_id=c.doc_id
+                    WHERE c.embedding_json IS NOT NULL
+                      AND jsonb_typeof(c.embedding_json) = 'array'
+                      AND jsonb_array_length(c.embedding_json) > 0
+                      AND d.metadata_json->>'data_origin'='official'
                     """
                 )
             ).scalar()
             sample_rows = conn.execute(
                 text(
                     """
-                    SELECT embedding_json, metadata_json
-                    FROM kb_chunks
-                    WHERE embedding_json IS NOT NULL
-                      AND jsonb_typeof(embedding_json) = 'array'
-                      AND jsonb_array_length(embedding_json) > 0
-                    ORDER BY updated_at DESC NULLS LAST
+                    SELECT c.embedding_json, c.metadata_json
+                    FROM kb_chunks c
+                    JOIN kb_documents d ON d.doc_id=c.doc_id
+                    WHERE c.embedding_json IS NOT NULL
+                      AND jsonb_typeof(c.embedding_json) = 'array'
+                      AND jsonb_array_length(c.embedding_json) > 0
+                      AND d.metadata_json->>'data_origin'='official'
+                    ORDER BY c.updated_at DESC NULLS LAST
                     LIMIT 200
                     """
                 )
@@ -158,6 +194,7 @@ def _knowledge_state() -> dict[str, Any]:
             "kb_document_count": 0,
             "kb_chunk_count": 0,
             "embedded_chunk_count": 0,
+            "formal_metadata_complete_count": 0,
             "last_embedding_refresh_at": None,
             "embedding_dim_distribution": {},
             "error": str(exc)[:300],
@@ -178,6 +215,7 @@ def _knowledge_state() -> dict[str, Any]:
         "kb_document_count": documents,
         "kb_chunk_count": chunks,
         "embedded_chunk_count": embedded,
+        "formal_metadata_complete_count": formal_complete,
         "last_embedding_refresh_at": last_refresh.isoformat() if isinstance(last_refresh, datetime) else str(last_refresh) if last_refresh else None,
         "embedding_dim_distribution": dim_distribution,
         "sample_fallback_embedding_count": fallback_embeddings,
@@ -192,20 +230,34 @@ def rag_health() -> dict[str, Any]:
         fallback_reasons.append(f"fallback_embeddings_in_recent_sample={knowledge['sample_fallback_embedding_count']}")
     embedded = int(knowledge.get("embedded_chunk_count") or 0)
     chunks = int(knowledge.get("kb_chunk_count") or 0)
+    documents = int(knowledge.get("kb_document_count") or 0)
+    formal_complete = int(knowledge.get("formal_metadata_complete_count") or 0)
+    blocking_reasons: list[str] = []
+    if not knowledge.get("available"):
+        blocking_reasons.append("knowledge_database_unavailable")
+    elif documents <= 0:
+        blocking_reasons.append("official_knowledge_unavailable")
+    elif formal_complete != documents:
+        blocking_reasons.append("official_metadata_incomplete")
+    if chunks and set(knowledge.get("embedding_dim_distribution") or {}) != {str(EXPECTED_BGE_LARGE_DIM)}:
+        blocking_reasons.append("official_embedding_dimension_mismatch")
+    if chunks and embedded < chunks:
+        blocking_reasons.append("official_embedding_incomplete")
     status = "normal"
     if (_env("RAG_ENABLED", "1") or "1").lower() in {"0", "false", "no", "off"}:
         status = "disabled"
     elif fallback_reasons:
         status = "fallback"
+    elif blocking_reasons:
+        status = "unavailable"
     elif not provider.get("embedding_model_path_exists") and provider.get("embedding_provider_config") in {"bge", "sentence_transformers", "sentence-transformers"}:
         status = "not_configured"
-    elif chunks and embedded < chunks:
-        status = "partial"
     return {
-        "ok": status in {"normal", "partial"},
+        "ok": status == "normal",
         "status": status,
         **provider,
         **knowledge,
         "fallback_enabled": bool(fallback_reasons),
         "fallback_reasons": fallback_reasons,
+        "blocking_reasons": blocking_reasons,
     }

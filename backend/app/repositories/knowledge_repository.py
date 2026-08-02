@@ -257,6 +257,24 @@ def upsert_document(
     )
     doc_id = document_id(source_path, content, str(document_metadata["document_version"]))
     document_metadata["document_id"] = doc_id
+    is_official = document_metadata.get("data_origin") == "official"
+    if is_official:
+        required_metadata = ("source_name", "document_version", "generated_at", "domain", "applicability_scope")
+        missing = [key for key in required_metadata if not str(document_metadata.get(key) or "").strip()]
+        if missing:
+            return {
+                "available": False,
+                "message": f"Official knowledge metadata is incomplete: {','.join(missing)}",
+                "doc_id": doc_id,
+                "metadata_failed": True,
+            }
+        if not generate_embeddings:
+            return {
+                "available": False,
+                "message": "Official knowledge requires verified semantic embeddings.",
+                "doc_id": doc_id,
+                "embedding_failed": True,
+            }
     chunks = split_chunks(content)
     embedding_results = (
         embed_batch_with_metadata([f"{title}\n{chunk}" for chunk in chunks])
@@ -273,6 +291,27 @@ def upsert_document(
             "doc_id": doc_id,
             "embedding_failed": True,
         }
+    if is_official:
+        invalid_embeddings = []
+        for index, item in enumerate(embedding_results):
+            vector = item.get("embedding") or []
+            embedding_metadata = item.get("metadata") or {}
+            if (
+                len(vector) != 1024
+                or embedding_metadata.get("provider") not in {"sentence_transformers", "bge"}
+                or bool(embedding_metadata.get("fallback"))
+                or not str(embedding_metadata.get("model") or "").strip()
+                or not str(embedding_metadata.get("version") or "").strip()
+            ):
+                invalid_embeddings.append(index)
+        if invalid_embeddings:
+            return {
+                "available": False,
+                "message": "Official knowledge embedding admission failed; BGE 1024 non-fallback vectors are required.",
+                "doc_id": doc_id,
+                "embedding_failed": True,
+                "invalid_embedding_indexes": invalid_embeddings,
+            }
     now = datetime.now()
     try:
         with engine.begin() as conn:
@@ -372,9 +411,14 @@ def _retrieval_filter_sql(
     include_demo: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     clauses = [
+        "d.metadata_json->>'data_origin' = 'official'",
         "COALESCE(d.metadata_json->>'status', 'active') = 'active'",
         "COALESCE(c.metadata_json->>'status', '') = 'active'",
         "COALESCE(d.metadata_json->>'domain', '') <> ''",
+        "COALESCE(d.metadata_json->>'source_name', '') <> ''",
+        "COALESCE(d.metadata_json->>'document_version', '') <> ''",
+        "COALESCE(d.metadata_json->>'generated_at', '') <> ''",
+        "COALESCE(d.metadata_json->>'applicability_scope', '') <> ''",
         "COALESCE(c.metadata_json->>'domain', '') = COALESCE(d.metadata_json->>'domain', '')",
         "COALESCE(c.metadata_json->>'source_type', '') = COALESCE(d.metadata_json->>'evidence_source_type', 'real')",
     ]
@@ -442,7 +486,7 @@ def search_keyword_chunks(
                            d.title, d.source_type, d.source_path
                     FROM kb_chunks c
                     JOIN kb_documents d ON d.doc_id = c.doc_id
-                    WHERE COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                    WHERE d.metadata_json->>'data_origin' = 'official'
                       AND {filter_sql}
                       AND ({predicates})
                     LIMIT 200
@@ -522,7 +566,7 @@ def list_embedded_chunks(
                     FROM kb_chunks c
                     JOIN kb_documents d ON d.doc_id = c.doc_id
                     WHERE c.embedding_json IS NOT NULL
-                      AND COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                      AND d.metadata_json->>'data_origin' = 'official'
                       AND {filter_sql}
                     ORDER BY d.updated_at DESC NULLS LAST, c.created_at DESC
                     LIMIT :limit
@@ -589,7 +633,7 @@ def get_vector_index_rows(limit: int = 50000) -> list[dict[str, Any]]:
                 JOIN kb_documents d ON d.doc_id = c.doc_id
                 WHERE c.embedding_json IS NOT NULL
                   AND COALESCE(c.metadata_json->>'embedding_status', '') = 'ready'
-                  AND COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                  AND d.metadata_json->>'data_origin' = 'official'
                   AND {filter_sql}
                 ORDER BY c.chunk_id
                 LIMIT :limit
@@ -641,7 +685,7 @@ def get_chunks_by_ids(
                 JOIN kb_documents d ON d.doc_id = c.doc_id
                 WHERE c.chunk_id IN ({placeholders})
                   AND COALESCE(c.metadata_json->>'embedding_status', '') = 'ready'
-                  AND COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                  AND d.metadata_json->>'data_origin' = 'official'
                   AND {filter_sql}
                 """
             ),
@@ -688,10 +732,13 @@ def backfill_missing_embeddings(limit: int = 5000) -> dict[str, Any]:
                     SELECT c.chunk_id, c.content, c.metadata_json, d.title
                     FROM kb_chunks c
                     JOIN kb_documents d ON d.doc_id = c.doc_id
-                    WHERE c.embedding_json IS NULL
-                       OR (
+                    WHERE d.metadata_json->>'data_origin' = 'official'
+                      AND (
+                           c.embedding_json IS NULL
+                           OR (
                             jsonb_typeof(c.embedding_json) = 'array'
                             AND jsonb_array_length(c.embedding_json) = 0
+                           )
                        )
                     LIMIT :limit
                     """
@@ -747,6 +794,7 @@ def refresh_stale_embeddings(limit: int = 20000) -> dict[str, Any]:
                     SELECT c.chunk_id, c.content, c.embedding_json, c.metadata_json, d.title
                     FROM kb_chunks c
                     JOIN kb_documents d ON d.doc_id = c.doc_id
+                    WHERE d.metadata_json->>'data_origin' = 'official'
                     ORDER BY d.updated_at DESC NULLS LAST, c.created_at DESC
                     LIMIT :limit
                     """
@@ -910,7 +958,7 @@ def list_knowledge_documents(page: int = 1, page_size: int = 20, search: str = "
     safe_page_size = max(1, min(int(page_size or 20), 100))
     offset = (safe_page - 1) * safe_page_size
     params: dict[str, Any] = {"limit": safe_page_size, "offset": offset}
-    where_sql = "WHERE COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'"
+    where_sql = "WHERE d.metadata_json->>'data_origin' = 'official'"
     if search.strip():
         params["search"] = f"%{search.strip()}%"
         where_sql += " AND (d.title ILIKE :search OR d.source_path ILIKE :search OR d.source_type ILIKE :search)"
@@ -1128,7 +1176,7 @@ def knowledge_stats() -> dict[str, Any]:
     try:
         with engine.connect() as conn:
             documents = int(
-                conn.execute(text("SELECT COUNT(*) FROM kb_documents WHERE COALESCE(metadata_json->>'data_origin', '') <> 'seed'")).scalar()
+                conn.execute(text("SELECT COUNT(*) FROM kb_documents WHERE metadata_json->>'data_origin' = 'official'")).scalar()
                 or 0
             )
             chunks = int(
@@ -1137,7 +1185,7 @@ def knowledge_stats() -> dict[str, Any]:
                         """
                         SELECT COUNT(*) FROM kb_chunks c
                         JOIN kb_documents d ON d.doc_id = c.doc_id
-                        WHERE COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                        WHERE d.metadata_json->>'data_origin' = 'official'
                         """
                     )
                 ).scalar()
@@ -1153,7 +1201,7 @@ def knowledge_stats() -> dict[str, Any]:
                         WHERE embedding_json IS NOT NULL
                           AND jsonb_typeof(embedding_json) = 'array'
                           AND jsonb_array_length(embedding_json) > 0
-                          AND COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                          AND d.metadata_json->>'data_origin' = 'official'
                         """
                     )
                 ).scalar()
@@ -1177,7 +1225,7 @@ def knowledge_stats() -> dict[str, Any]:
                                    ) AS embedded_count
                             FROM kb_documents d
                             LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id
-                            WHERE COALESCE(d.metadata_json->>'data_origin', '') <> 'seed'
+                            WHERE d.metadata_json->>'data_origin' = 'official'
                             GROUP BY d.doc_id
                         ) s
                         WHERE s.chunk_count = 0 OR COALESCE(s.embedded_count, 0) < s.chunk_count
@@ -1187,7 +1235,7 @@ def knowledge_stats() -> dict[str, Any]:
                 or 0
             )
             last_updated = conn.execute(
-                text("SELECT MAX(updated_at) FROM kb_documents WHERE COALESCE(metadata_json->>'data_origin', '') <> 'seed'")
+                text("SELECT MAX(updated_at) FROM kb_documents WHERE metadata_json->>'data_origin' = 'official'")
             ).scalar()
             try:
                 qa_row = conn.execute(

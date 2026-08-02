@@ -33,6 +33,8 @@ def test_rag_search_merges_keyword_vector_and_reranks(monkeypatch):
                 "title": "尖峰风险解释",
                 "source": "knowledge_base/peak.md",
                 "content": "尖峰概率高表示需要重点监控，不代表价格一定暴涨。",
+                "domain": "price_forecast",
+                "evidence_source_type": "real",
                 "keyword_score": 3.0,
                 "vector_score": 0.0,
             }
@@ -53,6 +55,8 @@ def test_rag_search_merges_keyword_vector_and_reranks(monkeypatch):
                 "title": "负荷天气关系",
                 "source": "knowledge_base/load_weather.md",
                 "content": "负荷预测偏高通常会抬高边际供电压力。",
+                "domain": "price_forecast",
+                "evidence_source_type": "real",
                 "embedding": [1.0, 0.0],
                 "keyword_score": 0.0,
                 "vector_score": 0.0,

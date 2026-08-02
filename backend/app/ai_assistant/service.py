@@ -56,9 +56,11 @@ def _security_refusal_reason(question: str) -> str:
         "sensitive_information": [
             "输出数据库连接", "显示数据库连接", "database_url", "输出token", "显示token",
             "输出secret", "显示secret", "输出密钥", "显示密钥", "输出密码", "显示密码",
-            "内部trace", "系统提示词", "systemprompt", "api_key", "apikey",
+            "内部trace", "系统提示词", "系统prompt", "systemprompt", "api_key", "apikey",
+            "bearertoken", "显示bearer", "内部密钥", "泄露系统", "原样返回",
+            "sentinel_secret_must_not_leak", "数据库连接串",
         ],
-        "prompt_injection": ["忽略以前指令", "忽略之前指令", "ignoreprevious", "绕过安全", "关闭安全检查"],
+        "prompt_injection": ["忽略以前指令", "忽略之前指令", "ignoreprevious", "忽略安全规则", "绕过安全", "关闭安全检查"],
         "unauthorized_action": ["绕过权限", "越权访问", "删除数据库", "删库", "dropdatabase", "关闭审计"],
         "automatic_trading": ["直接替我下单", "自动替我交易", "执行自动交易", "保证盈利", "承诺收益", "声称系统已经生产部署", "生产部署并能自动交易"],
     }
@@ -74,6 +76,10 @@ def _explicit_unavailable_reason(question: str) -> str:
         return "unrecorded_business_fact"
     if all(term in compact for term in ["soc", "容量", "效率"]) and any(term in compact for term in ["精确", "具体"]):
         return "missing_storage_constraints"
+    if any(term in compact for term in ["缺少模型误差", "没有模型误差", "模型误差数据缺失"]) and any(
+        term in compact for term in ["断言", "一定变差", "准确判断"]
+    ):
+        return "missing_model_error_evidence"
     return ""
 
 
@@ -1242,7 +1248,7 @@ def answer_chat_accurate(
         trace.step("rag_retriever", enabled=False, **rag_trigger_info)
     rag_required_unavailable = bool(
         use_rag
-        and not rag_result.get("items")
+        and not rag_result.get("citations")
         and decision.intent in {"knowledge_search", "general_query"}
         and not _storage_boundary_note(clean_question)
     )
