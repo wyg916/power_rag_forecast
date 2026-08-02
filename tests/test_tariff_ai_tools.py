@@ -19,13 +19,14 @@ def test_station_tariff_check_uses_tariff_asset():
     assert result["city"] == "衢州市"
 
 
-def test_policy_and_knowledge_search_return_evidence():
+def test_policy_search_uses_asset_but_knowledge_file_fallback_stays_disabled():
     policy = search_tariff_policy(question="光伏补贴政策 发改文件")
     assert policy["available"] is True
     assert policy["items"]
     knowledge = search_business_knowledge(question="光伏补贴政策")
-    assert knowledge["available"] is True
-    assert knowledge["items"]
+    assert knowledge["available"] is False
+    assert knowledge["items"] == []
+    assert knowledge["citations"] == []
 
 
 def test_market_and_tax_tools_return_rules():

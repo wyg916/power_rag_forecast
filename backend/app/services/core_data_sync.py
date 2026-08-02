@@ -15,11 +15,11 @@ from database_utils import (
     normalize_dataframe_for_sql,
 )
 
-from ..config import PROJECT_ROOT, project_config
+from ..config import project_config, runtime_asset_root
 from ..data_access import database_engine, jsonable, load_latest_forecast, price_column
 
 
-TARIFF_DATA_DIR = PROJECT_ROOT / "electricity_tariff_output" / "02_processed_data"
+TARIFF_DATA_DIR = runtime_asset_root() / "electricity_tariff_output" / "02_processed_data"
 
 
 def _log(log, message: str) -> None:

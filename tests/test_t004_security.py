@@ -223,7 +223,7 @@ def test_day2_preflight_static_gates_pass():
 
     assert config_failures == []
     assert migration_failures == []
-    assert migration_result["files_scanned"] == 16
+    assert migration_result["files_scanned"] == 18
 
     env_py = (ROOT / "migrations/env.py").read_text(encoding="utf-8")
     assert "ALEMBIC_TARGET_SCHEMA" in env_py

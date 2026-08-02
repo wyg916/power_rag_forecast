@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import os
 from pathlib import Path
 
 import numpy as np
@@ -22,8 +23,9 @@ from model_ops.safe_model_contract import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "model_artifacts" / "model_20260620_063015"
-FIXED_INPUT = ROOT / "结果-3" / "结果表" / "18_未来24小时预测输入特征_正式版.xlsx"
+ASSET_ROOT = Path(os.environ.get("POWER_TRADING_ASSET_ROOT") or ROOT).resolve()
+ARTIFACT = ASSET_ROOT / "model_artifacts" / "model_20260620_063015"
+FIXED_INPUT = ASSET_ROOT / "结果-3" / "结果表" / "18_未来24小时预测输入特征_正式版.xlsx"
 
 
 @pytest.fixture(scope="module")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,18 @@ from automation_common import get_pipeline_paths, load_config  # noqa: E402
 
 APP_VERSION = "v2.11.2"
 PLATFORM_NAME = "售电交易 AI 辅助决策平台"
+
+
+def runtime_asset_root() -> Path:
+    """Resolve an explicit read-only asset root for linked worktrees."""
+
+    value = os.environ.get("POWER_TRADING_ASSET_ROOT", "").strip()
+    if not value:
+        return PROJECT_ROOT
+    root = Path(value).resolve(strict=True)
+    if not root.is_dir():
+        raise RuntimeError("POWER_TRADING_ASSET_ROOT 必须指向现有目录。")
+    return root
 
 
 @lru_cache(maxsize=1)
