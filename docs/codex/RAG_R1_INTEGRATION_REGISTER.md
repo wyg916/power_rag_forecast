@@ -43,5 +43,6 @@
 | 37 | Candidate 确定性审计进度可观测性 | 全量 ID 探针通过后的最小日志补强 | 1 个代码文件 +1 | 真实只读审计 8,339/8,339 PASS；定向 8 passed；py_compile PASS | 仅输出累计审计数；请求、报告和 Candidate 数据不变 | 本提交 |
 | 38 | Candidate 不可变报告双 schema 兼容与第 22 索引收口 | 全量二次审计通过后的冲突修复 | 2 个代码/测试文件 +58/-1 | upsert 8,339/8,339；最终 ID 审计 8,339/8,339；既有报告核心事实一致；定向 23 passed | 保留既有报告 SHA-256 `6158284c…e39e`，不覆盖；事实差异继续 fail-closed；alias/snapshot/PostgreSQL 写入 0 | 本提交 |
 | 39 | Candidate Collection 正式全量构建与幂等复跑 | 当前脚本在既有不可变报告上正式执行 | 2 个证据文件 + 状态登记 | 初审 8,339/8,339；upsert 8,339/8,339；终审 8,339/8,339；dense/BM25 smoke PASS；脚本最终 PASS | Qdrant Candidate 写入完成；报告未覆盖；alias 0、snapshot 0、PostgreSQL 0、外网 0 | 本提交 |
+| 40 | PostgreSQL Candidate 只读漂移审计 | Candidate Collection 后发现数据库存在先行写入 | 5 个只读证据文件 + 状态登记 | 45/45 documents、45/45 versions、8,339/8,339 chunks、83/83 release items 精确一致；仅 manifest hash 1 项语义错位 | 数据库写入 0；待确认单行条件修复；alias/snapshot/Published/生产切换均未变 | 本提交 |
 
-下一阶段：PostgreSQL Candidate 元数据 → API/认证/AI/UI → 评测与全量回归 → PostgreSQL/Qdrant snapshot → alias 原子切换与发布回滚演练。
+下一阶段：人工确认 PostgreSQL 单行 manifest hash 修复 → 固化可复现 Candidate DB 工具 → API/认证/AI/UI → 评测与全量回归 → PostgreSQL/Qdrant snapshot → alias 原子切换与发布回滚演练。

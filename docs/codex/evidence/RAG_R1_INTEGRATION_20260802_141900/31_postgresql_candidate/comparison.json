@@ -1,0 +1,58 @@
+{
+  "status": "WAITING_CONFIRMATION",
+  "inspection_mode": "read_only",
+  "database_write_count": 0,
+  "target": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "postgres",
+    "user": "postgres",
+    "alembic_head": "0018_rag_enterprise_r1",
+    "structure_sha256": "15d4fd97a193c57b6b3bc0b6ad484902be2463cce3048fd3cb8fecd7b7e208be"
+  },
+  "candidate": {
+    "tenant_id": "default",
+    "release_id": "RAG-R1",
+    "status": "candidate",
+    "is_current": false,
+    "collection": "rag_chunks_RAG-R1",
+    "qdrant_alias": null
+  },
+  "identity_comparison": {
+    "documents": {"expected": 45, "actual": 45, "missing": 0, "extra": 0, "field_mismatches": 0},
+    "versions": {"expected": 45, "actual": 45, "missing": 0, "extra": 0, "field_mismatches": 0},
+    "chunks": {"expected": 8339, "actual": 8339, "missing": 0, "extra": 0, "field_mismatches": 0},
+    "release_items": {"expected": 83, "actual": 83, "missing": 0, "extra": 0, "field_mismatches": 0}
+  },
+  "release_item_status_counts": {
+    "published": 45,
+    "duplicate": 14,
+    "isolated": 24
+  },
+  "hash_comparison": {
+    "source_ledger_sha256": {
+      "expected": "ee61af9a0aa4509b2e7947e37c99004e2029fbfd69a55fe663e8acacafebf7d6",
+      "actual": "ee61af9a0aa4509b2e7947e37c99004e2029fbfd69a55fe663e8acacafebf7d6",
+      "matches": true
+    },
+    "candidate_manifest_sha256": {
+      "expected": "2aeaeb8325a192a8acceeee2dd81c631c313c40b0d7be6333bfd512fd52a0282",
+      "actual": "f74a29af786e03a945dd7955757c5ac352ebb4a15baae7138f14281886ad8426",
+      "matches": false,
+      "actual_value_semantics": "candidate_artifact_sha256"
+    }
+  },
+  "pre_write_snapshot": {
+    "path": "pre_write/public_database_snapshot.json",
+    "sha256": "55b5dd7b13d3146fe7517cf2f6fb89560f0dfc0ce70e604cb04b23daaea4b846",
+    "database_write_count": 0
+  },
+  "boundaries": {
+    "postgres_mutated": false,
+    "qdrant_mutated": false,
+    "alias_mutated": false,
+    "snapshot_created_in_qdrant": false,
+    "published": false,
+    "production_switched": false
+  }
+}
