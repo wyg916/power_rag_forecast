@@ -51,9 +51,8 @@ TENANT_ID = "default"
 SHARD_SIZE = 128
 INFERENCE_BATCH_SIZE = 16
 UPSERT_BATCH_SIZE = 16
-SCROLL_PAGE_SIZE = 256
-SCROLL_MIN_PAGE_SIZE = 8
-SCROLL_RETRY_LIMIT = 5
+RETRIEVE_BATCH_SIZE = 1024
+RETRIEVE_MIN_BATCH_SIZE = 64
 NAMESPACE = uuid.UUID("53eaee8d-794f-4a90-b8c6-1efda7fe51ff")
 TOKEN_RE = re.compile(r"[\u3400-\u9fff]+|[a-z0-9]+(?:[._-][a-z0-9]+)*")
 PAYLOAD_INDEXES: tuple[tuple[str, str], ...] = (
@@ -563,45 +562,45 @@ def _point_id(chunk_id: str) -> str:
     return str(uuid.uuid5(NAMESPACE, f"{RELEASE_ID}\0{chunk_id}"))
 
 
-def _scroll_payloads(client: QdrantHttp) -> dict[str, dict[str, Any]]:
+def _retrieve_payloads(client: QdrantHttp, expected_ids: set[str]) -> dict[str, dict[str, Any]]:
     output: dict[str, dict[str, Any]] = {}
-    offset: Any = None
-    page_size = SCROLL_PAGE_SIZE
-    retry_count = 0
-    while True:
-        request: dict[str, Any] = {
-            "limit": page_size,
-            "with_payload": [
-                "chunk_id", "tenant_id", "release_id", "status", "candidate_file_sha256",
-                "embedding_provider", "embedding_model", "embedding_version", "embedding_dimension",
-                "sparse_profile",
-            ],
-            "with_vector": False,
-        }
-        if offset is not None:
-            request["offset"] = offset
+    ordered_ids = sorted(expected_ids)
+    pending = [
+        ordered_ids[start : start + RETRIEVE_BATCH_SIZE]
+        for start in range(0, len(ordered_ids), RETRIEVE_BATCH_SIZE)
+    ]
+    while pending:
+        batch = pending.pop(0)
+        chunk_ids_by_point_id = {_point_id(chunk_id): chunk_id for chunk_id in batch}
         status, body = client.request(
-            f"/collections/{quote(COLLECTION)}/points/scroll",
+            f"/collections/{quote(COLLECTION)}/points",
             method="POST",
-            payload=request,
+            payload={
+                "ids": list(chunk_ids_by_point_id),
+                "with_payload": [
+                    "chunk_id", "tenant_id", "release_id", "status", "candidate_file_sha256",
+                    "embedding_provider", "embedding_model", "embedding_version", "embedding_dimension",
+                    "sparse_profile",
+                ],
+                "with_vector": False,
+            },
         )
-        if status >= 500 and retry_count < SCROLL_RETRY_LIMIT:
-            retry_count += 1
-            page_size = max(SCROLL_MIN_PAGE_SIZE, page_size // 2)
+        if status >= 500 and len(batch) > RETRIEVE_MIN_BATCH_SIZE:
+            midpoint = len(batch) // 2
+            pending[0:0] = [batch[:midpoint], batch[midpoint:]]
             continue
         if status != 200:
-            raise CandidateCollectionError(f"qdrant_scroll_failed:{status}")
-        retry_count = 0
-        result = body.get("result", {})
-        for point in result.get("points", []):
+            raise CandidateCollectionError(f"qdrant_retrieve_failed:{status}")
+        result = body.get("result", [])
+        if not isinstance(result, list):
+            raise CandidateCollectionError("qdrant_retrieve_result_invalid")
+        for point in result:
             payload = point.get("payload") or {}
             chunk_id = str(payload.get("chunk_id") or "")
-            if not chunk_id or chunk_id in output or str(point.get("id")) != _point_id(chunk_id):
+            point_id = str(point.get("id"))
+            if not chunk_id or chunk_id in output or chunk_ids_by_point_id.get(point_id) != chunk_id:
                 raise CandidateCollectionError("qdrant_point_identity_invalid")
             output[chunk_id] = payload
-        offset = result.get("next_page_offset")
-        if offset is None:
-            break
     return output
 
 
@@ -678,7 +677,12 @@ def upload_collection(
     if alias_before == COLLECTION:
         raise CandidateCollectionError("candidate_collection_already_aliased")
     _create_or_validate_collection(client, len(chunks))
-    existing = _scroll_payloads(client)
+    collection_before = _collection_result(client)
+    if collection_before is None:
+        raise CandidateCollectionError("qdrant_collection_missing_before_audit")
+    existing = _retrieve_payloads(client, set(payloads))
+    if len(existing) != int(collection_before.get("points_count") or 0):
+        raise CandidateCollectionError("qdrant_unknown_point_detected")
     _validate_payload_facts(existing, set(payloads))
     _create_payload_indexes(client)
 
@@ -724,7 +728,7 @@ def upload_collection(
     payload_schema = result.get("payload_schema", {})
     if set(name for name, _ in PAYLOAD_INDEXES) - set(payload_schema):
         raise CandidateCollectionError("qdrant_payload_indexes_incomplete")
-    final_payloads = _scroll_payloads(client)
+    final_payloads = _retrieve_payloads(client, set(payloads))
     if set(final_payloads) != set(payloads):
         raise CandidateCollectionError("qdrant_final_point_set_mismatch")
     _validate_payload_facts(final_payloads, set(payloads))

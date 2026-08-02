@@ -6,7 +6,7 @@ from scripts.rag_r1_candidate_collection import (
     PAYLOAD_INDEXES,
     _point_id,
     _parent_contents,
-    _scroll_payloads,
+    _retrieve_payloads,
     build_bm25_profile,
     build_payloads,
     collection_create_payload,
@@ -145,28 +145,27 @@ def test_candidate_report_uses_rerun_stable_collection_state():
     assert '"collection_disposition": disposition' not in source
 
 
-def test_scroll_retries_server_timeout_with_smaller_same_offset_page():
+def test_retrieve_splits_server_timeout_batch_and_preserves_identity():
     class StubClient:
-        def __init__(self):
+        def __init__(self, expected):
             self.requests = []
+            self.chunk_ids = {_point_id(chunk_id): chunk_id for chunk_id in expected}
 
         def request(self, path, *, method, payload):
             self.requests.append((path, method, payload))
             if len(self.requests) == 1:
                 return 500, {"status": {"error": "retrieve timed out"}}
             return 200, {
-                "result": {
-                    "points": [
-                        {
-                            "id": _point_id("chk_1"),
-                            "payload": {"chunk_id": "chk_1"},
-                        }
-                    ],
-                    "next_page_offset": None,
-                }
+                "result": [
+                    {"id": point_id, "payload": {"chunk_id": self.chunk_ids[point_id]}}
+                    for point_id in payload["ids"]
+                ]
             }
 
-    client = StubClient()
-    assert _scroll_payloads(client) == {"chk_1": {"chunk_id": "chk_1"}}
-    assert [item[2]["limit"] for item in client.requests] == [256, 128]
-    assert all("offset" not in item[2] for item in client.requests)
+    expected = {f"chk_{index}" for index in range(128)}
+    client = StubClient(expected)
+    result = _retrieve_payloads(client, expected)
+
+    assert set(result) == expected
+    assert [len(item[2]["ids"]) for item in client.requests] == [128, 64, 64]
+    assert all(item[0].endswith("/points") for item in client.requests)
