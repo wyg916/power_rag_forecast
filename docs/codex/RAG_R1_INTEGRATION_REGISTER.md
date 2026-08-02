@@ -6,5 +6,6 @@
 |---:|---|---|---:|---|---|---|
 | 1 | 公共契约冻结 | `e8052398…` | 4 / +604 | 契约测试 5 passed；diff check PASS | DB 0；Qdrant 0；模型 0；网络 0 | `d2fc8677…` |
 | 2 | Ingestion I1 不可变源台账 | `49935aae…` + `410bbdaa…` + `63b79abe…` | 7 / +519 | I1 测试 7 passed；83/83 只读复核稳定 | DB 0；Qdrant 0；模型 0；Corpus 写入 0 | 本提交 |
+| 3 | Ingestion I2 结构化解析 | `249662a4…` | 13 / +626 | PDF/DOCX/HTML/XLSX 测试 8 passed；diff check PASS | DB 0；Qdrant 0；OCR 0；Corpus 写入 0 | 本提交 |
 
 待接收顺序：I2 → I3 → I4/I4A → I5/I5A → I6 → RT1 → RT2 → RT3 → RT4/RT4A/RT4B → RT5/RT5A → RT6/RT6A → 公共冲突统一。
