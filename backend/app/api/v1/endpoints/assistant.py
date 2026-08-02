@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import hashlib
 import json
 import re
 import time
@@ -15,7 +16,12 @@ from fastapi.responses import Response, StreamingResponse
 from ....core.redaction import mask_secret_fields
 from ....core.security import CurrentUser, require_permission
 from ....repositories.audit_repository import write_audit_log
-from ....repositories.knowledge_repository import build_qa_answer
+from ....services.rag_enterprise_runtime import (
+    EnterpriseRetrievalRuntime,
+    get_enterprise_retrieval_runtime,
+)
+from ....services.rag_grounding_service import build_grounded_rag_answer
+from ....services.rag_runtime_contract import enterprise_mode
 from ....services.rag_service import rag_search
 from ....platform_services import answer_chat, generate_ai_insights, get_chat_session, list_chat_sessions
 from ....schemas import AgentAnalyzeRequest, AnswerFeedbackRequest, ChatFeedbackRequest, ChatRequest
@@ -26,6 +32,71 @@ router = APIRouter()
 
 ASSISTANT_UPLOAD_DIR = Path(__file__).resolve().parents[4] / "data" / "assistant_uploads"
 ASSISTANT_UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024
+ASSISTANT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+
+
+def assistant_retrieval_runtime() -> EnterpriseRetrievalRuntime:
+    return get_enterprise_retrieval_runtime()
+
+
+def _assistant_identifier(value: str, prefix: str) -> str:
+    normalized = str(value or "").strip()
+    if normalized:
+        if not ASSISTANT_ID_RE.fullmatch(normalized):
+            raise HTTPException(status_code=400, detail=f"{prefix} 格式无效")
+        return normalized
+    return f"{prefix}-{uuid.uuid4().hex}"
+
+
+def _assistant_retrieval_kwargs(
+    request: Request,
+    user: CurrentUser,
+    *,
+    requested_run_id: str = "",
+) -> dict[str, Any]:
+    if request.headers.get("X-Tenant-ID") or "tenant_id" in request.query_params:
+        raise HTTPException(status_code=400, detail="tenant_id 只能来自认证上下文")
+    header_run_id = str(request.headers.get("X-Run-ID") or "").strip()
+    payload_run_id = str(requested_run_id or "").strip()
+    if payload_run_id == "latest":
+        payload_run_id = ""
+    if header_run_id and payload_run_id and header_run_id != payload_run_id:
+        raise HTTPException(status_code=400, detail="run_id 上下文冲突")
+    requested_run = header_run_id or payload_run_id
+    run_id = (
+        _assistant_identifier(requested_run, "run_id")
+        if requested_run
+        else "run_ai_" + uuid.uuid4().hex
+    )
+    requested_trace = str(request.headers.get("X-Trace-ID") or "").strip()
+    trace_id = (
+        _assistant_identifier(requested_trace, "trace_id")
+        if requested_trace
+        else "trace_" + uuid.uuid4().hex[:12]
+    )
+    output: dict[str, Any] = {
+        "retrieval_context": None,
+        "enterprise_store": None,
+        "enterprise_unavailable_reason": "",
+        "trace_id": trace_id,
+    }
+    if not enterprise_mode():
+        return output
+    actor = str(user.user_id or user.username).strip()
+    if not ASSISTANT_ID_RE.fullmatch(actor):
+        actor = "actor-" + hashlib.sha256(actor.encode("utf-8")).hexdigest()[:24]
+    binding = assistant_retrieval_runtime().bind(
+        user_id=actor,
+        roles=(user.role,),
+        run_id=run_id,
+        trace_id=trace_id,
+    )
+    output.update(
+        retrieval_context=binding.context,
+        enterprise_store=binding.store,
+        enterprise_unavailable_reason=binding.public_reason,
+    )
+    return output
 
 
 def _stream_event(event: str, data: dict[str, Any]) -> str:
@@ -84,7 +155,11 @@ def _build_conversation_docx(payload: dict[str, Any]) -> bytes:
     return buffer.getvalue()
 
 
-def _answer_chat_from_payload(payload: ChatRequest, debug_allowed: bool) -> dict:
+def _answer_chat_from_payload(
+    payload: ChatRequest,
+    debug_allowed: bool,
+    retrieval_kwargs: dict[str, Any],
+) -> dict:
     return answer_chat(
         payload.question,
         session_id=payload.session_id,
@@ -97,14 +172,18 @@ def _answer_chat_from_payload(payload: ChatRequest, debug_allowed: bool) -> dict
         answer_style=payload.answer_style,
         model_provider=payload.model_provider,
         debug=debug_allowed,
+        **retrieval_kwargs,
     )
 
 
 @router.post("/api/ai/rag-answer")
 def ai_rag_answer_read_only(
-    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
+    if "tenant_id" in payload:
+        raise HTTPException(status_code=400, detail="tenant_id 只能来自认证上下文")
     question = str(payload.get("question") or "").strip()
     if not question:
         raise HTTPException(status_code=400, detail="问题不能为空")
@@ -112,6 +191,9 @@ def ai_rag_answer_read_only(
     source_types = payload.get("source_types") or []
     if isinstance(source_types, str):
         source_types = [item.strip() for item in source_types.split(",") if item.strip()]
+    retrieval_kwargs = _assistant_retrieval_kwargs(
+        request, user, requested_run_id=str(payload.get("run_id") or "")
+    )
     result = rag_search(
         question,
         top_k=top_k,
@@ -119,12 +201,15 @@ def ai_rag_answer_read_only(
         source_types=[str(item).strip() for item in source_types if str(item).strip()],
         include_historical=bool(payload.get("include_historical", False)),
         include_demo=bool(payload.get("include_demo", False)),
+        context=retrieval_kwargs["retrieval_context"],
+        enterprise_store=retrieval_kwargs["enterprise_store"],
+        enterprise_unavailable_reason=retrieval_kwargs[
+            "enterprise_unavailable_reason"
+        ],
     )
-    return {
-        **build_qa_answer(question, result),
-        "retrieval": result.get("retrieval") or {},
-        "read_only": True,
-    }
+    return build_grounded_rag_answer(
+        question, result, trace_id=str(retrieval_kwargs["trace_id"])
+    )
 
 
 @router.post("/api/ai/chat")
@@ -143,7 +228,10 @@ def ai_chat(
             ip_address=request.client.host if request.client else "",
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
-    return _answer_chat_from_payload(payload, debug_allowed)
+    retrieval_kwargs = _assistant_retrieval_kwargs(
+        request, user, requested_run_id=payload.run_id
+    )
+    return _answer_chat_from_payload(payload, debug_allowed, retrieval_kwargs)
 
 
 @router.post("/api/ai/chat/stream")
@@ -163,11 +251,17 @@ def ai_chat_stream(
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
 
+    retrieval_kwargs = _assistant_retrieval_kwargs(
+        request, user, requested_run_id=payload.run_id
+    )
+
     def generate() -> Iterator[str]:
         yield _stream_event("intent", {"message": "已接收问题，正在识别业务意图。"})
         yield _stream_event("tool_start", {"name": "AI/RAG/业务工具链", "message": "正在复用主问答链路生成结果。"})
         try:
-            response = _answer_chat_from_payload(payload, debug_allowed)
+            response = _answer_chat_from_payload(
+                payload, debug_allowed, retrieval_kwargs
+            )
             for item in response.get("evidence_summary") or []:
                 yield _stream_event("rag_result", {"source": item})
             for item in response.get("knowledge_evidence_summary") or []:
@@ -269,6 +363,9 @@ def ai_agent_analyze(
             ip_address=request.client.host if request.client else "",
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
+    retrieval_kwargs = _assistant_retrieval_kwargs(
+        request, user, requested_run_id=payload.run_id
+    )
     return answer_chat_accurate(
         payload.question,
         session_id=payload.session_id,
@@ -281,6 +378,7 @@ def ai_agent_analyze(
         answer_style=payload.answer_style,
         model_provider=payload.model_provider,
         debug=debug_allowed,
+        **retrieval_kwargs,
     )
 
 

@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "python_compile": "PASS",
+  "permission_matrix_check": {
+    "status": "PASS",
+    "route_method_count": 201,
+    "unique_path_count": 188,
+    "public_count": 7,
+    "protected_count": 194
+  },
+  "pytest": {
+    "status": "PASS",
+    "passed": 146,
+    "skipped": 0,
+    "failed": 0,
+    "duration_seconds": 36.07,
+    "scope": "AI Claim/Citation contract, enterprise runtime binding, ACL, API/RBAC, Qdrant read-only store, content security and 100-call read-only regression"
+  },
+  "focused_contract_tests": {
+    "status": "PASS",
+    "passed": 28,
+    "failed": 0
+  },
+  "git_diff_check": "PASS",
+  "sensitive_scan": {
+    "status": "PASS",
+    "changed_files": 10,
+    "checked_secret_values": 3,
+    "findings": 0
+  },
+  "scope_guard": {
+    "changed_code_test_files": 10,
+    "effective_additions": 697,
+    "effective_deletions": 22,
+    "limit_files": 20,
+    "limit_effective_lines": 1000
+  },
+  "non_gating_observations": [
+    "Legacy AI data-dependent tests require their established seeded/runtime environment and are deferred to final full regression.",
+    "The existing AssistantPage copy-label contract remains a UI-package item and was not modified in this backend package."
+  ]
+}

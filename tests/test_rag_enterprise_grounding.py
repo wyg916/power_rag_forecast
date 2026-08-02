@@ -7,6 +7,7 @@ import pytest
 
 from backend.app.services.rag_grounding_service import (
     CITATION_FIELDS,
+    build_grounded_rag_answer,
     validate_candidate_citation,
     validate_candidate_citations,
     validate_claim_bindings,
@@ -138,3 +139,60 @@ def test_claim_binding_rejects_unvalidated_citation_catalog():
     )
     assert result.available is False
     assert result.refusal_reason == "grounding_evidence_missing"
+
+
+def test_grounded_answer_returns_only_claims_bound_to_verified_citations():
+    citations = validate_candidate_citations([_item()]).citations
+
+    result = build_grounded_rag_answer(
+        "如何判断尖峰风险？",
+        {
+            "available": True,
+            "release_id": "RAG-R1",
+            "citations": citations,
+            "retrieval": {"available": True},
+        },
+        trace_id="trace-ai-1",
+    )
+
+    assert result["available"] is True
+    assert result["grounding_status"] == "grounded"
+    assert result["release_id"] == "RAG-R1"
+    assert result["trace_id"] == "trace-ai-1"
+    assert result["claims"]
+    assert result["citations"] == citations
+    citation_ids = {item["citation_id"] for item in result["citations"]}
+    assert all(set(claim["citation_ids"]) <= citation_ids for claim in result["claims"])
+    assert all(claim["text"] in result["answer"] for claim in result["claims"])
+
+
+def test_grounded_answer_fails_closed_and_sanitizes_internal_reason():
+    unavailable = build_grounded_rag_answer(
+        "内部知识问题",
+        {
+            "available": False,
+            "release_id": "RAG-R1",
+            "citations": [],
+            "retrieval": {"reason": "current_published_release_missing"},
+        },
+        trace_id="trace-ai-2",
+    )
+    tampered = deepcopy(validate_candidate_citations([_item()]).citations[0])
+    tampered["quote"] += "伪造"
+    invalid = build_grounded_rag_answer(
+        "内部知识问题",
+        {
+            "available": True,
+            "release_id": "RAG-R1",
+            "citations": [tampered],
+        },
+        trace_id="trace-ai-3",
+    )
+
+    assert unavailable["available"] is False
+    assert unavailable["release_id"] is None
+    assert unavailable["claims"] == unavailable["citations"] == []
+    assert unavailable["refusal_reason"] == "grounding_evidence_missing"
+    assert "current_published_release_missing" not in str(unavailable)
+    assert invalid["available"] is False
+    assert invalid["refusal_reason"] == "grounding_evidence_missing"

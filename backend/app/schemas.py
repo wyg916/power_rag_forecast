@@ -44,7 +44,7 @@ class ForecastRunRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), extra="forbid")
 
     question: str = Field(..., min_length=1, max_length=1000)
     session_id: str | None = None
@@ -60,7 +60,7 @@ class ChatRequest(BaseModel):
 
 
 class AgentAnalyzeRequest(BaseModel):
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), extra="forbid")
 
     question: str = Field(..., min_length=1, max_length=1000)
     session_id: str | None = None

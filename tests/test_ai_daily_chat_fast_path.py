@@ -60,5 +60,6 @@ def test_time_question_is_lightweight_and_hides_debug_by_default() -> None:
     assert "运行 ID" not in payload["answer"]
     assert "数据依据" not in payload["answer"]
     assert "知识依据" not in payload["answer"]
-    for hidden_key in ["intent", "tools", "tool_calls", "trace", "workflow", "agent_trace", "trace_id"]:
+    for hidden_key in ["intent", "tools", "tool_calls", "trace", "workflow", "agent_trace"]:
         assert hidden_key not in payload
+    assert payload["trace_id"].startswith("trace_")

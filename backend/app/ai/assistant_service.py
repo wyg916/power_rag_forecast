@@ -68,6 +68,10 @@ def answer_chat(
     answer_style: str = "analysis",
     model_provider: str = "auto",
     debug: bool = False,
+    retrieval_context: Any = None,
+    enterprise_store: Any = None,
+    enterprise_unavailable_reason: str = "",
+    trace_id: str = "",
 ) -> dict[str, Any]:
     clean_question = (question or "").strip()
     return answer_chat_accurate(
@@ -82,6 +86,10 @@ def answer_chat(
         answer_style=answer_style,
         model_provider=model_provider,
         debug=debug,
+        retrieval_context=retrieval_context,
+        enterprise_store=enterprise_store,
+        enterprise_unavailable_reason=enterprise_unavailable_reason,
+        trace_id=trace_id,
     )
 
     session_id = session_id or "chat_" + uuid.uuid4().hex[:12]

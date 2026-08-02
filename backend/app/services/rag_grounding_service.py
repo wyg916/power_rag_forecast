@@ -204,3 +204,107 @@ def validate_claim_bindings(
         claim_ids.add(claim_id)
         normalized.append({"claim_id": claim_id, "text": text, "citation_ids": list(dict.fromkeys(citation_ids))})
     return ClaimGrounding(True, "grounded", "", normalized, [dict(item) for item in citations])
+
+
+def _public_refusal_reason(reason: str) -> str:
+    allowed = {
+        "no_evidence",
+        "release_unavailable",
+        "retrieval_runtime_unavailable",
+        "unpublished_content_forbidden",
+        "content_security_quarantined",
+        "grounding_evidence_missing",
+        "claim_contract_invalid",
+        "claim_citation_missing",
+        "claim_citation_invalid",
+    }
+    return reason if reason in allowed else "grounding_evidence_missing"
+
+
+def build_grounded_rag_answer(
+    question: str,
+    rag_result: Mapping[str, Any],
+    *,
+    trace_id: str,
+) -> dict[str, Any]:
+    retrieval = rag_result.get("retrieval")
+    retrieval_reason = (
+        str(retrieval.get("reason") or "") if isinstance(retrieval, Mapping) else ""
+    )
+    citations = rag_result.get("citations")
+    if not rag_result.get("available") or not isinstance(citations, (list, tuple)):
+        reason = _public_refusal_reason(retrieval_reason or "grounding_evidence_missing")
+        return {
+            "available": False,
+            "answer": "当前没有可验证且已发布的知识证据，无法据此回答该问题。",
+            "claims": [],
+            "citations": [],
+            "evidence": [],
+            "grounding_status": "unavailable",
+            "refusal_reason": reason,
+            "release_id": None,
+            "trace_id": trace_id,
+            "degraded_components": ["retrieval"],
+            "source_type": "unavailable",
+            "read_only": True,
+            "retrieval": {"available": False, "reason": reason},
+        }
+
+    claims: list[dict[str, Any]] = []
+    seen_quotes: set[str] = set()
+    for citation in citations[:8]:
+        if not isinstance(citation, Mapping):
+            continue
+        citation_id = str(citation.get("citation_id") or "").strip()
+        quote = str(citation.get("quote") or "").strip()
+        if not citation_id or not quote or quote in seen_quotes:
+            continue
+        seen_quotes.add(quote)
+        claim_basis = "\0".join(
+            (str(rag_result.get("release_id") or ""), citation_id, quote)
+        )
+        claims.append(
+            {
+                "claim_id": "claim-"
+                + hashlib.sha256(claim_basis.encode("utf-8")).hexdigest()[:24],
+                "text": quote,
+                "citation_ids": [citation_id],
+            }
+        )
+    grounding = validate_claim_bindings(claims, citations)
+    if not grounding.available:
+        reason = _public_refusal_reason(grounding.refusal_reason)
+        return {
+            "available": False,
+            "answer": "当前知识证据未通过主张与引用一致性校验，无法据此回答该问题。",
+            "claims": [],
+            "citations": [],
+            "evidence": [],
+            "grounding_status": "unavailable",
+            "refusal_reason": reason,
+            "release_id": None,
+            "trace_id": trace_id,
+            "degraded_components": ["grounding"],
+            "source_type": "unavailable",
+            "read_only": True,
+            "retrieval": {"available": False, "reason": reason},
+        }
+    answer = "依据已验证知识库证据：\n" + "\n".join(
+        f"{index}. {claim['text']}" for index, claim in enumerate(grounding.claims, 1)
+    )
+    return {
+        "available": True,
+        "answer": answer,
+        "claims": grounding.claims,
+        "citations": grounding.citations,
+        "evidence": grounding.citations,
+        "grounding_status": grounding.grounding_status,
+        "refusal_reason": "",
+        "release_id": rag_result.get("release_id"),
+        "trace_id": trace_id,
+        "degraded_components": [],
+        "source_type": "published_knowledge",
+        "read_only": True,
+        "retrieval": {"available": True, "reason": ""},
+        "question": question,
+    }

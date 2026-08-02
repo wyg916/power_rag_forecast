@@ -7,8 +7,8 @@ from typing import Any
 
 
 class TraceManager:
-    def __init__(self, question: str):
-        self.trace_id = "trace_" + uuid.uuid4().hex[:12]
+    def __init__(self, question: str, trace_id: str = ""):
+        self.trace_id = trace_id or "trace_" + uuid.uuid4().hex[:12]
         self._started = perf_counter()
         self.payload: dict[str, Any] = {
             "trace_id": self.trace_id,

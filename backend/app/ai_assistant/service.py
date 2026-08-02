@@ -24,6 +24,9 @@ from .memory.conversation_state import get_conversation_state, save_conversation
 from .prompts import build_expert_messages
 from .schemas import ConversationState, IntentDecision, ToolResult
 from ..services.core_data_sync import save_ai_trace_record
+from ..services.qdrant_vector_store import QdrantReadOnlyStore
+from ..services.rag_grounding_service import build_grounded_rag_answer
+from ..services.rag_runtime_contract import RetrievalContext
 from ..services.rag_service import rag_enabled, rag_search
 from .templates.deterministic_answers import answer_current_date, answer_data_freshness, answer_data_sql_query, answer_forecast_metric, answer_prediction_window
 from .templates.fallback_answers import (
@@ -78,7 +81,7 @@ def _explicit_unavailable_reason(question: str) -> str:
 
 
 def _security_refusal_payload(
-    *, session_id: str, model_provider: str, debug: bool, reason: str
+    *, session_id: str, model_provider: str, debug: bool, reason: str, trace_id: str
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "session_id": session_id,
@@ -98,6 +101,12 @@ def _security_refusal_payload(
         "warnings": [],
         "refused": True,
         "security_reason": reason,
+        "claims": [],
+        "grounding_status": "refused",
+        "refusal_reason": reason,
+        "release_id": None,
+        "trace_id": trace_id,
+        "degraded_components": [],
     }
     if debug:
         payload.update(
@@ -106,14 +115,15 @@ def _security_refusal_payload(
                 "tool_calls": [],
                 "tools": [],
                 "rag": {"available": False, "items": [], "retrieval": {"enabled": False, "reason": "security_refusal"}},
-                "trace_id": "",
                 "workflow": ["input_normalizer", "security_boundary"],
             }
         )
     return jsonable(payload)
 
 
-def _unavailable_payload(*, session_id: str, model_provider: str, debug: bool, reason: str) -> dict[str, Any]:
+def _unavailable_payload(
+    *, session_id: str, model_provider: str, debug: bool, reason: str, trace_id: str
+) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "session_id": session_id,
         "answer": "unavailable：缺少可信证据或关键业务约束，不能编造实时数值、收益或精确充放电量。",
@@ -131,9 +141,15 @@ def _unavailable_payload(*, session_id: str, model_provider: str, debug: bool, r
         "llm_used": False,
         "warnings": [],
         "unavailable_reason": reason,
+        "claims": [],
+        "grounding_status": "unavailable",
+        "refusal_reason": reason,
+        "release_id": None,
+        "trace_id": trace_id,
+        "degraded_components": ["business_evidence"],
     }
     if debug:
-        payload.update({"intent": "explicit_unavailable", "tool_calls": [], "tools": [], "rag": {"available": False, "items": [], "retrieval": {"enabled": False, "reason": reason}}, "trace_id": "", "workflow": ["input_normalizer", "unavailable_boundary"]})
+        payload.update({"intent": "explicit_unavailable", "tool_calls": [], "tools": [], "rag": {"available": False, "items": [], "retrieval": {"enabled": False, "reason": reason}}, "workflow": ["input_normalizer", "unavailable_boundary"]})
     return jsonable(payload)
 
 
@@ -534,6 +550,13 @@ def _daily_fast_path_payload(
         "risk_level": "",
         "focus_periods": [],
         "created_at": datetime.now(ZoneInfo("Asia/Shanghai")).isoformat(sep=" ", timespec="seconds"),
+        "claims": [],
+        "citations": [],
+        "grounding_status": "not_required",
+        "refusal_reason": "",
+        "release_id": None,
+        "trace_id": trace.trace_id,
+        "degraded_components": [],
     }
     if debug:
         debug_tools = []
@@ -1140,6 +1163,10 @@ def answer_chat_accurate(
     model_provider: str = "auto",
     debug: bool = False,
     persist: bool = True,
+    retrieval_context: RetrievalContext | None = None,
+    enterprise_store: QdrantReadOnlyStore | None = None,
+    enterprise_unavailable_reason: str = "",
+    trace_id: str = "",
 ) -> dict[str, Any]:
     total_started = time.perf_counter()
     timings_ms: dict[str, float] = {}
@@ -1147,6 +1174,7 @@ def answer_chat_accurate(
     clean_question = normalize_question(question)
     timings_ms["input_normalizer_ms"] = _timing_ms(stage_started)
     session_id = session_id or "chat_" + uuid.uuid4().hex[:12]
+    trace_id = trace_id or "trace_" + uuid.uuid4().hex[:12]
     security_reason = _security_refusal_reason(clean_question)
     if security_reason:
         return _security_refusal_payload(
@@ -1154,6 +1182,7 @@ def answer_chat_accurate(
             model_provider=model_provider,
             debug=debug,
             reason=security_reason,
+            trace_id=trace_id,
         )
     unavailable_reason = _explicit_unavailable_reason(clean_question)
     if unavailable_reason:
@@ -1162,8 +1191,9 @@ def answer_chat_accurate(
             model_provider=model_provider,
             debug=debug,
             reason=unavailable_reason,
+            trace_id=trace_id,
         )
-    trace = TraceManager(clean_question)
+    trace = TraceManager(clean_question, trace_id=trace_id)
     trace.step("input_normalizer", normalized_question=clean_question)
     stage_started = time.perf_counter()
     previous = get_conversation_state(session_id)
@@ -1222,6 +1252,9 @@ def answer_chat_accurate(
                 clean_question,
                 top_k=_rag_top_k(),
                 domain=_rag_domain_hint(clean_question) if decision.intent == "knowledge_search" else "",
+                context=retrieval_context,
+                enterprise_store=enterprise_store,
+                enterprise_unavailable_reason=enterprise_unavailable_reason,
             )
             timings_ms["rag_total_ms"] = _timing_ms(stage_started)
             evidence.extend(_rag_evidence(rag_result))
@@ -1324,6 +1357,28 @@ def answer_chat_accurate(
     answer = sanitize_answer_for_display(answer)
     timings_ms["answer_guard_ms"] = _timing_ms(stage_started)
     trace.step("answer_guard", guard_result=guard_result)
+    requires_rag_grounding = bool(
+        use_rag
+        and decision.intent in {"knowledge_search", "general_query"}
+        and not _storage_boundary_note(clean_question)
+    )
+    grounding_payload = (
+        build_grounded_rag_answer(
+            clean_question, rag_result, trace_id=trace.trace_id
+        )
+        if use_rag
+        else None
+    )
+    if requires_rag_grounding and grounding_payload is not None:
+        answer = sanitize_answer_for_display(str(grounding_payload["answer"]))
+        guard_result = (
+            "passed" if grounding_payload.get("available") else "unavailable"
+        )
+    trace.step(
+        "rag_grounding",
+        required=requires_rag_grounding,
+        status=(grounding_payload or {}).get("grounding_status", "not_required"),
+    )
     timings_ms["total_ms"] = _timing_ms(total_started)
     trace_payload = trace.finish(intent=decision.intent, intent_confidence=decision.confidence, llm_used=llm_used, answer_mode=plan.answer_mode, guard_result=guard_result)
     tool_calls = [
@@ -1381,6 +1436,8 @@ def answer_chat_accurate(
         else "none"
     )
     actual_run_id = run_id if run_id and run_id != "latest" else None
+    if not actual_run_id and retrieval_context is not None:
+        actual_run_id = retrieval_context.run_id or None
     tool_source_types: list[str] = []
     response_domain = str(rag_result.get("domain") or "")
     model_version = ""
@@ -1402,6 +1459,48 @@ def answer_chat_accurate(
     )
     if rag_citations and any(item.get("tool") != "rag_hybrid_search" for item in evidence):
         response_source_type = "derived"
+    grounded_available = bool(grounding_payload and grounding_payload.get("available"))
+    if requires_rag_grounding and not grounded_available:
+        response_source_type = "unavailable"
+        rag_confidence = "none"
+    controlled_fact_answer = plan.answer_mode == "deterministic_template"
+    public_citations = (
+        list((grounding_payload or {}).get("citations") or [])
+        if grounding_payload is not None and not controlled_fact_answer
+        else []
+    )
+    public_claims = (
+        list((grounding_payload or {}).get("claims") or [])
+        if grounding_payload is not None and not controlled_fact_answer
+        else []
+    )
+    if requires_rag_grounding:
+        grounding_status = str(
+            (grounding_payload or {}).get("grounding_status") or "unavailable"
+        )
+        refusal_reason = str(
+            (grounding_payload or {}).get("refusal_reason")
+            or ("grounding_evidence_missing" if not grounded_available else "")
+        )
+    elif controlled_fact_answer and evidence:
+        grounding_status, refusal_reason = "tool_grounded", ""
+    elif grounded_available and evidence:
+        grounding_status, refusal_reason = "tool_and_rag_grounded", ""
+    elif evidence:
+        grounding_status, refusal_reason = "tool_grounded", ""
+    else:
+        grounding_status, refusal_reason = "not_required", ""
+    degraded_components: list[str] = []
+    if model_error:
+        degraded_components.append("llm")
+    if use_rag and not rag_result.get("available"):
+        degraded_components.append("retrieval")
+    degraded_components.extend(
+        str(item)
+        for item in (grounding_payload or {}).get("degraded_components", [])
+        if str(item)
+    )
+    degraded_components = list(dict.fromkeys(degraded_components))
     public_payload: dict[str, Any] = {
         "session_id": session_id,
         "answer": answer,
@@ -1412,8 +1511,18 @@ def answer_chat_accurate(
         "feature_version": feature_version or None,
         "generated_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
         "confidence": rag_confidence,
-        "citations": rag_citations,
-        "evidence": evidence,
+        "claims": public_claims,
+        "citations": public_citations,
+        "evidence": public_citations if requires_rag_grounding else evidence,
+        "grounding_status": grounding_status,
+        "refusal_reason": refusal_reason,
+        "release_id": (
+            (grounding_payload or {}).get("release_id")
+            if grounded_available and not controlled_fact_answer
+            else None
+        ),
+        "trace_id": trace.trace_id,
+        "degraded_components": degraded_components,
         "answer_style": normalize_answer_style(answer_style),
         "model_provider_used": model_status.get("provider") or "",
         "model_provider_requested": model_provider,
