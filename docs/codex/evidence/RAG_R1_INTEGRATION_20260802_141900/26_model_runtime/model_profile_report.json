@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "output": "E:\\智能运营分析项目_运行资产\\rag-r1\\qdrant\\secrets\\model-profile.env",
+  "sha256": "fbb72023c95e6b199173975a5079e69d6fc0d755236aa4697588de35ea3434cc",
+  "versions": {
+    "embedding": "sha256:a6854a4b265bc6c7159d02927ece3548e63e7b57cf49deee2a77b94bbb0ec3fa",
+    "reranker": "sha256:2a581f058542bd175695f8f92097b7aa4fbdac637ad486739f26e4cbc11ca159"
+  },
+  "acl_applied": true,
+  "principal_sid_sha256": "d0ee92d0ce84ced04aec3172fb98f25ffec8214542b1497cde841fd6264d0268",
+  "secret_values_written": false
+}
