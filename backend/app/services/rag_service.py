@@ -26,6 +26,8 @@ from backend.app.repositories.knowledge_repository import (
 from backend.app.services.embedding_service import cosine_similarity, embed_text_with_metadata, get_embedding_provider
 from backend.app.services.hybrid_retrieval_service import hybrid_retrieve
 from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
+from backend.app.services.rag_content_security import secure_candidates
+from backend.app.services.rag_grounding_service import validate_candidate_citations
 from backend.app.services.rag_runtime_contract import (
     RetrievalContext,
     enterprise_mode,
@@ -840,21 +842,30 @@ def _enterprise_rag_search(
     )
     if not result.available:
         return _enterprise_unavailable(query, result.reason, release_id=release_id)
+    secured = secure_candidates(result.items)
+    if not secured.available:
+        return _enterprise_unavailable(query, secured.reason, release_id=release_id)
     prepared = [
         {
             **item,
             "doc_id": item.get("document_id"),
-            "section_title": item.get("section_title") or "/".join(item.get("section_path") or []),
+            "section_title": item.get("section_title") or "",
         }
-        for item in result.items
+        for item in secured.items
     ]
     reranked, reranker_name, rerank_error = rerank_candidates(query, prepared)
     if rerank_error or reranker_name == "unavailable" or not reranked:
         return _enterprise_unavailable(query, "reranker_unavailable", release_id=release_id)
+    for item in reranked:
+        item["final_score"] = float(item.get("final_score") or 0.0) * float(
+            item.get("security_score_multiplier") or 0.0
+        )
+    reranked.sort(key=lambda item: float(item.get("final_score") or 0.0), reverse=True)
     items = reranked[: result.top_k]
-    citations = _citations_from_items(items)
-    if len(citations) != len(items):
-        return _enterprise_unavailable(query, "citation_contract_incomplete", release_id=release_id)
+    citation_batch = validate_candidate_citations(items)
+    if not citation_batch.available:
+        return _enterprise_unavailable(query, citation_batch.reason, release_id=release_id)
+    citations = citation_batch.citations
     return {
         "available": True,
         "source_type": "published_knowledge",
@@ -872,6 +883,10 @@ def _enterprise_rag_search(
             "cache_key": result.cache_key,
             "cache_hit": False,
             "reranker": reranker_name,
+            "content_security": {
+                "quarantined": secured.quarantined_count,
+                "downranked": secured.downranked_count,
+            },
         },
         "timings_ms": {},
     }
