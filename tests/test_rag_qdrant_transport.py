@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 
 import pytest
+from sqlalchemy import create_engine, text
 
 from backend.app.api.v1.endpoints.knowledge import _search_payload
 from backend.app.services import rag_qdrant_transport as module
@@ -39,3 +40,41 @@ def test_transport_is_read_only_and_fixed_to_release_collection() -> None:
     assert 'method="DELETE"' not in source
     assert 'collection != "rag_chunks_RAG-R1"' in source
     assert "QDRANT_ADMIN_API_KEY" not in source
+    assert 'quote(CURRENT_ALIAS)' in source
+    assert "published_alias_mismatch" in source
+
+
+def test_postgres_current_release_gate_rejects_candidate_and_drift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    engine = create_engine("sqlite:///:memory:", future=True)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE kb_releases (
+                  tenant_id TEXT, release_id TEXT, collection_name TEXT,
+                  status TEXT, is_current BOOLEAN
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO kb_releases VALUES
+                  ('default','RAG-R1','rag_chunks_RAG-R1','candidate',false)
+                """
+            )
+        )
+    monkeypatch.setattr(module, "postgres_engine", lambda: engine)
+
+    assert module._postgres_release_is_current("RAG-R1", "rag_chunks_RAG-R1") is False
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "UPDATE kb_releases SET status='published', is_current=true WHERE release_id='RAG-R1'"
+            )
+        )
+    assert module._postgres_release_is_current("RAG-R1", "rag_chunks_RAG-R1") is True
+    assert module._postgres_release_is_current("RAG-R2", "rag_chunks_RAG-R2") is False

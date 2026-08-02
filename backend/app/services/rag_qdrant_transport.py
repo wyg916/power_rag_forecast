@@ -13,7 +13,10 @@ from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+from sqlalchemy import text
+
 from backend.app.core.security import CurrentUser
+from backend.app.repositories.base import postgres_engine
 from backend.app.services.qdrant_security_contract import qdrant_security_status
 from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
 from backend.app.services.rag_runtime_contract import RetrievalContext, runtime_contract_status
@@ -21,6 +24,7 @@ from backend.app.services.rag_runtime_contract import RetrievalContext, runtime_
 
 EXPECTED_RELEASE_ROOT = Path("E:/智能运营分析项目/.runtime/rag/releases/RAG-R1").resolve()
 TOKEN_RE = re.compile(r"[\u3400-\u9fff]+|[a-z0-9]+(?:[._-][a-z0-9]+)*")
+CURRENT_ALIAS = "rag_chunks_current"
 
 
 class QdrantReadError(RuntimeError):
@@ -107,9 +111,34 @@ class QdrantHttpsReadOnlyTransport:
             raise QdrantReadError("qdrant_response_invalid")
         return {"points": points}
 
+    def _current_alias(self) -> str | None:
+        request = Request(
+            self.endpoint + "/aliases",
+            headers={"accept": "application/json", "api-key": self.api_key},
+            method="GET",
+        )
+        try:
+            with urlopen(request, context=self.context, timeout=10) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError, HTTPError) as exc:
+            raise QdrantReadError("qdrant_alias_unavailable") from exc
+        aliases = body.get("result", {}).get("aliases")
+        if not isinstance(aliases, list):
+            raise QdrantReadError("qdrant_alias_response_invalid")
+        matches = [
+            str(item.get("collection_name") or "")
+            for item in aliases
+            if isinstance(item, Mapping) and item.get("alias_name") == CURRENT_ALIAS
+        ]
+        if len(matches) > 1:
+            raise QdrantReadError("qdrant_alias_response_invalid")
+        return matches[0] if matches else None
+
     def query(self, *, collection: str, request: Mapping[str, Any]) -> Mapping[str, Any]:
         if collection != "rag_chunks_RAG-R1":
             raise QdrantReadError("collection_rejected")
+        if self._current_alias() != collection:
+            raise QdrantReadError("published_alias_mismatch")
         mode = str(request.get("mode") or "")
         common = {
             "filter": request.get("filter"),
@@ -119,7 +148,7 @@ class QdrantHttpsReadOnlyTransport:
         }
         if mode == "dense":
             payload = {**common, "query": request.get("query"), "using": "dense"}
-            return self._request(f"/collections/{quote(collection)}/points/query", payload)
+            return self._request(f"/collections/{quote(CURRENT_ALIAS)}/points/query", payload)
         if mode == "sparse":
             source = request.get("query")
             query_text = str(source.get("text") or "") if isinstance(source, Mapping) else ""
@@ -127,11 +156,37 @@ class QdrantHttpsReadOnlyTransport:
             if not sparse["indices"]:
                 return {"points": []}
             payload = {**common, "query": sparse, "using": "bm25"}
-            return self._request(f"/collections/{quote(collection)}/points/query", payload)
+            return self._request(f"/collections/{quote(CURRENT_ALIAS)}/points/query", payload)
         if mode == "structured":
             payload = {**common, "limit": common["limit"]}
-            return self._request(f"/collections/{quote(collection)}/points/scroll", payload)
+            return self._request(f"/collections/{quote(CURRENT_ALIAS)}/points/scroll", payload)
         raise QdrantReadError("query_mode_invalid")
+
+
+def _postgres_release_is_current(release_id: str, collection: str) -> bool:
+    engine = postgres_engine()
+    if engine is None:
+        raise QdrantReadError("published_release_fact_unavailable")
+    try:
+        with engine.connect() as connection:
+            row = connection.execute(
+                text(
+                    """
+                    SELECT release_id, collection_name, status, is_current
+                    FROM kb_releases
+                    WHERE tenant_id = 'default' AND is_current
+                    """
+                )
+            ).mappings().one_or_none()
+    except Exception as exc:
+        raise QdrantReadError("published_release_fact_unavailable") from exc
+    return bool(
+        row
+        and row["release_id"] == release_id
+        and row["collection_name"] == collection
+        and row["status"] == "published"
+        and bool(row["is_current"])
+    )
 
 
 def enterprise_runtime_for_user(
@@ -139,6 +194,10 @@ def enterprise_runtime_for_user(
 ) -> tuple[RetrievalContext, QdrantReadOnlyStore]:
     contract = runtime_contract_status()
     contract.require_available()
+    if not _postgres_release_is_current(
+        contract.release.release_id, contract.release.collection
+    ):
+        raise QdrantReadError("published_release_fact_mismatch")
     roles = (user.role,) if user.role else ()
     acl_value = {
         "tenant_id": "default",
