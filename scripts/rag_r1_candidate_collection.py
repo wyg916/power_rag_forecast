@@ -51,6 +51,9 @@ TENANT_ID = "default"
 SHARD_SIZE = 128
 INFERENCE_BATCH_SIZE = 16
 UPSERT_BATCH_SIZE = 16
+SCROLL_PAGE_SIZE = 32
+SCROLL_MIN_PAGE_SIZE = 8
+SCROLL_RETRY_LIMIT = 3
 NAMESPACE = uuid.UUID("53eaee8d-794f-4a90-b8c6-1efda7fe51ff")
 TOKEN_RE = re.compile(r"[\u3400-\u9fff]+|[a-z0-9]+(?:[._-][a-z0-9]+)*")
 PAYLOAD_INDEXES: tuple[tuple[str, str], ...] = (
@@ -563,9 +566,11 @@ def _point_id(chunk_id: str) -> str:
 def _scroll_payloads(client: QdrantHttp) -> dict[str, dict[str, Any]]:
     output: dict[str, dict[str, Any]] = {}
     offset: Any = None
+    page_size = SCROLL_PAGE_SIZE
+    retry_count = 0
     while True:
         request: dict[str, Any] = {
-            "limit": 256,
+            "limit": page_size,
             "with_payload": [
                 "chunk_id", "tenant_id", "release_id", "status", "candidate_file_sha256",
                 "embedding_provider", "embedding_model", "embedding_version", "embedding_dimension",
@@ -580,8 +585,13 @@ def _scroll_payloads(client: QdrantHttp) -> dict[str, dict[str, Any]]:
             method="POST",
             payload=request,
         )
+        if status >= 500 and retry_count < SCROLL_RETRY_LIMIT:
+            retry_count += 1
+            page_size = max(SCROLL_MIN_PAGE_SIZE, page_size // 2)
+            continue
         if status != 200:
             raise CandidateCollectionError(f"qdrant_scroll_failed:{status}")
+        retry_count = 0
         result = body.get("result", {})
         for point in result.get("points", []):
             payload = point.get("payload") or {}

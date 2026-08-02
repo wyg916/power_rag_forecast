@@ -6,6 +6,7 @@ from scripts.rag_r1_candidate_collection import (
     PAYLOAD_INDEXES,
     _point_id,
     _parent_contents,
+    _scroll_payloads,
     build_bm25_profile,
     build_payloads,
     collection_create_payload,
@@ -142,3 +143,30 @@ def test_candidate_report_uses_rerun_stable_collection_state():
 
     assert '"collection_state": "ready"' in source
     assert '"collection_disposition": disposition' not in source
+
+
+def test_scroll_retries_server_timeout_with_smaller_same_offset_page():
+    class StubClient:
+        def __init__(self):
+            self.requests = []
+
+        def request(self, path, *, method, payload):
+            self.requests.append((path, method, payload))
+            if len(self.requests) == 1:
+                return 500, {"status": {"error": "retrieve timed out"}}
+            return 200, {
+                "result": {
+                    "points": [
+                        {
+                            "id": _point_id("chk_1"),
+                            "payload": {"chunk_id": "chk_1"},
+                        }
+                    ],
+                    "next_page_offset": None,
+                }
+            }
+
+    client = StubClient()
+    assert _scroll_payloads(client) == {"chk_1": {"chunk_id": "chk_1"}}
+    assert [item[2]["limit"] for item in client.requests] == [32, 16]
+    assert all("offset" not in item[2] for item in client.requests)
