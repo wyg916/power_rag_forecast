@@ -10,6 +10,7 @@ from sqlalchemy import text
 from config_loader import load_dotenv
 from backend.app.repositories.base import loads_json, mapping_list, postgres_engine
 from backend.app.services.embedding_service import get_embedding_provider
+from backend.app.services.rag_runtime_contract import runtime_contract_status
 from backend.app.services.rerank_service import get_reranker
 
 
@@ -222,7 +223,16 @@ def _knowledge_state() -> dict[str, Any]:
     }
 
 
-def rag_health() -> dict[str, Any]:
+def _component_issues(issues: list[str], prefix: str) -> list[str]:
+    return [item for item in issues if item.startswith(prefix)]
+
+
+def _safe_model_label(value: str) -> str:
+    return Path(str(value or "").replace("\\", "/")).name
+
+
+def rag_health(*, diagnostic: bool = False) -> dict[str, Any]:
+    contract = runtime_contract_status()
     provider = _provider_state()
     knowledge = _knowledge_state()
     fallback_reasons = list(provider.get("fallback_reasons") or [])
@@ -246,18 +256,110 @@ def rag_health() -> dict[str, Any]:
     status = "normal"
     if (_env("RAG_ENABLED", "1") or "1").lower() in {"0", "false", "no", "off"}:
         status = "disabled"
+    elif contract.enterprise and contract.issues:
+        status = "unavailable"
+    elif contract.enterprise and not knowledge.get("available"):
+        status = "unavailable"
     elif fallback_reasons:
         status = "fallback"
     elif blocking_reasons:
         status = "unavailable"
     elif not provider.get("embedding_model_path_exists") and provider.get("embedding_provider_config") in {"bge", "sentence_transformers", "sentence-transformers"}:
         status = "not_configured"
-    return {
+    contract_issues = list(contract.issues)
+    degraded_components: list[str] = []
+    if _component_issues(contract_issues, "embedding_") or any(
+        item.startswith("embedding_") for item in fallback_reasons
+    ):
+        degraded_components.append("embedding")
+    if _component_issues(contract_issues, "rerank_") or any(
+        item.startswith("rerank_") for item in fallback_reasons
+    ):
+        degraded_components.append("reranker")
+    if _component_issues(contract_issues, "release_"):
+        degraded_components.append("release")
+    if any(item.startswith("file_fallback_") for item in contract_issues):
+        degraded_components.append("retrieval")
+    if not knowledge.get("available") or any(
+        item in {"official_knowledge_unavailable", "official_metadata_incomplete"}
+        for item in blocking_reasons
+    ):
+        degraded_components.append("knowledge_store")
+    if any(item.startswith("official_embedding_") for item in blocking_reasons):
+        degraded_components.append("embedding")
+    degraded_components = list(dict.fromkeys(degraded_components))
+
+    public_result: dict[str, Any] = {
         "ok": status == "normal",
         "status": status,
-        **provider,
-        **knowledge,
-        "fallback_enabled": bool(fallback_reasons),
-        "fallback_reasons": fallback_reasons,
+        "enterprise_profile": contract.enterprise,
+        "release_id": contract.release.release_id if not contract.release.issues() else None,
+        "components": {
+            "knowledge_store": {"available": bool(knowledge.get("available"))},
+            "embedding": {
+                "available": "embedding" not in degraded_components,
+            },
+            "reranker": {
+                "available": "reranker" not in degraded_components,
+            },
+            "release": {
+                "available": "release" not in degraded_components,
+            },
+        },
+        "degraded_components": degraded_components,
+        "fallback_enabled": bool(fallback_reasons)
+        or any(item.endswith("_fallback_forbidden") for item in contract_issues),
+        "fallback_reasons": [
+            f"{component}_unavailable" for component in degraded_components
+        ],
         "blocking_reasons": blocking_reasons,
+        "kb_document_count": int(knowledge.get("kb_document_count") or 0),
+        "kb_chunk_count": int(knowledge.get("kb_chunk_count") or 0),
+        "embedded_chunk_count": int(knowledge.get("embedded_chunk_count") or 0),
+        "formal_metadata_complete_count": int(
+            knowledge.get("formal_metadata_complete_count") or 0
+        ),
+        "last_embedding_refresh_at": knowledge.get("last_embedding_refresh_at"),
     }
+    if diagnostic:
+        public_result["diagnostics"] = {
+            "embedding": {
+                "provider": contract.embedding.provider or provider.get("embedding_provider_config", ""),
+                "model": _safe_model_label(
+                    contract.embedding.model or provider.get("embedding_model", "")
+                ),
+                "version": contract.embedding.version,
+                "expected_version": contract.embedding.expected_version,
+                "dimension": contract.embedding.dimensions,
+                "expected_dimension": contract.embedding.expected_dimensions,
+                "model_path": {
+                    "configured": contract.embedding.model_path_configured,
+                    "exists": contract.embedding.model_path_exists,
+                    "readable": contract.embedding.model_path_readable,
+                },
+            },
+            "reranker": {
+                "provider": contract.reranker.provider or provider.get("rerank_provider_config", ""),
+                "model": _safe_model_label(contract.reranker.model),
+                "version": contract.reranker.version,
+                "expected_version": contract.reranker.expected_version,
+                "enabled": contract.reranker.enabled,
+                "model_path": {
+                    "configured": contract.reranker.model_path_configured,
+                    "exists": contract.reranker.model_path_exists,
+                    "readable": contract.reranker.model_path_readable,
+                },
+            },
+            "release": {
+                "release_id": contract.release.release_id,
+                "collection": contract.release.collection,
+                "alias": contract.release.alias,
+            },
+            "issues": contract_issues or fallback_reasons,
+            "runtime_fallback_reasons": fallback_reasons,
+            "blocking_reasons": blocking_reasons,
+            "embedding_dimension_distribution": knowledge.get(
+                "embedding_dim_distribution", {}
+            ),
+        }
+    return public_result

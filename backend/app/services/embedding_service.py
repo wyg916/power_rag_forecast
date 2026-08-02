@@ -10,6 +10,11 @@ from threading import Lock
 from typing import Any, Protocol
 
 from config_loader import load_dotenv
+from backend.app.services.rag_runtime_contract import (
+    RuntimeContractError,
+    enterprise_mode,
+    runtime_contract_status,
+)
 
 
 def _env(name: str, default: str = "") -> str:
@@ -159,6 +164,8 @@ _PROVIDER_CACHE: dict[tuple[Any, ...], EmbeddingProvider] = {}
 _PROVIDER_CACHE_LOCK = Lock()
 
 def get_embedding_provider() -> EmbeddingProvider:
+    if enterprise_mode():
+        runtime_contract_status().require_available()
     provider = (_env("RAG_EMBEDDING_PROVIDER", "local") or "local").lower()
     model = _env("RAG_EMBEDDING_MODEL", "local-hash-bge-small-zh-v1.5-compatible")
     version = _env("RAG_EMBEDDING_VERSION", "")
@@ -199,6 +206,8 @@ def get_embedding_provider() -> EmbeddingProvider:
 
 
 def _fallback_provider() -> EmbeddingProvider:
+    if enterprise_mode():
+        raise RuntimeContractError(("embedding_fallback_forbidden",))
     fallback = (_env("RAG_EMBEDDING_FALLBACK_PROVIDER", "hash") or "hash").lower()
     dimensions = int(_env("RAG_EMBEDDING_DIM", "256") or "256")
     model = _env("RAG_EMBEDDING_FALLBACK_MODEL", "local-hash-fallback")
@@ -220,6 +229,19 @@ def _provider_metadata(provider: EmbeddingProvider, vector: list[float], *, fall
     return metadata
 
 
+def _unavailable_metadata(exc: Exception) -> dict[str, Any]:
+    issues = getattr(exc, "issues", ())
+    reason = ",".join(str(item) for item in issues) or exc.__class__.__name__
+    return {
+        "provider": "unavailable",
+        "model": "",
+        "dim": 0,
+        "version": "",
+        "fallback": False,
+        "error": reason[:200],
+    }
+
+
 def _validate_vector(provider: EmbeddingProvider, vector: list[float]) -> tuple[list[float], str]:
     if not vector:
         return [], "empty_embedding"
@@ -230,7 +252,10 @@ def _validate_vector(provider: EmbeddingProvider, vector: list[float]) -> tuple[
 
 
 def embed_text_with_metadata(text: str) -> dict[str, Any]:
-    provider = get_embedding_provider()
+    try:
+        provider = get_embedding_provider()
+    except Exception as exc:
+        return {"embedding": [], "metadata": _unavailable_metadata(exc)}
     try:
         vector, error = _validate_vector(provider, provider.embed(text))
         if vector:
@@ -256,7 +281,11 @@ def embed_text_with_metadata(text: str) -> dict[str, Any]:
 
 
 def embed_batch_with_metadata(texts: list[str]) -> list[dict[str, Any]]:
-    provider = get_embedding_provider()
+    try:
+        provider = get_embedding_provider()
+    except Exception as exc:
+        metadata = _unavailable_metadata(exc)
+        return [{"embedding": [], "metadata": dict(metadata)} for _ in texts]
     try:
         vectors = provider.embed_batch(texts)
         results = []

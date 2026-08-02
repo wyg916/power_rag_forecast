@@ -8,6 +8,7 @@ from threading import Lock
 from typing import Any, Protocol
 
 from config_loader import load_dotenv
+from backend.app.services.rag_runtime_contract import enterprise_mode, runtime_contract_status
 
 
 def _env(name: str, default: str = "") -> str:
@@ -167,6 +168,8 @@ _RERANKER_CACHE_LOCK = Lock()
 
 
 def get_reranker() -> RerankProvider:
+    if enterprise_mode():
+        runtime_contract_status().require_available()
     enabled = (_env("RAG_RERANK_ENABLED", "1") or "1").lower() not in {"0", "false", "no", "off"}
     if not enabled:
         return DisabledReranker()
@@ -200,10 +203,14 @@ def get_reranker() -> RerankProvider:
 
 
 def rerank_candidates(query: str, candidates: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str, str]:
-    reranker = get_reranker()
     try:
+        reranker = get_reranker()
         return reranker.rerank(query, candidates), reranker.name, ""
     except Exception as exc:
+        if enterprise_mode():
+            issues = getattr(exc, "issues", ())
+            error = ",".join(str(item) for item in issues) or exc.__class__.__name__
+            return [], "unavailable", error[:300]
         fallback_provider = (_env("RAG_RERANK_FALLBACK_PROVIDER", "heuristic") or "heuristic").lower()
         if fallback_provider in {"local", "heuristic", "local_heuristic"}:
             fallback = LocalHeuristicReranker(name="local_heuristic_fallback").rerank(query, candidates)
