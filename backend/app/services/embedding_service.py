@@ -127,12 +127,22 @@ class SentenceTransformersEmbeddingProvider:
             os.environ.setdefault("USE_FLAX", "0")
             os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
             os.environ.setdefault("TRANSFORMERS_NO_FLAX", "1")
+            enterprise = enterprise_mode()
+            if enterprise:
+                os.environ["TRANSFORMERS_OFFLINE"] = "1"
+                os.environ["HF_HUB_OFFLINE"] = "1"
+                os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
             from sentence_transformers import SentenceTransformer
 
             path = self.model_path or self.model
             if not path:
                 raise RuntimeError("RAG_EMBEDDING_MODEL_PATH is empty")
-            self._model_obj = SentenceTransformer(path, device=self.device or "cpu")
+            self._model_obj = SentenceTransformer(
+                path,
+                device=self.device or "cpu",
+                local_files_only=enterprise,
+                trust_remote_code=False,
+            )
             return self._model_obj
 
     def embed(self, text: str) -> list[float]:

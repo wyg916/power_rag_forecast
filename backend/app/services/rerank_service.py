@@ -91,14 +91,28 @@ class BGETransformersReranker:
             os.environ.setdefault("USE_FLAX", "0")
             os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
             os.environ.setdefault("TRANSFORMERS_NO_FLAX", "1")
+            enterprise = enterprise_mode()
+            if enterprise:
+                os.environ["TRANSFORMERS_OFFLINE"] = "1"
+                os.environ["HF_HUB_OFFLINE"] = "1"
+                os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
             import torch
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
             path = self.model_path or self.model
             if not path:
                 raise RuntimeError("RAG_RERANK_MODEL_PATH is empty")
-            tokenizer = AutoTokenizer.from_pretrained(path)
-            model = AutoModelForSequenceClassification.from_pretrained(path)
+            tokenizer = AutoTokenizer.from_pretrained(
+                path,
+                local_files_only=enterprise,
+                trust_remote_code=False,
+            )
+            model = AutoModelForSequenceClassification.from_pretrained(
+                path,
+                local_files_only=enterprise,
+                trust_remote_code=False,
+                use_safetensors=True if enterprise else None,
+            )
             model.to(self.device or "cpu")
             model.eval()
             self._tokenizer = tokenizer
