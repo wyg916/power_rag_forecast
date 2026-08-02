@@ -74,6 +74,17 @@ def test_enterprise_runtime_contract_accepts_only_complete_known_profile(monkeyp
     assert "readonly-test-key" not in repr(status)
 
 
+def test_runtime_contract_preserves_canonical_model_identity(monkeypatch, tmp_path):
+    _set_enterprise_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("RAG_EMBEDDING_MODEL", "BAAI/bge-large-zh-v1.5")
+    monkeypatch.setenv("RAG_EMBEDDING_MODEL_NAME", "BAAI/bge-large-zh-v1.5")
+
+    status = runtime_contract_status()
+
+    assert status.available is True
+    assert status.embedding.model == "BAAI/bge-large-zh-v1.5"
+
+
 def test_production_always_activates_enterprise_contract(monkeypatch):
     monkeypatch.delenv("RAG_PROFILE", raising=False)
     monkeypatch.setenv("APP_ENV", "production")

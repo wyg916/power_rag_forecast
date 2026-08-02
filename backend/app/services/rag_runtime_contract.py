@@ -36,9 +36,9 @@ def _normalized(value: str) -> str:
 def _model_name(env: Mapping[str, str], name_key: str, model_key: str, path_key: str) -> str:
     explicit = str(env.get(name_key, "") or env.get(model_key, "")).strip()
     if explicit:
-        return explicit.lower().replace("\\", "/")
+        return explicit.replace("\\", "/")
     path_value = str(env.get(path_key, "")).strip()
-    return Path(path_value).name.lower() if path_value else ""
+    return Path(path_value).name if path_value else ""
 
 
 def _strict_bool(env: Mapping[str, str], key: str, default: bool) -> tuple[bool, bool]:
@@ -271,7 +271,7 @@ def runtime_contract_status(env: Mapping[str, str] | None = None) -> RuntimeCont
             issues.append("rag_disabled_or_invalid")
         if embedding.provider not in ENTERPRISE_EMBEDDING_PROVIDERS:
             issues.append("embedding_provider_invalid")
-        if embedding.model not in ENTERPRISE_EMBEDDING_MODELS:
+        if embedding.model.lower() not in ENTERPRISE_EMBEDDING_MODELS:
             issues.append("embedding_model_invalid")
         if not embedding.version:
             issues.append("embedding_version_missing")
@@ -293,7 +293,7 @@ def runtime_contract_status(env: Mapping[str, str] | None = None) -> RuntimeCont
             issues.append("embedding_fallback_forbidden")
         if reranker.provider not in ENTERPRISE_RERANK_PROVIDERS:
             issues.append("rerank_provider_invalid")
-        if reranker.model not in ENTERPRISE_RERANK_MODELS:
+        if reranker.model.lower() not in ENTERPRISE_RERANK_MODELS:
             issues.append("rerank_model_invalid")
         if not reranker.version:
             issues.append("rerank_version_missing")

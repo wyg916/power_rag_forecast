@@ -68,13 +68,42 @@ def sparse_query(text_value: str, profile: Mapping[str, Any]) -> dict[str, list[
         frequencies[token] = frequencies.get(token, 0) + 1
     vocabulary = profile.get("vocabulary")
     idf = profile.get("idf")
-    if not isinstance(vocabulary, Mapping) or not isinstance(idf, list):
+    if not isinstance(idf, list):
         raise QdrantReadError("bm25_profile_invalid")
-    weighted: list[tuple[int, float]] = []
-    for token, frequency in frequencies.items():
-        index = vocabulary.get(token)
-        if isinstance(index, int) and 0 <= index < len(idf):
-            weighted.append((index, float(idf[index]) * (1.0 + math.log(frequency))))
+    if isinstance(vocabulary, list):
+        if (
+            len(vocabulary) != len(idf)
+            or len(set(vocabulary)) != len(vocabulary)
+            or any(not isinstance(token, str) or not token for token in vocabulary)
+        ):
+            raise QdrantReadError("bm25_profile_invalid")
+        lookup = {token: index + 1 for index, token in enumerate(vocabulary)}
+        k1 = float(profile.get("k1") or 0.0)
+        b = float(profile.get("b") or 0.0)
+        average_length = float(profile.get("average_document_length") or 0.0)
+        if k1 <= 0.0 or not 0.0 <= b <= 1.0 or average_length <= 0.0:
+            raise QdrantReadError("bm25_profile_invalid")
+        matched = {token: count for token, count in frequencies.items() if token in lookup}
+        length = sum(matched.values())
+        if not matched or length < 1:
+            return {"indices": [], "values": []}
+        denominator_scale = k1 * (1.0 - b + b * length / average_length)
+        weighted = [
+            (
+                lookup[token],
+                float(idf[lookup[token] - 1])
+                * ((frequency * (k1 + 1.0)) / (frequency + denominator_scale)),
+            )
+            for token, frequency in matched.items()
+        ]
+    elif isinstance(vocabulary, Mapping):
+        weighted = []
+        for token, frequency in frequencies.items():
+            index = vocabulary.get(token)
+            if isinstance(index, int) and 0 <= index < len(idf):
+                weighted.append((index, float(idf[index]) * (1.0 + math.log(frequency))))
+    else:
+        raise QdrantReadError("bm25_profile_invalid")
     weighted.sort(key=lambda item: item[0])
     return {
         "indices": [item[0] for item in weighted],

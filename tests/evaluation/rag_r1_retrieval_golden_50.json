@@ -1,0 +1,360 @@
+{
+  "schema_version": "rag-r1-retrieval-golden/v1",
+  "release_id": "RAG-R1",
+  "collection": "rag_chunks_RAG-R1",
+  "curated_at": "2026-08-02T00:00:00+08:00",
+  "label_provenance": "curated_from_immutable_candidate_corpus",
+  "human_verified": false,
+  "items": [
+    {
+      "id": "R1-RET-001",
+      "question": "符合绿证交易准入条件的社会主体怎样进行绿证交易用户注册？",
+      "critical": true,
+      "expected_document_ids": ["doc_1d7f4411333c7c903b0c31ed"],
+      "evidence_chunk_id": "chk_3215d0d4697097d052926c1b"
+    },
+    {
+      "id": "R1-RET-002",
+      "question": "多用户绿电直连通知明确了哪些投资建设和内部自平衡管理要求？",
+      "critical": true,
+      "expected_document_ids": ["doc_467bb3721b47669335be92f6"],
+      "evidence_chunk_id": "chk_b7a366a0c274c49dab8f3b69"
+    },
+    {
+      "id": "R1-RET-003",
+      "question": "项目情况说明中如何承诺不以资源出让、援建捐赠或本地设备捆绑变相收费？",
+      "critical": true,
+      "expected_document_ids": ["doc_42f79b15fab66e413d90a120"],
+      "evidence_chunk_id": "chk_70a30b0fba33ecc3b26523a2"
+    },
+    {
+      "id": "R1-RET-004",
+      "question": "邦达新寨分家户变压器最大负载率143%时还存在哪些低电压治理问题？",
+      "critical": true,
+      "expected_document_ids": ["doc_dc262bc9607ffe19076896a1"],
+      "evidence_chunk_id": "chk_1b9a6b51641f3e9abc02dddc"
+    },
+    {
+      "id": "R1-RET-005",
+      "question": "2026年河北南网优先发电量计划表包含哪些容量、发电量和利用小时数字段？",
+      "critical": true,
+      "expected_document_ids": ["doc_703666e63c12e763e7f3706e"],
+      "evidence_chunk_id": "chk_1b4597398fd0879009cfbfec"
+    },
+    {
+      "id": "R1-RET-006",
+      "question": "天津新能源可持续发展价格结算机制如何按月开展差价结算？",
+      "critical": true,
+      "expected_document_ids": ["doc_6f1a4556fc220b173e6ba38b"],
+      "evidence_chunk_id": "chk_d83c9843faad6bb2658dac0b"
+    },
+    {
+      "id": "R1-RET-007",
+      "question": "上海2026年陆上风电光伏申报需要同步提交哪些可研、实施计划和资信材料？",
+      "critical": true,
+      "expected_document_ids": ["doc_ef837603979c9eb030481e50"],
+      "evidence_chunk_id": "chk_9657c7c450876bec0f329b33"
+    },
+    {
+      "id": "R1-RET-008",
+      "question": "集中式光伏项目申报信息表需要填写建设规模、并网时间、储能和消纳模式吗？",
+      "critical": true,
+      "expected_document_ids": ["doc_2b56baede4f113ac7f75dc05"],
+      "evidence_chunk_id": "chk_9a5fd718679126a3a044ca84"
+    },
+    {
+      "id": "R1-RET-009",
+      "question": "2025年河北省风电光伏项目竞配清单总计多少个项目和多少万千瓦？",
+      "critical": true,
+      "expected_document_ids": ["doc_ed5b9d899fedc186624286f2"],
+      "evidence_chunk_id": "chk_0e7219bad7e6d279870f4184"
+    },
+    {
+      "id": "R1-RET-010",
+      "question": "山东虚拟电厂管理办法中的定义分别引用了哪些电力市场和负荷管理文件？",
+      "critical": true,
+      "expected_document_ids": ["doc_f73c52e9d0520d84c6f8ebe0"],
+      "evidence_chunk_id": "chk_78634f48c37729cceb2097fd"
+    },
+    {
+      "id": "R1-RET-011",
+      "question": "2026年集中式光伏项目评审中前期工作满分多少，支持性材料如何计分？",
+      "critical": true,
+      "expected_document_ids": ["doc_4b06ae909a8667c8f67d56c8"],
+      "evidence_chunk_id": "chk_1433ae3d8dca2b7439c8f6db"
+    },
+    {
+      "id": "R1-RET-012",
+      "question": "光伏项目申报材料中自然资源部门对选址坐标、土地分类和三区三线要出具什么意见？",
+      "critical": true,
+      "expected_document_ids": ["doc_2b56581fddc32d2ad4e960be"],
+      "evidence_chunk_id": "chk_76ca12d83fe7b4aa2ca48b3b"
+    },
+    {
+      "id": "R1-RET-013",
+      "question": "电力现货市场限价通知中春秋季暂定系数1.2适用于哪些月份？",
+      "critical": true,
+      "expected_document_ids": ["doc_6058eb6aedcc5bb3e0aaeb19"],
+      "evidence_chunk_id": "chk_3153827a17a074b3370f151e"
+    },
+    {
+      "id": "R1-RET-014",
+      "question": "河北南部电网电力中长期市场应当按什么频率连续开市？",
+      "critical": true,
+      "expected_document_ids": ["doc_6573860cb1af58fc5a5d5517"],
+      "evidence_chunk_id": "chk_0758749d1d5d5c5b195ad199"
+    },
+    {
+      "id": "R1-RET-015",
+      "question": "河北南部电网电力市场运行规则包含哪一章计量与结算？",
+      "critical": true,
+      "expected_document_ids": ["doc_0950b7cb8ce41419b5e1aa44"],
+      "evidence_chunk_id": "chk_7b55b46b9448d2f014e1c794"
+    },
+    {
+      "id": "R1-RET-016",
+      "question": "从互联网+向人工智能+战略跃升的十年基础包括哪些网络和数字经济数据？",
+      "critical": false,
+      "expected_document_ids": ["doc_f52ad73bce63650ef67073c9"],
+      "evidence_chunk_id": "chk_0725c6dcfff8f8a36277f989"
+    },
+    {
+      "id": "R1-RET-017",
+      "question": "非化石能源电力消费核算中存量常规水电从什么日期界定？",
+      "critical": false,
+      "expected_document_ids": ["doc_6abe928efae88c625b8b5c9e"],
+      "evidence_chunk_id": "chk_9e81403f253e3f81c72d6bbe"
+    },
+    {
+      "id": "R1-RET-018",
+      "question": "电e宝开户申请提交后，处理中、签约成功和签约失败分别表示什么？",
+      "critical": false,
+      "expected_document_ids": ["doc_0331c244cd35bfecfbcd0473"],
+      "evidence_chunk_id": "chk_ae24d6b7348f3508d88b090d"
+    },
+    {
+      "id": "R1-RET-019",
+      "question": "电力用户注册实名绿证账户后，交易平台应在几个工作日内推送信息？",
+      "critical": false,
+      "expected_document_ids": ["doc_40bf9f8aae50da68b75ca6c7"],
+      "evidence_chunk_id": "chk_428efcc7f9ca12d24651142d"
+    },
+    {
+      "id": "R1-RET-020",
+      "question": "Increment Offers在日前与实时市场中怎样买卖电，预期哪边价格更高？",
+      "critical": false,
+      "expected_document_ids": ["doc_9114502217873da9d0dab8e3"],
+      "evidence_chunk_id": "chk_fbe588e0918e986ce46eecd3"
+    },
+    {
+      "id": "R1-RET-021",
+      "question": "河北南网不满1千伏工商业用户是否执行尖峰和深谷电价？",
+      "critical": false,
+      "expected_document_ids": ["doc_b1ab0c131574e7faea3ca7ae"],
+      "evidence_chunk_id": "chk_b9cc1d3e420098f39c8aec29"
+    },
+    {
+      "id": "R1-RET-022",
+      "question": "2021年冬季风暴Uri为什么让得州电价从约100美元涨到5000美元每兆瓦时以上？",
+      "critical": false,
+      "expected_document_ids": ["doc_4cd6efecca535ac1c8ed2875"],
+      "evidence_chunk_id": "chk_b2207bc579cfd5ac43ec3e14"
+    },
+    {
+      "id": "R1-RET-023",
+      "question": "独立新型储能电站容量补偿从何时开始，充放电时输配电费如何处理？",
+      "critical": false,
+      "expected_document_ids": ["doc_5cb59eb2abf684a0cefaaaf1"],
+      "evidence_chunk_id": "chk_215ab533093b2263664c7a03"
+    },
+    {
+      "id": "R1-RET-024",
+      "question": "绿证卖方前一日交易资金每天几点自动划转，出款失败状态表示什么？",
+      "critical": false,
+      "expected_document_ids": ["doc_b815147264b08d13a259e6fa"],
+      "evidence_chunk_id": "chk_655bd629c77283b7b8a263cf"
+    },
+    {
+      "id": "R1-RET-025",
+      "question": "山西2026年新能源机制电价竞价结果中苏岳红项目编号和项目类型是什么？",
+      "critical": false,
+      "expected_document_ids": ["doc_8587c03151e0c278a60b3af0"],
+      "evidence_chunk_id": "chk_72f5d5b2221cf5b578aaa665"
+    },
+    {
+      "id": "R1-RET-026",
+      "question": "AI助手错误回答示例为什么不应直接展示forecast_query、deterministic和get_forecast？",
+      "critical": false,
+      "expected_document_ids": ["doc_ad4f06af21675bd46ba4e1a7"],
+      "evidence_chunk_id": "chk_9dfd029016f319bb080f2dd0"
+    },
+    {
+      "id": "R1-RET-027",
+      "question": "绿证买方点击充值后，不同注册类型可以选择哪些支付方式？",
+      "critical": false,
+      "expected_document_ids": ["doc_9890be44e9a629c309e08d9d"],
+      "evidence_chunk_id": "chk_223a0a2794953ab97b14e344"
+    },
+    {
+      "id": "R1-RET-028",
+      "question": "项目字段字典为什么把日前电价作为预测目标并把实际负荷和天气作为特征？",
+      "critical": false,
+      "expected_document_ids": ["doc_0fed1fdcf896f975d3f1eb50"],
+      "evidence_chunk_id": "chk_b52551d2a163aa7953bb87dc"
+    },
+    {
+      "id": "R1-RET-029",
+      "question": "云霄直流输电权报价上限暂定为每小时多少元每兆瓦？",
+      "critical": false,
+      "expected_document_ids": ["doc_6d11a454c275a7ba7a5ded70"],
+      "evidence_chunk_id": "chk_f1f94febfc77665e82f94a34"
+    },
+    {
+      "id": "R1-RET-030",
+      "question": "新型储能工程质量监督中压缩机出厂和现场需要完成哪些试验验收？",
+      "critical": false,
+      "expected_document_ids": ["doc_e1d2cdcb0feacd30980e9991"],
+      "evidence_chunk_id": "chk_9b77bfb4d4505882641b88d0"
+    },
+    {
+      "id": "R1-RET-031",
+      "question": "河北南部电网电力零售市场实施细则的第六章主题是什么？",
+      "critical": false,
+      "expected_document_ids": ["doc_ee5f5a59170e838da1f33c0f"],
+      "evidence_chunk_id": "chk_833313e1ba3768de9de168aa"
+    },
+    {
+      "id": "R1-RET-032",
+      "question": "绿证交易用户手册目录中首页章节位于哪一部分？",
+      "critical": false,
+      "expected_document_ids": ["doc_1d7f4411333c7c903b0c31ed"],
+      "evidence_chunk_id": "chk_4da1e13477c7d55e797a9ffc"
+    },
+    {
+      "id": "R1-RET-033",
+      "question": "PJM DOM日前电价预测如何从最新数据起点递推未来24小时？",
+      "critical": false,
+      "expected_document_ids": ["doc_612d16ceeecc795cb78b2a66"],
+      "evidence_chunk_id": "chk_f32f4523048632804aff261b"
+    },
+    {
+      "id": "R1-RET-034",
+      "question": "CV(RMSE)如何定义，能源模型中小于25%通常表示什么？",
+      "critical": false,
+      "expected_document_ids": ["doc_286e4c4871614c23491cf749", "doc_4524ff011b2cd1c9e61fb497"],
+      "evidence_chunk_id": "chk_d15c597616d5c87d73e0f814"
+    },
+    {
+      "id": "R1-RET-035",
+      "question": "2023年得州高温时电价从101美元每兆瓦时跃升到多少？",
+      "critical": false,
+      "expected_document_ids": ["doc_4c331415b34af8871190a980"],
+      "evidence_chunk_id": "chk_9ddf00ef4f453aab585f1ae3"
+    },
+    {
+      "id": "R1-RET-036",
+      "question": "峰谷价差为什么体现高峰价格较高、低谷波动较小的分时费率结构？",
+      "critical": false,
+      "expected_document_ids": ["doc_ea2c9e28b3f3f615f118ccc0"],
+      "evidence_chunk_id": "chk_376936150c115e9a4bd0492a"
+    },
+    {
+      "id": "R1-RET-037",
+      "question": "历史日报为什么既需要数据细节，也需要误差、负荷和天气的专家解读？",
+      "critical": false,
+      "expected_document_ids": ["doc_cf6eff8361ace8c8641c89a9", "doc_2c50be1158846a26a59f0bbb", "doc_2bb628a52df7ca5cce2fd651"],
+      "evidence_chunk_id": "chk_4446ee3503ec767ea50f892f"
+    },
+    {
+      "id": "R1-RET-038",
+      "question": "集中式光伏项目承诺表对2027年底全容量并网和倒卖规模指标如何约束？",
+      "critical": false,
+      "expected_document_ids": ["doc_bc1a681a11f6232b310de517"],
+      "evidence_chunk_id": "chk_392072290026c79797b12e4b"
+    },
+    {
+      "id": "R1-RET-039",
+      "question": "风电光伏申报企业在什么情况下承诺两年内放弃参与山西项目建设？",
+      "critical": false,
+      "expected_document_ids": ["doc_ed5a7e167d74e4210f1dda1c"],
+      "evidence_chunk_id": "chk_6a46588a15cc4033b6e54964"
+    },
+    {
+      "id": "R1-RET-040",
+      "question": "风电光伏开发建设规模申报资料为什么需要信用能源网站的企业信用证明？",
+      "critical": false,
+      "expected_document_ids": ["doc_4ee363df6916b1e4a7b10ff8"],
+      "evidence_chunk_id": "chk_f5ec315592d18f92f164b186"
+    },
+    {
+      "id": "R1-RET-041",
+      "question": "北京登记结算买方指引列出的电力交易中心和绿证平台客服电话是什么？",
+      "critical": false,
+      "expected_document_ids": ["doc_9890be44e9a629c309e08d9d"],
+      "evidence_chunk_id": "chk_7985389b2364fdcc01d231b5"
+    },
+    {
+      "id": "R1-RET-042",
+      "question": "北京登记结算卖方订单显示已成交出款成功或出款失败分别说明什么？",
+      "critical": false,
+      "expected_document_ids": ["doc_b815147264b08d13a259e6fa"],
+      "evidence_chunk_id": "chk_655bd629c77283b7b8a263cf"
+    },
+    {
+      "id": "R1-RET-043",
+      "question": "发电企业建档立卡信息不完整导致绿证项目匹配困难时应如何处理？",
+      "critical": false,
+      "expected_document_ids": ["doc_40bf9f8aae50da68b75ca6c7"],
+      "evidence_chunk_id": "chk_9b98bd0672a5d7da28860340"
+    },
+    {
+      "id": "R1-RET-044",
+      "question": "天津增量新能源项目机制电量通过什么方式纳入，竞价原则上多久组织一次？",
+      "critical": false,
+      "expected_document_ids": ["doc_6f1a4556fc220b173e6ba38b"],
+      "evidence_chunk_id": "chk_f63ee2c0ad7c618c09d34391"
+    },
+    {
+      "id": "R1-RET-045",
+      "question": "多用户绿电直连如何扩大负荷类型和零碳园区工业园区应用场景？",
+      "critical": false,
+      "expected_document_ids": ["doc_467bb3721b47669335be92f6"],
+      "evidence_chunk_id": "chk_ce218948e6ca1d3829e48bdf"
+    },
+    {
+      "id": "R1-RET-046",
+      "question": "新型储能项目并网投产两年内能否变更投资主体或股东持股比例？",
+      "critical": false,
+      "expected_document_ids": ["doc_5cb59eb2abf684a0cefaaaf1"],
+      "evidence_chunk_id": "chk_8058d2c06c342614248c1a94"
+    },
+    {
+      "id": "R1-RET-047",
+      "question": "上海风电光伏项目应依据哪份2025到2030储能方案提出建设或购买调峰能力？",
+      "critical": false,
+      "expected_document_ids": ["doc_ef837603979c9eb030481e50"],
+      "evidence_chunk_id": "chk_3185c219844289acea6ced19"
+    },
+    {
+      "id": "R1-RET-048",
+      "question": "河北南部电网电力中长期市场实施细则怎样规范交易行为？",
+      "critical": false,
+      "expected_document_ids": ["doc_6573860cb1af58fc5a5d5517"],
+      "evidence_chunk_id": "chk_148e33c32dfd10569b605d74"
+    },
+    {
+      "id": "R1-RET-049",
+      "question": "河北南部电力市场信息披露主体发现披露信息有误或需要变更时如何配合解释？",
+      "critical": false,
+      "expected_document_ids": ["doc_52ab517be2af7ca464074701"],
+      "evidence_chunk_id": "chk_0a6f0dc91a0a286f31ad2d35"
+    },
+    {
+      "id": "R1-RET-050",
+      "question": "河北南部电网日前现货市场的发电企业报价信息要满足哪些电网和机组运行条件？",
+      "critical": false,
+      "expected_document_ids": ["doc_d704476f8b466ad023f41dbe"],
+      "evidence_chunk_id": "chk_05230e2fda183603695cfde5"
+    }
+  ]
+}

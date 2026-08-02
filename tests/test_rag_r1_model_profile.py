@@ -33,6 +33,11 @@ def test_profile_freezes_versions_paths_dimensions_and_fallbacks():
     content, versions = render_profile(*_reports())
     assert f"RAG_EMBEDDING_VERSION={versions['embedding']}" in content
     assert f"RAG_RERANK_VERSION={versions['reranker']}" in content
+    assert "RAG_EMBEDDING_MODEL=BAAI/bge-large-zh-v1.5" in content
+    assert "RAG_EMBEDDING_MODEL_NAME=BAAI/bge-large-zh-v1.5" in content
+    assert "RAG_RERANK_DEVICE=cpu" in content
+    assert "RAG_RERANK_BATCH_SIZE=8" in content
+    assert "RAG_RERANK_MAX_LENGTH=128" in content
     assert "RAG_EMBEDDING_DIM=1024" in content
     assert "RAG_EMBEDDING_ALLOW_FALLBACK=0" in content
     assert "RAG_RERANK_FALLBACK_PROVIDER=disabled" in content

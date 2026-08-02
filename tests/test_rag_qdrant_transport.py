@@ -18,6 +18,18 @@ def _profile() -> dict:
     return base | {"profile_sha256": __import__("hashlib").sha256(module._canonical(base)).hexdigest()}
 
 
+def _immutable_profile() -> dict:
+    base = {
+        "chunk_count": 8339,
+        "vocabulary": ["电", "价", "电价", "risk"],
+        "idf": [1.0, 2.0, 3.0, 4.0],
+        "k1": 1.2,
+        "b": 0.75,
+        "average_document_length": 12.0,
+    }
+    return base | {"profile_sha256": __import__("hashlib").sha256(module._canonical(base)).hexdigest()}
+
+
 def test_sparse_query_is_stable_and_never_hash_embeds() -> None:
     first = module.sparse_query("电价 risk", _profile())
     second = module.sparse_query("电价 risk", _profile())
@@ -25,6 +37,14 @@ def test_sparse_query_is_stable_and_never_hash_embeds() -> None:
     assert first["indices"] == sorted(first["indices"])
     assert len(first["indices"]) == len(first["values"])
     assert "hash_embedding" not in inspect.getsource(module)
+
+
+def test_sparse_query_matches_immutable_one_based_bm25_profile() -> None:
+    result = module.sparse_query("电价 risk", _immutable_profile())
+
+    assert result["indices"] == [1, 2, 3, 4]
+    assert len(result["values"]) == 4
+    assert all(value > 0 for value in result["values"])
 
 
 def test_client_tenant_override_is_rejected() -> None:
