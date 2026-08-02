@@ -59,6 +59,7 @@ def _payload(**changes):
         "embedding_model": "bge-large-zh-v1.5",
         "embedding_version": "bge-v1",
         "embedding_dimension": 1024,
+        "sparse_profile": "bm25-zh-v1",
         "chunk_id": "chunk-1",
         "document_id": "doc-1",
         "version_id": "version-1",
@@ -91,7 +92,7 @@ def _store(transport, release=None):
     )
 
 
-def test_store_builds_mandatory_filters_and_uses_release_collection_only():
+def test_store_builds_mandatory_filters_and_queries_current_alias_only():
     transport = FakeTransport(_payload())
     original = deepcopy(transport.payload)
 
@@ -107,9 +108,12 @@ def test_store_builds_mandatory_filters_and_uses_release_collection_only():
     assert result.available is True
     assert set(result.candidates) == {"dense", "sparse", "structured"}
     assert len(transport.requests) == 3
-    assert {item[0] for item in transport.requests} == {"rag_chunks_RAG-R1"}
+    assert {item[0] for item in transport.requests} == {"rag_chunks_current"}
     serialized_filter = str(transport.requests[0][1]["filter"])
-    for required in ("tenant_id", "release_id", "published", "valid_from", "acl_roles", "embedding_version"):
+    for required in (
+        "tenant_id", "release_id", "published", "valid_from", "acl_roles",
+        "embedding_version", "sparse_profile",
+    ):
         assert required in serialized_filter
     assert "acl_fingerprint" not in serialized_filter
     assert transport.write_count == 0
@@ -124,6 +128,7 @@ def test_store_builds_mandatory_filters_and_uses_release_collection_only():
         ("status", "draft"),
         ("acl_fingerprint", ""),
         ("embedding_version", "other"),
+        ("sparse_profile", "other"),
         ("valid_from", "2027-01-01T00:00:00Z"),
         ("valid_to", "2026-01-01T00:00:00Z"),
     ],

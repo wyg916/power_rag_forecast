@@ -12,6 +12,8 @@ from backend.app.knowledge_enterprise_contracts import (
     ReleaseContract,
     ReleaseState,
 )
+from backend.app.services.rag_enterprise_runtime import EnterpriseRetrievalBinding
+from backend.app.services.rag_runtime_contract import RetrievalContext
 
 
 NOW = datetime(2026, 8, 2, tzinfo=timezone.utc)
@@ -139,3 +141,63 @@ def test_diagnostics_permission_is_separate(monkeypatch) -> None:
     response = _client("developer").get("/api/knowledge/health/diagnostics")
     assert response.status_code == 200
     assert response.json() == {"diagnostics": True}
+
+
+def test_enterprise_search_binds_server_auth_context_and_safe_failure(monkeypatch) -> None:
+    captured = {}
+
+    class Runtime:
+        def bind(self, **kwargs):
+            captured["binding"] = kwargs
+            return EnterpriseRetrievalBinding(
+                context=RetrievalContext(
+                    tenant_id="default",
+                    user_id=kwargs["user_id"],
+                    roles=kwargs["roles"],
+                    acl_fingerprint="acl-v1",
+                    release_id="RAG-R1",
+                    run_id=kwargs["run_id"],
+                    trace_id=kwargs["trace_id"],
+                ),
+                store=None,
+                public_reason="release_unavailable",
+                diagnostic_reason="current_published_release_missing",
+            )
+
+    def search(query, top_k=5, **kwargs):
+        captured["search"] = {"query": query, "top_k": top_k, **kwargs}
+        return {
+            "available": False,
+            "items": [],
+            "citations": [],
+            "retrieval": {"reason": kwargs["enterprise_unavailable_reason"]},
+        }
+
+    runtime = Runtime()
+    monkeypatch.setattr(knowledge, "enterprise_mode", lambda: True)
+    monkeypatch.setattr(knowledge, "enterprise_retrieval_runtime", lambda: runtime)
+    monkeypatch.setattr(knowledge, "rag_search", search)
+    response = _client("analyst").get(
+        "/api/knowledge/search?q=peak",
+        headers={"X-Run-ID": "run-api-1", "X-Trace-ID": "trace-api-1"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["retrieval"]["reason"] == "release_unavailable"
+    assert captured["binding"] == {
+        "user_id": "analyst-1",
+        "roles": ("analyst",),
+        "run_id": "run-api-1",
+        "trace_id": "trace-api-1",
+    }
+    assert captured["search"]["enterprise_unavailable_reason"] == "release_unavailable"
+    assert captured["search"]["enterprise_store"] is None
+
+
+def test_enterprise_search_rejects_client_tenant_override(monkeypatch) -> None:
+    monkeypatch.setattr(knowledge, "enterprise_mode", lambda: True)
+    monkeypatch.setattr(knowledge, "enterprise_retrieval_runtime", lambda: object())
+    response = _client("analyst").get(
+        "/api/knowledge/search?q=peak&tenant_id=other"
+    )
+    assert response.status_code == 400

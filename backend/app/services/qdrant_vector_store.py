@@ -58,10 +58,19 @@ class QdrantReadOnlyStore:
         transport: ReadOnlyQdrantTransport,
         release: ReleaseIdentity,
         embedding_profile: EmbeddingProfile,
+        sparse_profile: str = "bm25-zh-v1",
+        *,
+        payload_embedding_provider: str | None = None,
+        payload_embedding_model: str | None = None,
     ) -> None:
         self._transport = transport
         self.release = release
         self.embedding_profile = embedding_profile
+        self.sparse_profile = sparse_profile
+        self.payload_embedding_provider = (
+            payload_embedding_provider or embedding_profile.provider
+        )
+        self.payload_embedding_model = payload_embedding_model or embedding_profile.model
 
     def _issues(self, context: RetrievalContext) -> tuple[str, ...]:
         issues = [*context.issues(), *self.release.issues(), *_profile_issues(self.embedding_profile)]
@@ -80,10 +89,11 @@ class QdrantReadOnlyStore:
             {"key": "release_id", "match": {"value": self.release.release_id}},
             {"key": "status", "match": {"value": "published"}},
             {"key": "valid_from", "range": {"lte": now.isoformat()}},
-            {"key": "embedding_provider", "match": {"value": self.embedding_profile.provider}},
-            {"key": "embedding_model", "match": {"value": self.embedding_profile.model}},
+            {"key": "embedding_provider", "match": {"value": self.payload_embedding_provider}},
+            {"key": "embedding_model", "match": {"value": self.payload_embedding_model}},
             {"key": "embedding_version", "match": {"value": self.embedding_profile.version}},
             {"key": "embedding_dimension", "match": {"value": 1024}},
+            {"key": "sparse_profile", "match": {"value": self.sparse_profile}},
             {
                 "min_should": {
                     "conditions": [
@@ -135,10 +145,11 @@ class QdrantReadOnlyStore:
                 valid_from is not None and valid_from <= now,
                 (not valid_to_raw) or (valid_to is not None and valid_to > now),
                 acl_allowed,
-                payload.get("embedding_provider") == self.embedding_profile.provider,
-                payload.get("embedding_model") == self.embedding_profile.model,
+                payload.get("embedding_provider") == self.payload_embedding_provider,
+                payload.get("embedding_model") == self.payload_embedding_model,
                 payload.get("embedding_version") == self.embedding_profile.version,
                 payload.get("embedding_dimension") == 1024,
+                payload.get("sparse_profile") == self.sparse_profile,
             )
         )
 
@@ -212,7 +223,7 @@ class QdrantReadOnlyStore:
         try:
             for mode, query in requests:
                 response = self._transport.query(
-                    collection=self.release.collection,
+                    collection=self.release.alias,
                     request={
                         "mode": mode,
                         "query": query,

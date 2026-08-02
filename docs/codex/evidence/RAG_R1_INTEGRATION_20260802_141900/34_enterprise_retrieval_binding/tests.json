@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "python_compile": "PASS",
+  "permission_matrix_check": {
+    "status": "PASS",
+    "route_method_count": 201,
+    "unique_path_count": 188,
+    "public_count": 7,
+    "protected_count": 194
+  },
+  "pytest": {
+    "status": "PASS",
+    "passed": 170,
+    "skipped": 2,
+    "failed": 0,
+    "duration_seconds": 28.54,
+    "scope": "enterprise runtime binding, vector store, API/RBAC, runtime/security contracts, service seam, orchestrator and read-only side-effect regression"
+  },
+  "git_diff_check": "PASS",
+  "sensitive_scan": {
+    "status": "PASS",
+    "findings": 0,
+    "checked_secret_values": 4
+  },
+  "scope_guard": {
+    "changed_code_test_files": 9,
+    "effective_additions": 907,
+    "limit_files": 20,
+    "limit_effective_lines": 1000
+  },
+  "non_gating_observation": {
+    "test": "tests/test_rag_hybrid.py::test_rag_search_merges_keyword_vector_and_reranks",
+    "status": "pre_existing_legacy_path_failure",
+    "impact": "not on the enterprise retrieval path; retained for final full-regression closure"
+  }
+}

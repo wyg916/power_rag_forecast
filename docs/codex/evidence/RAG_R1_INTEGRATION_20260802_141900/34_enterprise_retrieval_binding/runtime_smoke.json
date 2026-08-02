@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "target": "localhost:5432/postgres",
+  "database_role": "beta10d_forecast_login",
+  "postgres_release": {
+    "release_id": "RAG-R1",
+    "status": "candidate",
+    "is_current": false
+  },
+  "api": {
+    "method": "GET",
+    "path": "/api/knowledge/search",
+    "status_code": 200,
+    "available": false,
+    "public_reason": "release_unavailable",
+    "diagnostic_reason_leaked": false
+  },
+  "fail_closed": {
+    "diagnostic_reason": "current_published_release_missing",
+    "qdrant_transport_factory_calls": 0,
+    "candidate_collection_queried": false
+  },
+  "audit_counts_before": [0, 0, 2],
+  "audit_counts_after": [0, 0, 2],
+  "persisted_writes": 0
+}

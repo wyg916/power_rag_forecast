@@ -27,6 +27,10 @@ from ....repositories.knowledge_repository import (
     upsert_document,
 )
 from ....services.rag_health_service import rag_health
+from ....services.rag_enterprise_runtime import (
+    EnterpriseRetrievalRuntime,
+    get_enterprise_retrieval_runtime,
+)
 from ....services.knowledge_enterprise_service import (
     EnterpriseKnowledgeApplication,
     EnterpriseKnowledgeConflict,
@@ -35,6 +39,7 @@ from ....services.knowledge_enterprise_service import (
     get_enterprise_knowledge_application,
 )
 from ....services.rag_service import rag_search
+from ....services.rag_runtime_contract import enterprise_mode
 from ....workers.dispatcher import enqueue_task
 
 
@@ -52,6 +57,10 @@ ENTERPRISE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 def enterprise_knowledge_application() -> EnterpriseKnowledgeApplication:
     return get_enterprise_knowledge_application()
+
+
+def enterprise_retrieval_runtime() -> EnterpriseRetrievalRuntime:
+    return get_enterprise_retrieval_runtime()
 
 
 def _request_identifier(request: Request, header: str, prefix: str) -> str:
@@ -116,8 +125,34 @@ def _search_payload(payload: dict[str, Any] | None) -> tuple[str, int, dict[str,
         },
     )
 
-def _run_search(query: str, top_k: int, options: dict[str, Any] | None = None) -> dict:
+def _run_search(
+    query: str,
+    top_k: int,
+    options: dict[str, Any] | None = None,
+    *,
+    request: Request | None = None,
+    user: CurrentUser | None = None,
+    runtime: EnterpriseRetrievalRuntime | None = None,
+) -> dict:
     normalized = options or {}
+    enterprise_kwargs: dict[str, Any] = {}
+    if enterprise_mode():
+        if request is None or user is None:
+            enterprise_kwargs["enterprise_unavailable_reason"] = "retrieval_context_unavailable"
+        else:
+            runtime = runtime or enterprise_retrieval_runtime()
+            request_context = _enterprise_context(request, user)
+            binding = runtime.bind(
+                user_id=request_context.actor_id,
+                roles=(user.role,),
+                run_id=request_context.run_id,
+                trace_id=request_context.trace_id,
+            )
+            enterprise_kwargs.update(
+                context=binding.context,
+                enterprise_store=binding.store,
+                enterprise_unavailable_reason=binding.public_reason,
+            )
     if not any(
         (
             normalized.get("domain"),
@@ -126,8 +161,8 @@ def _run_search(query: str, top_k: int, options: dict[str, Any] | None = None) -
             normalized.get("include_demo"),
         )
     ):
-        return rag_search(query, top_k=top_k)
-    return rag_search(query, top_k=top_k, **normalized)
+        return rag_search(query, top_k=top_k, **enterprise_kwargs)
+    return rag_search(query, top_k=top_k, **normalized, **enterprise_kwargs)
 
 
 @router.get("/api/knowledge/stats")
@@ -274,7 +309,8 @@ def rollback_enterprise_release(
 
 @router.get("/api/knowledge/search")
 def search_knowledge(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     q: str = Query(default="", max_length=500),
     top_k: int = Query(default=5, ge=1, le=20),
     domain: str = Query(default="", max_length=64),
@@ -291,34 +327,39 @@ def search_knowledge(
             "include_historical": include_historical,
             "include_demo": include_demo,
         },
+        request=request,
+        user=user,
     )
 
 
 @router.post("/api/knowledge/search")
 def search_knowledge_post(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
     query, top_k, options = _search_payload(payload)
-    return _run_search(query, top_k, options)
+    return _run_search(query, top_k, options, request=request, user=user)
 
 
 @router.post("/api/knowledge/qa-test")
 def qa_test_knowledge(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
     query, top_k, options = _search_payload(payload)
     if not query:
         raise HTTPException(status_code=400, detail="问题不能为空")
     started = time.perf_counter()
-    result = _run_search(query, top_k, options)
+    result = _run_search(query, top_k, options, request=request, user=user)
     return run_qa_from_search(query, top_k, result, started)
 
 
 @router.post("/api/knowledge/batch-validate")
 def batch_validate_knowledge(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     payload: dict[str, Any] = Body(default_factory=dict),
 ) -> dict:
     questions = payload.get("questions") if isinstance(payload, dict) else None
@@ -327,7 +368,7 @@ def batch_validate_knowledge(
     items: list[dict[str, Any]] = []
     for question in values[:20]:
         started = time.perf_counter()
-        result = rag_search(question, top_k=top_k)
+        result = _run_search(question, top_k, request=request, user=user)
         qa = run_qa_from_search(question, top_k, result, started)
         items.append(
             {

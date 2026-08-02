@@ -80,3 +80,40 @@ class PostgresReleaseContractReader:
             return [self._contract(row) for row in rows]
         except Exception as exc:
             raise EnterpriseReleaseReadError("release_fact_contract_invalid") from exc
+
+    def current_published_release(self, *, tenant_id: str) -> ReleaseContract | None:
+        if tenant_id != "default":
+            raise EnterpriseReleaseReadError("release_tenant_rejected")
+        engine = self._engine_provider()
+        if engine is None or engine.dialect.name != "postgresql":
+            raise EnterpriseReleaseReadError("release_database_unavailable")
+        try:
+            with engine.connect() as connection:
+                connection.execute(text("SET TRANSACTION READ ONLY"))
+                rows = connection.execute(
+                    text(
+                        """
+                        SELECT tenant_id, release_id, status, collection_name,
+                               manifest_sha256, embedding_provider, embedding_model,
+                               embedding_version, embedding_dimension, sparse_profile,
+                               run_id, trace_id, created_at, updated_at
+                        FROM kb_releases
+                        WHERE tenant_id = :tenant_id
+                          AND status = 'published'
+                          AND is_current IS TRUE
+                        ORDER BY created_at DESC, release_id
+                        """
+                    ),
+                    {"tenant_id": tenant_id},
+                ).mappings().all()
+                connection.rollback()
+        except Exception as exc:
+            raise EnterpriseReleaseReadError("release_fact_read_failed") from exc
+        if len(rows) > 1:
+            raise EnterpriseReleaseReadError("release_current_not_unique")
+        if not rows:
+            return None
+        try:
+            return self._contract(rows[0])
+        except Exception as exc:
+            raise EnterpriseReleaseReadError("release_fact_contract_invalid") from exc

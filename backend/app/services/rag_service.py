@@ -804,6 +804,7 @@ def _enterprise_rag_search(
     source_types: list[str] | None,
     include_historical: bool,
     include_demo: bool,
+    unavailable_reason: str,
 ) -> dict[str, Any]:
     contract = runtime_contract_status()
     release_id = contract.release.release_id
@@ -813,6 +814,8 @@ def _enterprise_rag_search(
         return _enterprise_unavailable(query, "retrieval_context_missing", release_id=release_id)
     if context.issues():
         return _enterprise_unavailable(query, context.issues()[0], release_id=release_id)
+    if unavailable_reason:
+        return _enterprise_unavailable(query, unavailable_reason, release_id=release_id)
     if store is None:
         return _enterprise_unavailable(query, "qdrant_store_unavailable", release_id=release_id)
     if include_historical or include_demo:
@@ -1131,6 +1134,7 @@ def rag_search(
     include_demo: bool = False,
     context: RetrievalContext | None = None,
     enterprise_store: QdrantReadOnlyStore | None = None,
+    enterprise_unavailable_reason: str = "",
 ) -> dict[str, Any]:
     if enterprise_mode():
         return _enterprise_rag_search(
@@ -1142,6 +1146,7 @@ def rag_search(
             source_types=source_types,
             include_historical=include_historical,
             include_demo=include_demo,
+            unavailable_reason=enterprise_unavailable_reason,
         )
     cache_enabled = (_env("RAG_CACHE_ENABLED", "1") or "1").lower() not in {"0", "false", "no", "off"}
     if not cache_enabled or _contains_sensitive_text(query):

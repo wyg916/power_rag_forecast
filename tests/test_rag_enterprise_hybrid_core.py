@@ -54,6 +54,7 @@ def _point(content_hash=None, *, content="子块证据"):
             "embedding_provider": "sentence_transformers",
             "embedding_model": "bge-large-zh-v1.5",
             "embedding_version": "bge-v1", "embedding_dimension": 1024,
+            "sparse_profile": "bm25-zh-v1",
             "chunk_id": "chunk-1", "document_id": "doc-1",
             "version_id": "version-1", "content_hash": resolved_hash,
             "content": content, "parent_content": parent_content,
