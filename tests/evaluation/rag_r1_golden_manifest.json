@@ -3,9 +3,36 @@
     "release_id":  "RAG-R1",
     "collection":  "rag_chunks_RAG-R1",
     "generated_at":  "2026-08-03T14:25:03+08:00",
-    "status":  "PENDING_HUMAN_APPROVAL",
+    "status":  "AI_ONLY_ACCEPTANCE_IN_PROGRESS",
     "formal_golden_set_pass":  false,
-    "human_review_required_questions":  150,
+    "human_review_required_questions":  0,
+    "legacy_human_candidate_status":  "PENDING_HUMAN_APPROVAL",
+    "legacy_human_review_required_questions":  150,
+    "ai_only_acceptance":  {
+                                 "amendment":  "docs/codex/RAG_R1B_AI_ONLY_ACCEPTANCE_AMENDMENT.md",
+                                 "verification_mode":  "multi_agent_independent_consensus",
+                                 "human_verified":  false,
+                                 "production_human_signoff":  false,
+                                 "production_cutover":  false,
+                                 "retrieval":  {
+                                                     "status":  "AI_SURROGATE_GOLD_STANDARD_FROZEN_PENDING_FORMAL_REVALIDATION",
+                                                     "path":  "docs/codex/evidence/RAG_R1B_GOLDEN_AI_CONSENSUS_20260804T023000/retrieval_ai_consensus_50.json",
+                                                     "sha256":  "1e526ee2f4c2feda72a27c52fdc08b68888fccd02be2302110e45c1e2674df7e",
+                                                     "consensus_manifest":  "docs/codex/evidence/RAG_R1B_GOLDEN_AI_CONSENSUS_20260804T023000/retrieval_consensus_manifest.json",
+                                                     "consensus_manifest_sha256":  "123c8cf57034c8b59dfaf477d8626945255a3f94dda5609103e4275818829c49",
+                                                     "development_count":  40,
+                                                     "hidden_count":  10,
+                                                     "hidden_critical_count":  3,
+                                                     "unresolved_count":  0,
+                                                     "formal_metrics":  "PENDING_REVALIDATION"
+                                                 },
+                                 "ai":  {
+                                              "status":  "MULTI_AGENT_CONSENSUS_IN_PROGRESS",
+                                              "question_count":  100,
+                                              "critical_count":  30,
+                                              "formal_metrics":  "NOT_PASS"
+                                          }
+                             },
     "approval_contract":  {
                               "required_status":  "approved",
                               "annotator_required":  true,
