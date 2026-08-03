@@ -1,0 +1,1 @@
+timestamp=2026-08-03T14:03:27.3068108+08:00 worktree=E:\智能运营分析项目_worktrees\beta10d_rag_r1b_ocr branch=beta10d/rag-r1b-ocr head=ec78c569bd4036f23341e40b2d4d212a6f85177c git=git version 2.55.0.windows.3 python=Python 3.11.9 os=Microsoft Windows NT 10.0.22000.0 database_access=not_attempted

@@ -1,0 +1,923 @@
+{
+  "artifacts": {
+    "rag_r1b_ocr_annotation_batch_01.zip": "795b3f2b87c205a199073c34a92684f3d7ae089751ee1a703a3cd7660b562677",
+    "rag_r1b_ocr_annotation_batch_02.zip": "fe4e69d01f4485acc19b875a44f041ca4c64929e3b27a35603e5a1434bbc18ba",
+    "rag_r1b_ocr_annotation_batch_03.zip": "a2ec85c789b5899318b47f0145fc1f9056095b9806bfd3ce850d1426da4a70d2",
+    "rag_r1b_ocr_candidate_review.zip": "72a9a7ef904aef9dcb8b3d3608f6822ee26fb3e3bc09c30bad3582d3858592db",
+    "rag_r1b_ocr_contact_sheet.png": "de84c679d9b37cd9dd0c1c7b896408540fb5523caca54d640fbe04899da0fdf5"
+  },
+  "automatic_candidate_is_gold": false,
+  "batch_count": 3,
+  "batch_size": 10,
+  "ocr_or_vlm_model_used": false,
+  "page_count": 30,
+  "pages": [
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-001.json",
+      "candidate_sha256": "d8a5467948fd1f0c2aadb9040953f8c080367deb0d2542861787ba97c0a25195",
+      "page_id": "ocr-001",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-001.png",
+        "height_px": 2339,
+        "sha256": "2adc5d373cb076ae23254ee1aa19e2d93473e5935b54f54bbb9646a6d3b53cf8",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 7,
+        "page_height": 841.8,
+        "page_number": 1,
+        "page_width": 595.2,
+        "path": "知识库/山东省抽水蓄能项目管理实施细则（征求意见稿）-downfile.jsp_classid=0&filename=8460971e62e54062b368a0974ad7a6c2.pdf.pdf",
+        "sha256": "adbbcd9b3c7e41f4a11704cd98d073cd04d93680d13d189a1f5bf5697b004a1f"
+      },
+      "strata": [
+        "scanned_pdf"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-002.json",
+      "candidate_sha256": "5c4e5a85bd56348952bc5dd2f799aea60c055d717ea4b53836085238259cd8a1",
+      "page_id": "ocr-002",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-002.png",
+        "height_px": 2339,
+        "sha256": "918b3651382a9d08de44648766cfac86ec424db6e93392ff708f0ffe74f5fbfb",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 7,
+        "page_height": 841.8,
+        "page_number": 6,
+        "page_width": 595.2,
+        "path": "知识库/山东省抽水蓄能项目管理实施细则（征求意见稿）-downfile.jsp_classid=0&filename=8460971e62e54062b368a0974ad7a6c2.pdf.pdf",
+        "sha256": "adbbcd9b3c7e41f4a11704cd98d073cd04d93680d13d189a1f5bf5697b004a1f"
+      },
+      "strata": [
+        "scanned_pdf"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-003.json",
+      "candidate_sha256": "5a01efa03f5d2d13281fdddf75e3d71f9de47c3d3845a70a4ce12a4d744b16f3",
+      "page_id": "ocr-003",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-003.png",
+        "height_px": 2339,
+        "sha256": "cf71cfe4c0d5e2c37fb44503f4c0857c5b0c088fec76ea27bd912bbad7c27a3b",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 16,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "chart",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-004.json",
+      "candidate_sha256": "620eaa82b4ba6336d0d2733324aaf2f6b09cd9f8db045117ac7f97ed44d6a1e7",
+      "page_id": "ocr-004",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-004.png",
+        "height_px": 2339,
+        "sha256": "d921c68282e8eb7e82a8018ec2c9f87fe9c5b21fe916b2deff829856de71cb94",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 45,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-005.json",
+      "candidate_sha256": "19fd89c4bef62b56dee9e0cf56546de9743b5c138c8e908a8329e59f8db61af9",
+      "page_id": "ocr-005",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-005.png",
+        "height_px": 1653,
+        "sha256": "1fb401cc0e13c5fba037363d892cfcc57e754b7ec35011d0fc68b8a2d5a8d3d7",
+        "width_px": 2339
+      },
+      "source": {
+        "page_count": 11,
+        "page_height": 595.0,
+        "page_number": 5,
+        "page_width": 842.0,
+        "path": "知识库/国家能源局云南监管办公室关于开展2026年“两低”专项治理和抵边村寨供....pdf",
+        "sha256": "34bb8ae0ab3bf6e4f15d103d10ea35d5f3e9ea6a12674ec091f7c3cdd649d2a0"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "complex_table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-006.json",
+      "candidate_sha256": "7feed170f5d50527635b07495cb53b64a60a61e9e823721711d30c7d7b84e1d4",
+      "page_id": "ocr-006",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-006.png",
+        "height_px": 1500,
+        "sha256": "658573cef658efb524bafd63bd633a31e209f9e0f89de23eb879723865d4e106",
+        "width_px": 2667
+      },
+      "source": {
+        "page_count": 2,
+        "page_height": 540.0,
+        "page_number": 1,
+        "page_width": 960.0,
+        "path": "知识库/北京登记结算公司支付渠道-买方指引(202605).pdf",
+        "sha256": "bce187a40acffade9884085009f7962b9c6503f02f6293647454baf0eeebc737"
+      },
+      "strata": [
+        "text_pdf",
+        "multi_column",
+        "chart",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-007.json",
+      "candidate_sha256": "ee68acf7f9775c82270b3d2216e974758af3892fe0630647ee05d87279f37858",
+      "page_id": "ocr-007",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-007.png",
+        "height_px": 2339,
+        "sha256": "2be8812ce7d7bf7b59ac2253015f10383c5df7bf49536649ebc96d493b17b93d",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 64,
+        "page_height": 841.9,
+        "page_number": 31,
+        "page_width": 595.3,
+        "path": "知识库/河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf.pdf",
+        "sha256": "c6606e4248f8aeb603cafe927aa4609fe95b44b1da442d96417ed19626c633c9"
+      },
+      "strata": [
+        "text_pdf",
+        "formula",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-008.json",
+      "candidate_sha256": "ce0552e0c43d854cb3448f4a18d496c40041507e0edd9f28849f792b14f04a47",
+      "page_id": "ocr-008",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-008.png",
+        "height_px": 2339,
+        "sha256": "f2f8fe548d617a46de107059ddf13334957725b440be5bde5042981ab099ceb7",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 74,
+        "page_height": 841.9,
+        "page_number": 73,
+        "page_width": 595.3,
+        "path": "知识库/国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知.pdf",
+        "sha256": "30de24213a4916ec462334f448d220df09c279c49cb6a048afcf647555d8df34"
+      },
+      "strata": [
+        "text_pdf",
+        "chart",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-009.json",
+      "candidate_sha256": "492fcc8df338e86b4b3b34cff3a3d7450dc71de71f66b87d18db6a96718e0f33",
+      "page_id": "ocr-009",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-009.png",
+        "height_px": 2339,
+        "sha256": "7d585a7440e6927a54bc3c126d4d48f4ae819599b7f58c91437187a0bf84dcc7",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 13,
+        "page_height": 841.9,
+        "page_number": 6,
+        "page_width": 595.3,
+        "path": "知识库/《非化石能源电力消费核算指南（试行）》.pdf-P020260601561979770878.pdf.pdf",
+        "sha256": "c3d78a4b091d9e4c805a55e7ff8457c98e17775e719d4e54b9620ba13b5ce2c1"
+      },
+      "strata": [
+        "text_pdf",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 1,
+      "candidate_entry": "batch_01/candidates/ocr-010.json",
+      "candidate_sha256": "ce3936d22f74a3086be86dd5898937f583d2a83bac9f8d17d58ee6615517f1fb",
+      "page_id": "ocr-010",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_01.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-010.png",
+        "height_px": 1653,
+        "sha256": "00eb22a36a1e823accce2afadeb8e2e5e729c58d73eb1b7e4e0c6ca0304f7e8f",
+        "width_px": 2339
+      },
+      "source": {
+        "page_count": 11,
+        "page_height": 595.0,
+        "page_number": 1,
+        "page_width": 842.0,
+        "path": "知识库/国家能源局云南监管办公室关于开展2026年“两低”专项治理和抵边村寨供....pdf",
+        "sha256": "34bb8ae0ab3bf6e4f15d103d10ea35d5f3e9ea6a12674ec091f7c3cdd649d2a0"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-011.json",
+      "candidate_sha256": "f77eef3ecbfac5039245c10f7ba52d19f40b4792706ccaafe0a1e41cebd2766a",
+      "page_id": "ocr-011",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-011.png",
+        "height_px": 2339,
+        "sha256": "ccb6430a135aa97bc2928a683188423538918bdbe0df8e68b99d0b956509f479",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 7,
+        "page_height": 841.8,
+        "page_number": 2,
+        "page_width": 595.2,
+        "path": "知识库/山东省抽水蓄能项目管理实施细则（征求意见稿）-downfile.jsp_classid=0&filename=8460971e62e54062b368a0974ad7a6c2.pdf.pdf",
+        "sha256": "adbbcd9b3c7e41f4a11704cd98d073cd04d93680d13d189a1f5bf5697b004a1f"
+      },
+      "strata": [
+        "scanned_pdf"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-012.json",
+      "candidate_sha256": "c3ad457b675952418fa34a29f4889f767da1300410029ec5e8fc02142cc62bc0",
+      "page_id": "ocr-012",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-012.png",
+        "height_px": 2339,
+        "sha256": "20a7efa6faa76d6a712a4578583802cb1bc2f37b5647ca670d4c4f5374065808",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 7,
+        "page_height": 841.8,
+        "page_number": 7,
+        "page_width": 595.2,
+        "path": "知识库/山东省抽水蓄能项目管理实施细则（征求意见稿）-downfile.jsp_classid=0&filename=8460971e62e54062b368a0974ad7a6c2.pdf.pdf",
+        "sha256": "adbbcd9b3c7e41f4a11704cd98d073cd04d93680d13d189a1f5bf5697b004a1f"
+      },
+      "strata": [
+        "scanned_pdf"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-013.json",
+      "candidate_sha256": "fa9376f318d20188e81d72a1657a79a40ddd91dfa3869cd7edcd1a0e3f503755",
+      "page_id": "ocr-013",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-013.png",
+        "height_px": 2339,
+        "sha256": "f400c3a3fd7a644acb3dd1f98a585bc29365ff67659342c4ac2edf77c9295990",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 18,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "chart",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-014.json",
+      "candidate_sha256": "3143be72a7d2e414611e02b944e8051f3af56e5db518a0ca323251570dc322cd",
+      "page_id": "ocr-014",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-014.png",
+        "height_px": 2339,
+        "sha256": "cb765a1773cf2a4af67ff3f564eaa57a16cfacfc2286030d7648a462b7bfd9f8",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 47,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "complex_table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-015.json",
+      "candidate_sha256": "76e6fb9ba8911fb80fad859b8ccd5e46a01fa52a0e8dd308b1e8c8cfa5206544",
+      "page_id": "ocr-015",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-015.png",
+        "height_px": 1653,
+        "sha256": "c3d7a351085b001613aae96015037f001504b00924cd79986754865378f5acca",
+        "width_px": 2339
+      },
+      "source": {
+        "page_count": 11,
+        "page_height": 595.0,
+        "page_number": 6,
+        "page_width": 842.0,
+        "path": "知识库/国家能源局云南监管办公室关于开展2026年“两低”专项治理和抵边村寨供....pdf",
+        "sha256": "34bb8ae0ab3bf6e4f15d103d10ea35d5f3e9ea6a12674ec091f7c3cdd649d2a0"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "complex_table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-016.json",
+      "candidate_sha256": "da5acab1b4e83bd654afadb2be51454cb488badd1c71b1bd5ecd7eb4f02c7ffd",
+      "page_id": "ocr-016",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-016.png",
+        "height_px": 1500,
+        "sha256": "03c1ece8b2f241c721bd35e5c6e66b5cecb568f7acbb7936a2c7d323fb55f1d9",
+        "width_px": 2666
+      },
+      "source": {
+        "page_count": 2,
+        "page_height": 540.0,
+        "page_number": 1,
+        "page_width": 959.76,
+        "path": "知识库/电e宝支付渠道-功能使用指引.pdf",
+        "sha256": "f524588df25162ba6f42a1e599e87b0bf9ffa169c3c663f5a81aefc90f624537"
+      },
+      "strata": [
+        "text_pdf",
+        "chart",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-017.json",
+      "candidate_sha256": "0f8c2f8ff6ee8a9fb74f36219fbfdf697c4075e08c835dc67399320b4ed82714",
+      "page_id": "ocr-017",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-017.png",
+        "height_px": 2339,
+        "sha256": "2b1a009a0e8fed2c9b68362d09e13317a714408bc6e7c4d3def9a5895e76aee6",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 64,
+        "page_height": 841.9,
+        "page_number": 33,
+        "page_width": 595.3,
+        "path": "知识库/河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf.pdf",
+        "sha256": "c6606e4248f8aeb603cafe927aa4609fe95b44b1da442d96417ed19626c633c9"
+      },
+      "strata": [
+        "text_pdf",
+        "formula",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-018.json",
+      "candidate_sha256": "8f5598fa1a0f0ae9fe20100aade20b5bb62823bfe6e8bfef081e67ffaf4764d8",
+      "page_id": "ocr-018",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-018.png",
+        "height_px": 2339,
+        "sha256": "10bddced61f51f44f8730fdcacd26a3352332034c5d10939ba954f025c2759f9",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 74,
+        "page_height": 841.9,
+        "page_number": 60,
+        "page_width": 595.3,
+        "path": "知识库/国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知.pdf",
+        "sha256": "30de24213a4916ec462334f448d220df09c279c49cb6a048afcf647555d8df34"
+      },
+      "strata": [
+        "text_pdf",
+        "formula",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-019.json",
+      "candidate_sha256": "7061af661d29b2d8b5c1dc8ffa9fdd9a49f7a6d6182b5d08b1af889f2c2d5eed",
+      "page_id": "ocr-019",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-019.png",
+        "height_px": 2339,
+        "sha256": "8583bc7e3eb78c975e663be373ecf1df91ae1de670a2e25cef4c7ba4a9576086",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 5,
+        "page_height": 841.9,
+        "page_number": 4,
+        "page_width": 595.3,
+        "path": "知识库/云霄直流输电权市场化交易方案（暂行）.pdf-P020260602591084142337.pdf.pdf",
+        "sha256": "21cdf3b77a55cdd73426e7147f2a623f8936b4e5fc3dae9ba384e992e5fa14a0"
+      },
+      "strata": [
+        "text_pdf",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 2,
+      "candidate_entry": "batch_02/candidates/ocr-020.json",
+      "candidate_sha256": "f86327357883d709d13362fe06a1af4e8e7033635589a1ff08e778c09a62f440",
+      "page_id": "ocr-020",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_02.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-020.png",
+        "height_px": 2339,
+        "sha256": "146d6c4f88489d841c77ad8d69d6a4a39bd6b53c226fcd5f5d26fb793dd900d5",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 37,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "multi_column",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-021.json",
+      "candidate_sha256": "777601dd697fe60a43d09fba8827df4df52128931418eeeff167a6f1d6aafe8b",
+      "page_id": "ocr-021",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-021.png",
+        "height_px": 2339,
+        "sha256": "36a0a006042fe2034d1accdfa7c530a3a1d0bf95906b94d68fd9d8c7797e94c1",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 7,
+        "page_height": 841.8,
+        "page_number": 4,
+        "page_width": 595.2,
+        "path": "知识库/山东省抽水蓄能项目管理实施细则（征求意见稿）-downfile.jsp_classid=0&filename=8460971e62e54062b368a0974ad7a6c2.pdf.pdf",
+        "sha256": "adbbcd9b3c7e41f4a11704cd98d073cd04d93680d13d189a1f5bf5697b004a1f"
+      },
+      "strata": [
+        "scanned_pdf"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-022.json",
+      "candidate_sha256": "c3e0be278146f9dda798f2afbd6b7d32c53bec7adedb44e5547f1ae2926d13a1",
+      "page_id": "ocr-022",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-022.png",
+        "height_px": 2339,
+        "sha256": "573057ae1dbb019b3ee418733af6487211ba5bc7f01e77e0e138bceec8a16506",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 27,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "chart",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-023.json",
+      "candidate_sha256": "b693577fff81cc2fa63776ac07f123a813c2962a1938d40c855f191fe0899703",
+      "page_id": "ocr-023",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-023.png",
+        "height_px": 2339,
+        "sha256": "1464ac58316020ec6ae586ee6ad2fd14ad13f23e3a3fbd1aec236ec0525ed101",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 39,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "chart",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-024.json",
+      "candidate_sha256": "875e045431a66ea74b07d04dfd784f830b072cff2de77d83149945ab8f66ee91",
+      "page_id": "ocr-024",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-024.png",
+        "height_px": 2339,
+        "sha256": "05b5843552daf47c7faea7854022ce963bbd92bbc26ee2237b4d2fb7e8f90f01",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 40,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "chart",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-025.json",
+      "candidate_sha256": "65e71327bf4967d21546e735706817167d4974a800b6cd749d38f3c76dfb94ce",
+      "page_id": "ocr-025",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-025.png",
+        "height_px": 2339,
+        "sha256": "7fda2aacf706f3ff338275046be62c497c50bb5691b570a64de9e38f5ff3958c",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 49,
+        "page_height": 842.0,
+        "page_number": 48,
+        "page_width": 595.22,
+        "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+        "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "complex_table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-026.json",
+      "candidate_sha256": "15bec15d676ddcc51bd928e6472a711f11e78056ff54c85b6fd754e6f50b48bb",
+      "page_id": "ocr-026",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-026.png",
+        "height_px": 1653,
+        "sha256": "7e17cd00f5817b81cc08c6608a089553ebbbe9838c17a572fcd3b3d399c0efc2",
+        "width_px": 2339
+      },
+      "source": {
+        "page_count": 11,
+        "page_height": 595.0,
+        "page_number": 9,
+        "page_width": 842.0,
+        "path": "知识库/国家能源局云南监管办公室关于开展2026年“两低”专项治理和抵边村寨供....pdf",
+        "sha256": "34bb8ae0ab3bf6e4f15d103d10ea35d5f3e9ea6a12674ec091f7c3cdd649d2a0"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "complex_table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-027.json",
+      "candidate_sha256": "9ee7e59c60f3e8be135e6677e3e6fe63426249c86edc585b5fa7982bae5d6cd6",
+      "page_id": "ocr-027",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-027.png",
+        "height_px": 1653,
+        "sha256": "0679358ac81aaf5f057275d1e946d26e2bdb1a3e94bcff2f31be489c548a3a5f",
+        "width_px": 2339
+      },
+      "source": {
+        "page_count": 11,
+        "page_height": 595.0,
+        "page_number": 10,
+        "page_width": 842.0,
+        "path": "知识库/国家能源局云南监管办公室关于开展2026年“两低”专项治理和抵边村寨供....pdf",
+        "sha256": "34bb8ae0ab3bf6e4f15d103d10ea35d5f3e9ea6a12674ec091f7c3cdd649d2a0"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "complex_table",
+        "digit_dense"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-028.json",
+      "candidate_sha256": "fc7a40c575ea8d549e521dfa0e8ca6f99b1f762ed232a012f4f3c335bb1bd3d4",
+      "page_id": "ocr-028",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-028.png",
+        "height_px": 1654,
+        "sha256": "66fba4a1617ccff9f5775aa5c7ca87ad9ace04cfbfedb93115131cc455ee6655",
+        "width_px": 2339
+      },
+      "source": {
+        "page_count": 7,
+        "page_height": 595.3,
+        "page_number": 6,
+        "page_width": 841.9,
+        "path": "知识库/关于做好上海市2026年陆上风电、光伏电站开发建设方案申报工作的通知.pdf.pdf",
+        "sha256": "2d268788df38691cefcbeab75078721473c6112eb5ab37f515ccefcefdb2b123"
+      },
+      "strata": [
+        "text_pdf",
+        "table",
+        "complex_table"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-029.json",
+      "candidate_sha256": "0073f6af7a98fcfcda9a1642173776477b9e0c0f2b3f5fde6a36c5bba6b73793",
+      "page_id": "ocr-029",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-029.png",
+        "height_px": 2339,
+        "sha256": "7a0a795ac00ad6f0fa50e01385e8978348cc16cccf80b24a6a6b169a21101c8b",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 64,
+        "page_height": 841.9,
+        "page_number": 36,
+        "page_width": 595.3,
+        "path": "知识库/河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf.pdf",
+        "sha256": "c6606e4248f8aeb603cafe927aa4609fe95b44b1da442d96417ed19626c633c9"
+      },
+      "strata": [
+        "text_pdf",
+        "formula",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    },
+    {
+      "batch": 3,
+      "candidate_entry": "batch_03/candidates/ocr-030.json",
+      "candidate_sha256": "b1d8c8bfa20cd69291b89073beb001c5062d9025b5c60e593d01ba77fc9d3e35",
+      "page_id": "ocr-030",
+      "render": {
+        "archive": "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/rag_r1b_ocr_annotation_batch_03.zip",
+        "coordinate_space": "pdf_points",
+        "dpi": 200,
+        "entry": "pages/ocr-030.png",
+        "height_px": 2339,
+        "sha256": "8540c402af2898728b3f25c44d2f5931bfc6026c93514fb0ced8195ddd74aa24",
+        "width_px": 1654
+      },
+      "source": {
+        "page_count": 74,
+        "page_height": 841.9,
+        "page_number": 65,
+        "page_width": 595.3,
+        "path": "知识库/国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知.pdf",
+        "sha256": "30de24213a4916ec462334f448d220df09c279c49cb6a048afcf647555d8df34"
+      },
+      "strata": [
+        "text_pdf",
+        "formula",
+        "digit_dense",
+        "mixed_zh_en"
+      ]
+    }
+  ],
+  "schema_version": "rag-r1-ocr-annotation-package/v1",
+  "sources": [
+    {
+      "page_count": 2,
+      "path": "知识库/北京登记结算公司支付渠道-买方指引(202605).pdf",
+      "sha256": "bce187a40acffade9884085009f7962b9c6503f02f6293647454baf0eeebc737",
+      "source_key": "beijing_buyer_guide"
+    },
+    {
+      "page_count": 2,
+      "path": "知识库/电e宝支付渠道-功能使用指引.pdf",
+      "sha256": "f524588df25162ba6f42a1e599e87b0bf9ffa169c3c663f5a81aefc90f624537",
+      "source_key": "e_payment_guide"
+    },
+    {
+      "page_count": 49,
+      "path": "知识库/中国绿色电力证书发展报告（2025）.pdf",
+      "sha256": "19bfe2955e5a0ff96c8e9ceb56e94ce6329937cc9f04f33ad4b79c1e4a5c2bf7",
+      "source_key": "green_certificate_report"
+    },
+    {
+      "page_count": 64,
+      "path": "知识库/河北南部电网电力现货市场实施细则.pdf-W020260122360751867980.pdf.pdf",
+      "sha256": "c6606e4248f8aeb603cafe927aa4609fe95b44b1da442d96417ed19626c633c9",
+      "source_key": "hebei_spot_rules"
+    },
+    {
+      "page_count": 13,
+      "path": "知识库/《非化石能源电力消费核算指南（试行）》.pdf-P020260601561979770878.pdf.pdf",
+      "sha256": "c3d78a4b091d9e4c805a55e7ff8457c98e17775e719d4e54b9620ba13b5ce2c1",
+      "source_key": "non_fossil_guide"
+    },
+    {
+      "page_count": 74,
+      "path": "知识库/国家能源局西北监管局关于印发《西北区域省间电力互济交易实施细则(试行)》的通知.pdf",
+      "sha256": "30de24213a4916ec462334f448d220df09c279c49cb6a048afcf647555d8df34",
+      "source_key": "northwest_mutual_aid"
+    },
+    {
+      "page_count": 7,
+      "path": "知识库/山东省抽水蓄能项目管理实施细则（征求意见稿）-downfile.jsp_classid=0&filename=8460971e62e54062b368a0974ad7a6c2.pdf.pdf",
+      "sha256": "adbbcd9b3c7e41f4a11704cd98d073cd04d93680d13d189a1f5bf5697b004a1f",
+      "source_key": "shandong_scan"
+    },
+    {
+      "page_count": 7,
+      "path": "知识库/关于做好上海市2026年陆上风电、光伏电站开发建设方案申报工作的通知.pdf.pdf",
+      "sha256": "2d268788df38691cefcbeab75078721473c6112eb5ab37f515ccefcefdb2b123",
+      "source_key": "shanghai_application"
+    },
+    {
+      "page_count": 11,
+      "path": "知识库/国家能源局云南监管办公室关于开展2026年“两低”专项治理和抵边村寨供....pdf",
+      "sha256": "34bb8ae0ab3bf6e4f15d103d10ea35d5f3e9ea6a12674ec091f7c3cdd649d2a0",
+      "source_key": "yunnan_two_low"
+    },
+    {
+      "page_count": 5,
+      "path": "知识库/云霄直流输电权市场化交易方案（暂行）.pdf-P020260602591084142337.pdf.pdf",
+      "sha256": "21cdf3b77a55cdd73426e7147f2a623f8936b4e5fc3dae9ba384e992e5fa14a0",
+      "source_key": "yunxiao_transmission"
+    }
+  ],
+  "status": "MANUAL ANNOTATION REQUIRED"
+}

@@ -1,0 +1,3 @@
+Pre-change tracked modifications: none.
+Pre-change untracked files: none.
+Permitted task targets are recorded in critical_hashes.sha256.
