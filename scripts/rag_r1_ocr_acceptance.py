@@ -1178,8 +1178,9 @@ def assemble_ai_consensus(extractor: Mapping[str, Any], reviewer: Mapping[str, A
         if final["unresolved"]:
             raise OCRAcceptanceError(f"ai_final_unresolved:{page_id}")
         comparison = _ai_page_comparison(left_by_id[page_id], right_by_id[page_id], package_pages[page_id])
-        has_difference = any((value is True) or (type(value) in {int, float} and value > 0) for key, value in comparison.items() if key in {"text_edits", "table_cell_symmetric_difference", "page_number_mismatch", "digit_symmetric_difference"}) or comparison["bbox_matched"] < comparison["bbox_total"]
-        if has_difference and not item["decisions"]:
+        has_role_unresolved = bool(left_by_id[page_id]["unresolved"] or right_by_id[page_id]["unresolved"])
+        has_difference = has_role_unresolved or any((value is True) or (type(value) in {int, float} and value > 0) for key, value in comparison.items() if key in {"text_edits", "table_cell_symmetric_difference", "page_number_mismatch", "digit_symmetric_difference"}) or comparison["bbox_matched"] < comparison["bbox_total"]
+        if has_difference and (not item["differences"] or not item["decisions"]):
             raise OCRAcceptanceError(f"ai_adjudication_decision_missing:{page_id}")
         allowed_digits = _ai_page_digits(left_by_id[page_id]) | _ai_page_digits(right_by_id[page_id])
         hallucinated = sum((_ai_page_digits(final) - allowed_digits).values())

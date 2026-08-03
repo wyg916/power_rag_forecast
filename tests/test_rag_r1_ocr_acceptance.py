@@ -232,7 +232,7 @@ def test_ai_consensus_three_roles_build_validate_and_tamper_fail_closed():
         acceptance.validate_ai_consensus(tampered, package, "d" * 64)
 
 
-@pytest.mark.parametrize("mutation", ["human", "same_role", "unresolved", "hallucinated", "package"])
+@pytest.mark.parametrize("mutation", ["human", "same_role", "unresolved", "role_unresolved", "hallucinated", "package"])
 def test_ai_consensus_rejects_provenance_and_gate_mutations(mutation):
     package, extractor, reviewer, adjudication, _ = _consensus_fixture()
     if mutation == "human":
@@ -242,6 +242,8 @@ def test_ai_consensus_rejects_provenance_and_gate_mutations(mutation):
     elif mutation == "unresolved":
         adjudication["pages"][0]["resolved"] = False
         adjudication["pages"][0]["unresolved"] = ["needs review"]
+    elif mutation == "role_unresolved":
+        extractor["pages"][0]["unresolved"] = ["tiny field unreadable"]
     elif mutation == "hallucinated":
         final = adjudication["pages"][0]["final"]
         final["text"] += " 999"
