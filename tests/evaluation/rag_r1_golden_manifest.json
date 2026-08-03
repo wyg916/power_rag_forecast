@@ -1,0 +1,144 @@
+{
+    "schema_version":  "rag-r1-golden-manifest/v1",
+    "release_id":  "RAG-R1",
+    "collection":  "rag_chunks_RAG-R1",
+    "generated_at":  "2026-08-03T14:25:03+08:00",
+    "status":  "PENDING_HUMAN_APPROVAL",
+    "formal_golden_set_pass":  false,
+    "human_review_required_questions":  150,
+    "approval_contract":  {
+                              "required_status":  "approved",
+                              "annotator_required":  true,
+                              "reviewer_required":  true,
+                              "annotator_must_differ_from_reviewer":  true,
+                              "human_verified_required":  true,
+                              "model_generated_labels_forbidden":  true,
+                              "unresolved_document_version_chunk_mapping_forbidden":  true
+                          },
+    "sets":  {
+                 "retrieval":  {
+                                   "path":  "tests/evaluation/rag_r1_retrieval_golden_50.json",
+                                   "sha256":  "422ece5079f0c7e21354144aa3464d4cfd78277302fbad6399a3603bf3b07afb",
+                                   "schema_version":  "rag-r1-retrieval-golden/v1",
+                                   "candidate_schema_version":  "rag-r1-retrieval-golden-candidate/v1",
+                                   "count":  50,
+                                   "unique_ids":  50,
+                                   "critical_count":  15,
+                                   "pending_count":  50,
+                                   "review_batches":  [
+                                                          "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/retrieval_review_batch_01.json",
+                                                          "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/retrieval_review_batch_02.json"
+                                                      ],
+                                   "version_mapping_pending_count":  50
+                               },
+                 "ai":  {
+                            "path":  "tests/evaluation/ai_assistant_eval_questions.json",
+                            "sha256":  "6da5300007916a2003353569283c4e516a02e2cfa62f313138e0f1516d31a876",
+                            "item_schema_version":  "rag-r1-ai-golden-item/v1",
+                            "count":  100,
+                            "unique_ids":  100,
+                            "critical_count":  30,
+                            "pending_count":  100,
+                            "citation_required_count":  90,
+                            "business_tool_required_count":  10,
+                            "refusal_or_unavailable_count":  10,
+                            "category_distribution":  {
+                                                          "energy_market_price_basics":  15,
+                                                          "field_dictionary_metrics":  15,
+                                                          "model_feature_artifact_run_id":  15,
+                                                          "forecast_error_anomaly_spike_negative":  15,
+                                                          "source_type_historical_stale_unavailable":  10,
+                                                          "system_function_operations":  10,
+                                                          "realtime_tool_rag_combo":  10,
+                                                          "noanswer_security_adversarial":  10
+                                                      },
+                            "review_batches":  [
+                                                   "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/ai_review_batch_01.json",
+                                                   "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/ai_review_batch_02.json",
+                                                   "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/ai_review_batch_03.json",
+                                                   "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/ai_review_batch_04.json"
+                                               ],
+                            "critical_review":  "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/ai_critical_30.json",
+                            "evidence_mapping_pending_count":  90,
+                            "legacy_document_id_candidate_questions":  22
+                        }
+             },
+    "source_pools":  [
+                         {
+                             "path":  "tests/evaluation/phase5_base_30_questions.json",
+                             "sha256":  "b7d3fcd55a45e23776dad40469a496ecd73f3fc214e29afe1d85c29ebed97b0f",
+                             "note":  "强标签、拒答和系统契约来源；修复了 P5A-SYSTEM-03 的损坏 required_fact"
+                         },
+                         {
+                             "path":  "tests/evaluation/day8_golden_questions.json",
+                             "sha256":  "5a24abd11adfc045e22dcc22f35ce2331052e633b79af2e7af92c80e2ca5a527",
+                             "note":  "拒答、安全和数据工具场景的候选来源；本任务未修改"
+                         }
+                     ],
+    "thresholds":  {
+                       "retrieval":  {
+                                         "recall_at_3_min":  0.9,
+                                         "recall_at_5_min":  0.98,
+                                         "mrr_min":  0.85,
+                                         "critical_recall_at_5":  1.0,
+                                         "citation_integrity":  1.0
+                                     },
+                       "ai":  {
+                                  "pass_count_min":  97,
+                                  "critical_pass_count":  30,
+                                  "grounding_min":  0.98,
+                                  "citation_integrity":  1.0,
+                                  "hallucinated_digits":  0,
+                                  "no_evidence_refusal_rate":  1.0,
+                                  "unauthorized_block_rate":  1.0
+                              }
+                   },
+    "current_formal_metrics":  {
+                                   "evidence":  "docs/codex/RAG_R1_FINAL_ACCEPTANCE_REPORT.md",
+                                   "measured_at":  "2026-08-02",
+                                   "not_rerun_by_this_task":  true,
+                                   "retrieval":  {
+                                                     "recall_at_3":  1.0,
+                                                     "recall_at_5":  1.0,
+                                                     "mrr":  0.9667,
+                                                     "critical_passed":  15,
+                                                     "critical_total":  15,
+                                                     "citation_integrity":  1.0,
+                                                     "quality_gate":  "PASS",
+                                                     "human_verified":  false
+                                                 },
+                                   "ai":  {
+                                              "passed":  80,
+                                              "total":  100,
+                                              "critical_passed":  16,
+                                              "critical_total":  30,
+                                              "grounding":  0.93,
+                                              "reported_citation_integrity":  1.0,
+                                              "reported_citations_valid":  446,
+                                              "reported_citations_total":  446,
+                                              "hallucinated_digits":  0,
+                                              "reported_refusal_and_unavailable_rate":  1.0,
+                                              "unauthorized_block_rate":  "NOT_MEASURED",
+                                              "gate":  "FAIL"
+                                          }
+                               },
+    "failure_evidence":  {
+                             "current_formal_failed_count":  20,
+                             "current_formal_critical_failed_count":  14,
+                             "current_formal_grounding_failed_count":  7,
+                             "current_formal_failed_question_ids":  [
+
+                                                                    ],
+                             "classification_status":  "EVIDENCE_MISSING_PENDING_REVIEW",
+                             "reason":  "正式汇总引用的逐题 ai_100_report.json 和 citation_revalidation.json 不在当前工作树或可达 Git 对象中，禁止伪造题号和原因",
+                             "historical_per_question_classification":  "docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/failure_classification.json"
+                         },
+    "known_review_issues":  [
+                                "Retrieval R1-RET-034 含 2 个期望文档、R1-RET-037 含 3 个期望文档，需确认 any/all 规则及文档到 Chunk 映射",
+                                "Retrieval R1-RET-024 与 R1-RET-042 共用一个 Chunk，需确认该 Chunk 是否分别支持两个 Claim",
+                                "Retrieval critical 当前连续为 R1-RET-001 至 R1-RET-015，需逐题确认 critical 理由",
+                                "AI 90 个需 Citation 的候选仍需把标题或 legacy kb ID 映射到 RAG-R1 immutable document/version/chunk",
+                                "AI ACL unauthorized probe 尚未由现有评测夹具执行，因此未授权拦截率不得声明 PASS",
+                                "当前正式 AI 20 个失败题的逐题证据缺失，保持 EVIDENCE_MISSING_PENDING_REVIEW"
+                            ]
+}

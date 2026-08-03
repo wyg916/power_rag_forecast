@@ -472,7 +472,7 @@
     "expected_domain": "system_knowledge",
     "expected_source_type": "real",
     "required_facts": [
-      "GET ???????????",
+      "GET 和查询接口不得产生写副作用",
       "seed 和激活必须显式执行"
     ],
     "allowed_document_ids": [

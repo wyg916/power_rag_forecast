@@ -1,0 +1,1093 @@
+{
+    "schema_version":  "rag-r1-ai-failure-classification/v1",
+    "allowed_categories":  [
+                               "retrieval",
+                               "rerank",
+                               "citation",
+                               "claim",
+                               "tool_routing",
+                               "refusal",
+                               "eval_fixture"
+                           ],
+    "current_formal_result":  {
+                                  "evidence":  "docs/codex/RAG_R1_FINAL_ACCEPTANCE_REPORT.md",
+                                  "passed":  80,
+                                  "total":  100,
+                                  "failed":  20,
+                                  "critical_passed":  16,
+                                  "critical_total":  30,
+                                  "grounding":  0.93,
+                                  "grounding_failed_questions_inferred_from_report":  7,
+                                  "failed_question_ids":  [
+
+                                                          ],
+                                  "per_question_classification_status":  "EVIDENCE_MISSING_PENDING_REVIEW",
+                                  "missing_artifacts":  [
+                                                            "docs/codex/evidence/rag_r1_final_integration/ai100_candidate_domainfix/ai_100_report.json",
+                                                            "docs/codex/evidence/rag_r1_final_integration/ai100_candidate_final/citation_revalidation.json"
+                                                        ],
+                                  "classification_rule":  "正式聚合缺少 20 个失败题的逐题文件，禁止编造 retrieval、rerank、Citation、Claim、工具路由或拒答分类。"
+                              },
+    "historical_v2_7":  {
+                            "evidence":  "tests/evaluation/output/rag_failure_analysis_v2_7.json",
+                            "failed_count":  60,
+                            "items":  [
+                                          {
+                                              "question_id":  "price_001",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_002",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_003",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_004",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_005",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_006",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_007",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_008",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_009",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_010",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_012",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_015",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_016",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_017",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_018",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "price_019",
+                                              "category":  "price_forecast",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "weather_005",
+                                              "category":  "load_weather",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "weather_007",
+                                              "category":  "load_weather",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "weather_011",
+                                              "category":  "load_weather",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "weather_012",
+                                              "category":  "load_weather",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "weather_013",
+                                              "category":  "load_weather",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "spike_001",
+                                              "category":  "spike_risk",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "spike_003",
+                                              "category":  "spike_risk",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "spike_009",
+                                              "category":  "spike_risk",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "spike_010",
+                                              "category":  "spike_risk",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "spike_013",
+                                              "category":  "spike_risk",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_004",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_005",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_006",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_007",
+                                              "category":  "model_explain",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_008",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_009",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_010",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_013",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "model_015",
+                                              "category":  "model_explain",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_003",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_004",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_005",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_006",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_007",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_008",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_009",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_010",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_011",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_012",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_013",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "tool_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "strategy_015",
+                                              "category":  "trading_strategy",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "system_001",
+                                              "category":  "system_usage",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "rag_triggered":  true,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "system_003",
+                                              "category":  "system_usage",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "system_004",
+                                              "category":  "system_usage",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "system_005",
+                                              "category":  "system_usage",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "system_006",
+                                              "category":  "system_usage",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "system_008",
+                                              "category":  "system_usage",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "system_009",
+                                              "category":  "system_usage",
+                                              "primary_category":  "retrieval",
+                                              "failure_categories":  [
+                                                                         "retrieval",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "rag_expectation_ok",
+                                                                    "top_k_title_hit",
+                                                                    "keyword_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "daily_002",
+                                              "category":  "daily_chat",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "daily_003",
+                                              "category":  "daily_chat",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "daily_004",
+                                              "category":  "daily_chat",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "daily_006",
+                                              "category":  "daily_chat",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "daily_007",
+                                              "category":  "daily_chat",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim",
+                                                                         "tool_routing"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "tool_expectation_ok",
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          },
+                                          {
+                                              "question_id":  "daily_009",
+                                              "category":  "daily_chat",
+                                              "primary_category":  "claim",
+                                              "failure_categories":  [
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "rag_triggered":  false,
+                                              "stage_evidence_limit":  "pre-rerank and immutable citation diagnostics unavailable; retrieval versus rerank cannot be split further"
+                                          }
+                                      ],
+                            "limits":  [
+                                           "旧评测未校验不可变 Citation，无法形成可靠的 citation 失败数。",
+                                           "缺少 pre-rerank 诊断，retrieval 与 rerank 无法进一步拆分。",
+                                           "这些是历史失败谱系，不代表当前正式 80/100 的逐题失败清单。"
+                                       ]
+                        },
+    "historical_v2_8":  {
+                            "evidence":  "tests/evaluation/output/rag_tuned_v2_8_report.json",
+                            "failed_count":  6,
+                            "items":  [
+                                          {
+                                              "question_id":  "price_010",
+                                              "primary_category":  "eval_fixture",
+                                              "failure_categories":  [
+                                                                         "eval_fixture",
+                                                                         "rerank"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "explanation":  "Top5 已包含语义等价的风险等级定义，固定标题 oracle 过窄；期望文档也位于候选后排。"
+                                          },
+                                          {
+                                              "question_id":  "weather_007",
+                                              "primary_category":  "eval_fixture",
+                                              "failure_categories":  [
+                                                                         "eval_fixture"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "explanation":  "答案已说明天气偏差会引起负荷偏差并放大电价预测误差，字面答案点未命中。"
+                                          },
+                                          {
+                                              "question_id":  "weather_012",
+                                              "primary_category":  "eval_fixture",
+                                              "failure_categories":  [
+                                                                         "eval_fixture"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "explanation":  "答案已说明数据更新时间、预测窗口和可信度限制，字面答案点未命中。"
+                                          },
+                                          {
+                                              "question_id":  "spike_001",
+                                              "primary_category":  "eval_fixture",
+                                              "failure_categories":  [
+                                                                         "eval_fixture"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "explanation":  "答案已说明不等于暴涨、概率预警并需结合实际负荷，字面答案点未命中。"
+                                          },
+                                          {
+                                              "question_id":  "model_007",
+                                              "primary_category":  "eval_fixture",
+                                              "failure_categories":  [
+                                                                         "eval_fixture",
+                                                                         "claim"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "answer_point_hit"
+                                                                ],
+                                              "explanation":  "答案说明不应立即切换并需连续观察，但未显式提到回测或复核；Claim 仍待人工复核。"
+                                          },
+                                          {
+                                              "question_id":  "strategy_006",
+                                              "primary_category":  "eval_fixture",
+                                              "failure_categories":  [
+                                                                         "eval_fixture"
+                                                                     ],
+                                              "failed_checks":  [
+                                                                    "top_k_title_hit"
+                                                                ],
+                                              "explanation":  "答案和权威储能政策已覆盖 SOC、容量、效率与规则，固定标题 oracle 过窄。"
+                                          }
+                                      ],
+                            "limits":  [
+                                           "2026-06-08 的历史结果，仅用于失败模式复核。"
+                                       ]
+                        },
+    "historical_v2_9_samples":  {
+                                    "failed_observations":  5,
+                                    "items":  [
+                                                  {
+                                                      "report":  "tests/evaluation/output/v2_9_quality_sample_report.json",
+                                                      "question_id":  "spike_001",
+                                                      "primary_category":  "eval_fixture",
+                                                      "failure_categories":  [
+                                                                                 "eval_fixture"
+                                                                             ],
+                                                      "failed_checks":  [
+                                                                            "answer_point_hit"
+                                                                        ],
+                                                      "explanation":  "与 v2.8 相同，答案语义已覆盖但字面答案点未命中。"
+                                                  },
+                                                  {
+                                                      "report":  "tests/evaluation/output/v2_9_balanced_sample_report.json",
+                                                      "question_id":  "price_001",
+                                                      "primary_category":  "rerank",
+                                                      "failure_categories":  [
+                                                                                 "rerank"
+                                                                             ],
+                                                      "failed_checks":  [
+                                                                            "top_k_title_hit"
+                                                                        ],
+                                                      "explanation":  "期望文档位于候选第 6、14、17、20 位，被挤出 Top5。"
+                                                  },
+                                                  {
+                                                      "report":  "tests/evaluation/output/v2_9_balanced_sample_report.json",
+                                                      "question_id":  "price_002",
+                                                      "primary_category":  "eval_fixture",
+                                                      "failure_categories":  [
+                                                                                 "eval_fixture",
+                                                                                 "retrieval"
+                                                                             ],
+                                                      "failed_checks":  [
+                                                                            "top_k_title_hit"
+                                                                        ],
+                                                      "explanation":  "答案正确且召回 PJM 与日前市场相关文档，但固定标题 oracle 不接受；严格 oracle 下也可标记 retrieval。"
+                                                  },
+                                                  {
+                                                      "report":  "tests/evaluation/output/v2_9_fast_sample_report.json",
+                                                      "question_id":  "price_002",
+                                                      "primary_category":  "eval_fixture",
+                                                      "failure_categories":  [
+                                                                                 "eval_fixture",
+                                                                                 "retrieval"
+                                                                             ],
+                                                      "failed_checks":  [
+                                                                            "top_k_title_hit"
+                                                                        ],
+                                                      "explanation":  "与 balanced 样本相同，固定标题 oracle 不接受语义相关证据。"
+                                                  },
+                                                  {
+                                                      "report":  "tests/evaluation/output/v2_9_fast_sample_report.json",
+                                                      "question_id":  "system_002",
+                                                      "primary_category":  "retrieval",
+                                                      "failure_categories":  [
+                                                                                 "retrieval",
+                                                                                 "claim",
+                                                                                 "tool_routing",
+                                                                                 "eval_fixture"
+                                                                             ],
+                                                      "failed_checks":  [
+                                                                            "top_k_title_hit",
+                                                                            "answer_point_hit"
+                                                                        ],
+                                                      "explanation":  "召回绿证和支付手册并给出错误操作建议；should_use_tools=false 但实际调用工具，旧夹具未将其判失败。"
+                                                  }
+                                              ],
+                                    "limits":  [
+                                                   "30 题样本按原 question_id 记录，同题跨样本观察保留。",
+                                                   "样本结果不能外推为 100 题正式结果。"
+                                               ]
+                                },
+    "fixture_findings":  [
+                             "Phase5-B 旧夹具按数组位置切片并重编号，未保留 legacy ID。",
+                             "旧展开遗漏 weather_011..015、spike_001..005、strategy_006..015、system_001..010、daily_001..010，且 strategy_001..005 分类错误。",
+                             "should_use_tools=false 时旧评分器无条件把工具路由判为通过。",
+                             "legacy 答案点仅做字面子串且任一点即通过；direct grounding 只要求覆盖 50% required_facts。",
+                             "旧 citation_integrity 只统计已经输出的 Citation，漏掉必需 Citation 缺失。",
+                             "旧数字检查在成功业务工具存在时豁免全部数字溯源。"
+                         ]
+}

@@ -1,0 +1,15 @@
+执行约束：所有命令 workdir 均为 E:\智能运营分析项目_worktrees\beta10d_rag_r1b_golden_set。
+
+1. git branch --show-current；git rev-parse HEAD；git status --short
+   - 初始结果：beta10d/rag-r1b-golden-set；ec78c569bd4036f23341e40b2d4d212a6f85177c；干净。
+2. 完整读取 docs/codex/tasks/15_RAG_R1B_GOLDEN_SET.md、PROJECT_BASELINE_SUMMARY.md、MASTER_ENGINEERING_RULES.md。
+3. 使用 rg 和只读 JSON 检查现有 Retrieval、AI、Phase5、Day8、历史评测报告及 RAG-R1 证据摘要。
+4. 严格 JSON/治理契约/批次完整性/哈希/字符完整性校验。
+   - 结果：PASS；Retrieval 50、AI 100、AI critical 30、审核批次 2+4+1、历史逐题分类 71。
+5. E:\智能运营分析项目\.venv\Scripts\python.exe -B -m pytest tests/test_rag_r1_candidate_ai_acceptance.py tests/test_rag_r1_candidate_acceptance.py -q -p no:cacheprovider --basetemp <项目盘证据目录>
+   - 结果：18 passed in 0.68s。
+6. 对脚本和测试执行内存 compile() 语法校验；未写入 pyc。
+   - 结果：PASS。
+7. git diff --check、白名单核对、question_id 硬编码扫描、敏感信息扫描。
+   - 结果：PASS；0 项越界文件；0 项答案硬编码；0 项真实密钥命中。
+8. 未连接数据库、Qdrant、模型服务或外部网络；未执行 alias、release、snapshot、迁移或发布操作。
