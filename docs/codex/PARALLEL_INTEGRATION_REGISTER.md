@@ -100,3 +100,15 @@
 - 性能 `4a514d3...` 在 live 50 题复验前仅为实验候选；不得直接标记 PASS。
 - 开发验收全部通过前 snapshot、alias、current release 均不得变更。
 - 正式生产切换：`NO`。
+
+## RAG-R1B OCR 工具/技术预标注受控接收（2026-08-04）
+
+- 来源：`beta10d/rag-r1b-ocr` / `7ebc3a9ff808ceaa332cd2506823fba6fa349982`；父提交 `ec78c569bd4036f23341e40b2d4d212a6f85177c`。
+- 接收：普通 cherry-pick `0398496846905fb3c931c37aa1f89ddc6409fc00`；无冲突，未 merge/rebase/改写历史。
+- 范围：19/19 文件符合任务 14 白名单；数据库、迁移、Compose、公共配置/API、release、alias、snapshot 修改为 0。
+- 包完整性：10 个来源、30 页、3×10 盲标包、1 个候选复核包；外层与 ZIP 内 SHA-256 校验通过，ZIP 路径穿越 0。
+- 接收后测试：`8 passed in 30.60s`；敏感 finding 0。
+- 当前状态：`TECHNICAL PACKAGE RECEIVED / AI CONSENSUS PENDING`；gold 仍为 30/30 template、verified 0、`human_verified=false`。
+- 7 页无文本层且尚未运行 OCR/VLM：`ocr-001/002/011/012/015/021/027`；不得将 native PDF 候选当作 OCR 共识。
+- 来源工作树的未提交 `TASK_STATUS.md` 和 `backups/` 未接收、未修改、未清理。
+- 下一阶段：按 AI-only 修订执行 Extractor/Independent Reviewer/Adjudicator 三角色 30 页共识；完成前不得标记 OCR PASS。
