@@ -111,3 +111,137 @@ def test_stable_zip_and_manual_cli_exit_code(capsys):
     assert acceptance.main(["validate-gold", "--gold", str(acceptance.GOLD_PATH)]) == 3
     output = json.loads(capsys.readouterr().out)
     assert output["status"] == acceptance.MANUAL_REQUIRED and output["metrics"] is None
+
+
+def _ai_page(package_page, *, text_suffix=""):
+    page_number = package_page["source"]["page_number"]
+    text = f"page {page_number} value {page_number}{text_suffix}"
+    return {
+        "page_id": package_page["page_id"],
+        "render_sha256": package_page["render"]["sha256"],
+        "text": text,
+        "elements": [
+            {
+                "element_id": f"{package_page['page_id']}-e1",
+                "kind": "text",
+                "reading_order": 1,
+                "page_number": page_number,
+                "text": text,
+                "bbox": [0.0, 0.0, 10.0, 10.0],
+            }
+        ],
+        "tables": [],
+        "page_number": page_number,
+        "digits": [str(page_number), str(page_number)],
+        "unresolved": [],
+    }
+
+
+def _ai_role(package, *, origin, isolation, review_pass, suffix=""):
+    return {
+        "schema_version": acceptance.AI_ROLE_SCHEMA,
+        "origin": origin,
+        "model_role": f"role-{review_pass}",
+        "input_isolation": isolation,
+        "review_pass": review_pass,
+        "human_verified": False,
+        "pages": [_ai_page(page, text_suffix=suffix) for page in package["pages"]],
+    }
+
+
+def _ai_adjudication(package, extractor):
+    return {
+        "schema_version": acceptance.AI_ADJUDICATION_SCHEMA,
+        "origin": acceptance.AI_ROLE_ORIGINS[2],
+        "model_role": "role-3",
+        "input_isolation": "page_images_plus_a_b_only",
+        "review_pass": 3,
+        "human_verified": False,
+        "pages": [
+            {
+                "page_id": page["page_id"],
+                "render_sha256": page["render"]["sha256"],
+                "differences": [],
+                "decisions": [],
+                "final": copy.deepcopy(extractor["pages"][index]),
+                "resolved": True,
+                "unresolved": [],
+            }
+            for index, page in enumerate(package["pages"])
+        ],
+    }
+
+
+def _consensus_fixture():
+    package_path = acceptance.ROOT / "docs/codex/evidence/RAG_R1B_OCR_20260803T140208+0800/package_manifest.json"
+    package = json.loads(package_path.read_text(encoding="utf-8"))
+    extractor = _ai_role(
+        package,
+        origin=acceptance.AI_ROLE_ORIGINS[0],
+        isolation="blind_page_images_only",
+        review_pass=1,
+    )
+    reviewer = _ai_role(
+        package,
+        origin=acceptance.AI_ROLE_ORIGINS[1],
+        isolation="blind_page_images_only_no_extractor_access",
+        review_pass=2,
+    )
+    adjudication = _ai_adjudication(package, extractor)
+    consensus = acceptance.assemble_ai_consensus(
+        extractor,
+        reviewer,
+        adjudication,
+        package,
+        extractor_sha256="a" * 64,
+        reviewer_sha256="b" * 64,
+        adjudication_sha256="c" * 64,
+        package_sha256="d" * 64,
+        frozen_at="2026-08-04T00:00:00Z",
+    )
+    return package, extractor, reviewer, adjudication, consensus
+
+
+def test_ai_consensus_three_roles_build_validate_and_tamper_fail_closed():
+    package, _, _, _, consensus = _consensus_fixture()
+    report = acceptance.validate_ai_consensus(consensus, package, "d" * 64)
+    assert report["status"] == acceptance.AI_CONSENSUS_VERIFIED
+    assert report["page_count"] == 30
+    assert report["human_verified"] is False
+    assert report["automated_consensus_verified"] is True
+    assert report["production_human_signoff"] is False
+    tampered = copy.deepcopy(consensus)
+    tampered["metrics"]["hallucinated_digits"] = 1
+    with pytest.raises(acceptance.OCRAcceptanceError, match="metrics_tampered"):
+        acceptance.validate_ai_consensus(tampered, package, "d" * 64)
+
+
+@pytest.mark.parametrize("mutation", ["human", "same_role", "unresolved", "hallucinated", "package"])
+def test_ai_consensus_rejects_provenance_and_gate_mutations(mutation):
+    package, extractor, reviewer, adjudication, _ = _consensus_fixture()
+    if mutation == "human":
+        extractor["human_verified"] = True
+    elif mutation == "same_role":
+        reviewer["origin"] = acceptance.AI_ROLE_ORIGINS[0]
+    elif mutation == "unresolved":
+        adjudication["pages"][0]["resolved"] = False
+        adjudication["pages"][0]["unresolved"] = ["needs review"]
+    elif mutation == "hallucinated":
+        final = adjudication["pages"][0]["final"]
+        final["text"] += " 999"
+        final["elements"][0]["text"] += " 999"
+        final["digits"].append("999")
+    else:
+        package["page_count"] = 29
+    with pytest.raises(acceptance.OCRAcceptanceError):
+        acceptance.assemble_ai_consensus(
+            extractor,
+            reviewer,
+            adjudication,
+            package,
+            extractor_sha256="a" * 64,
+            reviewer_sha256="b" * 64,
+            adjudication_sha256="c" * 64,
+            package_sha256="d" * 64,
+            frozen_at="2026-08-04T00:00:00Z",
+        )

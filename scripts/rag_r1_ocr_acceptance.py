@@ -45,6 +45,12 @@ TABLE_F1_MIN_DENOMINATOR = 10
 LOCATOR_IOU_MIN = 0.5
 METRIC_CONTRACT = {"normalization": "nfkc-whitespace-v1", "cer_max": 0.05, "table_f1_min": 0.9, "locator_iou_min": 0.5, "locator_complete": 1.0, "hallucinated_digits_max": 0}
 MANUAL_POLICY = {"required_page_count": 30, "batch_size": 10, "source_of_truth": "human_transcription_from_rendered_page", "independent_reviewer": True, "candidate_blind_initial_annotation": True, "automatic_candidate_is_gold": False}
+AI_ROLE_SCHEMA = "rag-r1-ocr-ai-role-output/v1"
+AI_ADJUDICATION_SCHEMA = "rag-r1-ocr-ai-adjudication/v1"
+AI_CONSENSUS_SCHEMA = "rag-r1-ocr-ai-consensus/v1"
+AI_VERIFICATION_MODE = "multi_agent_independent_consensus"
+AI_CONSENSUS_VERIFIED = "AI_CONSENSUS_VERIFIED"
+AI_ROLE_ORIGINS = ("codex_ai_ocr_extractor", "codex_ai_independent_visual_reviewer", "codex_ai_consensus_adjudicator")
 
 
 class OCRAcceptanceError(RuntimeError):
@@ -949,6 +955,261 @@ def prepare(output_dir: Path, gold_path: Path = GOLD_PATH, *, dpi: int = 200, se
     return {"status": MANUAL_REQUIRED, "page_count": 30, "output_dir": str(output_dir), "gold": str(gold_path), "artifacts": manifest["artifacts"] | {"package_manifest.json": _sha256_bytes(artifacts["package_manifest.json"])} }
 
 
+def _text(value: Any) -> str:
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _rate(numerator: int, denominator: int) -> float:
+    if denominator <= 0:
+        return 1.0
+    return round(numerator / denominator, 6)
+
+
+def _json_file(path: Path, label: str) -> tuple[Mapping[str, Any], str]:
+    value = _load_json_bytes(path.resolve(strict=True).read_bytes(), label)
+    if not isinstance(value, Mapping):
+        raise OCRAcceptanceError(f"json_object_required:{label}")
+    return value, _sha256_file(path)
+
+
+def _package_pages(package: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    if package.get("schema_version") != "rag-r1-ocr-annotation-package/v1" or package.get("page_count") != 30:
+        raise OCRAcceptanceError("ai_consensus_package_invalid")
+    pages = package.get("pages")
+    if not isinstance(pages, list) or len(pages) != 30:
+        raise OCRAcceptanceError("ai_consensus_package_pages_invalid")
+    by_id = {str(page.get("page_id") or ""): page for page in pages if isinstance(page, Mapping)}
+    if len(by_id) != 30 or "" in by_id:
+        raise OCRAcceptanceError("ai_consensus_package_page_ids_invalid")
+    return by_id
+
+
+def _ai_page_digits(page: Mapping[str, Any]) -> Counter[str]:
+    values = number_counter(str(page.get("text") or ""))
+    for table in page.get("tables") or []:
+        if isinstance(table, Mapping):
+            for cell in table.get("cells") or []:
+                if isinstance(cell, Mapping):
+                    values += number_counter(str(cell.get("text") or ""))
+    return values
+
+
+def _validate_ai_page(page: Any, package_page: Mapping[str, Any], label: str) -> dict[str, Any]:
+    page = _exact_keys(page, {"page_id", "render_sha256", "text", "elements", "tables", "page_number", "digits", "unresolved"}, label)
+    page_id = str(page["page_id"])
+    if page_id != package_page.get("page_id") or page["render_sha256"] != package_page.get("render", {}).get("sha256"):
+        raise OCRAcceptanceError(f"ai_page_identity_invalid:{page_id}")
+    source = package_page.get("source")
+    if not isinstance(source, Mapping):
+        raise OCRAcceptanceError(f"ai_page_source_invalid:{page_id}")
+    width, height = float(source.get("page_width") or 0), float(source.get("page_height") or 0)
+    if width <= 0 or height <= 0 or type(page["page_number"]) is not int or page["page_number"] != source.get("page_number"):
+        raise OCRAcceptanceError(f"ai_page_number_invalid:{page_id}")
+    if not isinstance(page["text"], str) or "\ufffd" in page["text"] or not isinstance(page["elements"], list) or not isinstance(page["tables"], list):
+        raise OCRAcceptanceError(f"ai_page_content_invalid:{page_id}")
+    element_ids: set[str] = set()
+    for index, element in enumerate(page["elements"]):
+        element = _exact_keys(element, {"element_id", "kind", "reading_order", "page_number", "text", "bbox"}, f"{label}:element:{index}")
+        if not _text(element["element_id"]) or element["element_id"] in element_ids or element["kind"] not in ELEMENT_KINDS:
+            raise OCRAcceptanceError(f"ai_element_identity_invalid:{page_id}:{index}")
+        element_ids.add(element["element_id"])
+        if type(element["reading_order"]) is not int or element["reading_order"] < 1 or element["page_number"] != page["page_number"] or not isinstance(element["text"], str):
+            raise OCRAcceptanceError(f"ai_element_contract_invalid:{page_id}:{index}")
+        _bbox(element["bbox"], width, height, f"{label}:element:{index}")
+    if len({element["reading_order"] for element in page["elements"]}) != len(page["elements"]):
+        raise OCRAcceptanceError(f"ai_element_order_duplicate:{page_id}")
+    table_ids: set[str] = set()
+    for index, table in enumerate(page["tables"]):
+        _validate_table(table, width, height, f"{label}:table:{index}")
+        table_id = str(table.get("table_id") or "")
+        if not table_id or table_id in table_ids:
+            raise OCRAcceptanceError(f"ai_table_identity_invalid:{page_id}:{index}")
+        table_ids.add(table_id)
+    if not isinstance(page["digits"], list) or any(not isinstance(value, str) for value in page["digits"]):
+        raise OCRAcceptanceError(f"ai_digits_invalid:{page_id}")
+    try:
+        supplied = Counter(_canonical_number(value) for value in page["digits"])
+    except (InvalidOperation, ValueError) as exc:
+        raise OCRAcceptanceError(f"ai_digits_invalid:{page_id}") from exc
+    if supplied != _ai_page_digits(page):
+        raise OCRAcceptanceError(f"ai_digits_content_mismatch:{page_id}")
+    if not isinstance(page["unresolved"], list) or any(not _text(value) for value in page["unresolved"]):
+        raise OCRAcceptanceError(f"ai_unresolved_invalid:{page_id}")
+    return dict(page)
+
+
+def validate_ai_role_output(value: Any, package: Mapping[str, Any], *, origin: str, isolation: str, review_pass: int) -> list[dict[str, Any]]:
+    value = _exact_keys(value, {"schema_version", "origin", "model_role", "input_isolation", "review_pass", "human_verified", "pages"}, origin)
+    if value["schema_version"] != AI_ROLE_SCHEMA or value["origin"] != origin or not _text(value["model_role"]):
+        raise OCRAcceptanceError(f"ai_role_identity_invalid:{origin}")
+    if value["input_isolation"] != isolation or value["review_pass"] != review_pass or value["human_verified"] is not False:
+        raise OCRAcceptanceError(f"ai_role_isolation_invalid:{origin}")
+    pages = value["pages"]
+    package_pages = _package_pages(package)
+    if not isinstance(pages, list) or len(pages) != 30:
+        raise OCRAcceptanceError(f"ai_role_page_count_invalid:{origin}")
+    by_id = {str(page.get("page_id") or ""): page for page in pages if isinstance(page, Mapping)}
+    if set(by_id) != set(package_pages):
+        raise OCRAcceptanceError(f"ai_role_page_set_invalid:{origin}")
+    return [_validate_ai_page(by_id[page_id], package_pages[page_id], f"{origin}:{page_id}") for page_id in sorted(package_pages)]
+
+
+def _ai_cells(page: Mapping[str, Any]) -> Counter[tuple[int, int, int, int, str]]:
+    result: Counter[tuple[int, int, int, int, str]] = Counter()
+    for table in page["tables"]:
+        result += _cells(table)
+    return result
+
+
+def _ai_boxes(page: Mapping[str, Any], package_page: Mapping[str, Any], label: str) -> list[dict[str, Any]]:
+    source = package_page["source"]
+    width, height = float(source["page_width"]), float(source["page_height"])
+    result: list[dict[str, Any]] = []
+    for index, element in enumerate(page["elements"]):
+        result.append({"kind": str(element["kind"]), "_bbox": _bbox(element["bbox"], width, height, f"{label}:element:{index}")})
+    for table_index, table in enumerate(page["tables"]):
+        result.append({"kind": "table", "_bbox": _bbox(table["bbox"], width, height, f"{label}:table:{table_index}")})
+        for cell_index, cell in enumerate(table["cells"]):
+            result.append({"kind": "cell", "_bbox": _bbox(cell["bbox"], width, height, f"{label}:cell:{table_index}:{cell_index}")})
+    return result
+
+
+def _ai_page_comparison(left: Mapping[str, Any], right: Mapping[str, Any], package_page: Mapping[str, Any]) -> dict[str, Any]:
+    left_text, right_text = normalize_text(left["text"]), normalize_text(right["text"])
+    left_cells, right_cells = _ai_cells(left), _ai_cells(right)
+    left_boxes = _ai_boxes(left, package_page, "extractor")
+    right_boxes = _ai_boxes(right, package_page, "reviewer")
+    pairs = _best_matching(left_boxes, right_boxes, same_kind=True)
+    bbox_ious = [_iou(left_boxes[a]["_bbox"], right_boxes[b]["_bbox"]) for a, b in pairs]
+    left_digits, right_digits = _ai_page_digits(left), _ai_page_digits(right)
+    return {
+        "text_edits": levenshtein_distance(left_text, right_text),
+        "text_characters": max(len(left_text), len(right_text)),
+        "table_cell_symmetric_difference": sum((left_cells - right_cells).values()) + sum((right_cells - left_cells).values()),
+        "table_tp": sum((left_cells & right_cells).values()),
+        "table_left": sum(left_cells.values()),
+        "table_right": sum(right_cells.values()),
+        "bbox_matched": len(pairs),
+        "bbox_total": max(len(left_boxes), len(right_boxes)),
+        "bbox_iou_sum": round(sum(bbox_ious), 9),
+        "page_number_mismatch": left["page_number"] != right["page_number"],
+        "digit_symmetric_difference": sum((left_digits - right_digits).values()) + sum((right_digits - left_digits).values()),
+        "digit_intersection": sum((left_digits & right_digits).values()),
+        "digit_union": sum((left_digits | right_digits).values()),
+    }
+
+
+def _ai_metrics(pages: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    comparisons = [page["computed_differences"] for page in pages]
+    text_characters = sum(row["text_characters"] for row in comparisons)
+    edits = sum(row["text_edits"] for row in comparisons)
+    table_tp = sum(row["table_tp"] for row in comparisons)
+    table_total = sum(row["table_left"] + row["table_right"] for row in comparisons)
+    bbox_matched = sum(row["bbox_matched"] for row in comparisons)
+    digit_union = sum(row["digit_union"] for row in comparisons)
+    return {
+        "page_count": len(pages),
+        "text_agreement_rate": _rate(sum(row["text_edits"] == 0 for row in comparisons), len(pages)),
+        "consensus_CER_proxy": round(edits / text_characters, 6) if text_characters else 0.0,
+        "table_structure_agreement_rate": _rate(sum(row["table_cell_symmetric_difference"] == 0 for row in comparisons), len(pages)),
+        "consensus_table_F1_proxy": round((2 * table_tp) / table_total, 6) if table_total else 1.0,
+        "bbox_iou_proxy": round(sum(row["bbox_iou_sum"] for row in comparisons) / bbox_matched, 6) if bbox_matched else 1.0,
+        "page_number_agreement_rate": _rate(sum(not row["page_number_mismatch"] for row in comparisons), len(pages)),
+        "digit_agreement_rate": round(sum(row["digit_intersection"] for row in comparisons) / digit_union, 6) if digit_union else 1.0,
+        "unresolved_disagreements": sum(len(page["adjudication"]["unresolved"]) for page in pages),
+        "hallucinated_digits": sum(page["hallucinated_digits"] for page in pages),
+        "human_gold_status": "unavailable",
+        "metric_semantics": "AI consensus proxy; not human gold CER/F1",
+        "per_page": [{"page_id": page["page_id"], "status": page["status"], **page["computed_differences"], "hallucinated_digits": page["hallucinated_digits"]} for page in pages],
+    }
+
+
+def assemble_ai_consensus(extractor: Mapping[str, Any], reviewer: Mapping[str, Any], adjudication: Mapping[str, Any], package: Mapping[str, Any], *, extractor_sha256: str, reviewer_sha256: str, adjudication_sha256: str, package_sha256: str, frozen_at: str) -> dict[str, Any]:
+    package_pages = _package_pages(package)
+    left = validate_ai_role_output(extractor, package, origin=AI_ROLE_ORIGINS[0], isolation="blind_page_images_only", review_pass=1)
+    right = validate_ai_role_output(reviewer, package, origin=AI_ROLE_ORIGINS[1], isolation="blind_page_images_only_no_extractor_access", review_pass=2)
+    adjudication = _exact_keys(adjudication, {"schema_version", "origin", "model_role", "input_isolation", "review_pass", "human_verified", "pages"}, "adjudication")
+    if adjudication["schema_version"] != AI_ADJUDICATION_SCHEMA or adjudication["origin"] != AI_ROLE_ORIGINS[2] or not _text(adjudication["model_role"]):
+        raise OCRAcceptanceError("ai_adjudicator_identity_invalid")
+    if adjudication["input_isolation"] != "page_images_plus_a_b_only" or adjudication["review_pass"] != 3 or adjudication["human_verified"] is not False:
+        raise OCRAcceptanceError("ai_adjudicator_isolation_invalid")
+    adjudication_pages = adjudication["pages"]
+    if not isinstance(adjudication_pages, list) or len(adjudication_pages) != 30:
+        raise OCRAcceptanceError("ai_adjudication_page_count_invalid")
+    adj_by_id = {str(page.get("page_id") or ""): page for page in adjudication_pages if isinstance(page, Mapping)}
+    if set(adj_by_id) != set(package_pages):
+        raise OCRAcceptanceError("ai_adjudication_page_set_invalid")
+    left_by_id, right_by_id = {page["page_id"]: page for page in left}, {page["page_id"]: page for page in right}
+    pages: list[dict[str, Any]] = []
+    for page_id in sorted(package_pages):
+        item = _exact_keys(adj_by_id[page_id], {"page_id", "render_sha256", "differences", "decisions", "final", "resolved", "unresolved"}, f"adjudication:{page_id}")
+        if item["render_sha256"] != package_pages[page_id]["render"]["sha256"] or item["resolved"] is not True:
+            raise OCRAcceptanceError(f"ai_adjudication_resolution_invalid:{page_id}")
+        if not isinstance(item["differences"], list) or any(not _text(value) for value in item["differences"]):
+            raise OCRAcceptanceError(f"ai_adjudication_differences_invalid:{page_id}")
+        if not isinstance(item["decisions"], list) or any(not _text(value) for value in item["decisions"]):
+            raise OCRAcceptanceError(f"ai_adjudication_decisions_invalid:{page_id}")
+        if not isinstance(item["unresolved"], list) or item["unresolved"]:
+            raise OCRAcceptanceError(f"ai_adjudication_unresolved:{page_id}")
+        final = _validate_ai_page(item["final"], package_pages[page_id], f"adjudication_final:{page_id}")
+        if final["unresolved"]:
+            raise OCRAcceptanceError(f"ai_final_unresolved:{page_id}")
+        comparison = _ai_page_comparison(left_by_id[page_id], right_by_id[page_id], package_pages[page_id])
+        has_difference = any((value is True) or (type(value) in {int, float} and value > 0) for key, value in comparison.items() if key in {"text_edits", "table_cell_symmetric_difference", "page_number_mismatch", "digit_symmetric_difference"}) or comparison["bbox_matched"] < comparison["bbox_total"]
+        if has_difference and not item["decisions"]:
+            raise OCRAcceptanceError(f"ai_adjudication_decision_missing:{page_id}")
+        allowed_digits = _ai_page_digits(left_by_id[page_id]) | _ai_page_digits(right_by_id[page_id])
+        hallucinated = sum((_ai_page_digits(final) - allowed_digits).values())
+        if hallucinated:
+            raise OCRAcceptanceError(f"ai_final_hallucinated_digits:{page_id}")
+        pages.append({"page_id": page_id, "render_sha256": item["render_sha256"], "extractor": left_by_id[page_id], "reviewer": right_by_id[page_id], "computed_differences": comparison, "adjudication": {"origin": AI_ROLE_ORIGINS[2], "differences": list(item["differences"]), "decisions": list(item["decisions"]), "resolved": True, "unresolved": []}, "final": final, "hallucinated_digits": 0, "status": "consensus_verified"})
+    metrics = _ai_metrics(pages)
+    if metrics["page_count"] != 30 or metrics["unresolved_disagreements"] != 0 or metrics["hallucinated_digits"] != 0:
+        raise OCRAcceptanceError("ai_consensus_gate_failed")
+    if not isinstance(frozen_at, str) or not frozen_at.endswith(("Z", "+00:00")):
+        raise OCRAcceptanceError("ai_consensus_frozen_at_invalid")
+    roles = {
+        "extractor": {"origin": AI_ROLE_ORIGINS[0], "model_role": extractor["model_role"], "input_isolation": extractor["input_isolation"], "review_pass": 1, "artifact_sha256": extractor_sha256},
+        "reviewer": {"origin": AI_ROLE_ORIGINS[1], "model_role": reviewer["model_role"], "input_isolation": reviewer["input_isolation"], "review_pass": 2, "artifact_sha256": reviewer_sha256},
+        "adjudicator": {"origin": AI_ROLE_ORIGINS[2], "model_role": adjudication["model_role"], "input_isolation": adjudication["input_isolation"], "review_pass": 3, "artifact_sha256": adjudication_sha256},
+    }
+    result = {"schema_version": AI_CONSENSUS_SCHEMA, "status": AI_CONSENSUS_VERIFIED, "verification_mode": AI_VERIFICATION_MODE, "human_verified": False, "automated_consensus_verified": True, "production_human_signoff": False, "review_passes": 3, "source_package_sha256": package_sha256, "roles": roles, "frozen_at": frozen_at, "pages": pages, "metrics": metrics}
+    result["consensus_sha256"] = _sha256_bytes(_json_bytes(result))
+    return result
+
+
+def validate_ai_consensus(value: Any, package: Mapping[str, Any], package_sha256: str) -> dict[str, Any]:
+    expected_keys = {"schema_version", "status", "verification_mode", "human_verified", "automated_consensus_verified", "production_human_signoff", "review_passes", "source_package_sha256", "roles", "frozen_at", "pages", "metrics", "consensus_sha256"}
+    value = _exact_keys(value, expected_keys, "ai_consensus")
+    if value["schema_version"] != AI_CONSENSUS_SCHEMA or value["status"] != AI_CONSENSUS_VERIFIED or value["verification_mode"] != AI_VERIFICATION_MODE:
+        raise OCRAcceptanceError("ai_consensus_identity_invalid")
+    if value["human_verified"] is not False or value["automated_consensus_verified"] is not True or value["production_human_signoff"] is not False or value["review_passes"] != 3:
+        raise OCRAcceptanceError("ai_consensus_provenance_invalid")
+    if value["source_package_sha256"] != package_sha256 or len(value["pages"]) != 30:
+        raise OCRAcceptanceError("ai_consensus_package_mismatch")
+    roles = value["roles"]
+    if not isinstance(roles, Mapping) or tuple(roles[name]["origin"] for name in ("extractor", "reviewer", "adjudicator")) != AI_ROLE_ORIGINS:
+        raise OCRAcceptanceError("ai_consensus_roles_invalid")
+    package_pages = _package_pages(package)
+    if {page["page_id"] for page in value["pages"]} != set(package_pages):
+        raise OCRAcceptanceError("ai_consensus_page_set_invalid")
+    for page in value["pages"]:
+        if page.get("status") != "consensus_verified" or page.get("hallucinated_digits") != 0 or page.get("adjudication", {}).get("unresolved"):
+            raise OCRAcceptanceError(f"ai_consensus_page_gate_failed:{page.get('page_id')}")
+        _validate_ai_page(page["extractor"], package_pages[page["page_id"]], f"consensus_extractor:{page['page_id']}")
+        _validate_ai_page(page["reviewer"], package_pages[page["page_id"]], f"consensus_reviewer:{page['page_id']}")
+        _validate_ai_page(page["final"], package_pages[page["page_id"]], f"consensus_final:{page['page_id']}")
+        if page["computed_differences"] != _ai_page_comparison(page["extractor"], page["reviewer"], package_pages[page["page_id"]]):
+            raise OCRAcceptanceError(f"ai_consensus_difference_tampered:{page['page_id']}")
+    if value["metrics"] != _ai_metrics(value["pages"]):
+        raise OCRAcceptanceError("ai_consensus_metrics_tampered")
+    unsigned = dict(value)
+    consensus_sha256 = unsigned.pop("consensus_sha256")
+    if not isinstance(consensus_sha256, str) or consensus_sha256 != _sha256_bytes(_json_bytes(unsigned)):
+        raise OCRAcceptanceError("ai_consensus_sha256_invalid")
+    return {"status": AI_CONSENSUS_VERIFIED, "page_count": 30, "metrics": value["metrics"], "consensus_sha256": consensus_sha256, "human_verified": False, "automated_consensus_verified": True, "production_human_signoff": False}
+
+
 def _manual_report(reasons: Sequence[str]) -> dict[str, Any]:
     return {"schema_version": "rag-r1-ocr-evaluation/v1", "status": MANUAL_REQUIRED, "reason_codes": list(reasons), "metrics": None, "gate": {"status": MANUAL_REQUIRED}}
 
@@ -959,6 +1220,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     prepare_parser = subparsers.add_parser("prepare")
     prepare_parser.add_argument("--output-dir", type=Path, required=True)
     prepare_parser.add_argument("--gold", type=Path, default=GOLD_PATH)
+    assemble_parser = subparsers.add_parser("assemble-ai-consensus")
+    assemble_parser.add_argument("--extractor", type=Path, required=True)
+    assemble_parser.add_argument("--reviewer", type=Path, required=True)
+    assemble_parser.add_argument("--adjudication", type=Path, required=True)
+    assemble_parser.add_argument("--package-manifest", type=Path, required=True)
+    assemble_parser.add_argument("--output", type=Path, required=True)
+    assemble_parser.add_argument("--frozen-at", required=True)
+    consensus_parser = subparsers.add_parser("validate-ai-consensus")
+    consensus_parser.add_argument("--consensus", type=Path, required=True)
+    consensus_parser.add_argument("--package-manifest", type=Path, required=True)
     validate_parser = subparsers.add_parser("validate-gold")
     validate_parser.add_argument("--gold", type=Path, default=GOLD_PATH)
     evaluate_parser = subparsers.add_parser("evaluate")
@@ -969,6 +1240,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "prepare":
             report = prepare(args.output_dir, args.gold)
             print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 0
+        if args.command == "assemble-ai-consensus":
+            extractor, extractor_sha = _json_file(args.extractor, "extractor")
+            reviewer, reviewer_sha = _json_file(args.reviewer, "reviewer")
+            adjudication, adjudication_sha = _json_file(args.adjudication, "adjudication")
+            package, package_sha = _json_file(args.package_manifest, "package_manifest")
+            report = assemble_ai_consensus(extractor, reviewer, adjudication, package, extractor_sha256=extractor_sha, reviewer_sha256=reviewer_sha, adjudication_sha256=adjudication_sha, package_sha256=package_sha, frozen_at=args.frozen_at)
+            _write_new_or_identical(args.output, _json_bytes(report))
+            print(json.dumps({"status": report["status"], "page_count": 30, "output": str(args.output), "consensus_sha256": report["consensus_sha256"]}, ensure_ascii=False, indent=2))
+            return 0
+        if args.command == "validate-ai-consensus":
+            consensus, _ = _json_file(args.consensus, "ai_consensus")
+            package, package_sha = _json_file(args.package_manifest, "package_manifest")
+            print(json.dumps(validate_ai_consensus(consensus, package, package_sha), ensure_ascii=False, indent=2))
             return 0
         if args.gold.resolve() != GOLD_PATH.resolve():
             raise OCRAcceptanceError("gold_path_not_whitelisted")
