@@ -1,0 +1,3765 @@
+{
+  "schema_version": "rag-r1-retrieval-ai-mapper-revalidation/v1",
+  "origin": "codex_ai_independent",
+  "model_role": "retrieval_evidence_mapper_revalidator",
+  "review_pass": 3,
+  "input_isolation": "judge_plus_prior_independent_mapper_plus_questions_plus_immutable_corpus_no_system_results",
+  "human_verified": false,
+  "automated_consensus_verified": false,
+  "verification_mode": "independent_pass3_revalidation_pending_corrections",
+  "production_human_signoff": false,
+  "environment_scope": "development_pre_release_only",
+  "release_id": "RAG-R1",
+  "generated_at": "2026-08-03T17:56:35.205127Z",
+  "inputs": {
+    "judge_path": "E:\\智能运营分析项目\\.codex_tmp\\rag_r1b_ai_consensus\\retrieval_judge\\judge.json",
+    "judge_file_sha256": "8b09ac2d1ce53416ec84ff9179c999152145d14ace9b869a52b5f247a9ec8897",
+    "judge_logical_output_sha256": "c877cee80538c7cbf326670691ddbee16e9288ef4a9a31464fb06c0bebd4d3a0",
+    "prior_mapper_path": "E:\\智能运营分析项目\\.codex_tmp\\rag_r1b_ai_consensus\\retrieval_mapper\\mapper.json",
+    "prior_mapper_sha256": "f62925cefae27668d41e25b3520e8bb2d56cc08564c925c85871ed7d532b01aa",
+    "questions_path": "E:\\智能运营分析项目_worktrees\\beta10d_rag_r1b_evidence_closure\\tests\\evaluation\\rag_r1_retrieval_golden_50.json",
+    "questions_sha256": "422ece5079f0c7e21354144aa3464d4cfd78277302fbad6399a3603bf3b07afb",
+    "candidate_corpus_path": "E:\\智能运营分析项目\\.runtime\\rag\\releases\\RAG-R1\\candidate_corpus.json",
+    "candidate_corpus_file_sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7",
+    "candidate_corpus_manifest_sha256": "2e50d392806dcb4959050ec6baed17ce0a4d071c741f91147a569cad6c357102"
+  },
+  "isolation_attestation": {
+    "read_system_search_results": false,
+    "read_retrieval_run_results": false,
+    "read_performance_reports": false,
+    "read_standalone_evaluation_outputs": false,
+    "database_accessed": false,
+    "network_accessed": false,
+    "judge_was_not_default_accepted": true,
+    "prior_independent_mapper_read_for_unchanged_mapping_comparison": true
+  },
+  "summary": {
+    "question_count": 50,
+    "critical_count": 15,
+    "judge_replacement_count": 17,
+    "replacement_accepted_count": 13,
+    "replacement_rejected_count": 4,
+    "judge_disambiguation_count": 4,
+    "disambiguation_accepted_count": 4,
+    "unchanged_mapping_count": 29,
+    "unchanged_mapping_accepted_count": 29,
+    "consensus_eligible_count": 46,
+    "consensus_eligible_critical_count": 12,
+    "unresolved_count": 4,
+    "structural_hash_locator_validation": "PASS_50_OF_50",
+    "critical_not_lowered": true,
+    "unique_final_questions": 50,
+    "status": "REVALIDATION_COMPLETE_WITH_UNRESOLVED"
+  },
+  "verdicts": [
+    {
+      "id": "R1-RET-001",
+      "critical": true,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "符合绿证交易准入条件的社会主体怎样进行绿证交易用户注册？",
+      "final_question_sha256": "a6d8d4eddf99a910b2a02c6fc7456942a1d14f48e009b2502f34b3da20e4b336",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "66076a92f1f8fc28428cf17aa8b368a2c004ee387cd9a2feac08b9f990ce9af1",
+      "judge_decision_sha256": "bcacae10a739763f86bc3a3c5921318cd94d8dd1c1b7728716dfa44cbce8fc11",
+      "expected_document_ids": [
+        "doc_1d7f4411333c7c903b0c31ed"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "source_sha256": "13626a6b1c97d5b00e9f20ee440252a64a41a204fccac5b2d9f8b33b17bc4f54"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_3215d0d4697097d052926c1b",
+        "chk_d5f7c68916bd841981cb7bea",
+        "chk_7f369623cf9357ad13d3b01c",
+        "chk_c70abe9996f591531c1962ae"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_3215d0d4697097d052926c1b",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 59,
+          "section_path": [],
+          "content_hash": "407763bcc00a66a517821ba25f194ca4c6832e80fa605399735df5753d8440d2",
+          "quote_sha256": "407763bcc00a66a517821ba25f194ca4c6832e80fa605399735df5753d8440d2",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_d5f7c68916bd841981cb7bea",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 59,
+          "section_path": [],
+          "content_hash": "4d82204642049fa1a9ffdf720c6ac131695ce47438966c91484659e7aa590904",
+          "quote_sha256": "4d82204642049fa1a9ffdf720c6ac131695ce47438966c91484659e7aa590904",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_7f369623cf9357ad13d3b01c",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 59,
+          "section_path": [],
+          "content_hash": "06102dbe65bd7c205c2b8e33bb02817fc7e91a56abce9487acbb986c886c6951",
+          "quote_sha256": "06102dbe65bd7c205c2b8e33bb02817fc7e91a56abce9487acbb986c886c6951",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_c70abe9996f591531c1962ae",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 59,
+          "section_path": [],
+          "content_hash": "fe16f71d88a777b83015f6165784c4db47cfdbee4f6aaadfdc96aef0e459fbf6",
+          "quote_sha256": "fe16f71d88a777b83015f6165784c4db47cfdbee4f6aaadfdc96aef0e459fbf6",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "a9952f124167fd4cc9dc8ae3e087ed929edad3287196f8264821e60d4d9d8a9d"
+    },
+    {
+      "id": "R1-RET-002",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "河北省绿电直连项目申报表要求如何分别填报负荷、电源、源荷匹配、与公共电网交换功率和直连距离信息？",
+      "final_question_sha256": "a70f89598695aa132c3930d738bc740404e23b27250e69426d6e32482fa41201",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "96392922c0c9898162f36db319eda3c65ae69526c4ceba1b44c9c552f27aafab",
+      "judge_decision_sha256": "cffe824f4097506e9d9ed135b30aec63e42629a42039e4cfae2557b746f5e89f",
+      "expected_document_ids": [
+        "doc_db410db10aa6c8c1b6c84ba6"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_db410db10aa6c8c1b6c84ba6",
+          "version_id": "ver_6aefc22a601b0809b72ef757",
+          "source_sha256": "2a9667d059210da05c79832101831e09410a165431d87c2d5b8ed6f281a46798"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_2481ebce584dadb9b7ec4ad3",
+        "chk_b89b5e7652e17d4e7953cbda"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_2481ebce584dadb9b7ec4ad3",
+          "document_id": "doc_db410db10aa6c8c1b6c84ba6",
+          "version_id": "ver_6aefc22a601b0809b72ef757",
+          "page": null,
+          "section_path": [
+            "Sheet1"
+          ],
+          "content_hash": "801c63aaa12ed4c9a66ae6513d297a6c29ea4027c902aae96c0c0d88a298473f",
+          "quote_sha256": "6240f5236346fc2b9f19df77ba46e670166a031e984fc54ad749c038ce3f03d0",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_b89b5e7652e17d4e7953cbda",
+          "document_id": "doc_db410db10aa6c8c1b6c84ba6",
+          "version_id": "ver_6aefc22a601b0809b72ef757",
+          "page": null,
+          "section_path": [
+            "Sheet1"
+          ],
+          "content_hash": "59ff5c71c8f2861eb0d756e6f9e6e23cf89c66f7eb13aab0a516d790ee951fa2",
+          "quote_sha256": "d500e8e5a475aa9230b904b03be832170a4d0aa8e365c3c64d20b4863e503217",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "cb60284045d0c8f4e67c21638c81bb8a39d8593c155e64c7fa13f40f630dc2b6"
+    },
+    {
+      "id": "R1-RET-003",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "山西风电光伏申报企业需对项目选址建设条件，以及建设期和全容量并网后5年内的项目变更转让作出哪些承诺？",
+      "final_question_sha256": "3658b1f06bcf6bdec1f58d471468b9c3c27b3113524a08147f37432ab9cdfbdf",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "6978d2b1a0eaae150dca0512d96847f213af33e753152a41def519955f41cf45",
+      "judge_decision_sha256": "02f41f6e7ad6c557d06e9e667c51f3016a4703410275ac2ff17aaf6af64e86e3",
+      "expected_document_ids": [
+        "doc_ed5a7e167d74e4210f1dda1c"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "source_sha256": "458d968a9b6d3062e654b3af25852ab8d172ff83e75fb586d5b490d7c53f006d"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_08a1a183a4779e7a711c45f1",
+        "chk_f963701149a644b36ca0a7f8",
+        "chk_3ce5af4059921a1bfd79c64c",
+        "chk_2c33b8f0ed4707d941b4d59d",
+        "chk_c2d48320e5d5986be055cb6c"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_08a1a183a4779e7a711c45f1",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "00ab4ffcb24d1bff9c1fe4b7d1f2c5d397f16689bb2df33371ed1c250bc983e4",
+          "quote_sha256": "00ab4ffcb24d1bff9c1fe4b7d1f2c5d397f16689bb2df33371ed1c250bc983e4",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_f963701149a644b36ca0a7f8",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "68fa60ef602724b7b0566c50576bedac56a216f4b34b378e96017a7c4c0edd0a",
+          "quote_sha256": "68fa60ef602724b7b0566c50576bedac56a216f4b34b378e96017a7c4c0edd0a",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_3ce5af4059921a1bfd79c64c",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "5fce9560084eca971936a9d35ac0640e505ef6159f8ea2ea29524aa5ab2b5e22",
+          "quote_sha256": "5fce9560084eca971936a9d35ac0640e505ef6159f8ea2ea29524aa5ab2b5e22",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_2c33b8f0ed4707d941b4d59d",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "b72b8eadae4795b8364a6879a527fe07781d5b006235fe67b29fdd5a7306b128",
+          "quote_sha256": "b72b8eadae4795b8364a6879a527fe07781d5b006235fe67b29fdd5a7306b128",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_c2d48320e5d5986be055cb6c",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "47d90aaa2bba66e6add75bd840e0e7c80680a5485ca13d01f72a9e26076f82da",
+          "quote_sha256": "47d90aaa2bba66e6add75bd840e0e7c80680a5485ca13d01f72a9e26076f82da",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "b79f0fe6f88a762f40cb18f7ab142205d412c16bd4fe6a75dda6f7e09c503133"
+    },
+    {
+      "id": "R1-RET-004",
+      "critical": true,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "邦达新寨分家户变压器最大负载率143%时还存在哪些低电压治理问题？",
+      "final_question_sha256": "5752cbd5ba91cb5b6ab93fbf2662248edf3754f34ed5114886c4042aadb736b8",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "879dd30723034fd70d11b18790b11a81991657578ec94d43def13051d919d40e",
+      "judge_decision_sha256": "ae8053f57417a2e6ac2da24c0507d35fed3061ae6ee63b7cd6b1935594b4c9bf",
+      "expected_document_ids": [
+        "doc_dc262bc9607ffe19076896a1"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_dc262bc9607ffe19076896a1",
+          "version_id": "ver_71914abaaa0b1b980983df24",
+          "source_sha256": "34bb8ae0ab3bf6e4f15d103d10ea35d5f3e9ea6a12674ec091f7c3cdd649d2a0"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_1b9a6b51641f3e9abc02dddc"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_1b9a6b51641f3e9abc02dddc",
+          "document_id": "doc_dc262bc9607ffe19076896a1",
+          "version_id": "ver_71914abaaa0b1b980983df24",
+          "page": 11,
+          "section_path": [],
+          "content_hash": "d844bdb3e01347c2dbdb3eb535c0b70a1a53947f8c634bb003ca0e265b6f26dc",
+          "quote_sha256": "d844bdb3e01347c2dbdb3eb535c0b70a1a53947f8c634bb003ca0e265b6f26dc",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c4de7360d2f7dc0bff7735093d00566bc219f656d2089ad7bb93fabcee31f7a2"
+    },
+    {
+      "id": "R1-RET-005",
+      "critical": true,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "2026年河北南网优先发电量计划表包含哪些容量、发电量和利用小时数字段？",
+      "final_question_sha256": "54acae8f9e60841c9e006fe2d0962619f1429f079c72cf534074a9281dd5ff94",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "efaccd5982685f624d1260950503db67627df1ca2ee3918e8a48f993763f978f",
+      "judge_decision_sha256": "37154696a99c90932dfb53c10ed9102eead11a2bbc7c04873e914c2f9481498e",
+      "expected_document_ids": [
+        "doc_703666e63c12e763e7f3706e"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_703666e63c12e763e7f3706e",
+          "version_id": "ver_ffa2e4d66f40c6fc198e5105",
+          "source_sha256": "eeb7524ca24e9827b208b600b8e0276a4ace06bbca548921b4ff278e5fe0a620"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_1b4597398fd0879009cfbfec"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_1b4597398fd0879009cfbfec",
+          "document_id": "doc_703666e63c12e763e7f3706e",
+          "version_id": "ver_ffa2e4d66f40c6fc198e5105",
+          "page": null,
+          "section_path": [
+            "Sheet1"
+          ],
+          "content_hash": "c9deedb796e2c0b91cc4bcffca7a33d02541099a471e382b8c17c4aa46295d28",
+          "quote_sha256": "86c9b7340de1d7d522a6652cf1e9e67beb5776276e21fbd1e055fa9a89fd6f2c",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c089216e5c59c1f15413de9dc05d9842771d4a710d590bf96c66670c94d9a2f8"
+    },
+    {
+      "id": "R1-RET-006",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "山西2026年机制电价表中，师镒40KW与尤建芳90KW两个分布式光伏项目的编号、备案容量、机制电量、机制电价、比例和期限分别是什么？",
+      "final_question_sha256": "c0300f09f1e6d4208d60bd9a78c49735f3e24da76db587107c0beafbee9cce71",
+      "review_verdict": "REJECT_UNRESOLVED",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "FAIL",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "77cbc26a23b6fbbcd9d7d0281ffb4f0437b0506b8762938171c4692a1fd80002",
+      "judge_decision_sha256": "b609928d31f908705dc92c5b1050127265098e98c1c106fca80439364b3fc11b",
+      "expected_document_ids": [
+        "doc_8587c03151e0c278a60b3af0"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_8587c03151e0c278a60b3af0",
+          "version_id": "ver_acdd1b0d5d4057969159edf4",
+          "source_sha256": "b447c10e216571646030a22ee18be2ead302a21a3d4ba852c2aa5d8847c151f7"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_c134ecf90413f4e0c1cb42b3"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_c134ecf90413f4e0c1cb42b3",
+          "document_id": "doc_8587c03151e0c278a60b3af0",
+          "version_id": "ver_acdd1b0d5d4057969159edf4",
+          "page": null,
+          "section_path": [
+            "Sheet1"
+          ],
+          "content_hash": "e468570d828e1724783074ff0b1b01b4e57b269113e2e683c0f85ad5941180fd",
+          "quote_sha256": "c689dd83398ae60e2884d73aac3e73aa412f05cd012d0dcc6f236a303d70e852",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [
+        "The final question asks for filing capacity while the two official project names embedded in the question already expose 40KW and 90KW; this leaks a unit-convertible part of the requested answer."
+      ],
+      "suggested_fix": {
+        "action": "rewrite_question_without_capacity_in_entity_labels",
+        "suggested_question": "山西2026年机制电价表中，师镒与尤建芳两个分布式光伏项目的编号、备案容量、机制电量、机制电价、比例和期限分别是什么？",
+        "suggested_question_sha256": "386bc8503fa6d61a2884ced5d1187a6cac87ab3819196d4d5177f321ec5f141d",
+        "evidence_change_required": false
+      },
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "e501d1c4c7fb78eae7b2cd5083efe35c63489bb1bc0cd3bfe57c6da3e52cc4c5"
+    },
+    {
+      "id": "R1-RET-007",
+      "critical": true,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "上海2026年陆上风电光伏申报需要同步提交哪些可研、实施计划和资信材料？",
+      "final_question_sha256": "0b116510ad2c17a71e9fbdc8884c507f1f5309f8a8b84c2182f80e3ce72cfba2",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "08d83973764d82152201353fc2d3c3274c70c57daf1631866d708e14e6fabe62",
+      "judge_decision_sha256": "8ae71d8b82a7a59db6f4a478d31a7ddf168b0d53e42ed946848d3d975f2c4d76",
+      "expected_document_ids": [
+        "doc_ef837603979c9eb030481e50"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "source_sha256": "2d268788df38691cefcbeab75078721473c6112eb5ab37f515ccefcefdb2b123"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_9657c7c450876bec0f329b33"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_9657c7c450876bec0f329b33",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 5,
+          "section_path": [],
+          "content_hash": "936c3078e38478e5bc946d9c11c2cc3815b47835e7047150b9f41d854d26e85d",
+          "quote_sha256": "936c3078e38478e5bc946d9c11c2cc3815b47835e7047150b9f41d854d26e85d",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "069039b55a656f8a3c7e4b088d9f3bf964629122418239d154312637465ee411"
+    },
+    {
+      "id": "R1-RET-008",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "河北南网优先发电计划中，河北太行钢铁集团有限公司电厂与河北张河湾蓄能发电有限责任公司的容量、优先发电量、利用小时数和政府定价形成量分别是多少？",
+      "final_question_sha256": "d6e287240e99db7ad2111386d1f8dbcc5db20c719e87e75f044b2971b3029445",
+      "review_verdict": "REJECT_UNRESOLVED",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "FAIL"
+      },
+      "final_mapping_sha256": "21289aef47e220796a7b356498b558c70efd07ca5021e59a0291c04caffa68da",
+      "judge_decision_sha256": "4985d24adfa7840e3f4a780d1d3de7652a22c708f407e9718a53e17380735b8a",
+      "expected_document_ids": [
+        "doc_703666e63c12e763e7f3706e"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_703666e63c12e763e7f3706e",
+          "version_id": "ver_ffa2e4d66f40c6fc198e5105",
+          "source_sha256": "eeb7524ca24e9827b208b600b8e0276a4ace06bbca548921b4ff278e5fe0a620"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_e5eb9e6eeca1f73e652dcc5a"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_e5eb9e6eeca1f73e652dcc5a",
+          "document_id": "doc_703666e63c12e763e7f3706e",
+          "version_id": "ver_ffa2e4d66f40c6fc198e5105",
+          "page": null,
+          "section_path": [
+            "Sheet1"
+          ],
+          "content_hash": "144a28cb37842e4ac85c3804e2caeaec035863b8685f6fddf7a0b6c36a7ae17b",
+          "quote_sha256": "188e438d37ceb8cab916db17c6399b9936131a8101e8bc64ffe9165aa345532c",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [
+        "The mapped data-row Chunk does not contain the table header, so the numeric columns cannot be immutably attributed to capacity, priority generation, utilization hours and government-priced quantity from this evidence bundle alone."
+      ],
+      "suggested_fix": {
+        "action": "add_table_header_chunk_and_recompute_all_hashes",
+        "required_additional_chunk_ids": [
+          "chk_1b4597398fd0879009cfbfec"
+        ],
+        "evidence_change_required": true
+      },
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c784d4c667c455a9c7f726d9f0a8819792c1f322142402960bbff05fafb31bd6"
+    },
+    {
+      "id": "R1-RET-009",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "上海2026年陆上风电光伏申报中，虚假材料或场址重复重叠被第三方复核发现后如何处理？",
+      "final_question_sha256": "13a326ca4ae8ff23ae7f2ca041aaf50c5f9cd65f90bee3e42ac0a21b857a5d33",
+      "review_verdict": "REJECT_UNRESOLVED",
+      "checks": {
+        "semantic_support": "FAIL",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "d136e4bdb6f9fc3cc60bd07ac086112d787186b5679c09eb08d2c2c9dc6727b7",
+      "judge_decision_sha256": "fe6776ab162c45535dcff26b8aa1ffc85cc1cd4428367234cd901a16c5e660e3",
+      "expected_document_ids": [
+        "doc_ef837603979c9eb030481e50"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "source_sha256": "2d268788df38691cefcbeab75078721473c6112eb5ab37f515ccefcefdb2b123"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_7a314bc87b23c36e70da57bb",
+        "chk_03fc44e71dd47f86127f3d54",
+        "chk_d38c2e9e5593fe40d02106e5"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_7a314bc87b23c36e70da57bb",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "83b601071a48cfbc835e0090bfcd518a139e04622a20bdddca549f3ac6d6bb39",
+          "quote_sha256": "83b601071a48cfbc835e0090bfcd518a139e04622a20bdddca549f3ac6d6bb39",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_03fc44e71dd47f86127f3d54",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "d1372e56b144a23d83f4a1acbf32ff19db55848f4c6358a47ab6a2bd8b22df34",
+          "quote_sha256": "d1372e56b144a23d83f4a1acbf32ff19db55848f4c6358a47ab6a2bd8b22df34",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_d38c2e9e5593fe40d02106e5",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "8d99f20f5434b5109e2845cc239d048969cb1ffb9cb7517ac33c4d5fe2b5675a",
+          "quote_sha256": "8d99f20f5434b5109e2845cc239d048969cb1ffb9cb7517ac33c4d5fe2b5675a",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [
+        "The source explicitly cancels qualification when fraud is found, but the final question can be read as applying the same sanction to every repeated/overlapping site even when fraud is not established."
+      ],
+      "suggested_fix": {
+        "action": "rewrite_question_to_separate_prohibition_from_sanction",
+        "suggested_question": "上海2026年陆上风电光伏申报对虚假材料、场址重复重叠分别作何禁止；发现弄虚作假行为后如何处理？",
+        "suggested_question_sha256": "131ae07b5981c073076eac1f94ad3f06bdc5ae416a821e0f14d41fd98a8e3edd",
+        "evidence_change_required": false
+      },
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "4c3e20d2644366929ec32315f48f7873b3f42e8272dd42a5c8d4dbb7fc8387c7"
+    },
+    {
+      "id": "R1-RET-010",
+      "critical": true,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "山东虚拟电厂管理办法中的定义分别引用了哪些电力市场和负荷管理文件？",
+      "final_question_sha256": "05e771419d05fff9adc34f63ec2ef39daf196b684559ef902607139a245cba56",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "d3c1ac4e1e757ba0dac7387e4a1cdbbd74a195e665ed1a95a9ed9ec3c5730dfe",
+      "judge_decision_sha256": "1f105b84038fd3827c05c5426e06af476f93d7267f27af524ed533e59d507c72",
+      "expected_document_ids": [
+        "doc_f73c52e9d0520d84c6f8ebe0"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_f73c52e9d0520d84c6f8ebe0",
+          "version_id": "ver_02a7e0c838891bfb0917d165",
+          "source_sha256": "921cb362a88c29558e075555cf67dbdec6eeea7f88370b0c365e3e414839ba20"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_78634f48c37729cceb2097fd"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_78634f48c37729cceb2097fd",
+          "document_id": "doc_f73c52e9d0520d84c6f8ebe0",
+          "version_id": "ver_02a7e0c838891bfb0917d165",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "fd9092b934e22712b6b02272ab487ac2c64969a18d99ef06a89e632ae5ecb6fe",
+          "quote_sha256": "fd9092b934e22712b6b02272ab487ac2c64969a18d99ef06a89e632ae5ecb6fe",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "bcbaca1b4f09462973cb1810c8a0ee47311cbc6b0e1bf3ada418818cb42b12ed"
+    },
+    {
+      "id": "R1-RET-011",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "已纳入上海2025年方案但未建成的风光项目，哪些情形可继续纳入2026年方案，哪些情形应移出？",
+      "final_question_sha256": "0f7ef58f99f32317f29cffdd07007e43a72dfd50a86a89cd7cbc6454a273b4ca",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "83d3f1440dd03d3e67b763ff4a3a975e090cf5eee9a3e62d20ea35a3b7748efa",
+      "judge_decision_sha256": "6ca5e42c53444baa3b68fb03cfc2574aa9197b57c1a419c6bf8de725475fb2ca",
+      "expected_document_ids": [
+        "doc_ef837603979c9eb030481e50"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "source_sha256": "2d268788df38691cefcbeab75078721473c6112eb5ab37f515ccefcefdb2b123"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_61cff6fe817e55d920af5a17",
+        "chk_96e90484887c8369faf74316",
+        "chk_bb950ec9bcbdcb85707f38d4",
+        "chk_64320937bbcba8c5412f09d5",
+        "chk_c75ccbcbdefe9da938924660",
+        "chk_77639f3b078c3b4f9fe3aade"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_61cff6fe817e55d920af5a17",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "b360b47804d0bbeb2af0380e1fff98adb9f686788e52dabbc9b04e2107604fc4",
+          "quote_sha256": "b360b47804d0bbeb2af0380e1fff98adb9f686788e52dabbc9b04e2107604fc4",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_96e90484887c8369faf74316",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "5611698f371612660c5d6f2b8f4051e929994980f338c46b04c13d0be623df4c",
+          "quote_sha256": "5611698f371612660c5d6f2b8f4051e929994980f338c46b04c13d0be623df4c",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_bb950ec9bcbdcb85707f38d4",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "aa168e3ebb55966677c99acf330cb8184e49b1848c6f1972b249c1b072202d75",
+          "quote_sha256": "aa168e3ebb55966677c99acf330cb8184e49b1848c6f1972b249c1b072202d75",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_64320937bbcba8c5412f09d5",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "06c639d06a41af1e3573429f3fde8f1029c4b436d01d76cd44999217aa03be47",
+          "quote_sha256": "06c639d06a41af1e3573429f3fde8f1029c4b436d01d76cd44999217aa03be47",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_c75ccbcbdefe9da938924660",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "ee39213e549f628ac4c1bda31b90b1c7bb212fc7d1a5dbc1e3813e27d061e00f",
+          "quote_sha256": "ee39213e549f628ac4c1bda31b90b1c7bb212fc7d1a5dbc1e3813e27d061e00f",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_77639f3b078c3b4f9fe3aade",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "e8e0eb474c0359b7e13adcc109866fedbb46a9ca98b69b7dbb26ad59aa03e326",
+          "quote_sha256": "e8e0eb474c0359b7e13adcc109866fedbb46a9ca98b69b7dbb26ad59aa03e326",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "3d887294df7b3e8949a2604651ddad953418ccb104071fd9759fa8a427b9e5e0"
+    },
+    {
+      "id": "R1-RET-012",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "风电光伏开发建设规模申报资料对土地选址及前期证明、自然资源和电网意见、可研内容、企业信用证明分别要求什么？",
+      "final_question_sha256": "e8e7b1acb58a547c486205b5ac6f46f3fd8e93c7e1212443ca60ea06b355a54b",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "816ed8c8706db25c71c4ec9f39c9aaf03063797f9871e2490bcaeb1acd1fa70e",
+      "judge_decision_sha256": "7b545584d4e18ee0c524e556cb908e86c76f236418f9a11b1f8d9824228c2219",
+      "expected_document_ids": [
+        "doc_4ee363df6916b1e4a7b10ff8"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "source_sha256": "320ce767b5fbf7ea8ada2ed7779dc5d156c49addd20c45969f98ce29ee21c64e"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_c0b5bbb71422fb63eb1e5c40",
+        "chk_279d178c92d2d2bbc3053012",
+        "chk_3c326840270490f636f24169",
+        "chk_5fdeed0c2116913ddc1380e7",
+        "chk_d5bcb13fed948811af129696",
+        "chk_91874235cd649b049cb13f15",
+        "chk_f5ec315592d18f92f164b186",
+        "chk_e23856abea44b45d3f95b5b8"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_c0b5bbb71422fb63eb1e5c40",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "486e5f64a3b27f0e0b8b49029d68a12f8ad3bf177ddaf73408eb91159525560b",
+          "quote_sha256": "486e5f64a3b27f0e0b8b49029d68a12f8ad3bf177ddaf73408eb91159525560b",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_279d178c92d2d2bbc3053012",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "3f83f9b565907cf5ad422f73472a4c58e8eb6b97752846b3451872ec226280e2",
+          "quote_sha256": "3f83f9b565907cf5ad422f73472a4c58e8eb6b97752846b3451872ec226280e2",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_3c326840270490f636f24169",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "2f835bbcbcd84fa0baa44565a614b350117ee7e17375babae7b2a069a3ff0108",
+          "quote_sha256": "2f835bbcbcd84fa0baa44565a614b350117ee7e17375babae7b2a069a3ff0108",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_5fdeed0c2116913ddc1380e7",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "833ade0568b9ca7debaeaf4299c7ea00c32f88d20e1f85be1bcc6f13b8b42609",
+          "quote_sha256": "833ade0568b9ca7debaeaf4299c7ea00c32f88d20e1f85be1bcc6f13b8b42609",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_d5bcb13fed948811af129696",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "897c0b2af91b56f993812128a1c21f74650bb2a9e4e60dad19e336d86c42c455",
+          "quote_sha256": "897c0b2af91b56f993812128a1c21f74650bb2a9e4e60dad19e336d86c42c455",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_91874235cd649b049cb13f15",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "0edbfdda1f694e3588fa5173b7d5945d069a484db3f788372e87964002f68cb1",
+          "quote_sha256": "0edbfdda1f694e3588fa5173b7d5945d069a484db3f788372e87964002f68cb1",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_f5ec315592d18f92f164b186",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "9a2dda4c2493aab62f88103df37623397fedf88ef705351ddf06b8eb0d396680",
+          "quote_sha256": "9a2dda4c2493aab62f88103df37623397fedf88ef705351ddf06b8eb0d396680",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_e23856abea44b45d3f95b5b8",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "e5a9e00373d1bd2a0c89bc39b93f5e7824d0d86357cd14444a4019318f226d40",
+          "quote_sha256": "e5a9e00373d1bd2a0c89bc39b93f5e7824d0d86357cd14444a4019318f226d40",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "4d4b22b1f5b5272fa3499c5c3da04a4bde4ac22aa40ab08cf3ed59b5973418cd"
+    },
+    {
+      "id": "R1-RET-013",
+      "critical": true,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "电力现货市场限价通知中春秋季暂定系数1.2适用于哪些月份？",
+      "final_question_sha256": "d40fc64dc1569c98360c309491ba8b538d56f41361e9190f734cc2f3d6c7e522",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "5b9eeb251563b35c714c35c85950ac0d6ccc49787f299a427749f3de5a2cd92f",
+      "judge_decision_sha256": "833bc6a402bac2aa0c7f75f74f678fdd6d05cdb76b060acbf2908d0a72a5841a",
+      "expected_document_ids": [
+        "doc_6058eb6aedcc5bb3e0aaeb19"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_6058eb6aedcc5bb3e0aaeb19",
+          "version_id": "ver_912240222b86ed517a24d249",
+          "source_sha256": "6b63d644c2d112cc440812224e000c395cd8d92742d662777366ec657330324f"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_37bc110d2cc115d71f22176e",
+        "chk_3153827a17a074b3370f151e"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_37bc110d2cc115d71f22176e",
+          "document_id": "doc_6058eb6aedcc5bb3e0aaeb19",
+          "version_id": "ver_912240222b86ed517a24d249",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "b9bfb8ac762ed9208d2b0f6b8e9b01f24bf26c1230d1876456eb1309d4a15058",
+          "quote_sha256": "b9bfb8ac762ed9208d2b0f6b8e9b01f24bf26c1230d1876456eb1309d4a15058",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_3153827a17a074b3370f151e",
+          "document_id": "doc_6058eb6aedcc5bb3e0aaeb19",
+          "version_id": "ver_912240222b86ed517a24d249",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "2fb38f9390a41a79bd7d1dc3985f9f66563983f203df8f2e1d1d41a97e434615",
+          "quote_sha256": "2fb38f9390a41a79bd7d1dc3985f9f66563983f203df8f2e1d1d41a97e434615",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "6fcf16cb737bda3eaa600b00c66d911b48923b7d95643a278bc57fc86b55b6ee"
+    },
+    {
+      "id": "R1-RET-014",
+      "critical": true,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "河北南部电网电力中长期市场应当按什么频率连续开市？",
+      "final_question_sha256": "892292c409d6d61d1c07f8974c18d330ed913196045e35c240938ce5f45b987a",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "d2ac49f39e407f7e9abd6ae33baa419f7504468d0b8aea614896fc2efeb43ae2",
+      "judge_decision_sha256": "be39032ec8aa7333f50f91cc8a0d57bb1868f8703e5b9dc7a556bbdb927ea8b4",
+      "expected_document_ids": [
+        "doc_6573860cb1af58fc5a5d5517"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "source_sha256": "1946450197f0b651993af72b9ff5e4bfd56fefebeebfac8f57b919d0970ca899"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_0758749d1d5d5c5b195ad199"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_0758749d1d5d5c5b195ad199",
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "page": 8,
+          "section_path": [],
+          "content_hash": "1b3c08f78afbea7a2661be542e9c409eabf3b2197c92de4825d1d5cb8d9832f6",
+          "quote_sha256": "1b3c08f78afbea7a2661be542e9c409eabf3b2197c92de4825d1d5cb8d9832f6",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c93c83bb07b05d2d751c6bb9dbceef76e04cfcd197c4f034d9d9a6565165b3ab"
+    },
+    {
+      "id": "R1-RET-015",
+      "critical": true,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "河北南部电网电力市场规则禁止经营主体采取哪些串通、操纵价格或集中报价行为？",
+      "final_question_sha256": "cad1e7c58d634454c9bf28a834999a96b748eee6639d56b23d64db1b3ec9f709",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "30de66ab3d6ede49f1a6307faee3b0cec214b4a8ff224f985a2f25dc0ad44f8d",
+      "judge_decision_sha256": "d1555f25675f1f0290105f6f1690473ab306f904a61566c2148950c3f58bd687",
+      "expected_document_ids": [
+        "doc_0950b7cb8ce41419b5e1aa44"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_0950b7cb8ce41419b5e1aa44",
+          "version_id": "ver_89919aa78529504bdf62d258",
+          "source_sha256": "f8c387a80e86986ce916a35f3df06d0becfbb6fbcffd014feec506276abad3bb"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_126bb703195c884749616ee9",
+        "chk_a276f9d6c76f52f598c2c1ea",
+        "chk_a0be5be643b619892fcb7c11",
+        "chk_642b7aa59b5b939337ea1952"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_126bb703195c884749616ee9",
+          "document_id": "doc_0950b7cb8ce41419b5e1aa44",
+          "version_id": "ver_89919aa78529504bdf62d258",
+          "page": 11,
+          "section_path": [],
+          "content_hash": "6bec6a86cd07d10792e72824a5d253d2034afda963bbd07f004ef69bd03ccddb",
+          "quote_sha256": "6bec6a86cd07d10792e72824a5d253d2034afda963bbd07f004ef69bd03ccddb",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_a276f9d6c76f52f598c2c1ea",
+          "document_id": "doc_0950b7cb8ce41419b5e1aa44",
+          "version_id": "ver_89919aa78529504bdf62d258",
+          "page": 11,
+          "section_path": [],
+          "content_hash": "8a760d3674825ffb2affae4b8e537d81e3a7ec470cbe86cc603c3b62d21a4f1d",
+          "quote_sha256": "8a760d3674825ffb2affae4b8e537d81e3a7ec470cbe86cc603c3b62d21a4f1d",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_a0be5be643b619892fcb7c11",
+          "document_id": "doc_0950b7cb8ce41419b5e1aa44",
+          "version_id": "ver_89919aa78529504bdf62d258",
+          "page": 11,
+          "section_path": [],
+          "content_hash": "a0f0b3c46a5ebf39fabcd861e75aea5e35729f0251a25178e943be6da7cbdc8c",
+          "quote_sha256": "a0f0b3c46a5ebf39fabcd861e75aea5e35729f0251a25178e943be6da7cbdc8c",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_642b7aa59b5b939337ea1952",
+          "document_id": "doc_0950b7cb8ce41419b5e1aa44",
+          "version_id": "ver_89919aa78529504bdf62d258",
+          "page": 11,
+          "section_path": [],
+          "content_hash": "26154f70188e11c5808701fe97bb7472bdf095bc08850ca58f6e0ff2889d585e",
+          "quote_sha256": "26154f70188e11c5808701fe97bb7472bdf095bc08850ca58f6e0ff2889d585e",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "3278ed9c88220de773458dcbe08923133c2fd1d22b8619a47f2b276d5746ccbe"
+    },
+    {
+      "id": "R1-RET-016",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "模型误差评估为什么不能只看单一指标，RMSE对大误差和异常值有什么特性？",
+      "final_question_sha256": "58f2a0a4ab8ffce1223d00b8408fe4747f834ab657ac6f2984e411d57048369e",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "7111b32c9d3127c74cd0d24f51a23c3d391213c82e85a840bcd5f5fd5ae4b13c",
+      "judge_decision_sha256": "8ffe9863ce9ef0cd064448cd74d76cc6ac53260b760b08a16838a619b3fe2288",
+      "expected_document_ids": [
+        "doc_4524ff011b2cd1c9e61fb497"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_4524ff011b2cd1c9e61fb497",
+          "version_id": "ver_341425148bd0f7ee283bff28",
+          "source_sha256": "10fb5528dae97dab3127a00547351f07054307c618ecd9e576b9ddfbd819808d"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_4a7a81d201ea6e6a4a1f9824",
+        "chk_dacc4f1c42f7d328975ff691",
+        "chk_e694ead9388ed18b74cb2af9",
+        "chk_f134050a08b555e95366440c"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_4a7a81d201ea6e6a4a1f9824",
+          "document_id": "doc_4524ff011b2cd1c9e61fb497",
+          "version_id": "ver_341425148bd0f7ee283bff28",
+          "page": null,
+          "section_path": [
+            "模型误差解释",
+            "常见误区"
+          ],
+          "content_hash": "82f9b1cc49f01b1a5d034b87f44f885159874c4d91b8c445380cdaca5e95fdaa",
+          "quote_sha256": "b7e97554716a878056c2f544ea6621007267a640c600cd5bbb155e45d5515234",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_dacc4f1c42f7d328975ff691",
+          "document_id": "doc_4524ff011b2cd1c9e61fb497",
+          "version_id": "ver_341425148bd0f7ee283bff28",
+          "page": null,
+          "section_path": [
+            "模型误差解释",
+            "常见误区"
+          ],
+          "content_hash": "9aaf9a99ab115153bdd196c36685a04d90ba7ead4e0e27d72a2fe90a67802925",
+          "quote_sha256": "ae599ac7d8bfaff86d42fb1fc716860e5fdd3b7a8b590e0d9273e26279cb3917",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_e694ead9388ed18b74cb2af9",
+          "document_id": "doc_4524ff011b2cd1c9e61fb497",
+          "version_id": "ver_341425148bd0f7ee283bff28",
+          "page": null,
+          "section_path": [
+            "模型误差解释",
+            "判断依据"
+          ],
+          "content_hash": "c312a211afc95d403daa6c74a802767348747a1c81f0c0bb2817a03ba8a0d8d8",
+          "quote_sha256": "b3aabb7007110ac05c54a9092842ce566f3c0e6413474fbdee029a0c3e63d9cb",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_f134050a08b555e95366440c",
+          "document_id": "doc_4524ff011b2cd1c9e61fb497",
+          "version_id": "ver_341425148bd0f7ee283bff28",
+          "page": null,
+          "section_path": [
+            "模型误差解释",
+            "核心解释"
+          ],
+          "content_hash": "b0a38c5ff09555d0ea740181ad7f1ded914b59b15daf8e9130e37eb4e85d0619",
+          "quote_sha256": "0c2d4d62b2d3b39bc307b41cabe752582f8e97746d9dd36326e48ed627cdb85a",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "ca463887785b9fe3af0b8105f3b0d522838bfe32daabd6f9a2d49b5cbdfee9d9"
+    },
+    {
+      "id": "R1-RET-017",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "非化石能源电力消费核算中存量常规水电从什么日期界定？",
+      "final_question_sha256": "fcbb7e4fed31156fd4c413032e02d8d7146e70954133f45593dc3bf8d9b4bcdb",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "a320e2da2f27728c5a09ae53216092dc8ddd84d41ac67af4a7304db9cd8d4b50",
+      "judge_decision_sha256": "9d700f73aa01cefcd3a10c5002c06129e5844740d5f3e4d84e52bfbbc978e606",
+      "expected_document_ids": [
+        "doc_6abe928efae88c625b8b5c9e"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "source_sha256": "c3d78a4b091d9e4c805a55e7ff8457c98e17775e719d4e54b9620ba13b5ce2c1"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_9e81403f253e3f81c72d6bbe",
+        "chk_8ba700a471e4f33ddae2a87a"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_9e81403f253e3f81c72d6bbe",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 13,
+          "section_path": [],
+          "content_hash": "03fcb8653f7d9054a8e75a59a97c6397f6c63ed367e78773a3f5448e8e6cc83e",
+          "quote_sha256": "03fcb8653f7d9054a8e75a59a97c6397f6c63ed367e78773a3f5448e8e6cc83e",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_8ba700a471e4f33ddae2a87a",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 13,
+          "section_path": [],
+          "content_hash": "f9a65cfe4d0c9096d11584c7ebbedf919f6b7b792409f7b043187768de795898",
+          "quote_sha256": "f9a65cfe4d0c9096d11584c7ebbedf919f6b7b792409f7b043187768de795898",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c695f69a31cf8a10b72f7b69a69ed91ccd8b20181f54db64986abe802004956a"
+    },
+    {
+      "id": "R1-RET-018",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "电e宝开户申请提交后，处理中、签约成功和签约失败分别表示什么？",
+      "final_question_sha256": "27c92a6b9aa9dd174e8ba3b77f561c632b649b84c5fe1a7faa3d2cc8f4918a73",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "8f3cda8a6af43d6f818eb6fd80c1d889b86f7cd0def5f6a5b63eeb50d972ff9c",
+      "judge_decision_sha256": "fc4e876f7f9155b6db45222046cafbd0cc353ea2c81b117b5aa9ca5db22b5fe2",
+      "expected_document_ids": [
+        "doc_0331c244cd35bfecfbcd0473"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_0331c244cd35bfecfbcd0473",
+          "version_id": "ver_3114c9220458a66ebc4c0677",
+          "source_sha256": "f524588df25162ba6f42a1e599e87b0bf9ffa169c3c663f5a81aefc90f624537"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_ae24d6b7348f3508d88b090d"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_ae24d6b7348f3508d88b090d",
+          "document_id": "doc_0331c244cd35bfecfbcd0473",
+          "version_id": "ver_3114c9220458a66ebc4c0677",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "308675b5f7b2d16326eee279fb2f2507c930df00edb7e7e58ba76a1ecf3fcc0c",
+          "quote_sha256": "308675b5f7b2d16326eee279fb2f2507c930df00edb7e7e58ba76a1ecf3fcc0c",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "91cf6bae6a5c3f5d26515bcf09e79224c346a156e79d394181c069a1abbf0fb0"
+    },
+    {
+      "id": "R1-RET-019",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "绿证交易用户手册中，如何查询发电项目建档立卡详情和核发情况，核发情况包含哪些字段？",
+      "final_question_sha256": "a1da33b8ea9d3112a4401936ed8e71e1c3a8c48165fa77a389e37710e1e0e9e8",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "9da6e335a24f305b2654f4a45d2177a2b2153ee8322880a4ec5555e7a64fd411",
+      "judge_decision_sha256": "eacc10f4e28e541ca33e807e080cc6430c990624383a41a18552984d58be02f1",
+      "expected_document_ids": [
+        "doc_1d7f4411333c7c903b0c31ed"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "source_sha256": "13626a6b1c97d5b00e9f20ee440252a64a41a204fccac5b2d9f8b33b17bc4f54"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_93e57974f3b3adfca173d7db",
+        "chk_c08d8c2338a1a64d97aca14f",
+        "chk_da0a1ccc5ea759fcca191ad7",
+        "chk_3ba6db3b385440f205d21846",
+        "chk_1b392497f626fc9f16ce4c89",
+        "chk_b7a3151fc0a41bb13939a68b",
+        "chk_c37273b49b1d773d68fcae35"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_93e57974f3b3adfca173d7db",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 114,
+          "section_path": [],
+          "content_hash": "372d410b400318a36f5621e60bf3a8aaff7151adb2725f425da663d037280d49",
+          "quote_sha256": "372d410b400318a36f5621e60bf3a8aaff7151adb2725f425da663d037280d49",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_c08d8c2338a1a64d97aca14f",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 114,
+          "section_path": [],
+          "content_hash": "06bd3e5b4f7125ab3ff4244274b05151e284e860abfd852b654e6ed9abeea63d",
+          "quote_sha256": "06bd3e5b4f7125ab3ff4244274b05151e284e860abfd852b654e6ed9abeea63d",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_da0a1ccc5ea759fcca191ad7",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 114,
+          "section_path": [],
+          "content_hash": "bc8522bac2a93501f8caa61df29b262c1460353e5e0b11323c2a232f8ce74e2e",
+          "quote_sha256": "bc8522bac2a93501f8caa61df29b262c1460353e5e0b11323c2a232f8ce74e2e",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_3ba6db3b385440f205d21846",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 114,
+          "section_path": [],
+          "content_hash": "cba0f76c06f563f13ea964110c9433981293e83c53de1d3843bcac393ec09e00",
+          "quote_sha256": "cba0f76c06f563f13ea964110c9433981293e83c53de1d3843bcac393ec09e00",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_1b392497f626fc9f16ce4c89",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 115,
+          "section_path": [],
+          "content_hash": "abb929a9c2841c1dd4120954d1e9f0cf37ac096a0abe00590a1799c860433a6f",
+          "quote_sha256": "abb929a9c2841c1dd4120954d1e9f0cf37ac096a0abe00590a1799c860433a6f",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_b7a3151fc0a41bb13939a68b",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 115,
+          "section_path": [],
+          "content_hash": "9916f406bcb4cd1cde07c4b21e79c2fe4777faedd498d3e1d8985399646731ce",
+          "quote_sha256": "9916f406bcb4cd1cde07c4b21e79c2fe4777faedd498d3e1d8985399646731ce",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_c37273b49b1d773d68fcae35",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 115,
+          "section_path": [],
+          "content_hash": "f611ae22711adcf1ca0a31496c5824d16d5eaa0106e3f53dd935cda2658078ba",
+          "quote_sha256": "f611ae22711adcf1ca0a31496c5824d16d5eaa0106e3f53dd935cda2658078ba",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "7e65d728e9288fc8f18a9e6fad76d2979c1670d63d3026a0fcfe57edbd67cc96"
+    },
+    {
+      "id": "R1-RET-020",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "Increment Offers在日前与实时市场中怎样买卖电，预期哪边价格更高？",
+      "final_question_sha256": "9bc97ceb1967477a8134c325a14ad7ea7ab8d7d8b615473ff7b8ce56871ef412",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "b59a558a930c9911bfbe97d29da565f9f216644c75ad0ff79987ebde64026412",
+      "judge_decision_sha256": "9e8241dfce607c1e7db5f0fb2974c323aa89d637755480b521c519bf1f2210f4",
+      "expected_document_ids": [
+        "doc_9114502217873da9d0dab8e3"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_9114502217873da9d0dab8e3",
+          "version_id": "ver_228b03927311ff23260655a6",
+          "source_sha256": "ead5b8a9a9b72fb4b4f08fce0f68c466f84cc29f8eb8d39cbd9e12aa17039d80"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_fbe588e0918e986ce46eecd3"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_fbe588e0918e986ce46eecd3",
+          "document_id": "doc_9114502217873da9d0dab8e3",
+          "version_id": "ver_228b03927311ff23260655a6",
+          "page": null,
+          "section_path": [
+            "交易策略说明",
+            "核心解释",
+            "实时或虚拟交易策略"
+          ],
+          "content_hash": "f3b9d1f860763bc0575ef68974f0e74c2ce7805196c9bf75d91fd15cdf961db3",
+          "quote_sha256": "ac1f053aef96b7418fefc196df19735f2ea77da3fc9703d8b204d0c2084ccfb3",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c0d5c73a7289bc5246008f75e8126250d728c67aee7ae2d3b53c2cd30c7e8639"
+    },
+    {
+      "id": "R1-RET-021",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "河北南部电网零售市场的公共套餐与私有套餐分别面向谁、如何选择或发起？",
+      "final_question_sha256": "153556b5b71f0f8e20f983d306e67570f9c938194a8a772e69821a37b79e423e",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "f142a8cb3fa937a7047d3c799a10310b0c2ae91aaf3444430fc3d46417cc8455",
+      "judge_decision_sha256": "d7befcd79d7f122ab7efe2d71c7b250b80009dc55d22f7d765c80f5475e2d7f4",
+      "expected_document_ids": [
+        "doc_ee5f5a59170e838da1f33c0f"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ee5f5a59170e838da1f33c0f",
+          "version_id": "ver_0b535c8ab4b65d10a1838d81",
+          "source_sha256": "1be4db70be3140adb7d7d197017609392dd42eaa99c7a3759bd79243a9136f99"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_0776d5ecefbd6d36a55f4997",
+        "chk_0f7e69ef4acc0a82ad8c02ee",
+        "chk_8e1c65e4fec40ad4f38cca09",
+        "chk_1741e2bde34851358f25e4cf"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_0776d5ecefbd6d36a55f4997",
+          "document_id": "doc_ee5f5a59170e838da1f33c0f",
+          "version_id": "ver_0b535c8ab4b65d10a1838d81",
+          "page": 6,
+          "section_path": [],
+          "content_hash": "a89651c51199ade7a0ae59373ba177688e1f8c19a793beb4afdf8172d16c71d0",
+          "quote_sha256": "a89651c51199ade7a0ae59373ba177688e1f8c19a793beb4afdf8172d16c71d0",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_0f7e69ef4acc0a82ad8c02ee",
+          "document_id": "doc_ee5f5a59170e838da1f33c0f",
+          "version_id": "ver_0b535c8ab4b65d10a1838d81",
+          "page": 6,
+          "section_path": [],
+          "content_hash": "53e5c9713e037847c0948a04a292238ba4e58fd151573f32bf568c2de0e1c88f",
+          "quote_sha256": "53e5c9713e037847c0948a04a292238ba4e58fd151573f32bf568c2de0e1c88f",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_8e1c65e4fec40ad4f38cca09",
+          "document_id": "doc_ee5f5a59170e838da1f33c0f",
+          "version_id": "ver_0b535c8ab4b65d10a1838d81",
+          "page": 6,
+          "section_path": [],
+          "content_hash": "874e9ad9ebe45ccf0877814364be76e1883fb15412493430fb1ee038d2e522a9",
+          "quote_sha256": "874e9ad9ebe45ccf0877814364be76e1883fb15412493430fb1ee038d2e522a9",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_1741e2bde34851358f25e4cf",
+          "document_id": "doc_ee5f5a59170e838da1f33c0f",
+          "version_id": "ver_0b535c8ab4b65d10a1838d81",
+          "page": 6,
+          "section_path": [],
+          "content_hash": "1dcb592106da72258f4097abe259e0c74e019d800fb018d4e5bdb201d3a55d9a",
+          "quote_sha256": "1dcb592106da72258f4097abe259e0c74e019d800fb018d4e5bdb201d3a55d9a",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "f89d00484aa4ae2e2e0786a1ed1edf0c34fc89599ad703b2b03cb5dc1fbec6f1"
+    },
+    {
+      "id": "R1-RET-022",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "2021年冬季风暴Uri为什么让得州电价从约100美元涨到5000美元每兆瓦时以上？",
+      "final_question_sha256": "22dc44da6ef3399a68d4b84f79e38d58a772f5badb0c831998e3efb66437c20e",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "9c5c6853a58deef5f2f067e7ce3c8bfa690a8e2ccb767a0bbfb5fe33b7af8eb1",
+      "judge_decision_sha256": "6f83871fabfe4d3a626299be73d70318a9062643879a60ee2fb63877358e1505",
+      "expected_document_ids": [
+        "doc_4cd6efecca535ac1c8ed2875"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_4cd6efecca535ac1c8ed2875",
+          "version_id": "ver_49151d6ad66c2162f0222d8c",
+          "source_sha256": "9eacdd3189cf82e65e06f75d4642e70d284c4799ac2210b0929e3278d9d7920d"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_b2207bc579cfd5ac43ec3e14"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_b2207bc579cfd5ac43ec3e14",
+          "document_id": "doc_4cd6efecca535ac1c8ed2875",
+          "version_id": "ver_49151d6ad66c2162f0222d8c",
+          "page": null,
+          "section_path": [
+            "尖峰风险案例",
+            "核心解释",
+            "2021 年冬季风暴 Uri（美国得州）"
+          ],
+          "content_hash": "d9c6a6fa1283fc50a5019a0f760f7c51124b627e6faaf16c22e2d9fcb00ca515",
+          "quote_sha256": "8c847f4211759cfcfc34426983c7c3ddee312a3aaef5fbbd3732271e284eb15a",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "3ea751e93728aadb515f85f4bedcc620babf6cfd6753a47bd52fb762f48456da"
+    },
+    {
+      "id": "R1-RET-023",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "电化学储能设备质量监督对梯次利用电池、锂铅钠电池安装和液流电池管路分别有哪些要求？",
+      "final_question_sha256": "8a7ab333e73248370c0ea49d2a9638fb646d8e3453cf2e991a14b736c4e7ebb9",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "f5b0eb2802eccaaa49f2ddb8a68d3d42a72d2b0552d3567b6d0e508ea400e8dd",
+      "judge_decision_sha256": "8721a2443fefa4caa0517353192d453359252c859fe3a8e32a933ec9e4baae7d",
+      "expected_document_ids": [
+        "doc_e1d2cdcb0feacd30980e9991"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_e1d2cdcb0feacd30980e9991",
+          "version_id": "ver_66f927c7158b305c14fa4183",
+          "source_sha256": "92bed0d6ee7e9f905436d9914d54230ff3a15031db88598f746c6abd3d82cd8f"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_99c0db9bd143fba8ffdc512e"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_99c0db9bd143fba8ffdc512e",
+          "document_id": "doc_e1d2cdcb0feacd30980e9991",
+          "version_id": "ver_66f927c7158b305c14fa4183",
+          "page": 40,
+          "section_path": [],
+          "content_hash": "4fd4b111418b0d62173630d033652c970932505bd79b755c648a2995988c877a",
+          "quote_sha256": "4fd4b111418b0d62173630d033652c970932505bd79b755c648a2995988c877a",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "b70695070dd14330c012a0e5e88e7c0038e0d05a1e5b1993fd233592ad9e7dda"
+    },
+    {
+      "id": "R1-RET-024",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "绿证卖方前一日交易资金每天几点自动划转，出款失败状态表示什么？",
+      "final_question_sha256": "d0541a9e762cd7042f640647733428c43c0de3a74a076a20b91296fe756a839f",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "79630a695b89c240ebef084a6c4de9f127a96487448df420e333fcb9da283e9a",
+      "judge_decision_sha256": "71519002a8a191ec37429062e3f02887243c26f4e7abc8f31a9f6b2097875473",
+      "expected_document_ids": [
+        "doc_b815147264b08d13a259e6fa"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_b815147264b08d13a259e6fa",
+          "version_id": "ver_f141792d80278e8befb0f85f",
+          "source_sha256": "458137fda49184438c937bfcb8b10f7a4e5b529cd985e99e7e4482da94e6f8f5"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_655bd629c77283b7b8a263cf",
+        "chk_4f39b5633b511ac705d50c81"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_655bd629c77283b7b8a263cf",
+          "document_id": "doc_b815147264b08d13a259e6fa",
+          "version_id": "ver_f141792d80278e8befb0f85f",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "8ed9108ad7df6462cbd7bf6a22e7ec7579e49f53b3311b8aeb67f7fbd310a297",
+          "quote_sha256": "8ed9108ad7df6462cbd7bf6a22e7ec7579e49f53b3311b8aeb67f7fbd310a297",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_4f39b5633b511ac705d50c81",
+          "document_id": "doc_b815147264b08d13a259e6fa",
+          "version_id": "ver_f141792d80278e8befb0f85f",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "e0c05da3fe53ebb8383821d05e367eb49e27b7b7058dc1c5eedfa30aae55d8a3",
+          "quote_sha256": "e0c05da3fe53ebb8383821d05e367eb49e27b7b7058dc1c5eedfa30aae55d8a3",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "a5687b8260db1368d55121db9eb5bed0e548b3bc055734ef8f6f650375bead38"
+    },
+    {
+      "id": "R1-RET-025",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "山西2026年新能源机制电价竞价结果中苏岳红项目编号和项目类型是什么？",
+      "final_question_sha256": "5cc3b7c422631d335da39b139387c7c97dbb919644ae200f229ff2a4035bfe05",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "0e03b802cbabd40c0a6f168371736a056cfa3b8b78cc609935ae0a695ba06eda",
+      "judge_decision_sha256": "51aafe926313e17e0c09a082a27938c927db988e2eb8e5270b2d85e62e57e085",
+      "expected_document_ids": [
+        "doc_8587c03151e0c278a60b3af0"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_8587c03151e0c278a60b3af0",
+          "version_id": "ver_acdd1b0d5d4057969159edf4",
+          "source_sha256": "b447c10e216571646030a22ee18be2ead302a21a3d4ba852c2aa5d8847c151f7"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_72f5d5b2221cf5b578aaa665"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_72f5d5b2221cf5b578aaa665",
+          "document_id": "doc_8587c03151e0c278a60b3af0",
+          "version_id": "ver_acdd1b0d5d4057969159edf4",
+          "page": null,
+          "section_path": [
+            "Sheet1"
+          ],
+          "content_hash": "47c65f3ae2a18e46de879ca3370204c933ccdf4199bd5db713715bc1e5bd997b",
+          "quote_sha256": "0993d79ced5511d91fd9bde122d46b0c428c38a713842d1adc17b67b76f6f27e",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "61b0ff154f05931e5812bea3239b1dea2752482ed57368ed6bda909bd6e0e880"
+    },
+    {
+      "id": "R1-RET-026",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "AI助手错误回答示例为什么不应直接展示forecast_query、deterministic和get_forecast？",
+      "final_question_sha256": "d5b678f781df9e165f542e43587bc32a127fe8894745029c544368333a040e97",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "0f379fc5d09dbfc259e2f4c6df9c1bfc54d0df812dab7d58d7061def269dba26",
+      "judge_decision_sha256": "1a2744b7ad487ce8e3b8cd5d96583a3e48727c5f22ddaccb51e28e6f539243f4",
+      "expected_document_ids": [
+        "doc_ad4f06af21675bd46ba4e1a7"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ad4f06af21675bd46ba4e1a7",
+          "version_id": "ver_94622a2eac9badf809067f0b",
+          "source_sha256": "6fa8bc50500b248f1c37a9955ec4f9cb9324d9c46779875db845d64cf8774fd0"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_9dfd029016f319bb080f2dd0",
+        "chk_4f7c0287fe33fb0019f078aa",
+        "chk_4a23239ff21f40c4016fa39e",
+        "chk_ffd1884f54196e5745bd632d"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_9dfd029016f319bb080f2dd0",
+          "document_id": "doc_ad4f06af21675bd46ba4e1a7",
+          "version_id": "ver_94622a2eac9badf809067f0b",
+          "page": null,
+          "section_path": [
+            "错误与正确回答案例",
+            "回答示例",
+            "错误示例"
+          ],
+          "content_hash": "b720c1e12c926fcb72e190e56a91295d987b68e1ad0388676ac67b75445717cc",
+          "quote_sha256": "8bfea4067e9b12e636f275e5d90f22db3ee04a95222d3f26f5b11d15c8ddeab1",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_4f7c0287fe33fb0019f078aa",
+          "document_id": "doc_ad4f06af21675bd46ba4e1a7",
+          "version_id": "ver_94622a2eac9badf809067f0b",
+          "page": null,
+          "section_path": [
+            "错误与正确回答案例",
+            "回答示例",
+            "错误示例"
+          ],
+          "content_hash": "40feee95ce98323f74cb824c9da90fc98fb0c798ce4e9d806ed6aa7c48e44e6b",
+          "quote_sha256": "7e4ba6973522be655fc92db97f10704998f4b54552a2d5d07784f8ff5629d4ac",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_4a23239ff21f40c4016fa39e",
+          "document_id": "doc_ad4f06af21675bd46ba4e1a7",
+          "version_id": "ver_94622a2eac9badf809067f0b",
+          "page": null,
+          "section_path": [
+            "错误与正确回答案例",
+            "核心解释"
+          ],
+          "content_hash": "190a63df908cd71bb0a1f703142738a0db432e2003c999f51b77a32ffe06db1b",
+          "quote_sha256": "d9e57c4315e285e1b0dc739a7fc6a18cc1d194e4ca080ea0081192504b9948d6",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_ffd1884f54196e5745bd632d",
+          "document_id": "doc_ad4f06af21675bd46ba4e1a7",
+          "version_id": "ver_94622a2eac9badf809067f0b",
+          "page": null,
+          "section_path": [
+            "错误与正确回答案例",
+            "判断依据"
+          ],
+          "content_hash": "3abcf6642c954389a2096f30290fd0ef6d63167118787b2e91fc7ed499ab0867",
+          "quote_sha256": "e40997ae3c3a491daec433d6137bf7cb012debd9f714485ba45eb601f615a09c",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "e1814bc99b4442010f25662c926a05cfad166a4fd4243eb7d6fa2ad800b530f5"
+    },
+    {
+      "id": "R1-RET-027",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "绿证买方点击充值后，不同注册类型可以选择哪些支付方式？",
+      "final_question_sha256": "db6db79ee7bc04da10fb337627ef72e3ff9499c5e720ab45203e253743e60632",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "f76adbe88764912c71d09b43bd630373bab28bdbf8dfed42b1aaf1e5bfcd78b3",
+      "judge_decision_sha256": "e4b99b5ddfb724acf31133443a8a00b8713897273891da336363fa076401c5da",
+      "expected_document_ids": [
+        "doc_9890be44e9a629c309e08d9d"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_9890be44e9a629c309e08d9d",
+          "version_id": "ver_eafd12998e4080e17f6f434f",
+          "source_sha256": "bce187a40acffade9884085009f7962b9c6503f02f6293647454baf0eeebc737"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_223a0a2794953ab97b14e344"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_223a0a2794953ab97b14e344",
+          "document_id": "doc_9890be44e9a629c309e08d9d",
+          "version_id": "ver_eafd12998e4080e17f6f434f",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "067c6f2b1d36376a566d905679990c9fc7c0efe56aada53eabd4ef40740b94b9",
+          "quote_sha256": "067c6f2b1d36376a566d905679990c9fc7c0efe56aada53eabd4ef40740b94b9",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "4506fa1aa15facc47503bca2ec237e98bb54d13efe2869744a9ea3a24fe53416"
+    },
+    {
+      "id": "R1-RET-028",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "项目字段字典为什么把日前电价作为预测目标并把实际负荷和天气作为特征？",
+      "final_question_sha256": "ff275bcb39a8b7afbbc9b00cea269cedf1bcaceeb4782e85642f8286ddffe323",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "0b300cd8960ca6005156fd51bb4177ba71e26f5324d0e73975c6e18b048d787d",
+      "judge_decision_sha256": "2822e1051b9ffbb820763cb5eea233bb6f032a54978c21ec552f5e8815978996",
+      "expected_document_ids": [
+        "doc_0fed1fdcf896f975d3f1eb50"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_0fed1fdcf896f975d3f1eb50",
+          "version_id": "ver_e837b5e0a80ebd598d1f8c67",
+          "source_sha256": "2cf05c807e63178d6660f905743393d240134a53760db5f7db3e3f52d12a9019"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_b52551d2a163aa7953bb87dc"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_b52551d2a163aa7953bb87dc",
+          "document_id": "doc_0fed1fdcf896f975d3f1eb50",
+          "version_id": "ver_e837b5e0a80ebd598d1f8c67",
+          "page": null,
+          "section_path": [
+            "项目字段字典",
+            "判断依据"
+          ],
+          "content_hash": "851733aec6d2505e5a51f87bfad2d084b333c8ca0feedeeef9f5331ac9f64f74",
+          "quote_sha256": "e4314553655ed8321f15cc816f1c8926853e1c30e89144ed9b102cca690490e6",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "f8d67586e035c7dab1cc4a00af2ce3f080678fbb08d79516386c3187c27dd120"
+    },
+    {
+      "id": "R1-RET-029",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "云霄直流输电权报价上限暂定为每小时多少元每兆瓦？",
+      "final_question_sha256": "bdfe4d6e057de204a174dabcec1ba0bd4034a00b78bf7d04f43ee3125613327b",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "af9398881957022a0eb5798979f6e9f06a6cac701192e380f91aa0f5e604c3dc",
+      "judge_decision_sha256": "cd17e8e41320a4d0e0daf0c92b4d5f632d2232928a3a7b7e78269214299c087e",
+      "expected_document_ids": [
+        "doc_6d11a454c275a7ba7a5ded70"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_6d11a454c275a7ba7a5ded70",
+          "version_id": "ver_a1be77d828c5af3a3f7e8bff",
+          "source_sha256": "21cdf3b77a55cdd73426e7147f2a623f8936b4e5fc3dae9ba384e992e5fa14a0"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_f1f94febfc77665e82f94a34"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_f1f94febfc77665e82f94a34",
+          "document_id": "doc_6d11a454c275a7ba7a5ded70",
+          "version_id": "ver_a1be77d828c5af3a3f7e8bff",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "d8459a25c1d4fa714839034f5178674afa295cbe95ffb5054b2b20f02a8ddc31",
+          "quote_sha256": "d8459a25c1d4fa714839034f5178674afa295cbe95ffb5054b2b20f02a8ddc31",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "061c0ece2e50fb10c754697f119e96a1300e449fb190a7c2a7ca709fb477dfc2"
+    },
+    {
+      "id": "R1-RET-030",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "新型储能工程质量监督中压缩机出厂和现场需要完成哪些试验验收？",
+      "final_question_sha256": "4c4a6af7b7ccb8502a81d0dae49e370a5584ae62798a58a80ed6b67e58112a5d",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "334e8687d16b179a5788d694cec55c53703736c61aae2e30303a78056b22747a",
+      "judge_decision_sha256": "4dc9d2b1f675b4511fc7af5d37bac64ef725b841273de06cec183a44ce9f962f",
+      "expected_document_ids": [
+        "doc_e1d2cdcb0feacd30980e9991"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_e1d2cdcb0feacd30980e9991",
+          "version_id": "ver_66f927c7158b305c14fa4183",
+          "source_sha256": "92bed0d6ee7e9f905436d9914d54230ff3a15031db88598f746c6abd3d82cd8f"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_9b77bfb4d4505882641b88d0"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_9b77bfb4d4505882641b88d0",
+          "document_id": "doc_e1d2cdcb0feacd30980e9991",
+          "version_id": "ver_66f927c7158b305c14fa4183",
+          "page": 64,
+          "section_path": [],
+          "content_hash": "e8fc393b4ef172720e89717a9b8028d7ef4bf4360f78dab5e99313ae27c140be",
+          "quote_sha256": "e8fc393b4ef172720e89717a9b8028d7ef4bf4360f78dab5e99313ae27c140be",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "910aa57c66d7c5d4f0105bffef4365c3d632fdb0c0307aeb5faa3cde9afd318c"
+    },
+    {
+      "id": "R1-RET-031",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "河北南部电网电力零售市场实施细则的第六章主题是什么？",
+      "final_question_sha256": "7b3ed0c45d1ae4f0cc25f69068d1c13c12f85285244642590d4a2208358d37ef",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "1db313182c81dc0ac5f11564985096310205a68ed5df0fef29ceca947e8b9a89",
+      "judge_decision_sha256": "1564b560898d28f921f7581b72a1a7f0cde4aee4fdd49363c299c7a2c9631f2c",
+      "expected_document_ids": [
+        "doc_ee5f5a59170e838da1f33c0f"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ee5f5a59170e838da1f33c0f",
+          "version_id": "ver_0b535c8ab4b65d10a1838d81",
+          "source_sha256": "1be4db70be3140adb7d7d197017609392dd42eaa99c7a3759bd79243a9136f99"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_833313e1ba3768de9de168aa"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_833313e1ba3768de9de168aa",
+          "document_id": "doc_ee5f5a59170e838da1f33c0f",
+          "version_id": "ver_0b535c8ab4b65d10a1838d81",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "73cbccb9790b5e8eab0ef2860e7f477453b7cde655e1045b190695ea0de2682f",
+          "quote_sha256": "73cbccb9790b5e8eab0ef2860e7f477453b7cde655e1045b190695ea0de2682f",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "8235049f06961489d32d39a8dda90b4ae87f5961a5b383fd9210b1e97e91f934"
+    },
+    {
+      "id": "R1-RET-032",
+      "critical": false,
+      "judge_verdict": "ACCEPT_EVIDENCE_REWRITE_QUESTION",
+      "change_type": "question_disambiguation",
+      "final_question": "绿证交易用户手册目录将“首页”列为第几章，并标注从哪一页开始？",
+      "final_question_sha256": "9ed0e3bc7d2f4761067bb120895d88f20422356ddc47c796ddf3820630918156",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "40d3e4dd948d9ef569409637ae68ae5327f399330c6407024046801e7e9b1ad5",
+      "judge_decision_sha256": "993a10e5e1f13b5a4357f65b20c206a056a1f26c6f535cfe0f7446b46a6f6d1f",
+      "expected_document_ids": [
+        "doc_1d7f4411333c7c903b0c31ed"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "source_sha256": "13626a6b1c97d5b00e9f20ee440252a64a41a204fccac5b2d9f8b33b17bc4f54"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_4da1e13477c7d55e797a9ffc"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_4da1e13477c7d55e797a9ffc",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 57,
+          "section_path": [],
+          "content_hash": "685b059101efdccbc869bb962e26a64171bd5fd7004e5d55a01b5750b2a0e694",
+          "quote_sha256": "685b059101efdccbc869bb962e26a64171bd5fd7004e5d55a01b5750b2a0e694",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "22f3ad0d8d46d40448c08869188a978a1eaf49762b4b6876840e98d1c4bed167"
+    },
+    {
+      "id": "R1-RET-033",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "PJM DOM日前电价预测如何从最新数据起点递推未来24小时？",
+      "final_question_sha256": "8f4ceaf17ba6a47277baf9cc3ba59fc8b6a08170dccf2b6bf22ae5702e3f1fbf",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "5243feee1cc3340622580afb90e69563fbd0d8e5a096b645b4c10b0accd0a8b0",
+      "judge_decision_sha256": "bb640fe2f4694ac0533973be5fbf41503698d25dcb3d8baf92b9da620d6505da",
+      "expected_document_ids": [
+        "doc_612d16ceeecc795cb78b2a66"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_612d16ceeecc795cb78b2a66",
+          "version_id": "ver_69071832d4fb8c5aff5eca24",
+          "source_sha256": "23d5e50ab1a5a92118d52ac471075a020a2c7a787f24f116adfdffa24c1efb1b"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_f32f4523048632804aff261b"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_f32f4523048632804aff261b",
+          "document_id": "doc_612d16ceeecc795cb78b2a66",
+          "version_id": "ver_69071832d4fb8c5aff5eca24",
+          "page": null,
+          "section_path": [
+            "预测结果解释",
+            "核心解释"
+          ],
+          "content_hash": "cfa7de4b8c8123508f7df94476a5c27ab3c6a8305c838ebf673c7ad0e7f74bdf",
+          "quote_sha256": "92828f25be5ef503c0e477ba3a7aadaa5bc13ca9414f4d88fcdefffa7206a88d",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "95d14f3a105aef8b3b09e36d4fea2700abeb45e9cdee029c9340650c8a4e6f68"
+    },
+    {
+      "id": "R1-RET-034",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "CV(RMSE)如何定义，能源模型中小于25%通常表示什么？",
+      "final_question_sha256": "5fffc0bbfc0aa723731eb83a5afcedf4bfb6704e9b205db84f7b0a2b0fb38827",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "e3d6297c3f06f037f93ce24aca555a0e00335b29f9d4604c4b627af7876ba4f5",
+      "judge_decision_sha256": "e754dc0297dfbc5c549ef4032d31c6264bea7c08f98ce8ab7563bc0b00b405d3",
+      "expected_document_ids": [
+        "doc_286e4c4871614c23491cf749"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_286e4c4871614c23491cf749",
+          "version_id": "ver_b98a6ab41438277215827dba",
+          "source_sha256": "be6158930703655af725c8cd67b1c6181354098c8b868ef581b2d16d7437d113"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_d15c597616d5c87d73e0f814"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_d15c597616d5c87d73e0f814",
+          "document_id": "doc_286e4c4871614c23491cf749",
+          "version_id": "ver_b98a6ab41438277215827dba",
+          "page": null,
+          "section_path": [
+            "模型误差解释",
+            "核心解释"
+          ],
+          "content_hash": "4a95834a0b606088f226e0f98459c1da55c2a042ba39b22d595363b1bb586fe1",
+          "quote_sha256": "79ec97f87e555b097386fb1e86215695dce87ca8e5e8ca9cb82672c35d47d9db",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "15ee4a41bcf8a6f934b24bd49dd36d049dbd6fce8b7936d30f107b5b953a974b"
+    },
+    {
+      "id": "R1-RET-035",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "2023年得州高温时电价从101美元每兆瓦时跃升到多少？",
+      "final_question_sha256": "dba6e8c7565a2476daa984d3f33efe238f96e2eef5c2c463ce5e2f8d24a69e4b",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "962f4917c705b5f284c53ea3a57cc2a4e3125d7722fbe3287902ad94649e833b",
+      "judge_decision_sha256": "7d678888ed4176c2694882269032d4e34011bfeff1ca53cb2280c5694ec8a843",
+      "expected_document_ids": [
+        "doc_4c331415b34af8871190a980"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_4c331415b34af8871190a980",
+          "version_id": "ver_a81f6bd3b4893164fafe29d1",
+          "source_sha256": "35a7ac7435853a21ab8a7997cfbc143f7615f5b73131d0c5b2a8b70de2070da8"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_9ddf00ef4f453aab585f1ae3"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_9ddf00ef4f453aab585f1ae3",
+          "document_id": "doc_4c331415b34af8871190a980",
+          "version_id": "ver_a81f6bd3b4893164fafe29d1",
+          "page": null,
+          "section_path": [
+            "负荷与天气关系",
+            "核心解释"
+          ],
+          "content_hash": "245c7922369ae41135b50ec07db9a55cd033ae446a7921f4ca852ad545c37a3d",
+          "quote_sha256": "62c1f75553f74f92ea101780c0fcc2e80ddba764f271776859b0c964f540942d",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "8c39081bcfd7d7b45eb2ea24a9ffdf35c20f3af4f559cb1451fcf51ab9b5195e"
+    },
+    {
+      "id": "R1-RET-036",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "峰谷价差为什么体现高峰价格较高、低谷波动较小的分时费率结构？",
+      "final_question_sha256": "73a6d661227acbd20e027dd8150ca4ee7a547e4d5ffa200fbcfe83b9e15ec95f",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "042a944cdf082a9273f3be42053db24180b31727496fa634cba48220fb3552a8",
+      "judge_decision_sha256": "29c35a79f6d6d1db859b2c209e879280864651d1c26191cec0766153aa9079f5",
+      "expected_document_ids": [
+        "doc_ea2c9e28b3f3f615f118ccc0"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ea2c9e28b3f3f615f118ccc0",
+          "version_id": "ver_3820a0823a6a95589131d484",
+          "source_sha256": "6d6a1b7a1192028151b3342fb4e91ff971f1acd9f7b3f92de98bfbe605cb5182"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_376936150c115e9a4bd0492a"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_376936150c115e9a4bd0492a",
+          "document_id": "doc_ea2c9e28b3f3f615f118ccc0",
+          "version_id": "ver_3820a0823a6a95589131d484",
+          "page": null,
+          "section_path": [
+            "峰谷价差解释",
+            "回答示例"
+          ],
+          "content_hash": "65f5a4b48be0e3b02d98ad1ccb1aa5919a0eee07f9762118755520e50c1d688b",
+          "quote_sha256": "75d40a76519d83797807799135087d942fae1775ac2229eebf5e213a7ca3fa97",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "8386c39839bcb95b151386e50a69fc2d2c092e03a77ba648b1e3e9a295e3e50c"
+    },
+    {
+      "id": "R1-RET-037",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "历史日报为什么既需要数据细节，也需要误差、负荷和天气的专家解读？",
+      "final_question_sha256": "f1c8e7f67c4e2740d92f30aa5666e5d87099a2143b82e00caf95b46998d30b20",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "842b20c4387297f37c18d055e6205aebcfe83fc45c20300c36419c4089d3b891",
+      "judge_decision_sha256": "c5109b2fd2ffcd97aa065294c8a2a78eceb15a6cd26f90212e9ea73d7fc435e9",
+      "expected_document_ids": [
+        "doc_cf6eff8361ace8c8641c89a9"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_cf6eff8361ace8c8641c89a9",
+          "version_id": "ver_33dcab0fa72e64ca4e85e5c1",
+          "source_sha256": "8d8f89f404c8c9e0568cec46189e3093ec39650761fc000379c41568a45ab612"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_4446ee3503ec767ea50f892f"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_4446ee3503ec767ea50f892f",
+          "document_id": "doc_cf6eff8361ace8c8641c89a9",
+          "version_id": "ver_33dcab0fa72e64ca4e85e5c1",
+          "page": null,
+          "section_path": [
+            "历史日报编写指南",
+            "判断依据"
+          ],
+          "content_hash": "44065e08067080c7b7d302bfb1f7af094995cd97b2c19d40f0713aea80f2fa5e",
+          "quote_sha256": "bf82d1a1dbc620c3166f0a31e0fa5ad0bb79e2d2ef601d164d98276c7e73d72a",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "93b1fc46fef3a44620964e301a32f2efb47cdcb571f3d6b0e8943ec793245649"
+    },
+    {
+      "id": "R1-RET-038",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "山西风电光伏申报企业承诺书要求填写哪三个项目进度时间节点？",
+      "final_question_sha256": "a61440c0e7d742e78f4c0b231cac32bd85907f98606ffb6f4d1ab36da36c2086",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "673de45c510be21a4a28618f203167bc987e5827ed41c499e7d930954bb30dff",
+      "judge_decision_sha256": "279d852257355579140f6e1d4655b00812d17e60eb6c39b663ade4da0bd6decf",
+      "expected_document_ids": [
+        "doc_ed5a7e167d74e4210f1dda1c"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "source_sha256": "458d968a9b6d3062e654b3af25852ab8d172ff83e75fb586d5b490d7c53f006d"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_75d743ed18b23b2eaeb9e05b",
+        "chk_2323db7a08ebd018f466d6e9",
+        "chk_4200eb156311240042b4e931"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_75d743ed18b23b2eaeb9e05b",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "9e072093e4571be1b444553c0528a6839eff686fc7bc9acab886ead412448860",
+          "quote_sha256": "9e072093e4571be1b444553c0528a6839eff686fc7bc9acab886ead412448860",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_2323db7a08ebd018f466d6e9",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "6b0cef54459e599597fd4e23ff7dd9c8235c1b8bf10e8f56e4316f2c9fdc1b10",
+          "quote_sha256": "6b0cef54459e599597fd4e23ff7dd9c8235c1b8bf10e8f56e4316f2c9fdc1b10",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_4200eb156311240042b4e931",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "4e9eb220474af998d13fe56114e4355b0d870fd4aee22350eb8c0c0419f005eb",
+          "quote_sha256": "4e9eb220474af998d13fe56114e4355b0d870fd4aee22350eb8c0c0419f005eb",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "701404a28b75eb0e2465c9bd48c95f03e05998ad6b29cd0e1c17cb3158cec183"
+    },
+    {
+      "id": "R1-RET-039",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "风电光伏申报企业在什么情况下承诺两年内放弃参与山西项目建设？",
+      "final_question_sha256": "a4297b941e5aee0080efce2b56d8a1f5c0fcce0cdd60517da2e06cb61c638e80",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "06b7a4ce34ab1ad455e7e5c2da127c250ae6bb122d93d748b38ce1119201359e",
+      "judge_decision_sha256": "e338acbd9b5cc6a3ef9ea598fcc0602c132c8ef1f654c7a74a1d00b46477f901",
+      "expected_document_ids": [
+        "doc_ed5a7e167d74e4210f1dda1c"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "source_sha256": "458d968a9b6d3062e654b3af25852ab8d172ff83e75fb586d5b490d7c53f006d"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_dab74ff8d6de932699b8fccf",
+        "chk_3f7a0492cf54566277835f27",
+        "chk_6a46588a15cc4033b6e54964"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_dab74ff8d6de932699b8fccf",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "012f38bf83de4fde917cbd079de9357d21d6503dc1c0dab46707838cbb8b8274",
+          "quote_sha256": "012f38bf83de4fde917cbd079de9357d21d6503dc1c0dab46707838cbb8b8274",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_3f7a0492cf54566277835f27",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "2525350cca0e2eb087e06d4ae4e19d2f579f6ca766d98982f74b3447594f5bee",
+          "quote_sha256": "2525350cca0e2eb087e06d4ae4e19d2f579f6ca766d98982f74b3447594f5bee",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_6a46588a15cc4033b6e54964",
+          "document_id": "doc_ed5a7e167d74e4210f1dda1c",
+          "version_id": "ver_e38dad9a5c6a33c33effb179",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "8c15ee66226dda4370cbf0ca8f70c28cb01709dc1f324f2bd20de553cafcccf9",
+          "quote_sha256": "8c15ee66226dda4370cbf0ca8f70c28cb01709dc1f324f2bd20de553cafcccf9",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "9facbc9bb8ba2b2b2d00969be6a3ef15e4a3f29036a95232a6247b12469689dc"
+    },
+    {
+      "id": "R1-RET-040",
+      "critical": false,
+      "judge_verdict": "ACCEPT_EVIDENCE_REWRITE_QUESTION",
+      "change_type": "question_disambiguation",
+      "final_question": "风电光伏开发建设规模申报资料清单第10项要求提交哪类企业信用证明，并包含哪个网站的查询报告？",
+      "final_question_sha256": "e7c73a928046fe1b1adc1b3cd997648884a8407aec39d525c6b855ef96ae8f00",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "89c0de04381f53fdd0f0dda6b890534ad23737ec5fe4c80725ac2b5949a4488c",
+      "judge_decision_sha256": "7bcd68a9472f8c0e76d2487b6bc0a5020ae9206d995fa948417714b0fa3aa082",
+      "expected_document_ids": [
+        "doc_4ee363df6916b1e4a7b10ff8"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "source_sha256": "320ce767b5fbf7ea8ada2ed7779dc5d156c49addd20c45969f98ce29ee21c64e"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_f5ec315592d18f92f164b186",
+        "chk_e23856abea44b45d3f95b5b8"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_f5ec315592d18f92f164b186",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "9a2dda4c2493aab62f88103df37623397fedf88ef705351ddf06b8eb0d396680",
+          "quote_sha256": "9a2dda4c2493aab62f88103df37623397fedf88ef705351ddf06b8eb0d396680",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_e23856abea44b45d3f95b5b8",
+          "document_id": "doc_4ee363df6916b1e4a7b10ff8",
+          "version_id": "ver_ea35102166a6ac592a1f2e6f",
+          "page": 1,
+          "section_path": [],
+          "content_hash": "e5a9e00373d1bd2a0c89bc39b93f5e7824d0d86357cd14444a4019318f226d40",
+          "quote_sha256": "e5a9e00373d1bd2a0c89bc39b93f5e7824d0d86357cd14444a4019318f226d40",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c68d545b65eebdb814870807a60096701115256a5066b5b4e753cd13ac429ecd"
+    },
+    {
+      "id": "R1-RET-041",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "北京登记结算买方指引列出的电力交易中心和绿证平台客服电话是什么？",
+      "final_question_sha256": "deaefed84d02ecd8b3a84f9311aabc33014125742a9bbecb00a9fcd581a9d425",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "b232a9deaac6d4a125cd39e741887207cb2a4f8b753aeb86fe1cff30ed64aeb5",
+      "judge_decision_sha256": "c60cf859f6fe90494d4260ec69df01f18d6b4fd4c7a611ae63837186a8fa2a64",
+      "expected_document_ids": [
+        "doc_9890be44e9a629c309e08d9d"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_9890be44e9a629c309e08d9d",
+          "version_id": "ver_eafd12998e4080e17f6f434f",
+          "source_sha256": "bce187a40acffade9884085009f7962b9c6503f02f6293647454baf0eeebc737"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_7985389b2364fdcc01d231b5"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_7985389b2364fdcc01d231b5",
+          "document_id": "doc_9890be44e9a629c309e08d9d",
+          "version_id": "ver_eafd12998e4080e17f6f434f",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "a4ef5e71686188f82a16ecaf5133abdda3da3b989ec21fea1d0d2cb349c873b7",
+          "quote_sha256": "a4ef5e71686188f82a16ecaf5133abdda3da3b989ec21fea1d0d2cb349c873b7",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "9dac68ca0172bb8d8e1df54291ebb6562823f27c227b255ab6547906d50c9b39"
+    },
+    {
+      "id": "R1-RET-042",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "北京登记结算卖方订单显示已成交出款成功或出款失败分别说明什么？",
+      "final_question_sha256": "c493536739fd10251ab56b08b878062d821caca1cd343c9a289edea8a29fdef4",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "77c988c9ba3b664cbf4e69e9158ed14507c5119bb2f2582b4b0990940a96fa0d",
+      "judge_decision_sha256": "6391159b074f2bccda6932662d561aced652657a1c6addea3c7c1371328a0806",
+      "expected_document_ids": [
+        "doc_b815147264b08d13a259e6fa"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_b815147264b08d13a259e6fa",
+          "version_id": "ver_f141792d80278e8befb0f85f",
+          "source_sha256": "458137fda49184438c937bfcb8b10f7a4e5b529cd985e99e7e4482da94e6f8f5"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_655bd629c77283b7b8a263cf",
+        "chk_4f39b5633b511ac705d50c81"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_655bd629c77283b7b8a263cf",
+          "document_id": "doc_b815147264b08d13a259e6fa",
+          "version_id": "ver_f141792d80278e8befb0f85f",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "8ed9108ad7df6462cbd7bf6a22e7ec7579e49f53b3311b8aeb67f7fbd310a297",
+          "quote_sha256": "8ed9108ad7df6462cbd7bf6a22e7ec7579e49f53b3311b8aeb67f7fbd310a297",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_4f39b5633b511ac705d50c81",
+          "document_id": "doc_b815147264b08d13a259e6fa",
+          "version_id": "ver_f141792d80278e8befb0f85f",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "e0c05da3fe53ebb8383821d05e367eb49e27b7b7058dc1c5eedfa30aae55d8a3",
+          "quote_sha256": "e0c05da3fe53ebb8383821d05e367eb49e27b7b7058dc1c5eedfa30aae55d8a3",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "78e0e1c74f09d498f3859eb429a41497442513cee7679d074a7d919c25043d7b"
+    },
+    {
+      "id": "R1-RET-043",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "绿证项目上架信息页面可查看哪些总量、筛选条件和单个项目库存交易字段？",
+      "final_question_sha256": "b44f0f1a84afbfe7704fa1462d191135eb43f070225b69ad97040b214a8550b7",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "d5117c607e07c794e0dbc1349faed4eac3dd8f198f5d48ca717da760b4baed02",
+      "judge_decision_sha256": "449b3277d2ed17e7d6bbf62183b13c75adbd674fcc265d6ee7c568dc66fafa88",
+      "expected_document_ids": [
+        "doc_1d7f4411333c7c903b0c31ed"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "source_sha256": "13626a6b1c97d5b00e9f20ee440252a64a41a204fccac5b2d9f8b33b17bc4f54"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_05b64c13151590a8e123c70e",
+        "chk_a04db208df0335630ffe456c",
+        "chk_975b5714a742e34a6a7a798e",
+        "chk_6b7c0953ba4c55169cf40a20",
+        "chk_06a1fe7b8b04be12a33a0d70",
+        "chk_dc846d18e8abc71eb6ccb7e4",
+        "chk_fab3cfda58ff158ae16b7bb6",
+        "chk_0813b9e934844afa5271fb98",
+        "chk_9d6ea425ab742ff060a7b3d0"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_05b64c13151590a8e123c70e",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 117,
+          "section_path": [],
+          "content_hash": "0545bc2d6bea9911a4a55129b0ea99356620c3d790ea49dfe5c2edd8ebc5c832",
+          "quote_sha256": "0545bc2d6bea9911a4a55129b0ea99356620c3d790ea49dfe5c2edd8ebc5c832",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_a04db208df0335630ffe456c",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 117,
+          "section_path": [],
+          "content_hash": "99fa2826b6849b106f9e7591c3b21ab8c9bf6104d8098a3857e7aae8f550d232",
+          "quote_sha256": "99fa2826b6849b106f9e7591c3b21ab8c9bf6104d8098a3857e7aae8f550d232",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_975b5714a742e34a6a7a798e",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 117,
+          "section_path": [],
+          "content_hash": "a07834954ddb758b3acf3e535cdcf524340a7d646a1702949b959e084ff2b13b",
+          "quote_sha256": "a07834954ddb758b3acf3e535cdcf524340a7d646a1702949b959e084ff2b13b",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_6b7c0953ba4c55169cf40a20",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 117,
+          "section_path": [],
+          "content_hash": "53afa8db7f5c9bb7bba5d72aef0cac60ab7c59246b281779fe3092d563fc2bcd",
+          "quote_sha256": "53afa8db7f5c9bb7bba5d72aef0cac60ab7c59246b281779fe3092d563fc2bcd",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_06a1fe7b8b04be12a33a0d70",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 117,
+          "section_path": [],
+          "content_hash": "d8c2089c455c795a953b40b7c6a4a279bb9d671fcf4f7a92cd93f6071d0cef18",
+          "quote_sha256": "d8c2089c455c795a953b40b7c6a4a279bb9d671fcf4f7a92cd93f6071d0cef18",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_dc846d18e8abc71eb6ccb7e4",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 118,
+          "section_path": [],
+          "content_hash": "22062a486a6639495e97a73c5289beb4cebba885eef43d3cf6fb6cd7d9b64888",
+          "quote_sha256": "22062a486a6639495e97a73c5289beb4cebba885eef43d3cf6fb6cd7d9b64888",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_fab3cfda58ff158ae16b7bb6",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 118,
+          "section_path": [],
+          "content_hash": "8058302b329883c54f1b76a7a04e432eacbd9b977c7e3d5d265310026c33a0a4",
+          "quote_sha256": "8058302b329883c54f1b76a7a04e432eacbd9b977c7e3d5d265310026c33a0a4",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_0813b9e934844afa5271fb98",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 118,
+          "section_path": [],
+          "content_hash": "904d06f4669f191efd0b5d1025dc614ded9bdf2cf3f58285795c45d30d01d466",
+          "quote_sha256": "904d06f4669f191efd0b5d1025dc614ded9bdf2cf3f58285795c45d30d01d466",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_9d6ea425ab742ff060a7b3d0",
+          "document_id": "doc_1d7f4411333c7c903b0c31ed",
+          "version_id": "ver_b82038d43effcd4ab8ec763f",
+          "page": 118,
+          "section_path": [],
+          "content_hash": "2496c34adba0ba495a17b453b01c0f8792e42781910ba6e422921dcc0f8ff7d3",
+          "quote_sha256": "2496c34adba0ba495a17b453b01c0f8792e42781910ba6e422921dcc0f8ff7d3",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "1608a746952a51feb0dd7fe41146947abb613ec44bca0d5f1a52af5bbcf45101"
+    },
+    {
+      "id": "R1-RET-044",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "上海开发建设方案下达后，项目名称、投资企业或场址因客观因素确需变更时要走什么申请路径？",
+      "final_question_sha256": "b9157f641f508d5d2a9985d66fb2760ae2c4f312673c9199b90f7a36af52ca2b",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "fa717bb9e887be5fa134e770178f4c40820dde4c09ffae76b041fb98d7be611e",
+      "judge_decision_sha256": "81532a3d4ce8e9bc29378eb0ef1a049c23a11f23bb9007daeb9ce2a4bd7e9721",
+      "expected_document_ids": [
+        "doc_ef837603979c9eb030481e50"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "source_sha256": "2d268788df38691cefcbeab75078721473c6112eb5ab37f515ccefcefdb2b123"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_0ff19fff2a123273ae84b2bd",
+        "chk_af093eb3ca0d1ca95ac9a17d",
+        "chk_d1817ba3257c68041c9fd05f",
+        "chk_c5ae189ff975e60e88fa9fe6"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_0ff19fff2a123273ae84b2bd",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "8a5e3e1978e16fede3795faffb33185984b2cc05bf14d13716e6ed0f2a00e4c9",
+          "quote_sha256": "8a5e3e1978e16fede3795faffb33185984b2cc05bf14d13716e6ed0f2a00e4c9",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_af093eb3ca0d1ca95ac9a17d",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "f5cf2aa0d16a3ed2801488445ce288016c265c3d1498df73e2e00b261805f0cf",
+          "quote_sha256": "f5cf2aa0d16a3ed2801488445ce288016c265c3d1498df73e2e00b261805f0cf",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_d1817ba3257c68041c9fd05f",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "9085f6d3ec071a0c32a74fd44d843065c711f708b45aa6e116b6307dd8386b20",
+          "quote_sha256": "9085f6d3ec071a0c32a74fd44d843065c711f708b45aa6e116b6307dd8386b20",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_c5ae189ff975e60e88fa9fe6",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "97f3bf20099aa6ab266e14844529360f97ed00d93dfa49ef37cc7db861765c71",
+          "quote_sha256": "97f3bf20099aa6ab266e14844529360f97ed00d93dfa49ef37cc7db861765c71",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "3c593ee1a54204a336490ce7545845fd37bf5a614c07109961ad6d7b8dc13ff0"
+    },
+    {
+      "id": "R1-RET-045",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "非化石能源电力消费核算指南如何区分绿电直连、常规电能量交易和绿色电力交易？",
+      "final_question_sha256": "08f1add068ad453fbf69893c12e8458842e76c7cfc4aeb2e0218bdf2497fa549",
+      "review_verdict": "REJECT_UNRESOLVED",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "FAIL"
+      },
+      "final_mapping_sha256": "82b7a29bd49a3034e3d2e0bdaa773fc7d0317d4051c73364102d82df3ca95855",
+      "judge_decision_sha256": "d1b64d1fc1d45c4f8a5ddc48335ed2c65904712e4ded7cd3d803e0e921d75083",
+      "expected_document_ids": [
+        "doc_6abe928efae88c625b8b5c9e"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "source_sha256": "c3d78a4b091d9e4c805a55e7ff8457c98e17775e719d4e54b9620ba13b5ce2c1"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_e16592262906d84492521763",
+        "chk_c47908796fd6a4499c03af35",
+        "chk_a9a4d6ac180c71bb347ac626",
+        "chk_f2c85e02f63027fd604ba672",
+        "chk_d687bee20c60bae4df6a599b",
+        "chk_986671f1b3f797c031f18121",
+        "chk_7dd856a2496430ee574252df",
+        "chk_fc8522607c754c771f6bfbf0"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_e16592262906d84492521763",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "68a3a0c45af0c29377407e75233cec24a27f81dbb67735ad82b9a149a1a44b05",
+          "quote_sha256": "68a3a0c45af0c29377407e75233cec24a27f81dbb67735ad82b9a149a1a44b05",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_c47908796fd6a4499c03af35",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "09e1b630bdd0dfaf58c44242e07fff64b99747fd1a577ad841775276cb0004d7",
+          "quote_sha256": "09e1b630bdd0dfaf58c44242e07fff64b99747fd1a577ad841775276cb0004d7",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_a9a4d6ac180c71bb347ac626",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "af8b8d88d1a8137d43a13acfee8095a6de3ac7b91be2a34c5873360820944d90",
+          "quote_sha256": "af8b8d88d1a8137d43a13acfee8095a6de3ac7b91be2a34c5873360820944d90",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_f2c85e02f63027fd604ba672",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "e37c31ccde57e85fdf1b2a0aefd8bbdaeeb0853febcc4eb40e9159f21158c3b5",
+          "quote_sha256": "e37c31ccde57e85fdf1b2a0aefd8bbdaeeb0853febcc4eb40e9159f21158c3b5",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_d687bee20c60bae4df6a599b",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "2b3dec2089e8632367e61184158dbe22f39284bb2c18b46d1b37f40438bc8115",
+          "quote_sha256": "2b3dec2089e8632367e61184158dbe22f39284bb2c18b46d1b37f40438bc8115",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_986671f1b3f797c031f18121",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "0beef4f42a496c58ce245280f29c644a1de9131bc8b17dfb1931b20db5851828",
+          "quote_sha256": "0beef4f42a496c58ce245280f29c644a1de9131bc8b17dfb1931b20db5851828",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_7dd856a2496430ee574252df",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "4954a2c329467b0cf439671c363836bdb03a720e014a5fe5c28d4b8e9a7546e0",
+          "quote_sha256": "4954a2c329467b0cf439671c363836bdb03a720e014a5fe5c28d4b8e9a7546e0",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_fc8522607c754c771f6bfbf0",
+          "document_id": "doc_6abe928efae88c625b8b5c9e",
+          "version_id": "ver_0586b1d5e6dff47c259ee32a",
+          "page": 12,
+          "section_path": [],
+          "content_hash": "f9221da1eef54558bd0669db966307be87ea3e3c72c3d046c80436e64e04eeda",
+          "quote_sha256": "f9221da1eef54558bd0669db966307be87ea3e3c72c3d046c80436e64e04eeda",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [
+        "The conventional-energy-transaction definition ends with '交易标的物不包括' in the mapped bundle; the immutable next line '绿证。' was omitted, so the key distinction is incomplete."
+      ],
+      "suggested_fix": {
+        "action": "add_missing_continuation_chunk_and_recompute_all_hashes",
+        "required_additional_chunk_ids": [
+          "chk_41b8a767f28c2873ee4931a6"
+        ],
+        "evidence_change_required": true
+      },
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "8a29d2cd6722c235205e74e8af9a429a80774d59eba3a4254662db661716a1f3"
+    },
+    {
+      "id": "R1-RET-046",
+      "critical": false,
+      "judge_verdict": "REPLACE_WITH_CORPUS_SUPPORTED_QUESTION",
+      "change_type": "replacement_question",
+      "final_question": "质量监督大纲如何定义电化学储能单元、电池管理系统和储能变流器？",
+      "final_question_sha256": "a88a52729125d29ebb979bea45ed864ec487ba39ada062b2404d2a34eeaf58d2",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "da58c2dd83fc79116332d4b50fe31c3247387f2c7cb46bae767e8595522f8e4b",
+      "judge_decision_sha256": "893c24ceb7242a53fb323c4c6fec554490492d08c207216df219168e4113d3d7",
+      "expected_document_ids": [
+        "doc_e1d2cdcb0feacd30980e9991"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_e1d2cdcb0feacd30980e9991",
+          "version_id": "ver_66f927c7158b305c14fa4183",
+          "source_sha256": "92bed0d6ee7e9f905436d9914d54230ff3a15031db88598f746c6abd3d82cd8f"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_c390283f641f13907272cb2a"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_c390283f641f13907272cb2a",
+          "document_id": "doc_e1d2cdcb0feacd30980e9991",
+          "version_id": "ver_66f927c7158b305c14fa4183",
+          "page": 67,
+          "section_path": [],
+          "content_hash": "dc4297b0e2d508011d29035f7136cdeff3f5d8bce657dbc8e0d42ad7889fb432",
+          "quote_sha256": "dc4297b0e2d508011d29035f7136cdeff3f5d8bce657dbc8e0d42ad7889fb432",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "5d1139dea778de26b9d430e59110fe43c4f8cca7cff6efadfe9ae4333ec872ed"
+    },
+    {
+      "id": "R1-RET-047",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "上海风电光伏项目应依据哪份2025到2030储能方案提出建设或购买调峰能力？",
+      "final_question_sha256": "86b8187d6a0cd80c45aaeb9aa20c1ab1db2d0ca49b0440c3232e120234b21f62",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "aa8b8374fc57d029f853e8daa500290bb8d1f7fae4070981dcc34c3a517ace51",
+      "judge_decision_sha256": "1c47cbc1e1e3c7c40ee06289bcdc0dac9d1f5bae6434c6306b28b7cd00cc9eb1",
+      "expected_document_ids": [
+        "doc_ef837603979c9eb030481e50"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "source_sha256": "2d268788df38691cefcbeab75078721473c6112eb5ab37f515ccefcefdb2b123"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_1d49fc98a7165ec2680c2ed5",
+        "chk_3185c219844289acea6ced19"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_1d49fc98a7165ec2680c2ed5",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "0b1f5a691ed0bb9d912ee712c3e5d9283803b965ab64b9b26bcb5d814c85159b",
+          "quote_sha256": "0b1f5a691ed0bb9d912ee712c3e5d9283803b965ab64b9b26bcb5d814c85159b",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_3185c219844289acea6ced19",
+          "document_id": "doc_ef837603979c9eb030481e50",
+          "version_id": "ver_ea996f0440dcdfc6cf06c06b",
+          "page": 2,
+          "section_path": [],
+          "content_hash": "87cb7864ae8b2e547895b2aefcb8ae5335f0ebe9a3a101df6be5e9900d9e4be6",
+          "quote_sha256": "87cb7864ae8b2e547895b2aefcb8ae5335f0ebe9a3a101df6be5e9900d9e4be6",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "d371b070bb4c09ed09a96dedfe0e6bb543a0931a5b61627236eccc9167109b17"
+    },
+    {
+      "id": "R1-RET-048",
+      "critical": false,
+      "judge_verdict": "ACCEPT_EVIDENCE_REWRITE_QUESTION",
+      "change_type": "question_disambiguation",
+      "final_question": "河北南部电网电力中长期市场实施细则第一条说明了哪些制定目的与依据？",
+      "final_question_sha256": "dbf032b5a99a2f26bd3c5298a513b71a291efd9a71439575cc142ff34e9f71b7",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "18ce06c2256606f5aa5dfd8e7fbce3bfd4442573eb8cf903944def1b45e90eab",
+      "judge_decision_sha256": "a73d7d38238bfd2a2715550a4f9b3f25aa6233bcff10ecc3fb21788d4cdfa756",
+      "expected_document_ids": [
+        "doc_6573860cb1af58fc5a5d5517"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "source_sha256": "1946450197f0b651993af72b9ff5e4bfd56fefebeebfac8f57b919d0970ca899"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_148e33c32dfd10569b605d74",
+        "chk_871af9ccd9521160965a78c4",
+        "chk_2076221556bd5e87925f3890",
+        "chk_340fdcf16119955fd71d640d",
+        "chk_2967fbaf064acf9620d95c38"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_148e33c32dfd10569b605d74",
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "page": 3,
+          "section_path": [],
+          "content_hash": "b58c2947ee4bfbf4e9b1ebe114a6fcc10ddb4ed9739bb3607ecd6e41d6e137c4",
+          "quote_sha256": "b58c2947ee4bfbf4e9b1ebe114a6fcc10ddb4ed9739bb3607ecd6e41d6e137c4",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_871af9ccd9521160965a78c4",
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "page": 3,
+          "section_path": [],
+          "content_hash": "5a4461ca41961f44ad8cfbcd0e0bf0de9354de0d2c99bcb8a04494758d219bd1",
+          "quote_sha256": "5a4461ca41961f44ad8cfbcd0e0bf0de9354de0d2c99bcb8a04494758d219bd1",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_2076221556bd5e87925f3890",
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "page": 3,
+          "section_path": [],
+          "content_hash": "3ac1f52802d4299d3b013844f2039c1c6d49938cc8afe8ef2b5aeb179e7b6cee",
+          "quote_sha256": "3ac1f52802d4299d3b013844f2039c1c6d49938cc8afe8ef2b5aeb179e7b6cee",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_340fdcf16119955fd71d640d",
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "page": 3,
+          "section_path": [],
+          "content_hash": "e26d40f75df721812383c5fcbb4909bbb24e79a52d7dc6a8b200bce1bd8bf69b",
+          "quote_sha256": "e26d40f75df721812383c5fcbb4909bbb24e79a52d7dc6a8b200bce1bd8bf69b",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_2967fbaf064acf9620d95c38",
+          "document_id": "doc_6573860cb1af58fc5a5d5517",
+          "version_id": "ver_00ce2eaee29af11744dca4e8",
+          "page": 3,
+          "section_path": [],
+          "content_hash": "c2427541a9c7a64f3508cde5277c830b1a8f422d1db809e5063e58aacd755a00",
+          "quote_sha256": "c2427541a9c7a64f3508cde5277c830b1a8f422d1db809e5063e58aacd755a00",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "fb6b9d9c69466fea1972913253d0ef51f205dd243b091aa8f399ac3c8ebf7524"
+    },
+    {
+      "id": "R1-RET-049",
+      "critical": false,
+      "judge_verdict": "ACCEPT_MAPPER_MAPPING",
+      "change_type": "unchanged_mapping",
+      "final_question": "河北南部电力市场信息披露主体发现披露信息有误或需要变更时如何配合解释？",
+      "final_question_sha256": "c2d738c1d4f93270bf2598e61fb1ba7cb531b2966ae3f915f5daaa35aa790a51",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "334a6c4ceb3c3a21b8ece17429c49ccecb8fe70aee737bcf5eee738a6f3a00d3",
+      "judge_decision_sha256": "599bdb4798c23defe43247430dcd70a8233cf8a10b976f4eb9ee92675a71d3af",
+      "expected_document_ids": [
+        "doc_52ab517be2af7ca464074701"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_52ab517be2af7ca464074701",
+          "version_id": "ver_35dc309a2117f558aac25121",
+          "source_sha256": "92d92ff5d316f49ca1dd1f8b586ea6649fb75c290f5c1d1a5c7839d9e17c2ac0"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_8d1c5f96c1c3b8dc3a37c572",
+        "chk_0a6f0dc91a0a286f31ad2d35",
+        "chk_e13dfdcf7259ae36bdd5e4a9",
+        "chk_786acf8db88bce9720e0f964"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_8d1c5f96c1c3b8dc3a37c572",
+          "document_id": "doc_52ab517be2af7ca464074701",
+          "version_id": "ver_35dc309a2117f558aac25121",
+          "page": 4,
+          "section_path": [],
+          "content_hash": "aebd5f62cb7575902d9053722ac87b72813d3f3be6ad5eeac03bcd079de4f05c",
+          "quote_sha256": "aebd5f62cb7575902d9053722ac87b72813d3f3be6ad5eeac03bcd079de4f05c",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_0a6f0dc91a0a286f31ad2d35",
+          "document_id": "doc_52ab517be2af7ca464074701",
+          "version_id": "ver_35dc309a2117f558aac25121",
+          "page": 4,
+          "section_path": [],
+          "content_hash": "839a40e444ffd47db409940c3fa38f5118636cac05442efcec4b2b01a6b0d69d",
+          "quote_sha256": "839a40e444ffd47db409940c3fa38f5118636cac05442efcec4b2b01a6b0d69d",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_e13dfdcf7259ae36bdd5e4a9",
+          "document_id": "doc_52ab517be2af7ca464074701",
+          "version_id": "ver_35dc309a2117f558aac25121",
+          "page": 5,
+          "section_path": [],
+          "content_hash": "74d9522e1859ac73a64b026423458a51b22261e49a4f3b7b86ac38d516712072",
+          "quote_sha256": "74d9522e1859ac73a64b026423458a51b22261e49a4f3b7b86ac38d516712072",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_786acf8db88bce9720e0f964",
+          "document_id": "doc_52ab517be2af7ca464074701",
+          "version_id": "ver_35dc309a2117f558aac25121",
+          "page": 5,
+          "section_path": [],
+          "content_hash": "8bfc6978226cc492b35093cabf99d7e37ddb622684c6bce20422328718dbb6a9",
+          "quote_sha256": "8bfc6978226cc492b35093cabf99d7e37ddb622684c6bce20422328718dbb6a9",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "c4f574b802de043f629eb74f755c8743f15647d2b165d1ded16586db750d1bca"
+    },
+    {
+      "id": "R1-RET-050",
+      "critical": false,
+      "judge_verdict": "ACCEPT_EVIDENCE_REWRITE_QUESTION",
+      "change_type": "question_disambiguation",
+      "final_question": "河北南部电网日前现货市场在满足电网和机组运行约束后，如何按报价调减在线机组发电计划？",
+      "final_question_sha256": "8b83ce8833a9da2d94a19f72a941d46c429ae4cf7504e317620f50c781a6ddf0",
+      "review_verdict": "ACCEPT_FOR_CONSENSUS",
+      "checks": {
+        "semantic_support": "PASS",
+        "answer_leakage": "PASS",
+        "system_tailoring": "PASS",
+        "critical_not_lowered": "PASS",
+        "unique_question": "PASS",
+        "document_version_chunk_identity": "PASS",
+        "page_or_section_locator": "PASS",
+        "quote_and_hash_exact_match": "PASS",
+        "evidence_bundle_completeness": "PASS"
+      },
+      "final_mapping_sha256": "1b40b7afb88bfd117ec2316a4cadb08c6089b7c7b238229d9d08694826c4ebde",
+      "judge_decision_sha256": "db160e1f3eb096941acddc9da90978f74dda26bc2e19d3c967969521fdfd7cb6",
+      "expected_document_ids": [
+        "doc_d704476f8b466ad023f41dbe"
+      ],
+      "expected_versions": [
+        {
+          "document_id": "doc_d704476f8b466ad023f41dbe",
+          "version_id": "ver_3cde6b3c49bee05ab6eea1a2",
+          "source_sha256": "c6606e4248f8aeb603cafe927aa4609fe95b44b1da442d96417ed19626c633c9"
+        }
+      ],
+      "expected_chunk_ids": [
+        "chk_05230e2fda183603695cfde5",
+        "chk_65e055ae7c715cb5b088a446",
+        "chk_f2a2e1bd6a9487dc0766ef20"
+      ],
+      "chunk_match_rule": "all",
+      "locator_attestations": [
+        {
+          "chunk_id": "chk_05230e2fda183603695cfde5",
+          "document_id": "doc_d704476f8b466ad023f41dbe",
+          "version_id": "ver_3cde6b3c49bee05ab6eea1a2",
+          "page": 51,
+          "section_path": [],
+          "content_hash": "e3c45862cac3386898947f3ad7335097d07a9e1ae7a79db24b2ca89081a4c8d4",
+          "quote_sha256": "e3c45862cac3386898947f3ad7335097d07a9e1ae7a79db24b2ca89081a4c8d4",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_65e055ae7c715cb5b088a446",
+          "document_id": "doc_d704476f8b466ad023f41dbe",
+          "version_id": "ver_3cde6b3c49bee05ab6eea1a2",
+          "page": 51,
+          "section_path": [],
+          "content_hash": "f5fafa1ddc76195df98d432e9486911543b175ce27ab96ea8da56f819aa38a36",
+          "quote_sha256": "f5fafa1ddc76195df98d432e9486911543b175ce27ab96ea8da56f819aa38a36",
+          "exact_match_to_immutable_corpus": true
+        },
+        {
+          "chunk_id": "chk_f2a2e1bd6a9487dc0766ef20",
+          "document_id": "doc_d704476f8b466ad023f41dbe",
+          "version_id": "ver_3cde6b3c49bee05ab6eea1a2",
+          "page": 51,
+          "section_path": [],
+          "content_hash": "96afeed74baf34303e618db43531025c731ed3f95edc8c653b4a8ee9ab97fc0e",
+          "quote_sha256": "96afeed74baf34303e618db43531025c731ed3f95edc8c653b4a8ee9ab97fc0e",
+          "exact_match_to_immutable_corpus": true
+        }
+      ],
+      "unresolved_reasons": [],
+      "suggested_fix": null,
+      "human_verified": false,
+      "review_origin": "codex_ai_independent",
+      "review_pass": 3,
+      "verdict_sha256": "f13b6b6c0d3f3d760bd3925ac5c5109647b2523ec12435bbcb6873dafd7b5f20"
+    }
+  ],
+  "unresolved": [
+    {
+      "question_id": "R1-RET-006",
+      "critical": true,
+      "reasons": [
+        "The final question asks for filing capacity while the two official project names embedded in the question already expose 40KW and 90KW; this leaks a unit-convertible part of the requested answer."
+      ],
+      "suggested_fix": {
+        "action": "rewrite_question_without_capacity_in_entity_labels",
+        "suggested_question": "山西2026年机制电价表中，师镒与尤建芳两个分布式光伏项目的编号、备案容量、机制电量、机制电价、比例和期限分别是什么？",
+        "suggested_question_sha256": "386bc8503fa6d61a2884ced5d1187a6cac87ab3819196d4d5177f321ec5f141d",
+        "evidence_change_required": false
+      }
+    },
+    {
+      "question_id": "R1-RET-008",
+      "critical": true,
+      "reasons": [
+        "The mapped data-row Chunk does not contain the table header, so the numeric columns cannot be immutably attributed to capacity, priority generation, utilization hours and government-priced quantity from this evidence bundle alone."
+      ],
+      "suggested_fix": {
+        "action": "add_table_header_chunk_and_recompute_all_hashes",
+        "required_additional_chunk_ids": [
+          "chk_1b4597398fd0879009cfbfec"
+        ],
+        "evidence_change_required": true
+      }
+    },
+    {
+      "question_id": "R1-RET-009",
+      "critical": true,
+      "reasons": [
+        "The source explicitly cancels qualification when fraud is found, but the final question can be read as applying the same sanction to every repeated/overlapping site even when fraud is not established."
+      ],
+      "suggested_fix": {
+        "action": "rewrite_question_to_separate_prohibition_from_sanction",
+        "suggested_question": "上海2026年陆上风电光伏申报对虚假材料、场址重复重叠分别作何禁止；发现弄虚作假行为后如何处理？",
+        "suggested_question_sha256": "131ae07b5981c073076eac1f94ad3f06bdc5ae416a821e0f14d41fd98a8e3edd",
+        "evidence_change_required": false
+      }
+    },
+    {
+      "question_id": "R1-RET-045",
+      "critical": false,
+      "reasons": [
+        "The conventional-energy-transaction definition ends with '交易标的物不包括' in the mapped bundle; the immutable next line '绿证。' was omitted, so the key distinction is incomplete."
+      ],
+      "suggested_fix": {
+        "action": "add_missing_continuation_chunk_and_recompute_all_hashes",
+        "required_additional_chunk_ids": [
+          "chk_41b8a767f28c2873ee4931a6"
+        ],
+        "evidence_change_required": true
+      }
+    }
+  ],
+  "non_blocking_notes": [
+    {
+      "question_ids": [
+        "R1-RET-024",
+        "R1-RET-042"
+      ],
+      "type": "partial_evidence_overlap_not_duplicate",
+      "note": "Both use the same payment-status evidence and overlap on failure meaning, but R1-RET-024 uniquely asks transfer time while R1-RET-042 uniquely asks success meaning; retained as distinct with a diversity note."
+    }
+  ],
+  "output_sha256_scope": "sha256 of canonical UTF-8 JSON object with output_sha256 omitted",
+  "output_sha256": "8807e0f3d2f927170d0f79cc5d4c56f08b2c31772820cc66e73cb9ccdeb05a89"
+}
