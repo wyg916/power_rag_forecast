@@ -10,6 +10,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import Lock
 from typing import Any, Mapping, Sequence
 from urllib.error import HTTPError
 from urllib.parse import quote
@@ -33,7 +34,7 @@ from backend.app.services.rag_content_security import secure_candidates
 from backend.app.services.rag_grounding_service import validate_candidate_citations
 from backend.app.services.rag_qdrant_transport import sparse_query
 from backend.app.services.rag_runtime_contract import RetrievalContext, runtime_contract_status
-from backend.app.services.rerank_service import rerank_candidates
+from backend.app.services.rerank_service import prewarm_reranker, rerank_candidates
 
 
 RELEASE_ID = "RAG-R1"
@@ -41,6 +42,11 @@ COLLECTION = "rag_chunks_RAG-R1"
 ALIAS = "rag_chunks_current"
 TENANT_ID = "default"
 EXPECTED_CHUNKS = 8339
+READ_ONLY_REQUESTS = frozenset({
+    ("GET", "/aliases"), ("GET", f"/collections/{quote(COLLECTION)}"),
+    ("POST", f"/collections/{quote(COLLECTION)}/points/query"),
+    ("POST", f"/collections/{quote(COLLECTION)}/points/scroll"),
+})
 
 
 class CandidateAcceptanceError(RuntimeError):
@@ -51,6 +57,14 @@ def _canonical(value: Any) -> bytes:
     return json.dumps(
         value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
+
+
+def _stable_filter(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): ({str(op): "<time>" for op in item} if key == "range" and isinstance(item, Mapping) else _stable_filter(item)) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_stable_filter(item) for item in value]
+    return value
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -89,6 +103,19 @@ def _percentile(values: Sequence[float], percentile: float) -> float:
     return round(ordered[rank], 3)
 
 
+def _distribution(values: Sequence[float]) -> dict[str, float]:
+    normalized = [float(value) for value in values]
+    if not normalized:
+        return {key: 0.0 for key in ("p50_ms", "p90_ms", "p95_ms", "p99_ms", "max_ms")}
+    return {
+        "p50_ms": _percentile(normalized, 0.50),
+        "p90_ms": _percentile(normalized, 0.90),
+        "p95_ms": _percentile(normalized, 0.95),
+        "p99_ms": _percentile(normalized, 0.99),
+        "max_ms": round(max(normalized), 3),
+    }
+
+
 class CandidateQdrantReadOnlyTransport:
     """A deliberately non-public, exact-collection candidate evaluator transport."""
 
@@ -111,6 +138,9 @@ class CandidateQdrantReadOnlyTransport:
         self.request_count = 0
         self.write_count = 0
         self.methods_used: set[str] = set()
+        self.paths_used: set[str] = set()
+        self.filter_signatures: set[str] = set()
+        self._metrics_lock = Lock()
 
     def _request(
         self,
@@ -120,12 +150,10 @@ class CandidateQdrantReadOnlyTransport:
         payload: Mapping[str, Any] | None = None,
         timeout: int = 30,
     ) -> Mapping[str, Any]:
-        if method not in {"GET", "POST"}:
-            raise CandidateAcceptanceError("candidate_write_method_rejected")
-        if method == "POST" and not path.startswith(
-            f"/collections/{quote(COLLECTION)}/points/"
-        ):
-            raise CandidateAcceptanceError("candidate_path_rejected")
+        if (method, path) not in READ_ONLY_REQUESTS:
+            with self._metrics_lock:
+                self.write_count += int(method != "GET")
+            raise CandidateAcceptanceError("candidate_read_path_rejected")
         data = _canonical(payload) if payload is not None else None
         headers = {"accept": "application/json", "api-key": self._api_key}
         if data is not None:
@@ -136,8 +164,10 @@ class CandidateQdrantReadOnlyTransport:
             headers=headers,
             method=method,
         )
-        self.request_count += 1
-        self.methods_used.add(method)
+        with self._metrics_lock:
+            self.request_count += 1
+            self.methods_used.add(method)
+            self.paths_used.add(path)
         try:
             with urlopen(request, context=self.context, timeout=timeout) as response:
                 body = response.read().decode("utf-8")
@@ -169,11 +199,31 @@ class CandidateQdrantReadOnlyTransport:
             raise CandidateAcceptanceError("candidate_alias_response_invalid")
         return matches[0] if matches else None
 
+    def collection_state(self) -> dict[str, Any]:
+        body = self._request(
+            f"/collections/{quote(COLLECTION)}", method="GET", timeout=10
+        )
+        result = body.get("result")
+        if not isinstance(result, Mapping):
+            raise CandidateAcceptanceError("candidate_collection_state_invalid")
+        stable = {
+            "status": result.get("status"),
+            "points_count": result.get("points_count"),
+            "vectors_count": result.get("vectors_count"),
+            "config": result.get("config"),
+        }
+        return {
+            "points_count": int(result.get("points_count") or 0),
+            "state_sha256": hashlib.sha256(_canonical(stable)).hexdigest(),
+        }
+
     def query(
         self, *, collection: str, request: Mapping[str, Any]
     ) -> Mapping[str, Any]:
         if collection != COLLECTION:
             raise CandidateAcceptanceError("candidate_collection_rejected")
+        with self._metrics_lock:
+            self.filter_signatures.add(hashlib.sha256(_canonical(_stable_filter(request.get("filter")))).hexdigest())
         common = {
             "filter": request.get("filter"),
             "limit": max(1, min(int(request.get("limit") or 20), 100)),
@@ -301,6 +351,34 @@ def calculate_metrics(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     latencies = [float(item.get("latency_ms") or 0.0) for item in results]
     hybrid_latencies = [float(item.get("hybrid_ms") or 0.0) for item in results]
     rerank_latencies = [float(item.get("rerank_ms") or 0.0) for item in results]
+    stage_fields = {
+        "auth_acl": "auth_acl_ms",
+        "query_embedding": "query_embedding_ms",
+        "sparse": "sparse_ms",
+        "dense": "dense_ms",
+        "qdrant": "qdrant_ms",
+        "rrf": "rrf_ms",
+        "duplicate_merge": "duplicate_merge_ms",
+        "parent_expansion": "parent_expansion_ms",
+        "content_security": "security_ms",
+        "reranker": "rerank_ms",
+        "citation_hash": "citation_ms",
+        "postgres_metadata": "postgres_metadata_ms",
+        "serialization": "serialization_ms",
+        "cache": "cache_ms",
+    }
+    stage_latency_ms: dict[str, Any] = {}
+    for stage, field in stage_fields.items():
+        values = [
+            float(item[field])
+            for item in results
+            if isinstance(item.get(field), (int, float))
+            and not isinstance(item.get(field), bool)
+        ]
+        stage_latency_ms[stage] = {
+            "sample_count": len(values),
+            **(_distribution(values) if values else {"status": "not_measured"}),
+        }
     denominator = max(1, total)
     critical_denominator = max(1, len(critical))
     return {
@@ -312,9 +390,16 @@ def calculate_metrics(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "critical_recall_at_5": round(critical_hits / critical_denominator, 4),
         "citation_integrity": round(citation / denominator, 4),
         "latency_p50_ms": _percentile(latencies, 0.50),
+        "latency_p90_ms": _percentile(latencies, 0.90),
         "latency_p95_ms": _percentile(latencies, 0.95),
+        "latency_p99_ms": _percentile(latencies, 0.99),
+        "latency_max_ms": round(max(latencies), 3) if latencies else 0.0,
         "hybrid_p95_ms": _percentile(hybrid_latencies, 0.95),
         "rerank_p95_ms": _percentile(rerank_latencies, 0.95),
+        "latency_distribution_ms": _distribution(latencies),
+        "hybrid_distribution_ms": _distribution(hybrid_latencies),
+        "reranker_distribution_ms": _distribution(rerank_latencies),
+        "stage_latency_ms": stage_latency_ms,
     }
 
 
@@ -333,38 +418,40 @@ def _embedding_cache_key(
     return hashlib.sha256(_canonical(value)).hexdigest()
 
 
-def _embeddings(
-    questions: Sequence[Mapping[str, Any]],
+def _embedding(
+    question: Mapping[str, Any],
     contract: Any,
-    cache_path: Path | None,
-) -> tuple[list[dict[str, Any]], float, bool]:
-    cache_key = _embedding_cache_key(questions, contract)
+    cache_dir: Path | None,
+) -> tuple[dict[str, Any], float, bool, float]:
+    cache_key = _embedding_cache_key([question], contract)
+    cache_path = cache_dir / f"{cache_key}.json" if cache_dir else None
+    cache_started = time.perf_counter()
     if cache_path and cache_path.is_file():
         cached = _read_json(cache_path)
-        values = cached.get("embeddings")
+        value = cached.get("embedding")
         if (
-            cached.get("schema_version") != "rag-r1-query-embeddings/v1"
+            cached.get("schema_version") != "rag-r1-query-embedding/v2"
             or cached.get("cache_key") != cache_key
-            or not isinstance(values, list)
-            or len(values) != len(questions)
+            or not isinstance(value, Mapping)
         ):
             raise CandidateAcceptanceError("query_embedding_cache_invalid")
-        return [dict(item) for item in values], 0.0, True
+        return dict(value), 0.0, True, round((time.perf_counter() - cache_started) * 1000.0, 3)
+    cache_ms = round((time.perf_counter() - cache_started) * 1000.0, 3)
     started = time.perf_counter()
-    values = embed_batch_with_metadata(
-        [str(item["question"]) for item in questions]
-    )
-    elapsed = round((time.perf_counter() - started) * 1000.0, 3)
+    values = embed_batch_with_metadata([str(question["question"])])
+    if len(values) != 1:
+        raise CandidateAcceptanceError("query_embedding_count_mismatch")
+    embedding_ms = round((time.perf_counter() - started) * 1000.0, 3)
     if cache_path:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_write_started = time.perf_counter()
+        cache_dir.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(
             json.dumps(
                 {
-                    "schema_version": "rag-r1-query-embeddings/v1",
+                    "schema_version": "rag-r1-query-embedding/v2",
                     "cache_key": cache_key,
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
                     "secret_values_emitted": False,
-                    "embeddings": values,
+                    "embedding": values[0],
                 },
                 ensure_ascii=False,
                 separators=(",", ":"),
@@ -372,7 +459,8 @@ def _embeddings(
             + "\n",
             encoding="utf-8",
         )
-    return values, elapsed, False
+        cache_ms += round((time.perf_counter() - cache_write_started) * 1000.0, 3)
+    return dict(values[0]), embedding_ms, False, round(cache_ms, 3)
 
 
 def _gate(metrics: Mapping[str, Any], runtime: Mapping[str, Any]) -> dict[str, Any]:
@@ -385,11 +473,18 @@ def _gate(metrics: Mapping[str, Any], runtime: Mapping[str, Any]) -> dict[str, A
         "citation_integrity_100pct": metrics.get("citation_integrity") == 1.0,
         "latency_p95_lte_1500ms": float(metrics.get("latency_p95_ms") or 0) <= 1500.0,
         "read_only_key": runtime.get("access_mode") == "read_only",
-        "no_write_methods": runtime.get("write_count") == 0
-        and set(runtime.get("methods_used") or []).issubset({"GET", "POST"}),
+        "read_paths_only": runtime.get("write_count") == 0
+        and set(runtime.get("paths_used") or []).issubset(
+            {path for _, path in READ_ONLY_REQUESTS}
+        ),
+        "acl_negative_denied": runtime.get("acl_negative_denied") is True,
         "candidate_alias_unchanged": runtime.get("alias_before")
         == runtime.get("alias_after")
         and runtime.get("alias_after") != COLLECTION,
+        "candidate_collection_unchanged": runtime.get("collection_state_before")
+        == runtime.get("collection_state_after")
+        and int((runtime.get("collection_state_after") or {}).get("points_count") or 0)
+        == EXPECTED_CHUNKS,
     }
     return {
         "status": "PASS" if all(checks.values()) else "FAIL",
@@ -406,6 +501,7 @@ def evaluate(
     corpus_path: Path,
     questions_path: Path,
     embedding_cache: Path | None = None,
+    run_state: str = "unspecified",
 ) -> dict[str, Any]:
     values, qdrant = _runtime_values(qdrant_env, model_env)
     corpus = _read_json(corpus_path)
@@ -426,8 +522,10 @@ def evaluate(
         bm25=_load_bm25(corpus_path.parent / "bm25_profile.json"),
     )
     alias_before = transport.alias_target()
+    collection_state_before = transport.collection_state()
     if alias_before == COLLECTION:
         raise CandidateAcceptanceError("candidate_already_published")
+    acl_setup_started = time.perf_counter()
     context = RetrievalContext(
         tenant_id=TENANT_ID,
         user_id="rag-r1-acceptance",
@@ -436,20 +534,32 @@ def evaluate(
         release_id=RELEASE_ID,
     )
     store = QdrantReadOnlyStore(transport, contract.release, contract.embedding)
-
-    embeddings, embedding_ms, embedding_cache_hit = _embeddings(
-        questions, contract, embedding_cache
-    )
-    if len(embeddings) != 50:
-        raise CandidateAcceptanceError("query_embedding_count_mismatch")
+    acl_setup_ms = round((time.perf_counter() - acl_setup_started) * 1000.0, 3)
+    prewarmed_reranker = None
+    reranker_prewarm_ms = 0.0
+    if run_state == "warm":
+        prewarm_started = time.perf_counter()
+        prewarmed_reranker = prewarm_reranker()
+        reranker_prewarm_ms = round((time.perf_counter() - prewarm_started) * 1000.0, 3)
 
     results: list[dict[str, Any]] = []
     rerankers: set[str] = set()
-    for question_index, (question, embedding) in enumerate(
-        zip(questions, embeddings), start=1
-    ):
+    embedding_times: list[float] = []
+    embedding_cache_times: list[float] = []
+    embedding_cache_hits: list[bool] = []
+    first_vector: list[float] = []
+    for question_index, question in enumerate(questions, start=1):
+        request_started = time.perf_counter()
+        embedding, embedding_ms, cache_hit, embedding_cache_ms = _embedding(
+            question, contract, embedding_cache
+        )
+        embedding_times.append(embedding_ms)
+        embedding_cache_times.append(embedding_cache_ms)
+        embedding_cache_hits.append(cache_hit)
         metadata = embedding.get("metadata") or {}
         vector = list(embedding.get("embedding") or [])
+        if question_index == 1:
+            first_vector = vector
         if (
             len(vector) != 1024
             or metadata.get("provider") != contract.embedding.provider
@@ -514,15 +624,15 @@ def evaluate(
                     reason = "" if citation_ok else "citation_integrity_failed"
                 else:
                     reason = "reranker_unavailable"
-        latency_ms = round((time.perf_counter() - started) * 1000.0, 3)
+        retrieval_pipeline_ms = round((time.perf_counter() - started) * 1000.0, 3)
         expected = set(str(value) for value in question["expected_document_ids"])
         rankings = [str(item.get("document_id") or "") for item in items]
         rank = next(
             (index for index, document_id in enumerate(rankings, start=1) if document_id in expected),
             0,
         )
-        results.append(
-            {
+        hybrid_timings = dict(getattr(hybrid, "timings_ms", {}) or {})
+        row = {
                 "id": question["id"],
                 "question": question["question"],
                 "critical": question["critical"],
@@ -533,26 +643,62 @@ def evaluate(
                 "hit_at_5": bool(rank and rank <= 5),
                 "reciprocal_rank": round(1.0 / rank, 4) if rank else 0.0,
                 "citation_integrity": citation_ok,
-                "latency_ms": latency_ms,
+                "latency_ms": 0.0,
+                "retrieval_pipeline_ms": retrieval_pipeline_ms,
+                "query_embedding_ms": embedding_ms,
+                "cache_ms": embedding_cache_ms
+                + float(hybrid_timings.get("cache_ms") or 0.0),
+                "auth_acl_ms": round(
+                    acl_setup_ms / len(questions)
+                    + float(hybrid_timings.get("acl_ms") or 0.0),
+                    3,
+                ),
                 "hybrid_ms": hybrid_ms,
+                "dense_ms": hybrid_timings.get("dense_ms"),
+                "sparse_ms": hybrid_timings.get("sparse_ms"),
+                "qdrant_ms": hybrid_timings.get("qdrant_ms"),
+                "rrf_ms": hybrid_timings.get("rrf_ms"),
+                "duplicate_merge_ms": hybrid_timings.get("duplicate_merge_ms"),
+                "parent_expansion_ms": hybrid_timings.get("parent_expansion_ms"),
+                "postgres_metadata_ms": None,
                 "security_ms": security_ms,
                 "rerank_ms": rerank_ms,
                 "citation_ms": citation_ms,
+                "serialization_ms": 0.0,
                 "reason": reason,
                 "top_document_ids": rankings,
                 "top_chunk_ids": [str(item.get("chunk_id") or "") for item in items],
                 "candidate_counts": hybrid.candidate_counts,
                 "reranker": reranker_name,
             }
+        serialization_started = time.perf_counter()
+        json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        serialization_ms = round(
+            (time.perf_counter() - serialization_started) * 1000.0, 3
         )
+        row["serialization_ms"] = serialization_ms
+        row["latency_ms"] = round((time.perf_counter() - request_started) * 1000.0, 3)
+        results.append(row)
         print(
             f"[{question_index:02d}/50] {question['id']} "
             f"rank={rank or '-'} citation={'ok' if citation_ok else 'fail'} "
-            f"latency_ms={latency_ms:.3f}",
+            f"latency_ms={row['latency_ms']:.3f}",
             flush=True,
         )
 
+    negative_context = RetrievalContext(
+        tenant_id="rag-r1-denied-tenant", user_id="rag-r1-denied-user", roles=("viewer",),
+        acl_fingerprint=hashlib.sha256(b"rag-r1-denied").hexdigest(), release_id=RELEASE_ID)
+    acl_negative_started = time.perf_counter()
+    negative = hybrid_retrieve(
+        store=store, context=negative_context, query=str(questions[0]["question"]),
+        dense_vector=first_vector, sparse_query={"text": str(questions[0]["question"])},
+        structured_filter=None, requested_top_k=1,
+    )
+    acl_negative_ms = round((time.perf_counter() - acl_negative_started) * 1000.0, 3)
+    acl_negative_denied = not negative.available and negative.reason == "no_evidence" and not negative.items
     alias_after = transport.alias_target()
+    collection_state_after = transport.collection_state()
     metrics = calculate_metrics(results)
     runtime = {
         "release_id": RELEASE_ID,
@@ -560,6 +706,8 @@ def evaluate(
         "alias": ALIAS,
         "alias_before": alias_before,
         "alias_after": alias_after,
+        "collection_state_before": collection_state_before,
+        "collection_state_after": collection_state_after,
         "access_mode": contract.qdrant.access_mode,
         "tls_enabled": contract.qdrant.tls_enabled,
         "strict_mode": contract.qdrant.strict_mode,
@@ -568,13 +716,53 @@ def evaluate(
         "request_count": transport.request_count,
         "write_count": transport.write_count,
         "methods_used": sorted(transport.methods_used),
-        "embedding_batch_ms": embedding_ms,
-        "embedding_average_ms": round(embedding_ms / 50.0, 3),
-        "embedding_cache_hit": embedding_cache_hit,
+        "paths_used": sorted(transport.paths_used),
+        "acl_filter_signatures": sorted(transport.filter_signatures),
+        "acl_policy_signature": hashlib.sha256(_canonical({
+            "allowed_tenant": TENANT_ID, "denied_tenant": negative_context.tenant_id,
+            "allowed_roles": list(context.roles), "allowed_fingerprint": context.acl_fingerprint, "denied_fingerprint": negative_context.acl_fingerprint, "release_id": RELEASE_ID,
+        })).hexdigest(),
+        "acl_negative_denied": acl_negative_denied,
+        "acl_negative_check_ms": acl_negative_ms,
+        "embedding_batch_ms": round(sum(embedding_times), 3),
+        "embedding_average_ms": round(sum(embedding_times) / 50.0, 3),
+        "embedding_cache_hit": bool(embedding_cache_hits) and all(embedding_cache_hits),
+        "embedding_cache_total_ms": round(sum(embedding_cache_times), 3),
+        "reranker_prewarm_ms": reranker_prewarm_ms,
+        "prewarmed_reranker": getattr(prewarmed_reranker, "name", ""),
+        "cold_start_total_ms": results[0]["latency_ms"] if run_state == "cold" else 0.0,
+        "run_state": run_state,
+        "latency_scope": "per_question_cache_embedding_retrieval_rerank_citation_serialization",
+        "stage_coverage": {
+            "auth": "not_in_prepublication_candidate_path",
+            "acl": "retrieval_context_filter_and_payload_validation",
+            "postgres_metadata": "not_in_prepublication_candidate_path",
+            "query_embedding": "per_question_single_request",
+            "serialization": "per_question_result_json",
+        },
+        "hardware": {
+            "processor_count": os.cpu_count(),
+            "device": values.get("RAG_RERANK_DEVICE", "cpu") or "cpu",
+        },
+        "embedding_profile": {
+            "provider": contract.embedding.provider,
+            "model": contract.embedding.model,
+            "version": contract.embedding.version,
+            "dimension": contract.embedding.dimensions,
+            "batch_size": int(values.get("RAG_EMBEDDING_BATCH_SIZE") or 16),
+        },
+        "reranker_profile": {
+            "provider": contract.reranker.provider,
+            "model": contract.reranker.model,
+            "version": contract.reranker.version,
+            "batch_size": int(values.get("RAG_RERANK_BATCH_SIZE") or 8),
+            "max_length": int(values.get("RAG_RERANK_MAX_LENGTH") or 512),
+            "device": values.get("RAG_RERANK_DEVICE", "cpu") or "cpu",
+        },
         "rerankers": sorted(rerankers),
     }
     return {
-        "schema_version": "rag-r1-candidate-acceptance/v1",
+        "schema_version": "rag-r1-candidate-acceptance/v2",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "scope": "prepublication_candidate_read_only",
         "metrics": metrics,
@@ -598,7 +786,9 @@ def _markdown(report: Mapping[str, Any]) -> str:
         f"- MRR：{metrics['mrr']:.2%}",
         f"- 关键问题 Recall@5：{metrics['critical_recall_at_5']:.2%}",
         f"- 引用完整性：{metrics['citation_integrity']:.2%}",
-        f"- 检索 P95：{metrics['latency_p95_ms']:.3f} ms",
+        f"- 检索 P50/P90/P95/P99/max：{metrics['latency_p50_ms']:.3f} / "
+        f"{metrics['latency_p90_ms']:.3f} / {metrics['latency_p95_ms']:.3f} / "
+        f"{metrics['latency_p99_ms']:.3f} / {metrics['latency_max_ms']:.3f} ms",
         "- 评测路径：候选物理集合 + TLS + 只读 Key；未切换别名。",
         "",
         "## 未通过项",
@@ -622,6 +812,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--corpus", type=Path, required=True)
     parser.add_argument("--questions", type=Path, required=True)
     parser.add_argument("--embedding-cache", type=Path)
+    parser.add_argument(
+        "--run-state", choices=("cold", "warm", "unspecified"), default="unspecified"
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
@@ -631,6 +824,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             corpus_path=args.corpus.resolve(),
             questions_path=args.questions.resolve(),
             embedding_cache=args.embedding_cache.resolve() if args.embedding_cache else None,
+            run_state=args.run_state,
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(

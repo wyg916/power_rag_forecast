@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+from threading import Barrier, Lock
 
 import pytest
 
@@ -83,6 +84,34 @@ class FakeTransport:
         return {"points": points}
 
 
+class ConcurrentTransport(FakeTransport):
+    def __init__(self, payload=None, parties=3):
+        super().__init__(payload)
+        self.barrier = Barrier(parties, timeout=2)
+        self.request_lock = Lock()
+
+    def query(self, *, collection, request):
+        with self.request_lock:
+            self.requests.append((collection, deepcopy(request)))
+        self.barrier.wait()
+        points = [] if self.payload is None else [{"score": 0.9, "payload": deepcopy(self.payload)}]
+        return {"points": points}
+
+
+class PartiallyFailingTransport(FakeTransport):
+    def __init__(self, payload=None):
+        super().__init__(payload)
+        self.request_lock = Lock()
+
+    def query(self, *, collection, request):
+        with self.request_lock:
+            self.requests.append((collection, deepcopy(request)))
+        if request["mode"] == "sparse":
+            raise RuntimeError("simulated_transport_failure")
+        points = [] if self.payload is None else [{"score": 0.9, "payload": deepcopy(self.payload)}]
+        return {"points": points}
+
+
 def _store(transport, release=None):
     return QdrantReadOnlyStore(
         transport,
@@ -114,6 +143,53 @@ def test_store_builds_mandatory_filters_and_uses_release_collection_only():
     assert "acl_fingerprint" not in serialized_filter
     assert transport.write_count == 0
     assert transport.payload == original
+    assert list(result.candidates) == ["dense", "sparse", "structured"]
+    assert result.timings_ms["qdrant_wall_ms"] >= 0.0
+    assert result.timings_ms["payload_acl_ms"] >= 0.0
+
+
+def test_store_runs_read_only_modes_concurrently_and_keeps_result_order():
+    transport = ConcurrentTransport(_payload())
+
+    result = _store(transport).search(
+        context=_context(),
+        dense_vector=VALID_DENSE,
+        sparse_query={"text": "尖峰风险"},
+        structured_filter={"domain": "power_market"},
+        limit=20,
+        now=NOW,
+    )
+
+    assert result.available is True
+    assert list(result.candidates) == ["dense", "sparse", "structured"]
+    assert result.request_count == 3
+    assert {request[1]["mode"] for request in transport.requests} == {
+        "dense",
+        "sparse",
+        "structured",
+    }
+
+
+def test_store_discards_all_candidates_when_any_parallel_mode_fails():
+    transport = PartiallyFailingTransport(_payload())
+
+    result = _store(transport).search(
+        context=_context(),
+        dense_vector=VALID_DENSE,
+        sparse_query={"text": "尖峰风险"},
+        structured_filter=None,
+        limit=20,
+        now=NOW,
+    )
+
+    assert result.available is False
+    assert result.reason == "transport_unavailable"
+    assert result.candidates == {}
+    assert result.request_count == 2
+    assert {request[1]["mode"] for request in transport.requests} == {
+        "dense",
+        "sparse",
+    }
 
 
 @pytest.mark.parametrize(

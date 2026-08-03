@@ -16,6 +16,12 @@ def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
 
 
+def _normalized_model_path(value: str) -> str:
+    if not value:
+        return ""
+    return os.path.normcase(str(Path(value).expanduser().resolve(strict=False)))
+
+
 def _tokens(text: str) -> set[str]:
     compact = re.sub(r"\s+", "", (text or "").lower())
     items = re.findall(r"[\u4e00-\u9fa5A-Za-z0-9]{2,}", compact)
@@ -74,12 +80,15 @@ class BGETransformersReranker:
     batch_size: int = 8
     max_length: int = 512
     name: str = "bge"
+    model_version: str = ""
 
     def __post_init__(self) -> None:
         self._tokenizer: Any | None = None
         self._model_obj: Any | None = None
         self._load_lock = Lock()
         self._infer_lock = Lock()
+        self._warmup_lock = Lock()
+        self._warmed_up = False
 
     def _load_model(self) -> tuple[Any, Any]:
         if self._tokenizer is not None and self._model_obj is not None:
@@ -126,22 +135,40 @@ class BGETransformersReranker:
         import torch
 
         scores: list[float] = []
-        with self._infer_lock:
-            for start in range(0, len(texts), max(1, int(self.batch_size or 8))):
-                batch_texts = texts[start : start + max(1, int(self.batch_size or 8))]
-                pairs = [[query, text] for text in batch_texts]
-                inputs = tokenizer(
-                    pairs,
-                    padding=True,
-                    truncation=True,
-                    max_length=max(128, int(self.max_length or 512)),
-                    return_tensors="pt",
-                )
-                inputs = {key: value.to(self.device or "cpu") for key, value in inputs.items()}
-                with torch.no_grad():
+        batch_size = max(1, int(self.batch_size or 8))
+        for start in range(0, len(texts), batch_size):
+            batch_texts = texts[start : start + batch_size]
+            pairs = [[query, text] for text in batch_texts]
+            inputs = tokenizer(
+                pairs,
+                padding=True,
+                truncation=True,
+                max_length=max(128, int(self.max_length or 512)),
+                return_tensors="pt",
+            )
+            inputs = {key: value.to(self.device or "cpu") for key, value in inputs.items()}
+            with self._infer_lock:
+                with torch.inference_mode():
                     logits = model(**inputs).logits.view(-1).float().cpu().tolist()
-                scores.extend(float(item) for item in logits)
+            scores.extend(float(item) for item in logits)
         return scores
+
+    def warmup(self) -> None:
+        if self._warmed_up:
+            return
+        with self._warmup_lock:
+            if self._warmed_up:
+                return
+            query = "电力市场知识检索预热查询"
+            text = (
+                "电力市场运行规则、价格预测、风险控制、知识检索、引用校验与访问权限。"
+                * 4
+            )
+            texts = [f"{text}候选序号{index}" for index in range(8)]
+            scores = self._score_pairs(query, texts)
+            if len(scores) != len(texts):
+                raise RuntimeError("reranker_warmup_score_count_mismatch")
+            self._warmed_up = True
 
     @staticmethod
     def _normalize(raw_scores: list[float]) -> list[float]:
@@ -171,6 +198,7 @@ class BGETransformersReranker:
             enriched["rerank_score"] = round(float(rerank_score), 6)
             enriched["rerank_raw_score"] = round(float(raw_score), 6)
             enriched["reranker_model"] = self.model
+            enriched["reranker_version"] = self.model_version
             enriched["final_score"] = round(hybrid_score * 0.35 + float(rerank_score) * 0.65, 6)
             output.append(enriched)
         output.sort(key=lambda row: row.get("final_score", 0), reverse=True)
@@ -193,6 +221,7 @@ def get_reranker() -> RerankProvider:
     if provider in {"bge", "bge_reranker", "transformers", "local_bge"}:
         model_path = _env("RAG_RERANK_MODEL_PATH", _env("RAG_RERANK_MODEL", ""))
         model_name = _env("RAG_RERANK_MODEL_NAME", "") or (Path(model_path).name if model_path else "bge-reranker")
+        model_version = _env("RAG_RERANK_VERSION", "")
         device = _env("RAG_RERANK_DEVICE", "cpu") or "cpu"
         try:
             batch_size = int(_env("RAG_RERANK_BATCH_SIZE", "8") or "8")
@@ -202,18 +231,35 @@ def get_reranker() -> RerankProvider:
             max_length = int(_env("RAG_RERANK_MAX_LENGTH", "512") or "512")
         except Exception:
             max_length = 512
-        cache_key = ("bge", model_path, model_name, device, batch_size, max_length)
+        cache_key = (
+            "bge",
+            _normalized_model_path(model_path),
+            model_name,
+            model_version,
+            device,
+            batch_size,
+            max_length,
+        )
         with _RERANKER_CACHE_LOCK:
             if cache_key not in _RERANKER_CACHE:
                 _RERANKER_CACHE[cache_key] = BGETransformersReranker(
                     model_path=model_path,
                     model=model_name,
+                    model_version=model_version,
                     device=device,
                     batch_size=batch_size,
                     max_length=max_length,
                 )
         return _RERANKER_CACHE[cache_key]
     return LocalHeuristicReranker(name=f"{provider}_compatible")
+
+
+def prewarm_reranker() -> RerankProvider:
+    reranker = get_reranker()
+    warmup = getattr(reranker, "warmup", None)
+    if callable(warmup):
+        warmup()
+    return reranker
 
 
 def rerank_candidates(query: str, candidates: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], str, str]:

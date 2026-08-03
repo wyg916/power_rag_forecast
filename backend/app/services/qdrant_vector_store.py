@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from math import isfinite
+from time import perf_counter
 from typing import Any, Mapping, Protocol
 
 from backend.app.services.rag_runtime_contract import (
@@ -22,11 +24,16 @@ class StoreResult:
     reason: str
     candidates: dict[str, list[dict[str, Any]]]
     request_count: int = 0
+    timings_ms: dict[str, float] = field(default_factory=dict)
 
 
 def _utc(value: datetime | None = None) -> datetime:
     current = value or datetime.now(timezone.utc)
     return current if current.tzinfo else current.replace(tzinfo=timezone.utc)
+
+
+def _timing_ms(started: float) -> float:
+    return round((perf_counter() - started) * 1000.0, 3)
 
 
 def _parse_time(value: Any) -> datetime | None:
@@ -183,47 +190,132 @@ class QdrantReadOnlyStore:
         limit: int,
         now: datetime | None = None,
     ) -> StoreResult:
+        total_started = perf_counter()
+        timings: dict[str, float] = {}
         if issues := self._issues(context):
-            return StoreResult(False, issues[0], {}, 0)
+            timings["store_total_ms"] = _timing_ms(total_started)
+            return StoreResult(False, issues[0], {}, 0, timings)
         structured = dict(structured_filter or {})
         if set(structured).difference(self._STRUCTURED_KEYS):
-            return StoreResult(False, "structured_filter_invalid", {}, 0)
+            timings["store_total_ms"] = _timing_ms(total_started)
+            return StoreResult(False, "structured_filter_invalid", {}, 0, timings)
         current = _utc(now)
         requests: list[tuple[str, Any]] = []
+        dense_started = perf_counter()
         if dense_vector is not None:
             if len(dense_vector) != 1024:
-                return StoreResult(False, "query_embedding_dimension_mismatch", {}, 0)
+                timings["dense_prepare_ms"] = _timing_ms(dense_started)
+                timings["store_total_ms"] = _timing_ms(total_started)
+                return StoreResult(
+                    False,
+                    "query_embedding_dimension_mismatch",
+                    {},
+                    0,
+                    timings,
+                )
             try:
                 normalized_dense = [float(value) for value in dense_vector]
             except (TypeError, ValueError):
-                return StoreResult(False, "query_embedding_invalid", {}, 0)
+                timings["dense_prepare_ms"] = _timing_ms(dense_started)
+                timings["store_total_ms"] = _timing_ms(total_started)
+                return StoreResult(False, "query_embedding_invalid", {}, 0, timings)
             if not all(isfinite(value) for value in normalized_dense) or not any(
                 value != 0.0 for value in normalized_dense
             ):
-                return StoreResult(False, "query_embedding_invalid", {}, 0)
+                timings["dense_prepare_ms"] = _timing_ms(dense_started)
+                timings["store_total_ms"] = _timing_ms(total_started)
+                return StoreResult(False, "query_embedding_invalid", {}, 0, timings)
             requests.append(("dense", normalized_dense))
+        timings["dense_prepare_ms"] = _timing_ms(dense_started)
         if sparse_query:
             requests.append(("sparse", dict(sparse_query)))
         if structured:
             requests.append(("structured", None))
         if not requests:
-            return StoreResult(False, "query_representation_missing", {}, 0)
+            timings["store_total_ms"] = _timing_ms(total_started)
+            return StoreResult(False, "query_representation_missing", {}, 0, timings)
+
+        filter_started = perf_counter()
+        query_filter = self._filter(context, current, structured)
+        timings["filter_ms"] = _timing_ms(filter_started)
+
+        def execute(mode: str, query: Any) -> tuple[list[dict[str, Any]], float, float]:
+            transport_started = perf_counter()
+            response = self._transport.query(
+                collection=self.release.collection,
+                request={
+                    "mode": mode,
+                    "query": query,
+                    "filter": query_filter,
+                    "limit": max(1, min(int(limit), 200)),
+                    "with_payload": True,
+                    "with_vector": False,
+                },
+            )
+            transport_ms = _timing_ms(transport_started)
+            payload_started = perf_counter()
+            values = self._candidates(mode, response, context, current)
+            return values, transport_ms, _timing_ms(payload_started)
+
+        completed: dict[str, tuple[list[dict[str, Any]], float, float]] = {}
+        failures: dict[str, Exception] = {}
+        qdrant_started = perf_counter()
+        if len(requests) == 1:
+            mode, query = requests[0]
+            try:
+                completed[mode] = execute(mode, query)
+            except Exception as exc:
+                failures[mode] = exc
+        else:
+            with ThreadPoolExecutor(
+                max_workers=len(requests),
+                thread_name_prefix="rag-qdrant-read",
+            ) as executor:
+                futures = {
+                    executor.submit(execute, mode, query): mode
+                    for mode, query in requests
+                }
+                for future in as_completed(futures):
+                    mode = futures[future]
+                    try:
+                        completed[mode] = future.result()
+                    except Exception as exc:
+                        failures[mode] = exc
+        timings["qdrant_wall_ms"] = _timing_ms(qdrant_started)
+        timings["qdrant_ms"] = timings["qdrant_wall_ms"]
+
+        if failures:
+            first_error = next(
+                failures[mode] for mode, _ in requests if mode in failures
+            )
+            reason = (
+                str(first_error)
+                if str(first_error)
+                in {"payload_contract_violation", "candidate_identity_missing"}
+                else "transport_unavailable"
+            )
+            timings["store_total_ms"] = _timing_ms(total_started)
+            return StoreResult(False, reason, {}, len(requests), timings)
+
         candidates: dict[str, list[dict[str, Any]]] = {}
-        try:
-            for mode, query in requests:
-                response = self._transport.query(
-                    collection=self.release.collection,
-                    request={
-                        "mode": mode,
-                        "query": query,
-                        "filter": self._filter(context, current, structured),
-                        "limit": max(1, min(int(limit), 200)),
-                        "with_payload": True,
-                        "with_vector": False,
-                    },
-                )
-                candidates[mode] = self._candidates(mode, response, context, current)
-        except Exception as exc:
-            reason = str(exc) if str(exc) in {"payload_contract_violation", "candidate_identity_missing"} else "transport_unavailable"
-            return StoreResult(False, reason, {}, len(candidates))
-        return StoreResult(bool(any(candidates.values())), "" if any(candidates.values()) else "no_evidence", candidates, len(requests))
+        payload_total = 0.0
+        for mode, _ in requests:
+            values, transport_ms, payload_ms = completed[mode]
+            candidates[mode] = values
+            timings[f"{mode}_ms"] = transport_ms
+            timings[f"{mode}_payload_acl_ms"] = payload_ms
+            payload_total += payload_ms
+        timings["payload_acl_ms"] = round(payload_total, 3)
+        timings["acl_ms"] = round(
+            timings.get("filter_ms", 0.0) + timings["payload_acl_ms"],
+            3,
+        )
+        available = bool(any(candidates.values()))
+        timings["store_total_ms"] = _timing_ms(total_started)
+        return StoreResult(
+            available,
+            "" if available else "no_evidence",
+            candidates,
+            len(requests),
+            timings,
+        )

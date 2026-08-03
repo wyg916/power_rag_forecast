@@ -110,6 +110,28 @@ def test_rrf_is_stable_deduplicates_identity_and_expands_parent_context():
     assert fused == rrf_fuse(candidates)
 
 
+def test_rrf_limits_before_parent_expansion_and_reports_stages():
+    first = _point()["payload"] | {"score": 0.9}
+    second = _point("b" * 64)["payload"] | {
+        "chunk_id": "chunk-2",
+        "document_id": "doc-2",
+        "score": 0.8,
+    }
+    candidates = {"dense": [first, second], "sparse": [first, second]}
+    timings: dict[str, float] = {}
+
+    full = rrf_fuse(candidates)
+    limited = rrf_fuse(candidates, limit=1, timings_ms=timings)
+
+    assert limited == full[:1]
+    assert set(timings) == {
+        "duplicate_merge_ms",
+        "rrf_ms",
+        "parent_expansion_ms",
+    }
+    assert all(value >= 0.0 for value in timings.values())
+
+
 def test_dynamic_k_and_cache_key_include_release_and_permissions():
     store = _store([])
     base = _context()
@@ -147,6 +169,8 @@ def test_hybrid_core_refuses_when_no_evidence():
     assert result.available is False
     assert result.reason == "no_evidence"
     assert result.items == []
+    assert result.timings_ms["qdrant_wall_ms"] >= 0.0
+    assert result.timings_ms["hybrid_total_ms"] >= 0.0
 
 
 def test_enterprise_entry_uses_only_injected_store_and_fails_closed(monkeypatch):

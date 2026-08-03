@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_candidate_transport_is_exact_collection_read_only() -> None:
     source = inspect.getsource(module.CandidateQdrantReadOnlyTransport)
-    assert 'method not in {"GET", "POST"}' in source
+    assert "(method, path) not in READ_ONLY_REQUESTS" in source
     assert 'collection != COLLECTION' in source
     assert "quote(COLLECTION)" in source
     assert "QDRANT_ADMIN_API_KEY" not in source
@@ -42,6 +42,10 @@ def test_metric_math_and_formal_thresholds() -> None:
                 "reciprocal_rank": 1.0 / rank if rank else 0.0,
                 "citation_integrity": index != 49,
                 "latency_ms": float(index + 1),
+                "query_embedding_ms": 10.0,
+                "qdrant_ms": 20.0,
+                "rerank_ms": 30.0,
+                "serialization_ms": 1.0,
             }
         )
 
@@ -62,8 +66,41 @@ def test_metric_math_and_formal_thresholds() -> None:
     assert metrics["recall_at_5"] == 0.98
     assert metrics["critical_recall_at_5"] == 1.0
     assert metrics["citation_integrity"] == 0.98
+    assert metrics["latency_p50_ms"] == 25.0
+    assert metrics["latency_p90_ms"] == 45.0
+    assert metrics["latency_p95_ms"] == 48.0
+    assert metrics["latency_p99_ms"] == 50.0
+    assert metrics["latency_max_ms"] == 50.0
+    assert metrics["stage_latency_ms"]["query_embedding"]["sample_count"] == 50
+    assert metrics["stage_latency_ms"]["qdrant"]["p95_ms"] == 20.0
+    assert metrics["stage_latency_ms"]["postgres_metadata"] == {
+        "sample_count": 0,
+        "status": "not_measured",
+    }
     assert gate["status"] == "FAIL"
     assert gate["checks"]["citation_integrity_100pct"] is False
+
+
+def test_collection_state_is_hashed_without_emitting_payload(monkeypatch) -> None:
+    transport = object.__new__(module.CandidateQdrantReadOnlyTransport)
+    monkeypatch.setattr(
+        transport,
+        "_request",
+        lambda *args, **kwargs: {
+            "result": {
+                "status": "green",
+                "points_count": 8339,
+                "vectors_count": 8339,
+                "config": {"params": {"vectors": {"dense": {"size": 1024}}}},
+            }
+        },
+    )
+
+    state = transport.collection_state()
+
+    assert state["points_count"] == 8339
+    assert len(state["state_sha256"]) == 64
+    assert set(state) == {"points_count", "state_sha256"}
 
 
 def test_golden_set_is_fixed_50_and_does_not_claim_human_verification() -> None:

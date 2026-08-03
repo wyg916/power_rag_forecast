@@ -7,7 +7,10 @@ import os
 import re
 import ssl
 import unicodedata
+from collections import OrderedDict
+from functools import lru_cache
 from pathlib import Path
+from threading import Lock
 from typing import Any, Mapping
 from urllib.error import HTTPError
 from urllib.parse import quote
@@ -25,6 +28,13 @@ from backend.app.services.rag_runtime_contract import RetrievalContext, runtime_
 EXPECTED_RELEASE_ROOT = Path("E:/智能运营分析项目/.runtime/rag/releases/RAG-R1").resolve()
 TOKEN_RE = re.compile(r"[\u3400-\u9fff]+|[a-z0-9]+(?:[._-][a-z0-9]+)*")
 CURRENT_ALIAS = "rag_chunks_current"
+_BM25_LOOKUP_CACHE_LIMIT = 8
+_BM25_LOOKUP_CACHE: OrderedDict[
+    int, tuple[Mapping[str, Any], dict[str, int]]
+] = OrderedDict()
+_BM25_LOOKUP_CACHE_LOCK = Lock()
+_SSL_CONTEXT_CACHE: dict[tuple[str, int, int], ssl.SSLContext] = {}
+_SSL_CONTEXT_CACHE_LOCK = Lock()
 
 
 class QdrantReadError(RuntimeError):
@@ -48,9 +58,14 @@ def _tokens(text: str) -> tuple[str, ...]:
     return tuple(values)
 
 
-def _load_bm25(root: Path = EXPECTED_RELEASE_ROOT) -> dict[str, Any]:
-    if root.resolve() != EXPECTED_RELEASE_ROOT:
-        raise QdrantReadError("release_root_rejected")
+@lru_cache(maxsize=4)
+def _load_bm25_cached(
+    root_value: str,
+    profile_mtime_ns: int,
+    profile_size: int,
+) -> dict[str, Any]:
+    _ = profile_mtime_ns, profile_size
+    root = Path(root_value)
     try:
         value = json.loads((root / "bm25_profile.json").read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
@@ -62,6 +77,76 @@ def _load_bm25(root: Path = EXPECTED_RELEASE_ROOT) -> dict[str, Any]:
     return value
 
 
+def _load_bm25(root: Path = EXPECTED_RELEASE_ROOT) -> dict[str, Any]:
+    resolved = root.resolve()
+    if resolved != EXPECTED_RELEASE_ROOT:
+        raise QdrantReadError("release_root_rejected")
+    profile_path = resolved / "bm25_profile.json"
+    try:
+        stat = profile_path.stat()
+    except OSError as exc:
+        raise QdrantReadError("bm25_profile_unavailable") from exc
+    return _load_bm25_cached(
+        str(resolved),
+        int(stat.st_mtime_ns),
+        int(stat.st_size),
+    )
+
+
+def _list_vocabulary_lookup(
+    profile: Mapping[str, Any],
+    vocabulary: list[Any],
+    idf: list[Any],
+) -> dict[str, int]:
+    cache_key = id(profile)
+    with _BM25_LOOKUP_CACHE_LOCK:
+        cached = _BM25_LOOKUP_CACHE.get(cache_key)
+        if cached is not None and cached[0] is profile:
+            _BM25_LOOKUP_CACHE.move_to_end(cache_key)
+            return cached[1]
+
+    if (
+        len(vocabulary) != len(idf)
+        or len(set(vocabulary)) != len(vocabulary)
+        or any(not isinstance(token, str) or not token for token in vocabulary)
+    ):
+        raise QdrantReadError("bm25_profile_invalid")
+    base = dict(profile)
+    stored = str(base.pop("profile_sha256", ""))
+    if not stored or stored != hashlib.sha256(_canonical(base)).hexdigest():
+        raise QdrantReadError("bm25_profile_invalid")
+    lookup = {token: index + 1 for index, token in enumerate(vocabulary)}
+    with _BM25_LOOKUP_CACHE_LOCK:
+        _BM25_LOOKUP_CACHE[cache_key] = (profile, lookup)
+        _BM25_LOOKUP_CACHE.move_to_end(cache_key)
+        while len(_BM25_LOOKUP_CACHE) > _BM25_LOOKUP_CACHE_LIMIT:
+            _BM25_LOOKUP_CACHE.popitem(last=False)
+    return lookup
+
+
+def _tls_file_signature(ca_path: str) -> tuple[str, int, int]:
+    path = Path(ca_path).resolve()
+    try:
+        stat = path.stat()
+    except OSError as exc:
+        raise QdrantReadError("qdrant_tls_ca_unavailable") from exc
+    return str(path), int(stat.st_mtime_ns), int(stat.st_size)
+
+
+def _cached_ssl_context(ca_path: str) -> ssl.SSLContext:
+    signature = _tls_file_signature(ca_path)
+    with _SSL_CONTEXT_CACHE_LOCK:
+        cached = _SSL_CONTEXT_CACHE.get(signature)
+        if cached is not None:
+            return cached
+        context = ssl.create_default_context(cafile=signature[0])
+        for key in tuple(_SSL_CONTEXT_CACHE):
+            if key[0] == signature[0] and key != signature:
+                _SSL_CONTEXT_CACHE.pop(key, None)
+        _SSL_CONTEXT_CACHE[signature] = context
+        return context
+
+
 def sparse_query(text_value: str, profile: Mapping[str, Any]) -> dict[str, list[Any]]:
     frequencies: dict[str, int] = {}
     for token in _tokens(text_value):
@@ -71,13 +156,7 @@ def sparse_query(text_value: str, profile: Mapping[str, Any]) -> dict[str, list[
     if not isinstance(idf, list):
         raise QdrantReadError("bm25_profile_invalid")
     if isinstance(vocabulary, list):
-        if (
-            len(vocabulary) != len(idf)
-            or len(set(vocabulary)) != len(vocabulary)
-            or any(not isinstance(token, str) or not token for token in vocabulary)
-        ):
-            raise QdrantReadError("bm25_profile_invalid")
-        lookup = {token: index + 1 for index, token in enumerate(vocabulary)}
+        lookup = _list_vocabulary_lookup(profile, vocabulary, idf)
         k1 = float(profile.get("k1") or 0.0)
         b = float(profile.get("b") or 0.0)
         average_length = float(profile.get("average_document_length") or 0.0)
@@ -119,9 +198,12 @@ class QdrantHttpsReadOnlyTransport:
         ca_path = os.environ.get("RAG_QDRANT_TLS_CA_PATH", "").strip()
         api_key = os.environ.get("RAG_QDRANT_API_KEY", "").strip()
         self.endpoint = profile.endpoint.rstrip("/")
-        self.context = ssl.create_default_context(cafile=ca_path)
+        self.context = _cached_ssl_context(ca_path)
         self.api_key = api_key
         self.bm25 = _load_bm25()
+        self._alias_lock = Lock()
+        self._alias_checked = False
+        self._alias_error = ""
 
     def _request(self, path: str, payload: Mapping[str, Any]) -> Mapping[str, Any]:
         request = Request(
@@ -163,11 +245,23 @@ class QdrantHttpsReadOnlyTransport:
             raise QdrantReadError("qdrant_alias_response_invalid")
         return matches[0] if matches else None
 
+    def _require_current_alias(self, collection: str) -> None:
+        with self._alias_lock:
+            if not self._alias_checked:
+                try:
+                    current = self._current_alias()
+                    if current != collection:
+                        self._alias_error = "published_alias_mismatch"
+                except QdrantReadError as exc:
+                    self._alias_error = str(exc) or "qdrant_alias_unavailable"
+                self._alias_checked = True
+            if self._alias_error:
+                raise QdrantReadError(self._alias_error)
+
     def query(self, *, collection: str, request: Mapping[str, Any]) -> Mapping[str, Any]:
         if collection != "rag_chunks_RAG-R1":
             raise QdrantReadError("collection_rejected")
-        if self._current_alias() != collection:
-            raise QdrantReadError("published_alias_mismatch")
+        self._require_current_alias(collection)
         mode = str(request.get("mode") or "")
         common = {
             "filter": request.get("filter"),

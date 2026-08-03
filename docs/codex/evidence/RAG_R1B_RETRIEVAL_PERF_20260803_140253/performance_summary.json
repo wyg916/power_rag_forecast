@@ -1,0 +1,77 @@
+{
+  "schema_version": "rag-r1b-retrieval-performance-evidence/v1",
+  "baseline": {
+    "historical_end_to_end_p95_ms": 6175.825,
+    "source": "task_document",
+    "raw_report_available": false
+  },
+  "live_candidate_acceptance": {
+    "status": "BLOCKED",
+    "reason": "qdrant_127.0.0.1_6333_unreachable",
+    "formal_query_count": 50,
+    "query_set_human_verified": false,
+    "latency_p50_ms": null,
+    "latency_p90_ms": null,
+    "latency_p95_ms": null,
+    "latency_p99_ms": null,
+    "latency_max_ms": null
+  },
+  "formal_stage_latency_ms": {
+    "auth_acl": {"before": null, "after": null, "status": "not_measured_live"},
+    "query_embedding": {"before": null, "after": null, "status": "not_measured_live"},
+    "sparse": {"before": null, "after": null, "status": "not_measured_live"},
+    "dense": {"before": null, "after": null, "status": "not_measured_live"},
+    "qdrant": {"before": null, "after": null, "status": "not_measured_live"},
+    "rrf": {"before": null, "after": null, "status": "not_measured_live"},
+    "duplicate_merge": {"before": null, "after": null, "status": "not_measured_live"},
+    "parent_expansion": {"before": null, "after": null, "status": "not_measured_live"},
+    "reranker": {"before": null, "after": null, "status": "not_measured_live"},
+    "citation_hash": {"before": null, "after": null, "status": "not_measured_live"},
+    "postgres_metadata": {"before": null, "after": null, "status": "not_in_candidate_path"},
+    "serialization": {"before": null, "after": null, "status": "not_measured_live"},
+    "cache": {"before": null, "after": null, "status": "not_measured_live"}
+  },
+  "reranker_cpu_microbenchmark": {
+    "scope": "formal_bge_reranker_8_pairs_batch8_max_length128_threads8",
+    "before": {
+      "load_ms": 8124.554,
+      "cold_forward_ms": 4292.753,
+      "warm_p50_ms": 3807.91,
+      "warm_p90_ms": 4249.324,
+      "warm_p95_ms": 4249.324,
+      "warm_p99_ms": 4249.324,
+      "warm_max_ms": 4249.324
+    },
+    "after": {
+      "load_ms": 7108.785,
+      "cold_forward_ms": 4327.028,
+      "warm_p50_ms": 3754.059,
+      "warm_p90_ms": 4158.143,
+      "warm_p95_ms": 4158.143,
+      "warm_p99_ms": 4158.143,
+      "warm_max_ms": 4158.143
+    },
+    "quality_gate": "not_a_substitute_for_formal_50_query_acceptance"
+  },
+  "cache_matrix": {
+    "cold_miss": "BLOCKED",
+    "cold_hit": "BLOCKED",
+    "warm_miss": "BLOCKED",
+    "warm_hit": "BLOCKED"
+  },
+  "quality": {
+    "recall_at_5": "not_measured_live",
+    "mrr": "not_measured_live",
+    "citation_integrity": "not_measured_live",
+    "acl": "not_measured_live",
+    "semantic_contract_tests": "PASS"
+  },
+  "tests": {
+    "targeted_passed": 71,
+    "idempotent_rerun_passed": 71,
+    "whitelist_scan": "PASS",
+    "sensitive_scan": "PASS",
+    "diff_check": "PASS"
+  },
+  "handoff_ready": false
+}

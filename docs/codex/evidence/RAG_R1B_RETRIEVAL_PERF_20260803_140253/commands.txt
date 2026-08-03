@@ -1,0 +1,11 @@
+# 脱敏命令摘要
+
+- 核验指定工作树、分支和精确基线 HEAD。
+- 读取项目基线、工程总则和 RAG-R1B 检索性能任务文档。
+- 记录 Git 状态、差异、未跟踪文件、全仓 Git 树清单和白名单关键文件 SHA-256。
+- 使用正式离线 reranker、batch 8、max length 128 和 8 线程执行前后微基准；未采用实验性 INT8、缩短长度或缩减正式召回规模。
+- 两次执行 71 项定向回归，覆盖混合检索、运行时契约、Qdrant transport/store、Candidate 验收、legacy bypass 与 reranker 缓存/预热。
+- 单独验证逐题 embedding/cache 计时、精确只读路径拒写、range 操作符签名、四象限完整性、输入/环境/代码哈希绑定、cache hit 标志及逐题结果/ACL 签名退化门禁。
+- 执行 Python 编译、白名单扫描、敏感信息扫描、`git diff --check` 与新增有效行统计。
+- 只读探测 `127.0.0.1:6333`；Qdrant 超时不可达，未启动 Docker Desktop 或修改系统状态。
+- 未读取或记录密码、Token、API Key 或完整连接串。

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from time import perf_counter
 from typing import Any, Mapping, Sequence
 
 from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
@@ -17,6 +18,11 @@ class HybridResult:
     top_k: int
     cache_key: str
     candidate_counts: dict[str, int]
+    timings_ms: dict[str, float] = field(default_factory=dict)
+
+
+def _timing_ms(started: float) -> float:
+    return round((perf_counter() - started) * 1000.0, 3)
 
 
 def dynamic_k(query: str, requested: int = 5) -> int:
@@ -74,8 +80,13 @@ def rrf_fuse(
     candidate_sets: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
     rank_constant: int = 60,
+    limit: int | None = None,
+    timings_ms: dict[str, float] | None = None,
 ) -> list[dict[str, Any]]:
-    fused: dict[tuple[str, str, str], dict[str, Any]] = {}
+    duplicate_started = perf_counter()
+    grouped: dict[
+        tuple[str, str, str], list[tuple[str, int, Mapping[str, Any]]]
+    ] = {}
     for mode in sorted(candidate_sets):
         seen: set[tuple[str, str, str]] = set()
         for rank, source in enumerate(candidate_sets[mode], start=1):
@@ -83,25 +94,33 @@ def rrf_fuse(
             if identity is None or identity in seen:
                 continue
             seen.add(identity)
-            current = fused.setdefault(
-                identity,
-                {**dict(source), "rrf_score": 0.0, "retrieval_types": []},
-            )
+            grouped.setdefault(identity, []).append((mode, rank, source))
+    if timings_ms is not None:
+        timings_ms["duplicate_merge_ms"] = _timing_ms(duplicate_started)
+
+    rrf_started = perf_counter()
+    output: list[dict[str, Any]] = []
+    for sources in grouped.values():
+        first_mode, _, first_source = sources[0]
+        current = {
+            **dict(first_source),
+            "rrf_score": 0.0,
+            "retrieval_types": [first_mode],
+        }
+        for mode, rank, source in sources:
             current["rrf_score"] += 1.0 / (max(1, rank_constant) + rank)
             current["retrieval_types"] = sorted(
                 {*current.get("retrieval_types", []), mode}
             )
-            if float(source.get("score") or 0.0) > float(current.get("score") or 0.0):
+            if float(source.get("score") or 0.0) > float(
+                current.get("score") or 0.0
+            ):
                 for key, value in source.items():
                     if key not in {"rrf_score", "retrieval_types"}:
                         current[key] = value
-    output = list(fused.values())
-    for item in output:
-        item["rrf_score"] = round(float(item["rrf_score"]), 9)
-        item["final_score"] = item["rrf_score"]
-        parent = str(item.get("parent_content") or "").strip()
-        child = str(item.get("content") or "").strip()
-        item["context_content"] = f"{parent}\n\n{child}".strip() if parent else child
+        current["rrf_score"] = round(float(current["rrf_score"]), 9)
+        current["final_score"] = current["rrf_score"]
+        output.append(current)
     output.sort(
         key=lambda item: (
             -float(item.get("rrf_score") or 0.0),
@@ -110,6 +129,18 @@ def rrf_fuse(
             str(item.get("content_hash") or ""),
         )
     )
+    if limit is not None:
+        output = output[: max(0, int(limit))]
+    if timings_ms is not None:
+        timings_ms["rrf_ms"] = _timing_ms(rrf_started)
+
+    parent_started = perf_counter()
+    for item in output:
+        parent = str(item.get("parent_content") or "").strip()
+        child = str(item.get("content") or "").strip()
+        item["context_content"] = f"{parent}\n\n{child}".strip() if parent else child
+    if timings_ms is not None:
+        timings_ms["parent_expansion_ms"] = _timing_ms(parent_started)
     return output
 
 
@@ -123,8 +154,11 @@ def hybrid_retrieve(
     structured_filter: Mapping[str, Any] | None = None,
     requested_top_k: int = 5,
 ) -> HybridResult:
+    total_started = perf_counter()
+    timings: dict[str, float] = {}
     filters = dict(structured_filter or {})
     top_k = dynamic_k(query, requested_top_k)
+    cache_key_started = perf_counter()
     cache_key = release_aware_cache_key(
         context=context,
         store=store,
@@ -132,6 +166,8 @@ def hybrid_retrieve(
         structured_filter=filters,
         top_k=top_k,
     )
+    timings["cache_key_ms"] = _timing_ms(cache_key_started)
+    timings["cache_ms"] = timings["cache_key_ms"]
     result = store.search(
         context=context,
         dense_vector=dense_vector,
@@ -139,10 +175,34 @@ def hybrid_retrieve(
         structured_filter=filters,
         limit=max(20, min(top_k * 4, 100)),
     )
+    timings.update(result.timings_ms)
     counts = {key: len(value) for key, value in result.candidates.items()}
     if not result.available:
-        return HybridResult(False, result.reason, [], top_k, cache_key, counts)
-    items = rrf_fuse(result.candidates)[:top_k]
+        timings["hybrid_total_ms"] = _timing_ms(total_started)
+        return HybridResult(
+            False,
+            result.reason,
+            [],
+            top_k,
+            cache_key,
+            counts,
+            timings,
+        )
+    items = rrf_fuse(
+        result.candidates,
+        limit=top_k,
+        timings_ms=timings,
+    )
     if not items:
-        return HybridResult(False, "no_evidence", [], top_k, cache_key, counts)
-    return HybridResult(True, "", items, top_k, cache_key, counts)
+        timings["hybrid_total_ms"] = _timing_ms(total_started)
+        return HybridResult(
+            False,
+            "no_evidence",
+            [],
+            top_k,
+            cache_key,
+            counts,
+            timings,
+        )
+    timings["hybrid_total_ms"] = _timing_ms(total_started)
+    return HybridResult(True, "", items, top_k, cache_key, counts, timings)

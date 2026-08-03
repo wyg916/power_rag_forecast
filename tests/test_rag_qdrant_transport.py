@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import inspect
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 
 import pytest
 from sqlalchemy import create_engine, text
@@ -45,6 +47,89 @@ def test_sparse_query_matches_immutable_one_based_bm25_profile() -> None:
     assert result["indices"] == [1, 2, 3, 4]
     assert len(result["values"]) == 4
     assert all(value > 0 for value in result["values"])
+
+
+def test_sparse_query_reuses_only_a_fully_validated_list_lookup() -> None:
+    profile = _immutable_profile()
+    with module._BM25_LOOKUP_CACHE_LOCK:
+        module._BM25_LOOKUP_CACHE.clear()
+
+    first = module.sparse_query("电价 risk", profile)
+    second = module.sparse_query("电价 risk", profile)
+
+    assert first == second
+    with module._BM25_LOOKUP_CACHE_LOCK:
+        assert len(module._BM25_LOOKUP_CACHE) == 1
+
+    invalid = _immutable_profile()
+    invalid["vocabulary"] = ["已", "被", "篡改", "risk"]
+    with pytest.raises(module.QdrantReadError, match="bm25_profile_invalid"):
+        module.sparse_query("risk", invalid)
+
+
+def test_ssl_context_cache_is_scoped_to_ca_file_signature(monkeypatch) -> None:
+    signature = [("E:/runtime/ca.pem", 1, 100)]
+    created: list[str] = []
+
+    monkeypatch.setattr(module, "_tls_file_signature", lambda _: signature[0])
+    monkeypatch.setattr(
+        module.ssl,
+        "create_default_context",
+        lambda *, cafile: created.append(cafile) or object(),
+    )
+    with module._SSL_CONTEXT_CACHE_LOCK:
+        module._SSL_CONTEXT_CACHE.clear()
+
+    first = module._cached_ssl_context("ignored")
+    second = module._cached_ssl_context("ignored")
+    signature[0] = ("E:/runtime/ca.pem", 2, 100)
+    third = module._cached_ssl_context("ignored")
+
+    assert first is second
+    assert third is not first
+    assert created == ["E:/runtime/ca.pem", "E:/runtime/ca.pem"]
+
+
+def test_concurrent_modes_validate_alias_once_per_transport() -> None:
+    transport = object.__new__(module.QdrantHttpsReadOnlyTransport)
+    transport._alias_lock = Lock()
+    transport._alias_checked = False
+    transport._alias_error = ""
+    transport.bm25 = _immutable_profile()
+    alias_calls: list[int] = []
+    request_modes: list[str] = []
+    request_lock = Lock()
+
+    def current_alias() -> str:
+        alias_calls.append(1)
+        return "rag_chunks_RAG-R1"
+
+    def request(path, payload):
+        with request_lock:
+            request_modes.append(str(payload.get("using") or "structured"))
+        return {"points": []}
+
+    transport._current_alias = current_alias
+    transport._request = request
+    requests = (
+        {"mode": "dense", "query": [0.25] + [0.0] * 1023},
+        {"mode": "sparse", "query": {"text": "电价 risk"}},
+        {"mode": "structured", "query": None},
+    )
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        results = list(
+            executor.map(
+                lambda value: transport.query(
+                    collection="rag_chunks_RAG-R1", request=value
+                ),
+                requests,
+            )
+        )
+
+    assert results == [{"points": []}] * 3
+    assert len(alias_calls) == 1
+    assert set(request_modes) == {"dense", "bm25", "structured"}
 
 
 def test_client_tenant_override_is_rejected() -> None:
