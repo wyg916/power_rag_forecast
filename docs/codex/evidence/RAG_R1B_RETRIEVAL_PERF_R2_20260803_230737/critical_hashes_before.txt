@@ -1,0 +1,8 @@
+Hash                                                             Path
+----                                                             ----
+1CFDE862B4E16A3A8C5443D63A95DDDEDC4F9D7EC66198264AF75161D824AA15 \backend\app\services\hybrid_retrieval_service.py
+A04FD4E1CC61CBF73B178E07016838B208A30E1502EC441486DB4674CF6EED9B \backend\app\services\qdrant_vector_store.py
+F2F8947B4C81EA5A6387AAD08E9C64DDD01E6B65CD965F710C320FA3AEA8B362 \backend\app\services\rag_qdrant_transport.py
+5D6A9368957F6AA035F84C1ECE06D9AC37FE780DDF97A2EFE8DEF2DED76ED78C \backend\app\services\rerank_service.py
+EE3D996ABD34FB56FA5CDB67151F997AE4D6FEE30AEE7ED5A290E4DD1F4A90FC \scripts\rag_r1_candidate_acceptance.py
+F1DC0A81C9607B0FCCFAB932091EEDD9E4187028F3D1F134A019BD3FEEA74EA2 \tests\performance\rag_r1_retrieval_reranker_benchmark.py

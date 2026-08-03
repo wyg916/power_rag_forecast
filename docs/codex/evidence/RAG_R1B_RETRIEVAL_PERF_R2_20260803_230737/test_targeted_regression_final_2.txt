@@ -1,0 +1,94 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-8.4.2, pluggy-1.6.0 -- E:\������Ӫ������Ŀ\.venv\Scripts\python.exe
+rootdir: E:\������Ӫ������Ŀ_worktrees\beta10d_rag_r1b_retrieval_performance
+configfile: pytest.ini
+plugins: anyio-4.14.1
+collecting ... collected 74 items
+
+tests/test_rag_enterprise_hybrid_core.py::test_logical_ai_domains_are_not_misused_as_physical_filters PASSED [  1%]
+tests/test_rag_enterprise_hybrid_core.py::test_rrf_is_stable_deduplicates_identity_and_expands_parent_context PASSED [  2%]
+tests/test_rag_enterprise_hybrid_core.py::test_rrf_limits_before_parent_expansion_and_reports_stages PASSED [  4%]
+tests/test_rag_enterprise_hybrid_core.py::test_dynamic_k_and_cache_key_include_release_and_permissions PASSED [  5%]
+tests/test_rag_enterprise_hybrid_core.py::test_hybrid_core_refuses_when_no_evidence PASSED [  6%]
+tests/test_rag_enterprise_hybrid_core.py::test_enterprise_entry_uses_only_injected_store_and_fails_closed PASSED [  8%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_accepts_only_complete_known_profile PASSED [  9%]
+tests/test_rag_enterprise_runtime_contract.py::test_runtime_contract_preserves_canonical_model_identity PASSED [ 10%]
+tests/test_rag_enterprise_runtime_contract.py::test_production_always_activates_enterprise_contract PASSED [ 12%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_PROVIDER-unknown-embedding_provider_invalid] PASSED [ 13%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_DIM-256-embedding_dimension_invalid] PASSED [ 14%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_MODEL_NAME-unknown-model-embedding_model_invalid] PASSED [ 16%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_ALLOW_FALLBACK-1-embedding_fallback_forbidden] PASSED [ 17%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_FALLBACK_PROVIDER-hash-embedding_fallback_forbidden] PASSED [ 18%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_VERSION--embedding_version_missing] PASSED [ 20%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_EXPECTED_VERSION--embedding_expected_version_missing] PASSED [ 21%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_EMBEDDING_EXPECTED_VERSION-other-embedding_version_mismatch] PASSED [ 22%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_RERANK_PROVIDER-heuristic-rerank_provider_invalid] PASSED [ 24%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_RERANK_FALLBACK_PROVIDER-heuristic-rerank_fallback_forbidden] PASSED [ 25%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_RERANK_VERSION--rerank_version_missing] PASSED [ 27%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_RERANK_EXPECTED_VERSION--rerank_expected_version_missing] PASSED [ 28%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_RERANK_EXPECTED_VERSION-other-rerank_version_mismatch] PASSED [ 29%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_FILE_FALLBACK_ENABLED-1-file_fallback_forbidden] PASSED [ 31%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_RELEASE_ID--release_id_invalid] PASSED [ 32%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_ALIAS-other_alias-release_alias_invalid] PASSED [ 33%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_URL-http://qdrant:6333-qdrant_https_endpoint_required] PASSED [ 35%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_ACCESS_MODE-admin-qdrant_access_mode_invalid] PASSED [ 36%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_TLS_ENABLED-0-qdrant_tls_required] PASSED [ 37%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_STRICT_MODE-0-qdrant_strict_mode_required] PASSED [ 39%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_API_KEY-replace_me-qdrant_api_key_unavailable] PASSED [ 40%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_IMAGE_VERSION-latest-qdrant_image_version_invalid] PASSED [ 41%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_QDRANT_IMAGE_DIGEST-sha256:unset-qdrant_image_digest_invalid] PASSED [ 43%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_embedding_failure_is_unavailable_without_hash_fallback PASSED [ 44%]
+tests/test_rag_enterprise_runtime_contract.py::test_enterprise_rerank_failure_does_not_use_heuristic_fallback PASSED [ 45%]
+tests/test_rag_enterprise_runtime_contract.py::test_retrieval_context_and_citation_locator_fail_closed PASSED [ 47%]
+tests/test_rag_qdrant_transport.py::test_sparse_query_is_stable_and_never_hash_embeds PASSED [ 48%]
+tests/test_rag_qdrant_transport.py::test_sparse_query_matches_immutable_one_based_bm25_profile PASSED [ 50%]
+tests/test_rag_qdrant_transport.py::test_sparse_query_reuses_only_a_fully_validated_list_lookup PASSED [ 51%]
+tests/test_rag_qdrant_transport.py::test_ssl_context_cache_is_scoped_to_ca_file_signature PASSED [ 52%]
+tests/test_rag_qdrant_transport.py::test_concurrent_modes_validate_alias_once_per_transport PASSED [ 54%]
+tests/test_rag_qdrant_transport.py::test_client_tenant_override_is_rejected PASSED [ 55%]
+tests/test_rag_qdrant_transport.py::test_transport_is_read_only_and_fixed_to_release_collection PASSED [ 56%]
+tests/test_rag_qdrant_transport.py::test_postgres_current_release_gate_rejects_candidate_and_drift PASSED [ 58%]
+tests/test_rag_qdrant_vector_store.py::test_store_builds_mandatory_filters_and_uses_release_collection_only PASSED [ 59%]
+tests/test_rag_qdrant_vector_store.py::test_store_runs_read_only_modes_concurrently_and_keeps_result_order PASSED [ 60%]
+tests/test_rag_qdrant_vector_store.py::test_store_discards_all_candidates_when_any_parallel_mode_fails PASSED [ 62%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_payload_contract_violations[tenant_id-other] PASSED [ 63%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_payload_contract_violations[release_id-other] PASSED [ 64%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_payload_contract_violations[status-draft] PASSED [ 66%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_payload_contract_violations[acl_fingerprint-] PASSED [ 67%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_payload_contract_violations[embedding_version-other] PASSED [ 68%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_payload_contract_violations[valid_from-2027-01-01T00:00:00Z] PASSED [ 70%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_payload_contract_violations[valid_to-2026-01-01T00:00:00Z] PASSED [ 71%]
+tests/test_rag_qdrant_vector_store.py::test_store_allows_public_resource_fingerprint_but_rejects_acl_denial PASSED [ 72%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_invalid_dense_vectors[dense_vector0] PASSED [ 74%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_invalid_dense_vectors[dense_vector1] PASSED [ 75%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_invalid_dense_vectors[dense_vector2] PASSED [ 77%]
+tests/test_rag_qdrant_vector_store.py::test_store_rejects_missing_context_and_arbitrary_collection PASSED [ 78%]
+tests/test_rag_r1_candidate_acceptance.py::test_candidate_transport_is_exact_collection_read_only PASSED [ 79%]
+tests/test_rag_r1_candidate_acceptance.py::test_metric_math_and_formal_thresholds PASSED [ 81%]
+tests/test_rag_r1_candidate_acceptance.py::test_collection_state_is_hashed_without_emitting_payload PASSED [ 82%]
+tests/test_rag_r1_candidate_acceptance.py::test_golden_set_is_fixed_50_and_does_not_claim_human_verification PASSED [ 83%]
+tests/test_rag_r1_candidate_acceptance.py::test_ai_formal_gate_uses_rag_r1_thresholds PASSED [ 85%]
+tests/test_rag_r1_candidate_acceptance.py::test_ai_candidate_citations_use_immutable_citation_payload PASSED [ 86%]
+tests/test_rag_r1_legacy_bypass_closure.py::test_enterprise_embedding_loader_is_offline_local_only_and_no_remote_code PASSED [ 87%]
+tests/test_rag_r1_legacy_bypass_closure.py::test_enterprise_reranker_loader_requires_local_safetensors_and_no_remote_code PASSED [ 89%]
+tests/test_rag_r1_legacy_bypass_closure.py::test_enterprise_fallback_methods_remain_fail_closed PASSED [ 90%]
+tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_cache_identity_includes_normalized_path_and_version PASSED [ 91%]
+tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_score_pairs_batches_seventeen_as_eight_eight_one PASSED [ 93%]
+tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_rerank_scores_exact_duplicate_text_once_without_merging_candidates PASSED [ 94%]
+tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_rerank_maps_mixed_duplicates_and_preserves_candidate_metadata PASSED [ 95%]
+tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_rerank_score_count_mismatch_fails_closed PASSED [ 97%]
+tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_prewarm_is_idempotent_and_preserves_model PASSED [ 98%]
+tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_concurrent_load_constructs_runtime_once PASSED [100%]
+
+============================ slowest 10 durations =============================
+0.03s call     tests/performance/rag_r1_retrieval_reranker_unit_test.py::test_concurrent_load_constructs_runtime_once
+0.03s call     tests/test_rag_qdrant_transport.py::test_postgres_current_release_gate_rejects_candidate_and_drift
+0.02s call     tests/test_rag_r1_candidate_acceptance.py::test_candidate_transport_is_exact_collection_read_only
+0.01s call     tests/test_rag_enterprise_hybrid_core.py::test_enterprise_entry_uses_only_injected_store_and_fails_closed
+0.01s call     tests/test_rag_qdrant_transport.py::test_transport_is_read_only_and_fixed_to_release_collection
+0.01s setup    tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_accepts_only_complete_known_profile
+0.00s call     tests/test_rag_qdrant_vector_store.py::test_store_builds_mandatory_filters_and_uses_release_collection_only
+0.00s call     tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_RERANK_VERSION--rerank_version_missing]
+0.00s call     tests/test_rag_enterprise_runtime_contract.py::test_enterprise_runtime_contract_rejects_unknown_or_fallback_configuration[RAG_FILE_FALLBACK_ENABLED-1-file_fallback_forbidden]
+0.00s call     tests/test_rag_enterprise_runtime_contract.py::test_enterprise_embedding_failure_is_unavailable_without_hash_fallback
+============================= 74 passed in 1.09s ==============================

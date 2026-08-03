@@ -1,0 +1,6 @@
+﻿created_at=2026-08-03T23:07:38.4466602+08:00
+branch=beta10d/rag-r1b-retrieval-performance
+head=4a514d34113ee06a5725fa3f23bcf28298374040
+rollback=git revert of the next independent optimization commit; checkpoint commit remains 4a514d34113ee06a5725fa3f23bcf28298374040
+database_impact=none; this round forbids database, migration, release, alias, snapshot, Compose, and public configuration changes
+qdrant_write_impact=none

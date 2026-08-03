@@ -180,16 +180,31 @@ class BGETransformersReranker:
             return [(score - low) / (high - low) for score in raw_scores]
         return [1.0 / (1.0 + pow(2.718281828, -score)) for score in raw_scores]
 
+    @staticmethod
+    def _candidate_text(item: dict[str, Any]) -> str:
+        title = str(item.get("title") or "")
+        content = str(item.get("content") or "")
+        source = str(item.get("source") or "")
+        return f"{title}\n{content}\n{source}"[:1800]
+
     def rerank(self, query: str, candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not candidates:
             return []
-        texts = []
+        unique_texts: list[str] = []
+        unique_indexes: dict[str, int] = {}
+        candidate_indexes: list[int] = []
         for item in candidates:
-            title = str(item.get("title") or "")
-            content = str(item.get("content") or "")
-            source = str(item.get("source") or "")
-            texts.append(f"{title}\n{content}\n{source}"[:1800])
-        raw_scores = self._score_pairs(query, texts)
+            text = self._candidate_text(item)
+            index = unique_indexes.get(text)
+            if index is None:
+                index = len(unique_texts)
+                unique_indexes[text] = index
+                unique_texts.append(text)
+            candidate_indexes.append(index)
+        unique_raw_scores = self._score_pairs(query, unique_texts)
+        if len(unique_raw_scores) != len(unique_texts):
+            raise RuntimeError("reranker_score_count_mismatch")
+        raw_scores = [unique_raw_scores[index] for index in candidate_indexes]
         normalized_scores = self._normalize(raw_scores)
         output: list[dict[str, Any]] = []
         for item, raw_score, rerank_score in zip(candidates, raw_scores, normalized_scores):

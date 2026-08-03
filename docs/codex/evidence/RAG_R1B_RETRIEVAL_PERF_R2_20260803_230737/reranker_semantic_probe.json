@@ -1,0 +1,18 @@
+﻿{
+  "status": "PASS",
+  "score_count": 17,
+  "batch_forward_sizes": [
+    8,
+    8,
+    1
+  ],
+  "duplicate_candidate_count": 2,
+  "duplicate_unique_forward_size": 1,
+  "candidates_preserved": 2,
+  "model_eval_calls": 1,
+  "inference_mode_calls": 4,
+  "padding": true,
+  "truncation": true,
+  "max_length": 128,
+  "provider_singleton": true
+}

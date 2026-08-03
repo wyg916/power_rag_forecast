@@ -1,0 +1,189 @@
+{
+  "schema_version": "rag-r1b-fresh-cpu-root-cause-profile/v1",
+  "generated_at": "2026-08-03T16:06:29.3516209Z",
+  "status": "BLOCKED_RESOURCE_GUARD",
+  "scope": {
+    "branch": "beta10d/rag-r1b-retrieval-performance",
+    "head": "4a514d34113ee06a5725fa3f23bcf28298374040",
+    "offline": true,
+    "network_access": false,
+    "package_installation": false,
+    "database_access": false,
+    "qdrant_access": false,
+    "quantization": false,
+    "model_write": false,
+    "embedding_weight_deserialization": false,
+    "production_code_changes_by_profile": false
+  },
+  "command_methodology": [
+    "Validate branch and exact HEAD.",
+    "Validate the admitted reranker safetensors, current 50-question file and formal Candidate corpus as readable.",
+    "Verify the Candidate corpus SHA-256 against the admitted hash.",
+    "Precompute deterministic five-chunk selection and full-corpus exact reranker-input duplicate statistics without emitting text.",
+    "Start one offline project-venv process intended to hash and load the model once, then run the requested CPU matrix.",
+    "Monitor the profile process and available physical memory from a separate read-only probe.",
+    "Stop only the profile child process after the 120-second resource guard was exceeded before any forward configuration completed."
+  ],
+  "input_validation": {
+    "questions": {
+      "file_label": "rag_r1_retrieval_golden_50.json",
+      "sha256": "fdde7a6a517a61b8340c1b8e82efea3766c74db9a6f4dc7106912c1205d4099c",
+      "count": 50,
+      "human_verified": false,
+      "readable": true
+    },
+    "candidate_corpus": {
+      "file_label": "candidate_corpus.json",
+      "sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7",
+      "admitted_sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7",
+      "hash_match": true,
+      "chunk_count": 8339,
+      "document_count": 45,
+      "readable": true
+    },
+    "reranker": {
+      "model": "bge-reranker-v2-m3",
+      "weight_format": "safetensors",
+      "weight_bytes": 2271071852,
+      "admitted_weight_sha256": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286",
+      "admitted_manifest_sha256": "2a581f058542bd175695f8f92097b7aa4fbdac637ad486739f26e4cbc11ca159",
+      "readable": true,
+      "fresh_weight_hash_completed": false,
+      "fresh_model_load_completed": false
+    },
+    "rerank_service": {
+      "file_label": "rerank_service.py",
+      "sha256": "06db21d89e83a3a207bf460e37142c5ed1b93647d71d4ce43e742dc12d71b0eb",
+      "candidate_text_contract": "title newline content newline source, then first 1800 characters"
+    }
+  },
+  "candidate_corpus_exact_duplicate_statistics": {
+    "total_chunk_count": 8339,
+    "unique_input_count": 7235,
+    "duplicate_group_count": 746,
+    "duplicate_chunk_count": 1104,
+    "duplicate_chunk_count_definition": "sum(group_size_minus_one), equivalent to total_chunk_count minus unique_input_count",
+    "duplicate_group_member_chunk_count": 1850,
+    "maximum_group_size": 12,
+    "assembly_contract_sha256": "ae290f3183ed49c993efd4de4bb1ec5cdfad01cb15019da9015d56d8ccbd5093",
+    "exact_input_multiset_sha256": "1326c2dcba221cb89122a28db178456090833dd27b4df25dab17274e535d87e5",
+    "missing_key_counts": {
+      "title": 8339,
+      "content": 0,
+      "source": 8339
+    },
+    "missing_field_policy": "Missing title/content/source keys were converted to empty strings exactly as the current candidate-text function does.",
+    "texts_emitted": false,
+    "represents_formal_retrieval_top_candidate_duplicate_rate": false
+  },
+  "deterministic_five_chunk_precheck": {
+    "selected_count": 5,
+    "selected_inputs_unique": 5,
+    "production_candidate_text_character_counts": [
+      3,
+      19,
+      29,
+      64,
+      926
+    ],
+    "selection_policy": "Five evenly spaced positions after sorting unique production candidate texts by character length, chunk identity and text hash.",
+    "texts_emitted": false
+  },
+  "requested_profile_protocol": {
+    "model_load_count": 1,
+    "model_eval": true,
+    "torch_inference_mode": true,
+    "device": "cpu",
+    "inter_op_threads": 1,
+    "warmup_iterations_per_configuration": 1,
+    "timed_iterations_per_configuration": 5,
+    "thread_sweep": {
+      "intra_op_threads": [
+        4,
+        6,
+        8,
+        12
+      ],
+      "batch_size": 8,
+      "max_length": 128
+    },
+    "batch_sweep": {
+      "batch_sizes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "max_length": 128
+    },
+    "max_length_sweep_experimental": {
+      "max_lengths": [
+        64,
+        96,
+        128
+      ],
+      "batch_size": 8,
+      "formal_configuration_changed": false
+    },
+    "profile_script": {
+      "file_label": "fresh_cpu_profile.py",
+      "sha256": "d25beaddd2288a881d971620d2e85946b5ec4d35de623f9c0b42c8cd7aae9679"
+    }
+  },
+  "runtime": {
+    "python": "3.11.9",
+    "torch": "2.12.1+cpu",
+    "transformers": "4.57.6",
+    "sentence_transformers": "3.4.1",
+    "safetensors": "0.8.0",
+    "mkl_available": true,
+    "mkldnn_available": true,
+    "mkldnn_enabled": true,
+    "openmp_available": true,
+    "torch_cpu_capability": "AVX2"
+  },
+  "hardware": {
+    "cpu_model": "Intel Core i7-9750H",
+    "physical_cores": 6,
+    "logical_processors": 12,
+    "system_memory_total_gib": 15.92
+  },
+  "resource_guard": {
+    "threshold_seconds": 120,
+    "observed_process_elapsed_seconds": 269.42,
+    "observed_process_cpu_seconds": 8.41,
+    "observed_process_working_set_gib": 0.16,
+    "observed_process_private_memory_gib": 0.49,
+    "free_physical_memory_at_stop_gib": 1.07,
+    "free_physical_memory_after_stop_gib": 1.21,
+    "last_progress_event": null,
+    "model_loaded_event_received": false,
+    "completed_configuration_count": 0,
+    "completed_warmup_forward_count": 0,
+    "completed_timed_forward_count": 0,
+    "stop_target_identity_verified": true,
+    "only_profile_child_process_stopped": true,
+    "paging_counter_measured": false,
+    "interpretation": "The very low CPU-to-wall ratio and low free physical memory are consistent with severe file-I/O or paging pressure, but paging was not directly measured.",
+    "reason": "The pre-forward hash/import/model-load phase exceeded the safety threshold before the first model_loaded event."
+  },
+  "fresh_results": {
+    "model_load_ms": null,
+    "thread_sweep": [],
+    "best_intra_op_threads": null,
+    "batch_sweep": [],
+    "best_batch_size": null,
+    "max_length_sweep_experimental": [],
+    "constructed_exact_duplicate_forward_probe": null,
+    "total_tokenize_transfer_forward_percentiles_available": false,
+    "token_shape_and_non_pad_lengths_available": false,
+    "score_and_rank_digests_available": false
+  },
+  "conclusion": {
+    "status": "BLOCKED_RESOURCE_GUARD",
+    "fresh_forward_performance_claim": "NOT_AVAILABLE",
+    "quality_claim": "NOT_EVALUATED",
+    "production_pass_claim": false,
+    "next_safe_step": "Repeat only after memory pressure is reduced. Split admitted weight-hash verification from model loading, retain one model instance, and first run one 5-candidate batch8/max128 configuration under the same 120-second guard before expanding the matrix."
+  }
+}

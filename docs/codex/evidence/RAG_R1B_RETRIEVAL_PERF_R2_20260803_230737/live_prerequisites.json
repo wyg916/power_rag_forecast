@@ -1,0 +1,92 @@
+{
+  "schema_version": "rag-r1b-live-prerequisites/v1",
+  "generated_at": "2026-08-03T23:53:25.328+08:00",
+  "scope": "read_only_live_prerequisite_probe",
+  "workspace": {
+    "path": "E:\\智能运营分析项目_worktrees\\beta10d_rag_r1b_retrieval_performance",
+    "branch": "beta10d/rag-r1b-retrieval-performance",
+    "head": "4a514d34113ee06a5725fa3f23bcf28298374040"
+  },
+  "qdrant": {
+    "host": "127.0.0.1",
+    "port": 6333,
+    "tcp_timeout_ms": 1500,
+    "tcp_reachable": true,
+    "health_request": {
+      "method": "GET",
+      "path": "/healthz",
+      "credential_supplied": false,
+      "response_body_recorded": false,
+      "response_headers_recorded": false,
+      "status_code": null,
+      "http_health_confirmed": false,
+      "sanitized_observations": [
+        {
+          "client": "powershell_iwr",
+          "error_class": "WebException"
+        },
+        {
+          "client": "curl",
+          "http_code": "000",
+          "exit_code": 1
+        },
+        {
+          "client": "python_http_client",
+          "error_class": "BadStatusLine"
+        }
+      ]
+    }
+  },
+  "golden_set": {
+    "path": "tests/evaluation/rag_r1_retrieval_golden_50.json",
+    "sha256": "fdde7a6a517a61b8340c1b8e82efea3766c74db9a6f4dc7106912c1205d4099c",
+    "top_level_type": "object",
+    "schema_version": "rag-r1-retrieval-golden/v1",
+    "top_level_fields": [
+      "collection",
+      "curated_at",
+      "human_verified",
+      "items",
+      "label_provenance",
+      "release_id",
+      "schema_version"
+    ],
+    "item_type": "object",
+    "item_fields": {
+      "critical": "boolean",
+      "evidence_chunk_id": "string",
+      "expected_document_ids": "array",
+      "id": "string",
+      "question": "string"
+    },
+    "required_item_fields_present_for_all_records": true,
+    "count": 50,
+    "unique_id_count": 50,
+    "human_verified": false,
+    "human_verified_location": "top_level",
+    "per_item_human_verified_field": "absent"
+  },
+  "readiness": {
+    "qdrant_tcp_reachable": true,
+    "qdrant_http_health_confirmed": false,
+    "golden_schema_observed": true,
+    "golden_count_is_50": true,
+    "golden_human_verified": false,
+    "ready_for_formal_50_verified_run": false,
+    "blocking_reasons": [
+      "qdrant_http_health_not_confirmed",
+      "golden_set_not_human_verified"
+    ]
+  },
+  "safety": {
+    "formal_50_executed": false,
+    "database_connection_attempted": false,
+    "qdrant_write_attempted": false,
+    "compose_changed": false,
+    "configuration_changed": false,
+    "release_changed": false,
+    "alias_changed": false,
+    "snapshot_changed": false,
+    "secret_values_emitted": false
+  }
+}

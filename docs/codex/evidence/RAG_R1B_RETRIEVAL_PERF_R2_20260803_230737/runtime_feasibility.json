@@ -1,0 +1,226 @@
+{
+  "schema_version": "rag-r1b-runtime-feasibility/v1",
+  "scope": {
+    "branch": "beta10d/rag-r1b-retrieval-performance",
+    "head": "4a514d34113ee06a5725fa3f23bcf28298374040",
+    "audit_mode": "offline_read_only",
+    "production_changes": false,
+    "network_access": false,
+    "database_access": false,
+    "package_installation": false,
+    "model_deserialization": false
+  },
+  "command_methodology": [
+    "git branch --show-current and git rev-parse HEAD",
+    "Windows CIM CPU, OS, memory and video-controller inventory",
+    "nvidia-smi device, driver, memory and compute-capability query",
+    "project venv Python -B torch runtime and backend probe",
+    "system Python -B torch CUDA probe",
+    "Python package metadata probe without installation",
+    "in-memory tiny-model ONNX export smoke for dynamo and legacy exporters",
+    "in-memory tiny-model FX oneDNN static INT8 smoke",
+    "read-only parsing of existing reranker benchmark evidence"
+  ],
+  "gpu": {
+    "model": "NVIDIA GeForce GTX 1660 Ti",
+    "driver_version": "610.62",
+    "driver_advertised_cuda_umd_version": "13.3",
+    "compute_capability": "7.5",
+    "memory_total_mib": 6144,
+    "memory_used_snapshot_mib": 885,
+    "memory_free_snapshot_mib": 5082,
+    "nvidia_smi_available": true,
+    "nvcc_available": false,
+    "cuda_path_present": false
+  },
+  "cuda_runtime_availability": {
+    "status": "UNAVAILABLE_IN_CURRENT_PYTHON_STACKS",
+    "hardware_and_driver_visible": true,
+    "project_venv_torch_build": "2.12.1+cpu",
+    "project_venv_torch_cuda_build": null,
+    "project_venv_cuda_available": false,
+    "project_venv_cuda_device_count": 0,
+    "system_python_torch_build": "2.13.0+cpu",
+    "system_python_torch_cuda_build": null,
+    "system_python_cuda_available": false,
+    "system_python_cuda_device_count": 0,
+    "conclusion": "GPU hardware is present, but neither current Python stack can execute CUDA tensors."
+  },
+  "cpu": {
+    "model": "Intel Core i7-9750H",
+    "physical_cores": 6,
+    "logical_processors": 12,
+    "system_memory_total_gib": 15.92,
+    "system_memory_free_snapshot_gib": 2.22,
+    "torch_cpu_capability": "AVX2",
+    "mkl_available": true,
+    "mkl_version": "Intel oneAPI MKL 2026.0",
+    "mkldnn_available": true,
+    "mkldnn_enabled": true,
+    "mkldnn_version": "3.11.2",
+    "openmp_available": true,
+    "quantized_engine": "onednn",
+    "supported_quantized_engines": [
+      "onednn"
+    ],
+    "vnni_observation": "PyTorch emitted a warning that this CPU lacks VNNI and the default oneDNN INT8 qconfig may have accuracy issues."
+  },
+  "python_and_packages": {
+    "project_venv_python": "3.11.9",
+    "project_venv_torch": "2.12.1+cpu",
+    "system_python_torch": "2.13.0+cpu",
+    "transformers": "4.57.6",
+    "sentence_transformers": "3.4.1",
+    "huggingface_hub": "0.36.2",
+    "safetensors": "0.8.0",
+    "numpy": "2.4.6",
+    "onnx": null,
+    "onnxruntime": null,
+    "onnxruntime_gpu": null,
+    "optimum": null,
+    "optimum_onnx": null,
+    "onnxscript": null,
+    "torchao": null
+  },
+  "threading": {
+    "default_intra_op_threads": 6,
+    "default_inter_op_threads": 6,
+    "set_probe": {
+      "requested_intra_op_threads": 12,
+      "requested_inter_op_threads": 2,
+      "observed_intra_op_threads": 12,
+      "observed_inter_op_threads": 2,
+      "succeeded": true
+    },
+    "existing_benchmark_intra_op_threads": 8,
+    "existing_benchmark_inter_op_threads": 1,
+    "thread_environment_overrides_present": false,
+    "risk": "Default inter-op 6 can oversubscribe CPU resources under concurrent requests; inter-op must be set before parallel work starts."
+  },
+  "local_model_export_inputs": {
+    "embedding": {
+      "model": "bge-large-zh-v1.5",
+      "architecture": "BertModel",
+      "hidden_size": 1024,
+      "layers": 24,
+      "attention_heads": 16,
+      "declared_dtype": "float32",
+      "total_bytes": 1302802803,
+      "weight_file": "pytorch_model.bin",
+      "deserialization_status": "NOT_PERFORMED_REQUIRES_EXPLICIT_AUTHORIZATION"
+    },
+    "reranker": {
+      "model": "bge-reranker-v2-m3",
+      "architecture": "XLMRobertaForSequenceClassification",
+      "hidden_size": 1024,
+      "layers": 24,
+      "attention_heads": 16,
+      "declared_dtype": "float32",
+      "total_bytes": 2293567037,
+      "weight_file": "model.safetensors"
+    }
+  },
+  "onnx_export": {
+    "architecture_support": {
+      "bert": [
+        "default",
+        "sequence-classification"
+      ],
+      "xlm_roberta": [
+        "default",
+        "sequence-classification"
+      ]
+    },
+    "dynamo_smoke": {
+      "succeeded": false,
+      "error_type": "ModuleNotFoundError",
+      "reason": "onnxscript is not installed"
+    },
+    "legacy_smoke": {
+      "succeeded": false,
+      "error_type": "OnnxExporterError",
+      "reason": "onnx is not installed"
+    },
+    "external_data_required_for_reranker": true,
+    "current_status": "ARCHITECTURALLY_SUPPORTED_BUT_BLOCKED_BY_MISSING_PACKAGES_AND_MEMORY_HEADROOM"
+  },
+  "historical_performance_ms": {
+    "formal_end_to_end": {
+      "p95": 6175.825,
+      "source": "task_document",
+      "raw_report_available": false
+    },
+    "fp32_reranker_8_pairs_batch8_length128_threads8_interop1": {
+      "load": 8124.554,
+      "cold_forward": 4292.753,
+      "warm_p50": 3807.91,
+      "warm_p90": 4249.324,
+      "warm_p95": 4249.324,
+      "warm_p99": 4249.324,
+      "warm_max": 4249.324
+    },
+    "dynamic_int8_reranker_8_pairs_batch8_length128_threads8_interop1": {
+      "load": 8936.479,
+      "quantize": 72737.617,
+      "cold_forward": 6715.39,
+      "warm_p50": 2565.207,
+      "warm_p90": 2624.347,
+      "warm_p95": 2624.347,
+      "warm_p99": 2624.347,
+      "warm_max": 2624.347
+    },
+    "dynamic_int8_batch4": {
+      "quantize": 23912.209,
+      "cold_forward": 3173.494,
+      "warm_p50": 2676.845,
+      "warm_p95": 2818.89
+    },
+    "dynamic_int8_delta_vs_fp32_percent": {
+      "warm_p50_reduction": 32.63,
+      "warm_p95_reduction": 38.24,
+      "cold_forward_increase": 56.44,
+      "load_increase": 9.99,
+      "warm_p95_above_1500ms_target": 74.96
+    },
+    "fp32_threads4_warm_p95": 5433.325,
+    "fp32_threads8_vs_threads4_warm_p95_reduction_percent": 21.79,
+    "evidence_limitations": [
+      "The historical end-to-end raw report is unavailable.",
+      "The local raw INT8 JSON files are ignored by Git.",
+      "The committed benchmark script does not currently reproduce the dynamic INT8 path.",
+      "No live 50-query Recall, MRR, Citation or ACL equivalence result exists because Qdrant was unavailable."
+    ]
+  },
+  "int8_feasibility": {
+    "dynamic_pytorch": {
+      "actual_reranker_microbenchmark_completed": true,
+      "warm_speedup_observed": true,
+      "target_1500ms_met": false,
+      "cold_regression_observed": true,
+      "formal_quality_equivalence_proven": false,
+      "status": "TECHNICALLY_FEASIBLE_BUT_NOT_ACCEPTABLE_FOR_PRODUCTION"
+    },
+    "static_pytorch": {
+      "tiny_linear_fx_onednn_smoke_completed": true,
+      "actual_reranker_conversion_completed": false,
+      "calibration_completed": false,
+      "quality_equivalence_proven": false,
+      "deprecated_api_warning": true,
+      "replacement_torchao_available": false,
+      "status": "BACKEND_SMOKE_ONLY_MODEL_LEVEL_FEASIBILITY_UNPROVEN"
+    },
+    "static_onnxruntime": {
+      "runtime_available": false,
+      "calibration_tooling_available": false,
+      "status": "BLOCKED_BY_MISSING_PACKAGES"
+    }
+  },
+  "conclusions": {
+    "cuda": "The machine has a usable NVIDIA device and driver, but CUDA inference is unavailable in the installed Python runtimes because both Torch builds are CPU-only.",
+    "onnx": "Both formal model architectures have exporter definitions, but the current environment cannot export or execute ONNX and the reranker requires external-data output.",
+    "dynamic_int8": "Dynamic INT8 improves warm reranker latency but remains above the 1500ms target, regresses cold latency, and lacks formal quality proof.",
+    "static_int8": "The oneDNN backend can quantize a tiny module, but static INT8 for the formal reranker is unproven and carries VNNI, calibration, deprecated-tooling and quality risks.",
+    "recommended_next_experiment": "After explicit approval, use an isolated offline environment on the project drive: first validate CUDA FP16 with small batches, then validate ONNX Runtime dynamic INT8. Preserve the exact model, query set, evaluator protocol, ACL and Citation gates, and record cold/warm P50/P90/P95/P99/max plus result signatures.",
+    "handoff_status": "FEASIBILITY_ONLY_NO_PRODUCTION_PASS"
+  }
+}
