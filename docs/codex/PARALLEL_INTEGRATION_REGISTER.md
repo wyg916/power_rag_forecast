@@ -87,3 +87,16 @@
 - 候选 AI 基线：80/100、critical 16/30、grounding 93%、Citation 446/446、幻觉数字 0、拒答/不可用 100%、未授权拦截率 `NOT_MEASURED`。
 - 人工审核入口：`docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/`；检索 2 批×25、AI 4 批×25、critical 30 单独复核。
 - 发布约束：未创建 snapshot、未切 alias、未发布 Candidate；人工批准及正式复验完成前保持禁止。
+
+## RAG-R1B AI-only 验收口径修订（2026-08-04）
+
+- 状态：`ACCEPTED FOR DEVELOPMENT/PRE-RELEASE ONLY`。
+- 正式文件：`docs/codex/RAG_R1B_AI_ONLY_ACCEPTANCE_AMENDMENT.md`。
+- 用户取消本里程碑等待真人标注/复核，改用独立 AI 多角色共识；不得伪造真人身份。
+- 固定字段：`human_verified=false`、`automated_consensus_verified=true`、`verification_mode=multi_agent_independent_consensus`、`production_human_signoff=false`。
+- 旧 NOT PASS 报告、失败题和历史指标全部保留；ACL、Citation、拒答、真实性、安全、质量和 P95 门槛不变。
+- 当前黄金集治理提交已于 `428d62b0249d43e806011f9bfed47ed6256694cb` 接收；下一阶段为 AI 共识冻结与隐藏集隔离，不得重复 cherry-pick `90a4ff...`。
+- OCR `7ebc3a9...` 仅允许作为工具/技术预标注候选审计接收；不得表述为真人金标。
+- 性能 `4a514d3...` 在 live 50 题复验前仅为实验候选；不得直接标记 PASS。
+- 开发验收全部通过前 snapshot、alias、current release 均不得变更。
+- 正式生产切换：`NO`。

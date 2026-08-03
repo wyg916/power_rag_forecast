@@ -1,0 +1,10 @@
+docs/codex/RAG_R1B_AI_ONLY_ACCEPTANCE_AMENDMENT.md
+docs/codex/PARALLEL_INTEGRATION_REGISTER.md
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/RAG_R1B_AI_ONLY_AMENDMENT_20260804T001109/changed_files.txt
+docs/codex/evidence/RAG_R1B_AI_ONLY_AMENDMENT_20260804T001109/commands.md
+docs/codex/evidence/RAG_R1B_AI_ONLY_AMENDMENT_20260804T001109/plan.md
+docs/codex/evidence/RAG_R1B_AI_ONLY_AMENDMENT_20260804T001109/rollback.md
+docs/codex/evidence/RAG_R1B_AI_ONLY_AMENDMENT_20260804T001109/test_summary.md
+docs/codex/evidence/RAG_R1B_AI_ONLY_AMENDMENT_20260804T001109/unresolved.md
+docs/codex/evidence/RAG_R1B_AI_ONLY_AMENDMENT_20260804T001109/authorization_summary.md
