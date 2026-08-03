@@ -116,21 +116,35 @@ def test_stable_zip_and_manual_cli_exit_code(capsys):
 def _ai_page(package_page, *, text_suffix=""):
     page_number = package_page["source"]["page_number"]
     text = f"page {page_number} value {page_number}{text_suffix}"
+    required_kinds = [kind for kind in ("chart", "formula") if kind in package_page["strata"]]
+    kinds = required_kinds or ["text"]
+    elements = [
+        {
+            "element_id": f"{package_page['page_id']}-e{index}",
+            "kind": kind,
+            "reading_order": index,
+            "page_number": page_number,
+            "text": text if index == 1 else "",
+            "bbox": [float(index - 1), 0.0, float(index + 9), 10.0],
+        }
+        for index, kind in enumerate(kinds, start=1)
+    ]
+    tables = []
+    if {"table", "complex_table"} & set(package_page["strata"]):
+        tables = [{
+            "table_id": f"{package_page['page_id']}-t1",
+            "bbox": [0.0, 10.0, 10.0, 20.0],
+            "cells": [{
+                "row": 0, "column": 0, "row_span": 1, "column_span": 1,
+                "text": "", "bbox": [0.0, 10.0, 10.0, 20.0],
+            }],
+        }]
     return {
         "page_id": package_page["page_id"],
         "render_sha256": package_page["render"]["sha256"],
         "text": text,
-        "elements": [
-            {
-                "element_id": f"{package_page['page_id']}-e1",
-                "kind": "text",
-                "reading_order": 1,
-                "page_number": page_number,
-                "text": text,
-                "bbox": [0.0, 0.0, 10.0, 10.0],
-            }
-        ],
-        "tables": [],
+        "elements": elements,
+        "tables": tables,
         "page_number": page_number,
         "digits": [str(page_number), str(page_number)],
         "unresolved": [],
@@ -229,10 +243,33 @@ def test_ai_consensus_rejects_provenance_and_gate_mutations(mutation):
     elif mutation == "hallucinated":
         final = adjudication["pages"][0]["final"]
         final["text"] += " 999"
-        final["elements"][0]["text"] += " 999"
+        next(element for element in final["elements"] if element["text"])["text"] += " 999"
         final["digits"].append("999")
     else:
         package["page_count"] = 29
+    with pytest.raises(acceptance.OCRAcceptanceError):
+        acceptance.assemble_ai_consensus(
+            extractor,
+            reviewer,
+            adjudication,
+            package,
+            extractor_sha256="a" * 64,
+            reviewer_sha256="b" * 64,
+            adjudication_sha256="c" * 64,
+            package_sha256="d" * 64,
+            frozen_at="2026-08-04T00:00:00Z",
+        )
+
+
+@pytest.mark.parametrize("mutation", ["empty", "text_mismatch", "strata_incomplete"])
+def test_ai_consensus_rejects_incomplete_page_truth(mutation):
+    package, extractor, reviewer, adjudication, _ = _consensus_fixture()
+    if mutation == "empty":
+        extractor["pages"][0].update(text="", elements=[], tables=[], digits=[])
+    elif mutation == "text_mismatch":
+        next(element for element in extractor["pages"][0]["elements"] if element["text"])["text"] += " mismatch"
+    else:
+        package["pages"][0]["strata"] = list(package["pages"][0]["strata"]) + ["chart"]
     with pytest.raises(acceptance.OCRAcceptanceError):
         acceptance.assemble_ai_consensus(
             extractor,

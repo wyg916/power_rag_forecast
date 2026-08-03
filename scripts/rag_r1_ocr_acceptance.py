@@ -1025,6 +1025,21 @@ def _validate_ai_page(page: Any, package_page: Mapping[str, Any], label: str) ->
         if not table_id or table_id in table_ids:
             raise OCRAcceptanceError(f"ai_table_identity_invalid:{page_id}:{index}")
         table_ids.add(table_id)
+    reconstructed = "\n".join(
+        element["text"]
+        for element in sorted(page["elements"], key=lambda item: item["reading_order"])
+        if element["text"]
+    )
+    if not normalize_text(page["text"]) and not page["elements"] and not page["tables"]:
+        raise OCRAcceptanceError(f"ai_page_truth_empty:{page_id}")
+    if normalize_text(reconstructed) != normalize_text(page["text"]):
+        raise OCRAcceptanceError(f"ai_page_text_elements_mismatch:{page_id}")
+    strata = set(package_page.get("strata") or [])
+    if ({"table", "complex_table"} & strata and not page["tables"]) or any(
+        kind in strata and not any(element["kind"] == kind for element in page["elements"])
+        for kind in ("chart", "formula")
+    ):
+        raise OCRAcceptanceError(f"ai_page_strata_incomplete:{page_id}")
     if not isinstance(page["digits"], list) or any(not isinstance(value, str) for value in page["digits"]):
         raise OCRAcceptanceError(f"ai_digits_invalid:{page_id}")
     try:
