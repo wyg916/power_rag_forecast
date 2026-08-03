@@ -1,0 +1,12 @@
+只记录脱敏命令摘要：
+- git status / worktree list / for-each-ref / merge-base / rev-list / diff
+- PostgreSQL 角色、成员关系、ACL、Alembic、public 对象只读快照
+- ALTER ROLE beta10d_app_login PASSWORD <redacted>
+- 新旧受限凭据独立连接验证；旧会话清理
+- git push origin 1de4036:refs/heads/beta10d/rag-r1-integration（HTTPS 网络失败，未成功）
+- git merge --no-ff -s ours beta10d/rag-r1-integration
+- 定向 pytest、py_compile、git diff --check、秘密扫描
+
+完整无秘密检查点：
+`E:\智能运营分析项目_备份\beta10d\20260803_132939543_RAG_R1B_PRE`
+
