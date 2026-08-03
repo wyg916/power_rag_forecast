@@ -70,3 +70,20 @@
 ## 集成门禁
 
 支线交付必须同时满足：不超过 20 文件、不超过 1000 行有效代码、工作树干净、独立测试和证据完整、无当前 PostgreSQL 写入、无正式 Alembic revision、无真实密钥、未超出文件所有权。共享文件冲突由主线重新实现，不直接 merge 整支线。
+
+## RAG-R1B 黄金集受控接收（2026-08-03）
+
+- 接收目标：`beta10d/rag-r1b-evidence-closure`。
+- 来源：`beta10d/rag-r1b-golden-set` / `90a4ff3254b1f0c01a859da18074f6f7738ffd1d`。
+- 接收提交：普通 cherry-pick `428d62b0249d43e806011f9bfed47ed6256694cb`；无冲突，未 merge、rebase 或改写历史。
+- 修改范围：20/20 文件符合 `15_RAG_R1B_GOLDEN_SET.md` 白名单；数据库、迁移、Compose、公共配置、release、alias、snapshot 修改均为 0。
+- 治理测试：18/18 PASS；严格 JSON/schema、审核批次并集、来源 SHA-256 均 PASS。
+- 安全与硬编码：20 文件敏感信息 finding 0；150 个真实题号精确常量 0、题号专用分支 0、答案硬编码未发现、critical 门槛未降低。
+- 候选黄金集治理：已接收（RECEIVED）。
+- 人工审批：`PENDING`；清单状态保持 `PENDING_HUMAN_APPROVAL`，150/150 题仍为 pending，`human_verified=true` 为 0。
+- 正式检索指标：`PENDING HUMAN REVALIDATION`，不得把历史候选基线登记为正式 PASS。
+- 正式 AI 指标：`NOT PASS`。
+- 候选检索基线：R@3 100%、R@5 100%、MRR 96.67%、critical 15/15、Citation 100%。
+- 候选 AI 基线：80/100、critical 16/30、grounding 93%、Citation 446/446、幻觉数字 0、拒答/不可用 100%、未授权拦截率 `NOT_MEASURED`。
+- 人工审核入口：`docs/codex/evidence/RAG_R1B_GOLDEN_20260803T140228/`；检索 2 批×25、AI 4 批×25、critical 30 单独复核。
+- 发布约束：未创建 snapshot、未切 alias、未发布 Candidate；人工批准及正式复验完成前保持禁止。

@@ -1,0 +1,9 @@
+docs/codex/PARALLEL_INTEGRATION_REGISTER.md
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/RAG_R1B_GOLDEN_ACCEPT_20260803T233306/audit.md
+docs/codex/evidence/RAG_R1B_GOLDEN_ACCEPT_20260803T233306/changed_files.txt
+docs/codex/evidence/RAG_R1B_GOLDEN_ACCEPT_20260803T233306/commands.md
+docs/codex/evidence/RAG_R1B_GOLDEN_ACCEPT_20260803T233306/plan.md
+docs/codex/evidence/RAG_R1B_GOLDEN_ACCEPT_20260803T233306/rollback.md
+docs/codex/evidence/RAG_R1B_GOLDEN_ACCEPT_20260803T233306/test_summary.md
+docs/codex/evidence/RAG_R1B_GOLDEN_ACCEPT_20260803T233306/unresolved.md
