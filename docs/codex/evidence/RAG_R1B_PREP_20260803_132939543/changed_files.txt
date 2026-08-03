@@ -10,4 +10,4 @@ docs/codex/evidence/RAG_R1B_PREP_20260803_132939543/test_summary.md
 docs/codex/evidence/RAG_R1B_PREP_20260803_132939543/rollback.md
 docs/codex/evidence/RAG_R1B_PREP_20260803_132939543/unresolved.md
 docs/codex/evidence/RAG_R1B_PREP_20260803_132939543/reconciliation.md
-
+docs/codex/evidence/RAG_R1B_PREP_20260803_132939543/worktrees.md

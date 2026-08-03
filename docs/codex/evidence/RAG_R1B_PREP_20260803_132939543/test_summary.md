@@ -8,4 +8,5 @@
 - 关键 RAG/OCR/检索脚本 `py_compile`：PASS。
 - `git diff --check`：PASS。
 - 新凭据扫描：工作线与任务前检查点共扫描 1,246 个文件，命中 0；新增任务文档通用连接串/Authorization 模式命中 0。
-- GitHub 推送：BLOCKED；本机到 `github.com:443` 无法连接，GitHub API 复核 `1de4036` 尚不存在于远端。
+- GitHub 推送：PASS；最终幂等重试成功，`ls-remote` 与本地 tracking ref 均精确为 `1de4036247b38e5e688c846f25ac1836f6c2a5e5`。
+- 三个并行工作树：PASS；分支名、路径、HEAD、干净度和任务边界文件均验证通过。
