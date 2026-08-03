@@ -155,6 +155,7 @@ def _ai_role(package, *, origin, isolation, review_pass, suffix=""):
     return {
         "schema_version": acceptance.AI_ROLE_SCHEMA,
         "origin": origin,
+        acceptance.AI_ROLE_ORIGIN_FIELDS[origin]: origin,
         "model_role": f"role-{review_pass}",
         "input_isolation": isolation,
         "review_pass": review_pass,
@@ -167,6 +168,7 @@ def _ai_adjudication(package, extractor):
     return {
         "schema_version": acceptance.AI_ADJUDICATION_SCHEMA,
         "origin": acceptance.AI_ROLE_ORIGINS[2],
+        "adjudicator_origin": acceptance.AI_ROLE_ORIGINS[2],
         "model_role": "role-3",
         "input_isolation": "page_images_plus_a_b_only",
         "review_pass": 3,

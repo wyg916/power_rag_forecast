@@ -51,6 +51,11 @@ AI_CONSENSUS_SCHEMA = "rag-r1-ocr-ai-consensus/v1"
 AI_VERIFICATION_MODE = "multi_agent_independent_consensus"
 AI_CONSENSUS_VERIFIED = "AI_CONSENSUS_VERIFIED"
 AI_ROLE_ORIGINS = ("codex_ai_ocr_extractor", "codex_ai_independent_visual_reviewer", "codex_ai_consensus_adjudicator")
+AI_ROLE_ORIGIN_FIELDS = {
+    AI_ROLE_ORIGINS[0]: "annotator_origin",
+    AI_ROLE_ORIGINS[1]: "reviewer_origin",
+    AI_ROLE_ORIGINS[2]: "adjudicator_origin",
+}
 
 
 class OCRAcceptanceError(RuntimeError):
@@ -1054,10 +1059,13 @@ def _validate_ai_page(page: Any, package_page: Mapping[str, Any], label: str) ->
 
 
 def validate_ai_role_output(value: Any, package: Mapping[str, Any], *, origin: str, isolation: str, review_pass: int) -> list[dict[str, Any]]:
-    value = _exact_keys(value, {"schema_version", "origin", "model_role", "input_isolation", "review_pass", "human_verified", "pages"}, origin)
+    origin_field = AI_ROLE_ORIGIN_FIELDS.get(origin)
+    if origin_field is None:
+        raise OCRAcceptanceError(f"ai_role_origin_unknown:{origin}")
+    value = _exact_keys(value, {"schema_version", "origin", origin_field, "model_role", "input_isolation", "review_pass", "human_verified", "pages"}, origin)
     if value["schema_version"] != AI_ROLE_SCHEMA or value["origin"] != origin or not _text(value["model_role"]):
         raise OCRAcceptanceError(f"ai_role_identity_invalid:{origin}")
-    if value["input_isolation"] != isolation or value["review_pass"] != review_pass or value["human_verified"] is not False:
+    if value[origin_field] != origin or value["input_isolation"] != isolation or value["review_pass"] != review_pass or value["human_verified"] is not False:
         raise OCRAcceptanceError(f"ai_role_isolation_invalid:{origin}")
     pages = value["pages"]
     package_pages = _package_pages(package)
@@ -1143,10 +1151,10 @@ def assemble_ai_consensus(extractor: Mapping[str, Any], reviewer: Mapping[str, A
     package_pages = _package_pages(package)
     left = validate_ai_role_output(extractor, package, origin=AI_ROLE_ORIGINS[0], isolation="blind_page_images_only", review_pass=1)
     right = validate_ai_role_output(reviewer, package, origin=AI_ROLE_ORIGINS[1], isolation="blind_page_images_only_no_extractor_access", review_pass=2)
-    adjudication = _exact_keys(adjudication, {"schema_version", "origin", "model_role", "input_isolation", "review_pass", "human_verified", "pages"}, "adjudication")
+    adjudication = _exact_keys(adjudication, {"schema_version", "origin", "adjudicator_origin", "model_role", "input_isolation", "review_pass", "human_verified", "pages"}, "adjudication")
     if adjudication["schema_version"] != AI_ADJUDICATION_SCHEMA or adjudication["origin"] != AI_ROLE_ORIGINS[2] or not _text(adjudication["model_role"]):
         raise OCRAcceptanceError("ai_adjudicator_identity_invalid")
-    if adjudication["input_isolation"] != "page_images_plus_a_b_only" or adjudication["review_pass"] != 3 or adjudication["human_verified"] is not False:
+    if adjudication["adjudicator_origin"] != AI_ROLE_ORIGINS[2] or adjudication["input_isolation"] != "page_images_plus_a_b_only" or adjudication["review_pass"] != 3 or adjudication["human_verified"] is not False:
         raise OCRAcceptanceError("ai_adjudicator_isolation_invalid")
     adjudication_pages = adjudication["pages"]
     if not isinstance(adjudication_pages, list) or len(adjudication_pages) != 30:
