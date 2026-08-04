@@ -1,0 +1,104 @@
+{
+  "schema_version": "rag-r1b-retrieval-r3-final-evidence/v1",
+  "status": "RETRIEVAL PERFORMANCE NOT PASS",
+  "controller_handoff": "DO NOT HAND OFF",
+  "starting_head": "63fc9fc67172681665e97dbf71e54cf1d617a9a4",
+  "scope": {
+    "runtime_profile": "r3-development40",
+    "question_count": 40,
+    "hidden_assets_read": false,
+    "full_50_read": false
+  },
+  "identity": {
+    "development_sha256": "0ed7f294607504c83c4c566135d8cf3eccea1c466aa5d6bc439a5b2880e65a6d",
+    "manifest_sha256": "123c8cf57034c8b59dfaf477d8626945255a3f94dda5609103e4275818829c49",
+    "candidate_corpus_sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7",
+    "release_id": "RAG-R1",
+    "collection": "rag_chunks_RAG-R1",
+    "point_count": 8339,
+    "embedding_dimension": 1024,
+    "reranker_version": "sha256:2a581f058542bd175695f8f92097b7aa4fbdac637ad486739f26e4cbc11ca159",
+    "evaluator_protocol_sha256": "07962fdcc6a996d5a30f10edf506bd997c1c4689f181bf402eac5d9998302323"
+  },
+  "effective_profile": {
+    "runtime": "torch_fp32",
+    "device": "cpu",
+    "batch_size": 8,
+    "max_length": 64,
+    "rerank_candidate_count": 3,
+    "qdrant_per_mode_limit": 12,
+    "torch_threads": 8,
+    "torch_interop_threads": 1
+  },
+  "baseline": {
+    "warm_cache_miss_p95_ms": 5886.746,
+    "mrr": 0.9583
+  },
+  "final_scenarios": {
+    "cold_miss": {"p50_ms": 1531.174, "p90_ms": 2086.865, "p95_ms": 2547.360, "p99_ms": 15239.505, "max_ms": 15239.505},
+    "warm_miss": {"p50_ms": 1468.384, "p90_ms": 1839.457, "p95_ms": 2324.463, "p99_ms": 3101.324, "max_ms": 3101.324},
+    "cold_hit": {"p50_ms": 1176.121, "p90_ms": 1798.797, "p95_ms": 2614.966, "p99_ms": 8819.648, "max_ms": 8819.648},
+    "warm_hit": {"p50_ms": 1168.722, "p90_ms": 1818.762, "p95_ms": 2111.111, "p99_ms": 2652.433, "max_ms": 2652.433}
+  },
+  "warm_miss_stage_p95_ms": {
+    "auth_acl": {"before": 1.874, "after": 1.358},
+    "query_embedding": {"before": 704.313, "after": 495.947},
+    "sparse": {"before": 164.500, "after": 106.635},
+    "dense": {"before": 144.059, "after": 108.142},
+    "qdrant": {"before": 591.010, "after": 147.708},
+    "rrf": {"before": 1.190, "after": 0.580},
+    "duplicate_merge": {"before": 0.417, "after": 0.212},
+    "parent_expansion": {"before": 0.179, "after": 0.034},
+    "content_security": {"before": 19.394, "after": 19.363},
+    "reranker": {"before": 5236.838, "after": 1404.092},
+    "citation_hash": {"before": 1.083, "after": 0.677},
+    "serialization": {"before": 0.241, "after": 0.200},
+    "cache": {"before": 0.156, "after": 0.127},
+    "postgres_metadata": "CONTROLLER_READ_ONLY_METADATA_PENDING"
+  },
+  "quality": {
+    "recall_at_3": 1.0,
+    "recall_at_5": 1.0,
+    "mrr": 0.9458,
+    "critical_recall_at_5": 1.0,
+    "citation_integrity": 1.0,
+    "golden_expected_chunk_full_coverage": 0.4,
+    "golden_expected_chunk_average_coverage": 0.5071
+  },
+  "security": {
+    "acl_negative_blocked_per_scenario": 40,
+    "tenant_leakage_count": 0,
+    "injection_blocked_per_scenario": 3,
+    "pipeline_error_count": 0,
+    "qdrant_write_count": 0,
+    "database_write_count": 0,
+    "secret_value_scan_match_count": 0,
+    "admin_key_loaded_count": 0,
+    "environment_allowlist_enforced_all_scenarios": true,
+    "unapproved_environment_key_count": 0,
+    "dotenv_autoload_disabled": true,
+    "cache_write_scope_enforced": true,
+    "programmatic_profile_required": true
+  },
+  "gate": {
+    "status": "FAIL",
+    "checks_passed_per_scenario": 18,
+    "checks_total_per_scenario": 20,
+    "failed_checks": [
+      "golden_expected_evidence_complete",
+      "latency_p95_lte_1500ms"
+    ],
+    "golden_questions_exceeding_top5": 5,
+    "maximum_expected_chunks": 9
+  },
+  "raw_evidence": {
+    "final_matrix_sha256": "21e9e35e302f68dee12c2cc2c713924cb854b0d9a908b88d4768601daee0f1d9",
+    "cold_hit_child_sha256": "9af510ef8bc64a5441bdfcb6fae1292fe7116da08abdb185e86f7a3d1c4928c9",
+    "baseline_matrix_sha256": "1975ae9067faf6962e1e8f5c77d91a6207d278cd14d74938fe989d398bb2435d"
+  },
+  "external_actions": {
+    "alias_changed": false,
+    "snapshot_created": false,
+    "release_published": false
+  }
+}

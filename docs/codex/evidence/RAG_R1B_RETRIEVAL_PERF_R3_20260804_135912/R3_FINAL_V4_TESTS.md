@@ -1,0 +1,21 @@
+# RAG-R1B Retrieval Performance R3 Audit-Closed Final Tests
+
+- Python syntax compilation: PASS.
+- Focused R3 contracts, reranker unit tests, and enterprise hybrid core: 26 passed.
+- Extended targeted regression covering Qdrant transport/store, candidate acceptance, R3 contracts, reranker, and hybrid core: 55 passed.
+- Final development-40 four-scenario matrix: executed completely; expected process exit was non-zero because the gate status is FAIL.
+- JSON UTF-8 parse and aggregate validation: PASS.
+- Four-scenario completeness, cache flags, run-state labels, process isolation, unique nonces, prewarm proof, runtime identity, quality identity, result/ACL signatures, security evidence, zero writes, and collection identity: PASS.
+- Actual runtime environment allowlist: PASS in all four scenarios.
+- Unapproved runtime environment key count: 0.
+- Cache write scope outside the output evidence directory: rejected.
+- Programmatic gold/evaluate runtime profile: required.
+- Individual gates: FAIL because P95 exceeds 1500 ms and frozen expected evidence cannot fit top five for five questions.
+- Modified-file whitelist scan: 0 findings outside the task whitelist.
+- question_id hardcode scan: 0 findings.
+- answer hardcode scan: 0 findings.
+- Secret literal scan: 0 findings.
+- Database/release write scan: 0 findings.
+- Final report Secret match count: 0.
+- Final report Admin Key loaded count: 0.
+- Hidden 10 and full 50 were not read.

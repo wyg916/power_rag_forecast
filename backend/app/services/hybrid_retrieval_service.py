@@ -153,18 +153,27 @@ def hybrid_retrieve(
     sparse_query: Mapping[str, Any] | None,
     structured_filter: Mapping[str, Any] | None = None,
     requested_top_k: int = 5,
+    candidate_limit: int | None = None,
 ) -> HybridResult:
     total_started = perf_counter()
     timings: dict[str, float] = {}
     filters = dict(structured_filter or {})
     top_k = dynamic_k(query, requested_top_k)
+    rerank_limit = (
+        top_k if candidate_limit is None else max(1, min(int(candidate_limit), 20))
+    )
+    search_limit = (
+        max(20, min(top_k * 4, 100))
+        if candidate_limit is None
+        else max(8, min(rerank_limit * 4, 100))
+    )
     cache_key_started = perf_counter()
     cache_key = release_aware_cache_key(
         context=context,
         store=store,
         query=query,
         structured_filter=filters,
-        top_k=top_k,
+        top_k=rerank_limit,
     )
     timings["cache_key_ms"] = _timing_ms(cache_key_started)
     timings["cache_ms"] = timings["cache_key_ms"]
@@ -173,10 +182,12 @@ def hybrid_retrieve(
         dense_vector=dense_vector,
         sparse_query=sparse_query,
         structured_filter=filters,
-        limit=max(20, min(top_k * 4, 100)),
+        limit=search_limit,
     )
     timings.update(result.timings_ms)
     counts = {key: len(value) for key, value in result.candidates.items()}
+    counts["rerank_limit"] = rerank_limit
+    counts["qdrant_per_mode_limit"] = search_limit
     if not result.available:
         timings["hybrid_total_ms"] = _timing_ms(total_started)
         return HybridResult(
@@ -190,9 +201,10 @@ def hybrid_retrieve(
         )
     items = rrf_fuse(
         result.candidates,
-        limit=top_k,
+        limit=rerank_limit,
         timings_ms=timings,
     )
+    counts["rerank_input"] = len(items)
     if not items:
         timings["hybrid_total_ms"] = _timing_ms(total_started)
         return HybridResult(

@@ -74,8 +74,14 @@ def _fake_runtime(monkeypatch: pytest.MonkeyPatch, delay: float = 0.0):
     return state
 
 
-def _provider(version: str = "") -> rerank_service.BGETransformersReranker:
-    return rerank_service.BGETransformersReranker("fake-reranker-model", "bge-reranker-v2-m3", batch_size=8, max_length=128, model_version=version)
+def _provider(
+    version: str = "", max_length: int = 128,
+    runtime: str = "torch_fp32",
+) -> rerank_service.BGETransformersReranker:
+    return rerank_service.BGETransformersReranker(
+        "fake-reranker-model", "bge-reranker-v2-m3",
+        batch_size=8, max_length=max_length, model_version=version, runtime=runtime,
+    )
 
 
 def test_cache_identity_includes_normalized_path_and_version(monkeypatch: pytest.MonkeyPatch):
@@ -98,6 +104,19 @@ def test_score_pairs_batches_seventeen_as_eight_eight_one(monkeypatch: pytest.Mo
     assert state.max_lengths == [128, 128, 128] and state.inference_calls == 3
     assert state.model_eval_calls == 1
     assert all(item["padding"] is True and item["truncation"] is True for item in state.tokenizer_kwargs)
+
+
+@pytest.mark.parametrize("configured", [64, 96, 128])
+def test_score_pairs_uses_configured_effective_max_length(monkeypatch, configured):
+    state = _fake_runtime(monkeypatch)
+    assert len(_provider(max_length=configured)._score_pairs("query", ["evidence"])) == 1
+    assert state.max_lengths == [configured]
+
+
+def test_non_fp32_runtime_is_rejected():
+    with pytest.raises(ValueError, match="reranker_runtime_invalid"):
+        _provider(runtime="torch_dynamic_int8")
+
 
 
 def test_rerank_scores_exact_duplicate_text_once_without_merging_candidates(monkeypatch: pytest.MonkeyPatch):

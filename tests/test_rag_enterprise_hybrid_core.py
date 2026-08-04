@@ -160,6 +160,32 @@ def test_dynamic_k_and_cache_key_include_release_and_permissions():
     )
 
 
+def test_hybrid_candidate_limit_bounds_reranker_and_qdrant_inputs():
+    points = []
+    for index in range(6):
+        point = _point(content=f"evidence-{index}")
+        point["payload"]["chunk_id"] = f"chunk-{index}"
+        points.append(point)
+    store = _store(points)
+
+    result = hybrid_retrieve(
+        store=store,
+        context=_context(),
+        query="risk evidence",
+        dense_vector=VALID_DENSE,
+        sparse_query={"text": "risk evidence"},
+        requested_top_k=5,
+        candidate_limit=3,
+    )
+
+    assert result.available is True
+    assert len(result.items) == 3
+    assert result.candidate_counts["rerank_limit"] == 3
+    assert result.candidate_counts["rerank_input"] == 3
+    assert result.candidate_counts["qdrant_per_mode_limit"] == 12
+    assert all(request["limit"] == 12 for _, request in store._transport.requests)
+
+
 def test_hybrid_core_refuses_when_no_evidence():
     result = hybrid_retrieve(
         store=_store([]), context=_context(), query="没有证据的问题",

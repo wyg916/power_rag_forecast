@@ -79,10 +79,13 @@ class BGETransformersReranker:
     device: str = "cpu"
     batch_size: int = 8
     max_length: int = 512
+    runtime: str = "torch_fp32"
     name: str = "bge"
     model_version: str = ""
 
     def __post_init__(self) -> None:
+        if self.runtime != "torch_fp32":
+            raise ValueError("reranker_runtime_invalid")
         self._tokenizer: Any | None = None
         self._model_obj: Any | None = None
         self._load_lock = Lock()
@@ -122,7 +125,8 @@ class BGETransformersReranker:
                 trust_remote_code=False,
                 use_safetensors=True if enterprise else None,
             )
-            model.to(self.device or "cpu")
+            device = self.device or "cpu"
+            model.to(device)
             model.eval()
             self._tokenizer = tokenizer
             self._model_obj = model
@@ -143,7 +147,7 @@ class BGETransformersReranker:
                 pairs,
                 padding=True,
                 truncation=True,
-                max_length=max(128, int(self.max_length or 512)),
+                max_length=max(32, min(512, int(self.max_length or 512))),
                 return_tensors="pt",
             )
             inputs = {key: value.to(self.device or "cpu") for key, value in inputs.items()}
@@ -214,6 +218,7 @@ class BGETransformersReranker:
             enriched["rerank_raw_score"] = round(float(raw_score), 6)
             enriched["reranker_model"] = self.model
             enriched["reranker_version"] = self.model_version
+            enriched["reranker_runtime"] = self.runtime
             enriched["final_score"] = round(hybrid_score * 0.35 + float(rerank_score) * 0.65, 6)
             output.append(enriched)
         output.sort(key=lambda row: row.get("final_score", 0), reverse=True)
@@ -238,6 +243,7 @@ def get_reranker() -> RerankProvider:
         model_name = _env("RAG_RERANK_MODEL_NAME", "") or (Path(model_path).name if model_path else "bge-reranker")
         model_version = _env("RAG_RERANK_VERSION", "")
         device = _env("RAG_RERANK_DEVICE", "cpu") or "cpu"
+        runtime = (_env("RAG_RERANK_RUNTIME", "torch_fp32") or "torch_fp32").lower()
         try:
             batch_size = int(_env("RAG_RERANK_BATCH_SIZE", "8") or "8")
         except Exception:
@@ -254,6 +260,7 @@ def get_reranker() -> RerankProvider:
             device,
             batch_size,
             max_length,
+            runtime,
         )
         with _RERANKER_CACHE_LOCK:
             if cache_key not in _RERANKER_CACHE:
@@ -264,6 +271,7 @@ def get_reranker() -> RerankProvider:
                     device=device,
                     batch_size=batch_size,
                     max_length=max_length,
+                    runtime=runtime,
                 )
         return _RERANKER_CACHE[cache_key]
     return LocalHeuristicReranker(name=f"{provider}_compatible")
