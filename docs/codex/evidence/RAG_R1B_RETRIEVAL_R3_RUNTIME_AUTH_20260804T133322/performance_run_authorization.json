@@ -1,0 +1,162 @@
+{
+  "schema_version": "rag-r1b-r3-performance-run-authorization/v1",
+  "generated_at": "2026-08-04T13:33:22+08:00",
+  "status": "R3_DEVELOPMENT_AUTHORIZED_LIVE_PASS_PENDING",
+  "source_branch": "beta10d/rag-r1b-retrieval-performance",
+  "source_head": "63fc9fc67172681665e97dbf71e54cf1d617a9a4",
+  "source_parent": "4a514d34113ee06a5725fa3f23bcf28298374040",
+  "source_checkpoint": {
+    "type": "performance_experiment_checkpoint",
+    "controller_receive": "NO",
+    "receive_status": "PENDING",
+    "live_acceptance": "NOT_EXECUTED_BY_SOURCE_CHECKPOINT",
+    "p95": "NOT_PROVEN"
+  },
+  "candidate": {
+    "tenant_id": "default",
+    "release_id": "RAG-R1",
+    "release_status": "candidate",
+    "is_current": false,
+    "collection": "rag_chunks_RAG-R1",
+    "points_count": 8339,
+    "payload_index_count": 22,
+    "dense_dimension": 1024,
+    "sparse_vector": "bm25",
+    "embedding_provider": "sentence_transformers",
+    "embedding_model": "BAAI/bge-large-zh-v1.5",
+    "embedding_dimension": 1024,
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "candidate_file_sha256": "ed5f62ad50a36207ca7d0e729ae2bfb054e276b40816d8ac1da04eb376468ed7",
+    "alias_target": null,
+    "snapshot_count": 0
+  },
+  "qdrant": {
+    "status": "PASS",
+    "version": "1.18.2",
+    "image_digest": "sha256:75eab8c4ba42096724fdcfde8b4de0b5713d529dde32f285a1f86fdcb2c9e50c",
+    "endpoint": "https://127.0.0.1:6333",
+    "tls_health": "PASS",
+    "strict_mode": true,
+    "read_only_key_read": "PASS",
+    "read_only_key_write_denied": "PASS",
+    "no_key_denied": "PASS",
+    "admin_key_injected_to_retrieval": false,
+    "git_out_runtime_file": "E:\\智能运营分析项目_运行资产\\rag-r1\\performance\\r3-qdrant-readonly.env",
+    "secret_values_emitted": false
+  },
+  "postgres": {
+    "release_consistency": "PASS",
+    "audited_identity": "postgres",
+    "audited_transaction_read_only": true,
+    "audited_identity_is_least_privilege": false,
+    "credentials_injected_to_ultra": false,
+    "access_mode_for_r3": "controller_mediated_forced_read_only",
+    "reason": "The configured local identity is a superuser. A new persistent role was not authorized by the security gate, so no PostgreSQL secret or DSN is handed to the performance task.",
+    "database_writes": 0,
+    "migration_changes": 0,
+    "release_mutations": 0
+  },
+  "retrieval_set": {
+    "status": "AI_SURROGATE_GOLD_STANDARD_FROZEN_PENDING_FORMAL_REVALIDATION",
+    "human_verified": false,
+    "automated_consensus_verified": true,
+    "verification_mode": "multi_agent_independent_consensus",
+    "question_count": 50,
+    "development_count": 40,
+    "hidden_count": 10,
+    "critical_count": 15,
+    "hidden_critical_count": 3,
+    "unresolved_count": 0,
+    "manifest_path": "docs/codex/evidence/RAG_R1B_GOLDEN_AI_CONSENSUS_20260804T023000/retrieval_consensus_manifest.json",
+    "manifest_file_sha256": "123c8cf57034c8b59dfaf477d8626945255a3f94dda5609103e4275818829c49",
+    "manifest_internal_sha256": "3b80a9292aabe3ed3d40fe6c7fa584035984c8b501110c77e009f738a1f15cc6",
+    "development_path": "docs/codex/evidence/RAG_R1B_GOLDEN_AI_CONSENSUS_20260804T023000/retrieval_development_40.json",
+    "development_sha256": "0ed7f294607504c83c4c566135d8cf3eccea1c466aa5d6bc439a5b2880e65a6d",
+    "hidden_path": "docs/codex/evidence/RAG_R1B_GOLDEN_AI_CONSENSUS_20260804T023000/retrieval_hidden_10.sealed.json",
+    "hidden_sha256": "55368d9a5eadadd6c84d6ac3e31bb2704e3d3d2eb8534d1e683af7bd044cddab",
+    "full_50_controller_copy": "docs/codex/evidence/RAG_R1B_GOLDEN_AI_CONSENSUS_20260804T023000/retrieval_ai_consensus_50.json",
+    "full_50_sha256": "1e526ee2f4c2feda72a27c52fdc08b68888fccd02be2302110e45c1e2674df7e",
+    "ultra_may_read": [
+      "retrieval_consensus_manifest.json",
+      "retrieval_development_40.json"
+    ],
+    "ultra_must_not_read_while_tuning": [
+      "retrieval_hidden_10.sealed.json",
+      "retrieval_ai_consensus_50.json"
+    ],
+    "coverage": [
+      "tenant",
+      "ACL",
+      "Citation",
+      "critical",
+      "refusal"
+    ]
+  },
+  "machine": {
+    "cpu": "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz",
+    "cores": 6,
+    "logical_processors": 12,
+    "memory_bytes": 17095184384,
+    "gpu": "NVIDIA GeForce GTX 1660 Ti",
+    "gpu_memory_mib": 6144,
+    "gpu_driver": "610.62",
+    "gpu_compute_capability": "7.5"
+  },
+  "inference_runtime": {
+    "allowed": "existing project CPU-only PyTorch runtime",
+    "python": "3.11.9",
+    "torch": "2.12.1+cpu",
+    "cuda": null,
+    "transformers": "4.57.6",
+    "sentence_transformers": "3.4.1",
+    "physical_gpu_usable_by_current_torch": false,
+    "new_dependency_or_runtime_install_authorized": false
+  },
+  "allowed_files": [
+    "backend/app/services/hybrid_retrieval_service.py",
+    "backend/app/services/rerank_service.py",
+    "backend/app/services/rag_qdrant_transport.py",
+    "backend/app/services/qdrant_vector_store.py",
+    "scripts/rag_r1_candidate_acceptance.py",
+    "tests/test_rag_enterprise_hybrid_core.py",
+    "tests/test_rag_qdrant_transport.py",
+    "tests/test_rag_qdrant_vector_store.py",
+    "tests/test_rag_r1_candidate_acceptance.py",
+    "tests/performance/rag_r1_retrieval_*",
+    "docs/codex/evidence/RAG_R1B_RETRIEVAL_PERF_*"
+  ],
+  "forbidden": [
+    "database writes",
+    "database migrations",
+    "public configuration",
+    "Compose",
+    "public API contracts",
+    "golden answers",
+    "hidden answer access during tuning",
+    "release status",
+    "alias",
+    "snapshot",
+    "publish",
+    "merge",
+    "cherry-pick",
+    "rebase"
+  ],
+  "final_gate": {
+    "controller_only_hidden_and_full50_replay": true,
+    "p95_ms_lte": 1500,
+    "recall_at_3_gte": 0.9,
+    "recall_at_5_gte": 0.98,
+    "mrr_gte": 0.85,
+    "critical_recall": 1.0,
+    "citation_integrity": 1.0,
+    "acl_no_regression": true,
+    "required_cache_quadrants": [
+      "cold_miss",
+      "warm_miss",
+      "cold_hit",
+      "warm_hit"
+    ],
+    "status_now": "NOT_PASS"
+  },
+  "secret_values_emitted": false
+}

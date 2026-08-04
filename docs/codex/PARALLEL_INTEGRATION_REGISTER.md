@@ -112,3 +112,19 @@
 - 7 页无文本层且尚未运行 OCR/VLM：`ocr-001/002/011/012/015/021/027`；不得将 native PDF 候选当作 OCR 共识。
 - 来源工作树的未提交 `TASK_STATUS.md` 和 `backups/` 未接收、未修改、未清理。
 - 下一阶段：按 AI-only 修订执行 Extractor/Independent Reviewer/Adjudicator 三角色 30 页共识；完成前不得标记 OCR PASS。
+
+## RAG-R1B 检索性能 R2 检查点与 R3 运行授权（2026-08-04）
+
+- 来源：`beta10d/rag-r1b-retrieval-performance` / `63fc9fc67172681665e97dbf71e54cf1d617a9a4`；父提交 `4a514d34113ee06a5725fa3f23bcf28298374040`。
+- `63fc9fc` 类型：`性能实验检查点`；接收状态：`PENDING`；live 验收：`NOT EXECUTED`；P95：`NOT PROVEN`；主控接收：`NO`。
+- 主控未 cherry-pick `63fc9fc`，未 merge/rebase/改写性能支线历史；当前主控代码仍停在已独立接收的父提交对应提交 `c622754bc2e42e1d488bce9d86c88b8c0084ea32`。
+- Qdrant Candidate 环境恢复 PASS：1.18.2、TLS/HTTP health、strict mode、无 Key 拒绝、只读 Key 可读不可写；Admin Key 未注入检索配置。
+- Candidate 一致性 PASS：`RAG-R1` / `rag_chunks_RAG-R1` / 8,339 points / 22 payload indexes / dense 1024 / sparse bm25 / BGE 1024；release 仍为 `candidate`、`is_current=false`，alias NULL、snapshot 0。
+- Qdrant Git 外只读注入：`E:\智能运营分析项目_运行资产\rag-r1\performance\r3-qdrant-readonly.env`；文件不含 Admin Key、数据库 Secret 或完整数据库 DSN，Secret 正文未进入 Git/报告。
+- PostgreSQL release 一致性由主控强制只读事务验证；当前本地配置身份为 `postgres` 超级用户，不能作为最小权限身份交给 Ultra。新建持久只读角色未获安全门禁授权，因此 PostgreSQL Secret/DSN 未注入性能任务，metadata 阶段由主控代跑；数据库数据/结构/迁移/release 写入均为 0。
+- 正式 50 题 AI 自动共识集已冻结：40 开发 + 10 隐藏，`human_verified=false`、`automated_consensus_verified=true`、`verification_mode=multi_agent_independent_consensus`；manifest 文件 SHA-256 为 `123c8cf57034c8b59dfaf477d8626945255a3f94dda5609103e4275818829c49`。
+- 性能 Ultra 调优时只允许读取 manifest 与开发 40 题；不得读取隐藏 10 题或全 50 题答案，不得根据失败结果修改黄金答案；隐藏/全量复验由主控执行。
+- 主控在 `c622754` 上的独立 live50 结果仅作 R3 基线，不改变 `63fc9fc` 的 `NOT EXECUTED` 登记：cold miss P95 `11372.354ms`、warm hit P95 `6149.715ms`，质量门禁未退化但性能均 FAIL。
+- R3 允许运行时为当前 CPU-only PyTorch；物理 GTX 1660 Ti 存在，但当前 torch `2.12.1+cpu` / CUDA NULL，未授权安装新运行时或换机。
+- 运行授权包：`docs/codex/evidence/RAG_R1B_RETRIEVAL_R3_RUNTIME_AUTH_20260804T133322/`；结论 `R3 DEVELOPMENT AUTHORIZED / RETRIEVAL PERFORMANCE NOT PASS`。
+- snapshot、alias、release 状态、Candidate 发布与生产切换变更均为 0。

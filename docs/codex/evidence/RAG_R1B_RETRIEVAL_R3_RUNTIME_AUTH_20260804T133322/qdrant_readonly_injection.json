@@ -1,0 +1,25 @@
+{
+  "schema_version": "rag-r1b-r3-qdrant-readonly-injection/v1",
+  "status": "PASS",
+  "runtime_file": "E:\\智能运营分析项目_运行资产\\rag-r1\\performance\\r3-qdrant-readonly.env",
+  "checks": {
+    "runtime_file_exists": true,
+    "read_only_key_matches": true,
+    "admin_key_not_injected": true,
+    "database_secret_absent": true,
+    "collection_exact": true,
+    "embedding_1024": true
+  },
+  "injected_key_names": [
+    "RAG_RELEASE_ID",
+    "RAG_QDRANT_COLLECTION",
+    "QDRANT_URL",
+    "QDRANT_API_KEY",
+    "QDRANT_READ_ONLY_API_KEY",
+    "QDRANT_CA_CERT",
+    "RAG_EMBEDDING_MODEL",
+    "RAG_EMBEDDING_DIM",
+    "RAG_RERANKER_MODEL"
+  ],
+  "secret_values_emitted": false
+}

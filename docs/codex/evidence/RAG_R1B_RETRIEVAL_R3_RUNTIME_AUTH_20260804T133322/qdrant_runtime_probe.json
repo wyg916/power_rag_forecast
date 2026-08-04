@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "checked_at": "2026-08-04T05:23:40.739224+00:00",
+  "endpoint": "https://127.0.0.1:6333",
+  "image_version": "1.18.2",
+  "image_digest": "sha256:75eab8c4ba42096724fdcfde8b4de0b5713d529dde32f285a1f86fdcb2c9e50c",
+  "checks": {
+    "tls_version_read": true,
+    "no_key_read_denied": true,
+    "read_only_key_read_allowed": true,
+    "read_only_key_create_denied": true,
+    "admin_create_and_inspect": true,
+    "vector_dimension_1024": true,
+    "strict_mode_enabled": true,
+    "read_only_key_write_denied": true,
+    "probe_collection_deleted": true
+  },
+  "probe_collection": "rag_r1_security_probe_20260804_052332_2676",
+  "probe_collection_deleted": true,
+  "secret_values_emitted": false,
+  "persistent_candidate_mutations": 0
+}
