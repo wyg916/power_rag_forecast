@@ -6,7 +6,8 @@ from typing import Any
 
 from ..data_access import jsonable
 from .answer_guard import validate_answer
-from .chat_memory import save_chat_exchange
+from .chat_memory import save_assistant_turn as save_chat_exchange
+from .identity_context import IdentityContext
 from .context_builder import build_answer
 from .dify_client import DifyClient
 from .intent_classifier import classify
@@ -70,6 +71,7 @@ def answer_chat(
     debug: bool = False,
     rag_context: Any = None,
     enterprise_store: Any = None,
+    identity: IdentityContext | None = None,
 ) -> dict[str, Any]:
     clean_question = (question or "").strip()
     return answer_chat_accurate(
@@ -86,6 +88,8 @@ def answer_chat(
         debug=debug,
         rag_context=rag_context,
         enterprise_store=enterprise_store,
+        persist=identity is not None,
+        identity=identity,
     )
 
     session_id = session_id or "chat_" + uuid.uuid4().hex[:12]

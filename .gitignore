@@ -14,6 +14,7 @@ docx_render_check_*/
 .playwright-mcp/
 .codex_tmp/
 .codex_envs/
+backups/
 wheelhouse/
 browser_cache/
 .browser_cache/

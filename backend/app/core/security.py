@@ -95,6 +95,9 @@ class CurrentUser:
     role: str
     permissions: list[str]
     auth_mode: str
+    tenant_id: str = "default"
+    workspace_id: str = "default"
+    role_ids: tuple[str, ...] = ()
 
     def has_permission(self, permission: str) -> bool:
         values = set(self.permissions)
@@ -145,6 +148,9 @@ def _current_user_from_jwt(request: Request, token: str) -> CurrentUser:
         role=role,
         permissions=_permissions_for_role(role),
         auth_mode="jwt",
+        tenant_id=str(record.get("tenant_id") or "default"),
+        workspace_id=str(record.get("workspace_id") or "default"),
+        role_ids=tuple(record.get("role_ids") or (role,)),
     )
     request.state.current_user = user
     return user
@@ -173,6 +179,9 @@ def get_current_user(request: Request) -> CurrentUser:
         role=role,
         permissions=_permissions_for_role(role),
         auth_mode=auth_mode,
+        tenant_id="default",
+        workspace_id="default",
+        role_ids=(role,),
     )
     request.state.current_user = user
     return user

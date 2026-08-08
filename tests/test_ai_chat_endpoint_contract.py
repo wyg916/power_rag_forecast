@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from backend.app.api.v1.endpoints import assistant as assistant_endpoint
+from backend.app.ai.chat_memory import MemoryNotFoundError, MemoryPersistenceError
 from backend.app.main import app
 
 
@@ -32,6 +33,9 @@ def test_ai_chat_reuses_answer_chat(monkeypatch):
     assert payload["session_id"] == "chat_test_session"
     assert payload["answer"].startswith("结论：")
     assert captured["question"] == "测试问答链路"
+    identity = captured["kwargs"]["identity"]
+    assert identity.user_id == "pytest-admin"
+    assert identity.tenant_id == "default"
 
 
 def test_enterprise_ai_chat_injects_authenticated_rag_runtime(monkeypatch):
@@ -70,6 +74,14 @@ def test_ai_rag_answer_rejects_tenant_override():
 
     assert response.status_code == 400
     assert response.json()["detail"] == "tenant_override_forbidden"
+
+
+def test_ai_chat_rejects_identity_body_override():
+    response = client.post(
+        "/api/ai/chat",
+        json={"question": "identity tamper", "user_id": "victim", "tenant_id": "tenant_b"},
+    )
+    assert response.status_code == 422
 
 
 def test_ai_chat_stream_reuses_answer_chat(monkeypatch):
@@ -145,3 +157,37 @@ def test_ai_upload_attachment_saves_metadata(monkeypatch, tmp_path):
     assert payload["filename"] == "question.txt"
     assert payload["summary"] == "hello assistant"
     assert (tmp_path / "metadata.jsonl").exists()
+
+
+def test_session_crud_uses_authoritative_identity_and_hides_foreign_rows(monkeypatch):
+    captured: list[tuple[str, str]] = []
+
+    def fake_list(identity, page=1, page_size=50):
+        captured.append(("list", identity.user_id))
+        return {"items": [{"session_id": "owned"}], "total": 1, "page": page, "page_size": page_size}
+
+    def foreign(_identity):
+        raise MemoryNotFoundError("foreign")
+
+    monkeypatch.setattr(assistant_endpoint, "list_chat_sessions", fake_list)
+    monkeypatch.setattr(assistant_endpoint, "get_chat_session", foreign)
+
+    listed = client.get("/api/ai/chat/sessions?page=1&page_size=1")
+    assert listed.status_code == 200
+    assert listed.json()["sessions"] == [{"session_id": "owned"}]
+    assert captured == [("list", "pytest-admin")]
+
+    detail = client.get("/api/ai/chat/sessions/foreign-session")
+    assert detail.status_code == 404
+    assert detail.json()["detail"] == "assistant_memory_not_found"
+
+
+def test_memory_failure_is_not_reported_as_success(monkeypatch):
+    monkeypatch.setattr(
+        assistant_endpoint,
+        "list_chat_sessions",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(MemoryPersistenceError("db down")),
+    )
+    response = client.get("/api/ai/chat/sessions")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "assistant_memory_unavailable"

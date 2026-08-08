@@ -409,7 +409,7 @@ def _save_sync_task_log(engine, started: datetime, status: str, result: dict[str
 
 def save_ai_trace_record(
     *,
-    session_id: str,
+    identity,
     question: str,
     intent: str,
     answer: str,
@@ -418,62 +418,16 @@ def save_ai_trace_record(
     guard_result: dict[str, Any],
     trace_payload: dict[str, Any],
 ) -> None:
-    try:
-        from ..repositories.ai_trace_repository import save_ai_trace
+    from ..repositories.ai_trace_repository import save_ai_trace
 
-        if save_ai_trace(
-            trace_id=str(trace_payload.get("trace_id") or ""),
-            session_id=session_id,
-            question=question,
-            intent=intent,
-            answer=answer,
-            tools=tools,
-            evidence=evidence,
-            guard_result=guard_result,
-            trace_payload=trace_payload,
-        ):
-            return
-    except Exception:
-        pass
-
-    cfg = project_config()
-    if not get_database_config(cfg).enabled:
-        return
-    try:
-        apply_database_migrations(cfg)
-        engine = create_database_engine(cfg)
-        row = {
-            "trace_id": trace_payload.get("trace_id"),
-            "session_id": session_id,
-            "question": question,
-            "intent": intent,
-            "answer": answer,
-            "tools_json": _dumps(tools),
-            "evidence_json": _dumps(evidence),
-            "guard_result_json": _dumps(guard_result),
-            "trace_json": _dumps(trace_payload),
-        }
-        with engine.begin() as conn:
-            conn.execute(
-                text(
-                    """
-                    INSERT INTO ai_traces (
-                        trace_id, session_id, question, intent, answer,
-                        tools_json, evidence_json, guard_result_json, trace_json
-                    )
-                    VALUES (
-                        :trace_id, :session_id, :question, :intent, :answer,
-                        :tools_json, :evidence_json, :guard_result_json, :trace_json
-                    )
-                    ON DUPLICATE KEY UPDATE
-                        answer = VALUES(answer),
-                        tools_json = VALUES(tools_json),
-                        evidence_json = VALUES(evidence_json),
-                        guard_result_json = VALUES(guard_result_json),
-                        trace_json = VALUES(trace_json)
-                    """
-                ),
-                row,
-            )
-    except Exception:
-        return
+    save_ai_trace(
+        identity,
+        trace_id=str(trace_payload.get("trace_id") or ""),
+        question=question,
+        intent=intent,
+        answer=answer,
+        tools=tools,
+        evidence=evidence,
+        guard_result=guard_result,
+        trace_payload=trace_payload,
+    )

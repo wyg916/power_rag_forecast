@@ -20,7 +20,21 @@ from ....services.rag_service import rag_search
 from ....services.rag_qdrant_transport import enterprise_runtime_for_user
 from ....services.rag_runtime_contract import enterprise_mode
 from ....services.rag_grounding_service import validate_claim_bindings
-from ....platform_services import answer_chat, generate_ai_insights, get_chat_session, list_chat_sessions
+from ....ai.chat_memory import (
+    MemoryConflictError,
+    MemoryNotFoundError,
+    MemoryPersistenceError,
+    assert_session_available,
+    delete_chat_session,
+    get_chat_session,
+    list_chat_sessions,
+    save_answer_feedback,
+    save_chat_feedback,
+    update_chat_session,
+)
+from ....ai.identity_context import IdentityContext
+from ....ai.assistant_service import answer_chat
+from ....platform_services import generate_ai_insights
 from ....schemas import AgentAnalyzeRequest, AnswerFeedbackRequest, ChatFeedbackRequest, ChatRequest
 from backend.app.ai_assistant.service import answer_chat_accurate
 
@@ -29,6 +43,16 @@ router = APIRouter()
 
 ASSISTANT_UPLOAD_DIR = Path(__file__).resolve().parents[4] / "data" / "assistant_uploads"
 ASSISTANT_UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024
+
+
+def _identity(user: CurrentUser, session_id: str = "", run_id: str = "latest") -> IdentityContext:
+    return IdentityContext.from_user(user, session_id=session_id, run_id=run_id)
+
+
+def _raise_memory_http(exc: Exception) -> None:
+    if isinstance(exc, (MemoryNotFoundError, MemoryConflictError)):
+        raise HTTPException(status_code=404, detail="assistant_memory_not_found") from exc
+    raise HTTPException(status_code=503, detail="assistant_memory_unavailable") from exc
 
 
 def _stream_event(event: str, data: dict[str, Any]) -> str:
@@ -145,20 +169,25 @@ def _answer_contract(
 def _answer_chat_from_payload(
     payload: ChatRequest, debug_allowed: bool, user: CurrentUser
 ) -> dict:
-    return _answer_contract(answer_chat(
-        payload.question,
-        session_id=payload.session_id,
-        run_id=payload.run_id,
-        market=payload.market,
-        date=payload.date,
-        page_context=payload.page_context,
-        scenario=payload.scenario,
-        user_role=payload.user_role,
-        answer_style=payload.answer_style,
-        model_provider=payload.model_provider,
-        debug=debug_allowed,
-        **_enterprise_runtime(user),
-    ))
+    try:
+        return _answer_contract(answer_chat(
+            payload.question,
+            session_id=payload.session_id,
+            run_id=payload.run_id,
+            market=payload.market,
+            date=payload.date,
+            page_context=payload.page_context,
+            scenario=payload.scenario,
+            user_role=payload.user_role,
+            answer_style=payload.answer_style,
+            model_provider=payload.model_provider,
+            debug=debug_allowed,
+            identity=_identity(user, payload.session_id or "", payload.run_id),
+            **_enterprise_runtime(user),
+        ))
+    except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
 
 
 @router.post("/api/ai/rag-answer")
@@ -239,6 +268,11 @@ def ai_chat_stream(
             ip_address=request.client.host if request.client else "",
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
+    if payload.session_id:
+        try:
+            assert_session_available(_identity(user, payload.session_id, payload.run_id))
+        except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+            _raise_memory_http(exc)
 
     def generate() -> Iterator[str]:
         yield _stream_event("intent", {"message": "已接收问题，正在识别业务意图。"})
@@ -346,65 +380,125 @@ def ai_agent_analyze(
             ip_address=request.client.host if request.client else "",
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
-    return _answer_contract(answer_chat_accurate(
-        payload.question,
-        session_id=payload.session_id,
-        run_id=payload.run_id,
-        market=payload.market,
-        date=payload.date,
-        page_context=payload.page_context,
-        scenario=payload.scenario,
-        user_role=payload.user_role,
-        answer_style=payload.answer_style,
-        model_provider=payload.model_provider,
-        debug=debug_allowed,
-        **_enterprise_runtime(user),
-    ))
+    try:
+        return _answer_contract(answer_chat_accurate(
+            payload.question,
+            session_id=payload.session_id,
+            run_id=payload.run_id,
+            market=payload.market,
+            date=payload.date,
+            page_context=payload.page_context,
+            scenario=payload.scenario,
+            user_role=payload.user_role,
+            answer_style=payload.answer_style,
+            model_provider=payload.model_provider,
+            debug=debug_allowed,
+            persist=True,
+            identity=_identity(user, payload.session_id or "", payload.run_id),
+            **_enterprise_runtime(user),
+        ))
+    except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
 
 
 @router.post("/api/ai/chat/feedback")
 def ai_chat_feedback(
     payload: ChatFeedbackRequest,
-    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
 ) -> dict:
-    from ....ai.chat_memory import save_chat_feedback
-
-    return save_chat_feedback(
-        session_id=payload.session_id or "",
-        trace_id=payload.trace_id or "",
-        rating=payload.rating,
-        comment=payload.comment,
-    )
+    if not payload.session_id:
+        raise HTTPException(status_code=400, detail="session_id_required")
+    try:
+        return save_chat_feedback(
+            _identity(user, payload.session_id),
+            trace_id=payload.trace_id or "",
+            rating=payload.rating,
+            comment=payload.comment,
+            idempotency_key=payload.idempotency_key,
+        )
+    except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
 
 
 @router.post("/api/ai/feedback")
 def ai_answer_feedback(
     payload: AnswerFeedbackRequest,
-    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
 ) -> dict:
-    from ....ai.chat_memory import save_answer_feedback
-
-    return save_answer_feedback(
-        session_id=payload.session_id or "",
-        trace_id=payload.trace_id or "",
-        question=payload.question,
-        answer=payload.answer,
-        feedback_type=payload.feedback_type,
-        feedback_comment=payload.feedback_comment,
-    )
+    if not payload.session_id:
+        raise HTTPException(status_code=400, detail="session_id_required")
+    try:
+        return save_answer_feedback(
+            _identity(user, payload.session_id),
+            trace_id=payload.trace_id or "",
+            question=payload.question,
+            answer=payload.answer,
+            feedback_type=payload.feedback_type,
+            feedback_comment=payload.feedback_comment,
+            idempotency_key=payload.idempotency_key,
+        )
+    except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
 
 
 @router.get("/api/ai/chat/sessions")
-def ai_chat_sessions(_: Annotated[CurrentUser, Depends(require_permission("assistant:use"))]) -> dict:
-    return {"sessions": list_chat_sessions()}
+def ai_chat_sessions(
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    page: int = 1,
+    page_size: int = 50,
+) -> dict:
+    try:
+        result = list_chat_sessions(_identity(user), page=page, page_size=page_size)
+        return {"sessions": result["items"], **result}
+    except MemoryPersistenceError as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
 
 
 @router.get("/api/ai/chat/sessions/{session_id}")
 def ai_chat_session(
     session_id: str,
-    _: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
 ) -> dict:
-    return get_chat_session(session_id)
+    try:
+        return get_chat_session(_identity(user, session_id))
+    except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
+
+
+@router.patch("/api/ai/chat/sessions/{session_id}")
+def ai_update_chat_session(
+    session_id: str,
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+    payload: dict[str, Any] = Body(...),
+) -> dict:
+    if set(payload) - {"title"}:
+        raise HTTPException(status_code=400, detail="identity_override_forbidden")
+    title = str(payload.get("title") or "").strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="title_required")
+    try:
+        return update_chat_session(_identity(user, session_id), title=title)
+    except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
+
+
+@router.delete("/api/ai/chat/sessions/{session_id}")
+def ai_delete_chat_session(
+    session_id: str,
+    user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
+) -> dict:
+    try:
+        delete_chat_session(_identity(user, session_id))
+        return {"ok": True}
+    except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
+        _raise_memory_http(exc)
+        raise AssertionError("unreachable")
 
 
 @router.get("/api/ai/insights")
@@ -414,24 +508,24 @@ def ai_insights(_: Annotated[CurrentUser, Depends(require_permission("assistant:
 
 @router.get("/api/ai/traces")
 def ai_traces(
-    _: Annotated[CurrentUser, Depends(require_permission("trace:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("trace:read"))],
     limit: int = 50,
     session_id: str | None = None,
 ) -> dict:
     from ....repositories.ai_trace_repository import list_ai_traces
 
-    return {"traces": list_ai_traces(limit=limit, session_id=session_id)}
+    return {"traces": list_ai_traces(_identity(user), limit=limit, session_id=session_id)}
 
 
 @router.get("/api/ai/traces/{trace_id}")
 def ai_trace_detail(
     trace_id: str,
-    _: Annotated[CurrentUser, Depends(require_permission("trace:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("trace:read"))],
 ) -> dict:
     from fastapi import HTTPException
     from ....repositories.ai_trace_repository import get_ai_trace
 
-    trace = get_ai_trace(trace_id)
+    trace = get_ai_trace(_identity(user), trace_id)
     if not trace:
         raise HTTPException(status_code=404, detail="Trace 不存在")
     return trace

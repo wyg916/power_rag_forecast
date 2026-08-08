@@ -2,6 +2,7 @@
 
 | 任务 | 状态 | 开始时间 | 完成时间 | 分支/提交 | 证据目录 | 阻塞项 |
 |---|---|---|---|---|---|---|
+| Day2 记忆安全与 PostgreSQL 持久化闭环 | PASS（本地统一 RC / Day2 范围） | 2026-08-08 17:42 | 2026-08-08 19:02 | release/beta10d-agent-rc-20260807 / 本行所在闭环提交 | `docs/codex/evidence/DAY2_MEMORY_SAFETY_PERSISTENCE_20260808_184725` | 无 Day2 阻塞；IdentityContext 全链路、三账号跨域攻击泄漏 0、0019 隔离往返、事务/并发/幂等、101 pytest、TypeScript/Vite、浏览器及一键启动均 PASS；临时账号/会话残留 0；边界：RAG-R1 保持 candidate/is_current=false，未切 alias、未激活模型、未生产发布 |
 | Day1 唯一 RC 集成与一键启动闭环 | PASS（本地统一 RC 基础服务） | 2026-08-08 16:34 | 2026-08-08 17:20 | release/beta10d-agent-rc-20260807 / 本行所在闭环提交 | `docs/codex/evidence/DAY1_UNIFIED_RC_20260808_164500` | 无 Day1 阻塞；边界：RAG-R1 仍为 candidate/is_current=false，Qdrant/模型/生产切换均未执行 |
 | BETA10D Day 8 正式知识库与 AI 助手证据链收口 | PASS（本地开发验收） | 2026-08-02 14:08 | 2026-08-02 15:53 | beta10d/day8-execution / 本行所在收口提交 | E:\智能运营分析项目_worktrees\beta10d_day8_execution\docs\codex\evidence\DAY8_20260802 | 正式语料 34 文档/39 Chunk，39/39 为 BGE 1024 维且 fallback 0；知识库 20/20、AI 助手 30/30、来源展示/拒答/未授权拦截均 100%，工具成功率 95.65%；后端干净矩阵 96 passed、前端契约 14 passed、TypeScript/Vite 3675 modules PASS。Seed 语料保留但从正式链路隔离，QA 评测只读未落库；Active/Candidate 未变、生产切换 0、迁移 0、RAG 支线集成 0。宽回归 7 failed/24 errors 均按历史夹具/独立工作树环境差异保留，详见 `docs/codex/day8/DAY8_FINAL_EXECUTION_REPORT.md`；本 PASS 不代表生产准入。 |
 | Phase 0 基线与规则安装 | 完成（技术验收 PASS） | 2026-07-15 17:40 | 2026-07-15 18:25 | p5-frontend-ai-experience / f8dc0bc9011b5c7cada833a7d4b4851a512eae7e | E:\智能运营分析项目_备份\phase3\20260715_174011867_BASELINE | 无；非阻塞警告：student_python_project/node_modules/ 不存在，未影响退出码、清单一致性或结论 |

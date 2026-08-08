@@ -45,6 +45,25 @@ if not defined LOCAL_DATABASE_CONFIG (
     if "%RC_NO_PAUSE%"=="0" pause
     goto end_error
 )
+set "RC_JWT_SECRET_FILE=%~dp0.codex_tmp\rc_runtime_jwt.secret"
+if exist "%RC_JWT_SECRET_FILE%" goto jwt_secret_ready
+"%PYTHON_EXE%" -c "import pathlib,secrets; pathlib.Path(r'%RC_JWT_SECRET_FILE%').write_text(secrets.token_urlsafe(48), encoding='utf-8')"
+if errorlevel 1 goto end_error
+:jwt_secret_ready
+set /p JWT_SECRET_KEY=<"%RC_JWT_SECRET_FILE%"
+if not defined JWT_SECRET_KEY goto jwt_secret_error
+goto jwt_secret_complete
+:jwt_secret_error
+echo [ERROR] Local JWT signing secret could not be loaded.
+goto end_error
+:jwt_secret_complete
+if not defined QDRANT_RUNTIME_CONFIG if exist "%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\runtime.env" set "QDRANT_RUNTIME_CONFIG=%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\runtime.env"
+if not defined QDRANT_RUNTIME_CONFIG (
+    echo [ERROR] Approved Qdrant runtime config was not found.
+    echo [TIP] Set QDRANT_RUNTIME_CONFIG to the approved E-drive RAG-R1 runtime.env.
+    if "%RC_NO_PAUSE%"=="0" pause
+    goto end_error
+)
 
 if /I "%~1"=="menu" goto menu
 goto rcstart
@@ -83,6 +102,23 @@ if not exist "%~dp0frontend\node_modules" (
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" redis start
 if errorlevel 1 goto rc_failed
 
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_qdrant_preflight.py" --env-file "%QDRANT_RUNTIME_CONFIG%" --require-assets --require-runtime
+if errorlevel 1 goto rc_failed
+
+docker compose --env-file "%QDRANT_RUNTIME_CONFIG%" -f "%~dp0deploy\rag-r1\docker-compose.qdrant.yml" --profile rag-r1-qdrant up -d qdrant
+if errorlevel 1 goto rc_failed
+
+set /a QDRANT_PROBE_ATTEMPT=0
+:qdrant_probe_retry
+set /a QDRANT_PROBE_ATTEMPT+=1
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_qdrant_runtime_probe.py" --env-file "%QDRANT_RUNTIME_CONFIG%" --output "%~dp0output\runtime_logs\qdrant_runtime_probe.json"
+if not errorlevel 1 goto qdrant_ready
+if %QDRANT_PROBE_ATTEMPT% GEQ 12 goto rc_failed
+echo [WAIT] Qdrant is still recovering, retry %QDRANT_PROBE_ATTEMPT%/12...
+"%PYTHON_EXE%" -c "import time; time.sleep(5)"
+goto qdrant_probe_retry
+:qdrant_ready
+
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" celery start
 if errorlevel 1 goto rc_failed
 
@@ -97,6 +133,7 @@ echo.
 echo [DONE] Unified RC base services are healthy.
 echo [INFO] Frontend: http://127.0.0.1:5173
 echo [INFO] Backend health: http://127.0.0.1:8000/api/health
+echo [INFO] Qdrant: https://127.0.0.1:6333 ^(TLS + API key^)
 echo [INFO] Use "run_project.bat menu" for maintenance actions.
 if "%RC_NO_PAUSE%"=="0" pause
 goto end

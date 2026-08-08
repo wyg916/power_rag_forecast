@@ -44,7 +44,7 @@ class ForecastRunRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), extra="forbid")
 
     question: str = Field(..., min_length=1, max_length=1000)
     session_id: str | None = None
@@ -60,7 +60,7 @@ class ChatRequest(BaseModel):
 
 
 class AgentAnalyzeRequest(BaseModel):
-    model_config = ConfigDict(protected_namespaces=())
+    model_config = ConfigDict(protected_namespaces=(), extra="forbid")
 
     question: str = Field(..., min_length=1, max_length=1000)
     session_id: str | None = None
@@ -76,19 +76,25 @@ class AgentAnalyzeRequest(BaseModel):
 
 
 class ChatFeedbackRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     session_id: str | None = None
     trace_id: str | None = None
     rating: str = Field(..., pattern="^(up|down)$")
     comment: str = Field(default="", max_length=1000)
+    idempotency_key: str = Field(default="", max_length=160)
 
 
 class AnswerFeedbackRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     session_id: str | None = None
     trace_id: str | None = None
     question: str = Field(default="", max_length=2000)
     answer: str = Field(default="", max_length=10000)
     feedback_type: Literal["accurate", "answer_mismatch", "wrong_data", "unclear_explanation"] = "answer_mismatch"
     feedback_comment: str = Field(default="", max_length=2000)
+    idempotency_key: str = Field(default="", max_length=160)
 
 
 class DataStatusResponse(BaseModel):

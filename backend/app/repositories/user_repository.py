@@ -48,6 +48,9 @@ def _normalize_user(row: dict[str, Any]) -> dict[str, Any]:
         "password_hash": row.get("password_hash") or "",
         "role": role,
         "role_id": role,
+        "role_ids": list(row.get("role_ids") or [role]),
+        "tenant_id": str(row.get("tenant_id") or "default"),
+        "workspace_id": str(row.get("workspace_id") or "default"),
         "is_active": bool(is_active),
         "is_superuser": bool(row.get("is_superuser") or role == "admin"),
         "last_login_at": row.get("last_login_at"),
@@ -144,6 +147,7 @@ def get_user_by_username(username: str) -> dict[str, Any] | None:
                 text(
                     """
                     SELECT user_id, username, display_name, password_hash, role_id, status,
+                           tenant_id, workspace_id,
                            email, role, is_active, is_superuser, last_login_at, created_at, updated_at
                     FROM users
                     WHERE username = :username
@@ -173,6 +177,7 @@ def get_user_by_id(user_id: str) -> dict[str, Any] | None:
                 text(
                     """
                     SELECT user_id, username, display_name, password_hash, role_id, status,
+                           tenant_id, workspace_id,
                            email, role, is_active, is_superuser, last_login_at, created_at, updated_at
                     FROM users
                     WHERE user_id = :user_id OR CAST(id AS TEXT) = :user_id

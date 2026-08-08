@@ -33,7 +33,10 @@ def test_analyst_can_generate_report(monkeypatch):
 def test_developer_can_read_trace_list(monkeypatch):
     from backend.app.api.v1.endpoints import assistant as assistant_endpoint
 
-    monkeypatch.setattr("backend.app.repositories.ai_trace_repository.list_ai_traces", lambda limit=50, session_id=None: [{"trace_id": "trace_test"}])
+    monkeypatch.setattr(
+        "backend.app.repositories.ai_trace_repository.list_ai_traces",
+        lambda identity, limit=50, session_id=None: [{"trace_id": "trace_test", "user_id": identity.user_id}],
+    )
     response = client.get("/api/ai/traces", headers={"X-User": "dev1", "X-Role": "developer"})
     assert response.status_code == 200
     assert response.json()["traces"][0]["trace_id"] == "trace_test"

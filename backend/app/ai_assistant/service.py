@@ -8,7 +8,8 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from ..ai.chat_memory import save_chat_exchange
+from ..ai.chat_memory import save_assistant_turn
+from ..ai.identity_context import IdentityContext
 from ..data_access import jsonable
 from .core.answer_guard import guard_answer
 from .core.answer_planner import plan_answer
@@ -20,10 +21,9 @@ from .core.trace_manager import TraceManager
 from .context_pack_builder import build_context_pack
 from .expert_answer_planner import normalize_answer_style, plan_expert_answer
 from .llm_router import LLMRouter, sanitize_error
-from .memory.conversation_state import get_conversation_state, save_conversation_state
+from .memory.conversation_state import get_conversation_state
 from .prompts import build_expert_messages
 from .schemas import ConversationState, IntentDecision, ToolResult
-from ..services.core_data_sync import save_ai_trace_record
 from ..services.rag_service import rag_enabled, rag_search
 from ..services.rag_grounding_service import validate_claim_bindings
 from .templates.deterministic_answers import answer_current_date, answer_data_freshness, answer_data_sql_query, answer_forecast_metric, answer_prediction_window
@@ -1171,7 +1171,8 @@ def answer_chat_accurate(
     answer_style: str = "analysis",
     model_provider: str = "auto",
     debug: bool = False,
-    persist: bool = True,
+    persist: bool = False,
+    identity: IdentityContext | None = None,
     rag_context: Any = None,
     enterprise_store: Any = None,
 ) -> dict[str, Any]:
@@ -1181,6 +1182,7 @@ def answer_chat_accurate(
     clean_question = normalize_question(question)
     timings_ms["input_normalizer_ms"] = _timing_ms(stage_started)
     session_id = session_id or "chat_" + uuid.uuid4().hex[:12]
+    memory_identity = identity.with_session(session_id, run_id) if identity else None
     security_reason = _security_refusal_reason(clean_question)
     if security_reason:
         return _security_refusal_payload(
@@ -1200,7 +1202,7 @@ def answer_chat_accurate(
     trace = TraceManager(clean_question)
     trace.step("input_normalizer", normalized_question=clean_question)
     stage_started = time.perf_counter()
-    previous = get_conversation_state(session_id)
+    previous = get_conversation_state(memory_identity) if memory_identity else None
     resolved_decision = resolve_followup(clean_question, previous)
     timings_ms["context_resolver_ms"] = _timing_ms(stage_started)
     trace.step(
@@ -1373,27 +1375,19 @@ def answer_chat_accurate(
         for item in tool_results
     ]
     if persist:
-        save_ai_trace_record(
-            session_id=session_id,
-            question=clean_question,
-            intent=decision.intent,
-            answer=answer,
-            tools=tool_calls,
-            evidence=evidence,
-            guard_result={"result": guard_result},
-            trace_payload=trace_payload,
-        )
-        save_conversation_state(_state_from_answer(session_id, decision, answer, tool_results, run_id))
-        save_chat_exchange(
-            session_id=session_id,
+        if memory_identity is None:
+            raise ValueError("authoritative identity is required when persistence is enabled")
+        save_assistant_turn(
+            identity=memory_identity,
             question=clean_question,
             answer=answer,
             intent=decision.intent,
             evidence=evidence,
             tool_calls=tool_calls,
-            user_role=user_role,
-            scenario=scenario,
             trace_id=trace.trace_id,
+            trace_payload=trace_payload,
+            guard_result={"result": guard_result},
+            state=_state_from_answer(session_id, decision, answer, tool_results, run_id),
         )
     focus_periods = [
         item.get("time") or item.get("hour")

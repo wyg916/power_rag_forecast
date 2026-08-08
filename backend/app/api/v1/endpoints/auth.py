@@ -40,6 +40,9 @@ def _user_payload(user: CurrentUser, display_name: str = "", email: str = "") ->
         "role": user.role,
         "permissions": user.permissions,
         "auth_mode": user.auth_mode,
+        "tenant_id": user.tenant_id,
+        "workspace_id": user.workspace_id,
+        "role_ids": list(user.role_ids),
     }
 
 
@@ -65,8 +68,17 @@ def login(payload: LoginRequest, request: Request) -> dict:
         role=role,
         permissions=permissions,
         auth_mode="jwt",
+        tenant_id=str(record.get("tenant_id") or "default"),
+        workspace_id=str(record.get("workspace_id") or "default"),
+        role_ids=tuple(record.get("role_ids") or (role,)),
     )
-    token = create_access_token(subject=user.username, user_id=user.user_id, role=user.role, permissions=user.permissions)
+    token = create_access_token(
+        subject=user.username,
+        user_id=user.user_id,
+        role=user.role,
+        permissions=user.permissions,
+        extra={"tenant_id": user.tenant_id, "workspace_id": user.workspace_id, "role_ids": list(user.role_ids)},
+    )
     update_last_login(user.username)
     write_audit_log(
         action="auth.login_success",
