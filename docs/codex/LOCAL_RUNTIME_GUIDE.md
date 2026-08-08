@@ -6,29 +6,31 @@
 
 所有命令均从项目根目录执行。真实密钥只写入本地 `.env`；仓库仅提交 `.env.example`。
 
+## 1.1 唯一 RC 默认入口
+
+- 唯一 RC 分支：`release/beta10d-agent-rc-20260807`。
+- 默认双击 `run_project.bat`：执行分支/提交、最小权限数据库身份、单 Alembic head、Redis、隔离 Celery、FastAPI、前端和组合健康门禁。
+- `run_project.bat menu`：进入维护菜单；其中同步、预测和其他写动作仍需用户显式选择。
+- `run_web_platform.bat`：仅启动或复用 Web 两端，固定 `--skip-sync`，不终止未知端口进程。
+- 启动过程不会自动迁移、Seed、同步业务数据、安装 npm 依赖、激活模型或发布 RAG。
+- 当前一键入口承诺的是基础服务健康，不包含 Qdrant/RAG 发布、Ollama 推理或业务闭环任务。
+
 ## 2. 前置条件
 
 - Windows 11。
-- 项目虚拟环境：`.venv\Scripts\python.exe`。
+- 项目虚拟环境：优先使用 RC 自身 `.venv\Scripts\python.exe`；若不存在，则复用 Git 公共工作树的 E 盘虚拟环境。
 - Node.js/npm 位于 `PATH`；也可通过 `NODE_HOME`、`NPM_EXE` 指定。
-- PostgreSQL 可用，但必须连接开发库或验收隔离库。
+- PostgreSQL 固定为 `localhost:5432/postgres`。
 - Docker Desktop 使用 Linux Engine；Redis 脚本默认使用 `desktop-linux` 上下文。
 - 模型严格推理环境 `.codex_envs\t002_sklearn160` 必须保留。
 
-复制 `.env.example` 为本地 `.env` 后填写开发配置。不得提交 `.env`。
+业务配置从 Git 忽略的本地 `.env` 读取；数据库运行与安全身份从项目外 E 盘本地配置读取。不得提交任何凭据文件。可通过 `LOCAL_RUNTIME_CONFIG` 和 `LOCAL_DATABASE_CONFIG` 显式覆盖路径。
 
 ## 3. PostgreSQL
 
-本仓库当前没有经过本阶段验收的“PostgreSQL 单独启动脚本”。请先通过既有本地 PostgreSQL 安装启动服务，再把隔离开发库连接写入 `.env` 的 `DATABASE_URL`。
+本仓库没有授权自动启停 PostgreSQL。启动器只接受本机 `localhost:5432/postgres`，Web 运行态必须分别使用 `beta10d_app_login` 和 `beta10d_security_login`；`postgres` 仅用于显式、只读的管理检查或经检查点保护的迁移，不得作为 Web 运行身份。
 
-禁止把正式业务数据库连接串用于本地验收。可使用：
-
-- `intelligent_ops_t001_migration_test`
-- `intelligent_ops_t003_transaction_test`
-- `intelligent_ops_t005_source_contract_test`
-- `intelligent_ops_phase3_acceptance`
-
-以上均为既有验收隔离库，不得自动删除。
+启动前检只读取配置并执行静态 `alembic heads`，不会运行 `alembic upgrade`。任何实际迁移必须另建数据库检查点、提供 downgrade/恢复方案并单独验收。
 
 ## 4. Redis
 
@@ -76,23 +78,20 @@ Windows 必须使用 `solo` pool、并发数 `1`，且只监听 `phase4_health`�
 
 ## 6. FastAPI 与前端
 
-仅启动后端：
+旧的分项包装器仅作故障定位兼容入口，不属于唯一 RC 默认路径，也不会再强制终止端口进程：
 
 ```bat
 run_web_backend.bat
-```
-
-仅启动前端：
-
-```bat
 run_web_frontend.bat
 ```
 
-启动或刷新本地 Web 平台：
+启动或复用本地 Web 平台：
 
 ```bat
 run_web_platform.bat
 ```
+
+缺失 `frontend/node_modules` 时，默认入口只复用 Git 公共工作树中已批准的依赖；若不存在则失败关闭，不会自动执行 `npm install`。
 
 后端健康地址：`http://127.0.0.1:8000/api/health`。
 
@@ -125,12 +124,9 @@ run_celery_health.bat
 
 ## 9. 重启顺序
 
-1. 确认 PostgreSQL 隔离开发库可连接。
-2. `run_redis_local.bat`。
-3. `run_celery_worker.bat`。
-4. `run_web_platform.bat`。
-5. `run_health_check.bat`。
-6. `run_celery_health.bat`。
+1. 确认本机 PostgreSQL 与两份 Git 忽略配置可用。
+2. 双击 `run_project.bat`。
+3. 若需分项维护，运行 `run_project.bat menu` 后显式选择。
 
 ## 10. 常见错误
 
@@ -184,5 +180,5 @@ Get-NetTCPConnection -State Listen -LocalPort 6379
 
 - 训练时 LightGBM 精确版本仍为 `unknown`。
 - Docker Desktop 版本较旧，升级不属于本任务。
-- 当前运行说明不覆盖 RAG 恢复、AI 100 题、报告/策略闭环或企业生产部署。
+- 当前运行说明不覆盖 Qdrant/RAG 发布、AI 100 题、报告/策略闭环或企业生产部署；PostgreSQL 中 `RAG-R1` 仍为 Candidate 且不是 current release。
 - 没有已验收的 PostgreSQL 单独启动脚本和 Web 平台一键停止脚本。

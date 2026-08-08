@@ -1,0 +1,27 @@
+{
+  "schema_version": "unified-rc-integration/v1",
+  "branch": "release/beta10d-agent-rc-20260807",
+  "worktree": "E:\\智能运营分析项目_worktrees\\release_beta10d_agent_rc_20260807",
+  "base": "bc36715d6943c212197d2e3dce5d8f2c6949bd08",
+  "fast_forward": "d5376bf899028b2353b73c84dfac2b25b3e6c7f9",
+  "cherry_picks": [
+    {
+      "source": "63fc9fc",
+      "result": "9ff8caebe68f47e9481fa512b7c660af8691fc98"
+    },
+    {
+      "source": "ef5217b58bb8c888d4f6e2c724775d065c0cd9e8",
+      "result": "0f6f1841e64b6f4bd83e01d57584c901254c3302"
+    }
+  ],
+  "skipped_patch_equivalent": {
+    "source": "4a514d34113ee06a5725fa3f23bcf28298374040",
+    "already_present_as": "c622754bc2e42e1d488bce9d86c88b8c0084ea32"
+  },
+  "alembic_head": "0018_rag_enterprise_r1",
+  "database_write_count": 0,
+  "production_switch": false,
+  "rag_release_published": false,
+  "model_activation": false,
+  "evidence": "docs/codex/evidence/DAY1_UNIFIED_RC_20260808_164500"
+}

@@ -10,7 +10,8 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from urllib.parse import quote_plus
+from typing import Sequence
+from urllib.parse import quote_plus, unquote, urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,10 +22,11 @@ BACKEND_URL = "http://127.0.0.1:8000/api/health"
 FRONTEND_URL = "http://127.0.0.1:5173"
 
 
-def load_dotenv() -> None:
-    env_path = ROOT / ".env"
+def load_env_file(env_path: Path, *, required: bool = False) -> bool:
     if not env_path.exists():
-        return
+        if required:
+            raise RuntimeError(f"Runtime config does not exist: {env_path}")
+        return False
     for raw_line in env_path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#") or "=" not in line:
@@ -34,6 +36,13 @@ def load_dotenv() -> None:
         value = value.strip().strip('"').strip("'")
         if key and (key not in os.environ or os.environ.get(key, "") == ""):
             os.environ[key] = value
+    return True
+
+
+def load_dotenv(runtime_configs: Sequence[Path] | None = None) -> None:
+    for runtime_config in runtime_configs or ():
+        load_env_file(runtime_config, required=True)
+    load_env_file(ROOT / ".env")
 
 
 def ensure_database_url() -> None:
@@ -53,6 +62,104 @@ def ensure_database_url() -> None:
         )
 
 
+def _database_identity(raw_url: str) -> tuple[str, str, int, str] | None:
+    try:
+        parsed = urlparse(raw_url)
+        return (
+            unquote(parsed.username or ""),
+            (parsed.hostname or "").lower(),
+            int(parsed.port or 5432),
+            unquote(parsed.path.lstrip("/")),
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+def validate_database_target() -> bool:
+    raw_url = os.environ.get("DATABASE_URL", "").strip()
+    security_url = os.environ.get("SECURITY_DATABASE_URL", "").strip()
+    if not raw_url or not security_url:
+        log(
+            "[ERROR] DATABASE_URL and SECURITY_DATABASE_URL are both required "
+            "for the unified RC launcher."
+        )
+        return False
+    runtime_identity = _database_identity(raw_url)
+    security_identity = _database_identity(security_url)
+    if runtime_identity is None or security_identity is None:
+        log("[ERROR] Database identity target cannot be parsed.")
+        return False
+    approved = (
+        ("beta10d_app_login", "localhost", 5432, "postgres"),
+        ("beta10d_security_login", "localhost", 5432, "postgres"),
+    )
+    normalized_runtime = (
+        runtime_identity[0],
+        "localhost" if runtime_identity[1] == "127.0.0.1" else runtime_identity[1],
+        runtime_identity[2],
+        runtime_identity[3],
+    )
+    normalized_security = (
+        security_identity[0],
+        "localhost" if security_identity[1] == "127.0.0.1" else security_identity[1],
+        security_identity[2],
+        security_identity[3],
+    )
+    if (normalized_runtime, normalized_security) != approved:
+        log(
+            "[ERROR] Database identities rejected; expected local least-privilege "
+            "runtime and security identities."
+        )
+        return False
+    if raw_url == security_url:
+        log("[ERROR] Runtime and security database identities must remain separated.")
+        return False
+    log(
+        "[OK] Database identities: beta10d_app_login + beta10d_security_login "
+        "@localhost:5432/postgres (credentials hidden)."
+    )
+    return True
+
+
+def git_identity() -> tuple[str, str]:
+    try:
+        branch = subprocess.check_output(
+            ["git", "-C", str(ROOT), "branch", "--show-current"],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        ).strip()
+        sha = subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        ).strip()
+        return branch, sha
+    except (OSError, subprocess.SubprocessError):
+        return "unknown", "unknown"
+
+
+def alembic_heads(py: str) -> tuple[bool, str]:
+    try:
+        result = subprocess.run(
+            [py, "-X", "utf8", "-m", "alembic", "heads"],
+            cwd=str(ROOT),
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, exc.__class__.__name__
+    heads = [line.strip() for line in result.stdout.splitlines() if "(head)" in line]
+    if result.returncode != 0 or len(heads) != 1:
+        return False, "; ".join(heads) or "unavailable"
+    return True, heads[0].removesuffix(" (head)").strip()
+
+
 def log(message: str) -> None:
     print(message, flush=True)
 
@@ -66,6 +173,7 @@ def python_executable() -> str:
         if resolved:
             return resolved
     return sys.executable or shutil.which("python") or "python"
+
 
 def npm_executable() -> str | None:
     configured = os.environ.get("NPM_EXE", "").strip()
@@ -117,49 +225,6 @@ def wait_http(url: str, name: str, seconds: int) -> bool:
     return False
 
 
-def port_pids(port: int) -> list[int]:
-    if os.name != "nt":
-        return []
-    try:
-        output = subprocess.check_output(["netstat", "-ano", "-p", "tcp"], text=True, encoding="utf-8", errors="ignore")
-    except Exception:
-        return []
-    pids: set[int] = set()
-    suffix = f":{port}"
-    for raw_line in output.splitlines():
-        columns = raw_line.split()
-        if len(columns) < 5:
-            continue
-        local_address = columns[1]
-        state = columns[3].upper()
-        pid_text = columns[4]
-        if not local_address.endswith(suffix) or state != "LISTENING":
-            continue
-        try:
-            pids.add(int(pid_text))
-        except ValueError:
-            continue
-    return sorted(pids)
-
-
-def stop_port(port: int, name: str) -> None:
-    pids = port_pids(port)
-    if not pids:
-        return
-    current_pid = os.getpid()
-    for pid in pids:
-        if pid == current_pid:
-            continue
-        log(f"[INFO] Stop existing {name} process on port {port}, pid={pid}.")
-        try:
-            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception as exc:
-            log(f"[WARN] Failed to stop pid={pid}: {exc}")
-    deadline = time.time() + 12
-    while time.time() < deadline and port_open(port, timeout=0.2):
-        time.sleep(0.5)
-
-
 def popen_detached(args: list[str], cwd: Path, log_name: str) -> subprocess.Popen:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     log_path = LOG_DIR / log_name
@@ -187,9 +252,7 @@ def sync_core_data(py: str) -> bool:
     return True
 
 
-def start_backend(py: str, sync: bool, restart: bool = False) -> bool:
-    if restart:
-        stop_port(8000, "backend")
+def start_backend(py: str, sync: bool) -> bool:
     if http_ok(BACKEND_URL):
         log("[INFO] Backend is already healthy on port 8000.")
         return True
@@ -205,16 +268,13 @@ def start_backend(py: str, sync: bool, restart: bool = False) -> bool:
 def ensure_frontend_deps() -> bool:
     if (FRONTEND_DIR / "node_modules").exists():
         return True
-    npm = npm_executable()
-    if not npm:
-        log("[ERROR] npm was not found in PATH.")
-        return False
-    log("[INFO] node_modules not found. Installing frontend dependencies.")
-    result = subprocess.run([npm, "install"], cwd=str(FRONTEND_DIR), text=True)
-    if result.returncode != 0:
-        log(f"[ERROR] npm install failed, exit code: {result.returncode}")
-        return False
-    return True
+    log("[ERROR] frontend/node_modules was not found.")
+    log(
+        "[TIP] Provision or reuse approved dependencies explicitly; "
+        "automatic network installation is disabled."
+    )
+    return False
+
 
 def start_static_frontend(py: str) -> bool:
     index_file = FRONTEND_DIST_DIR / "index.html"
@@ -242,9 +302,7 @@ def start_static_frontend(py: str) -> bool:
     return wait_http(FRONTEND_URL, "Frontend static server", 30)
 
 
-def start_frontend(py: str, restart: bool = False) -> bool:
-    if restart:
-        stop_port(5173, "frontend")
+def start_frontend(py: str) -> bool:
     if http_ok(FRONTEND_URL):
         log("[INFO] Frontend is already healthy on port 5173.")
         return True
@@ -287,21 +345,43 @@ def main() -> int:
     parser.add_argument("--frontend-only", action="store_true")
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--skip-sync", action="store_true")
-    parser.add_argument("--restart", action="store_true")
+    parser.add_argument("--runtime-config", type=Path, action="append")
+    parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
 
-    load_dotenv()
+    try:
+        load_dotenv(
+            [path.resolve() for path in args.runtime_config]
+            if args.runtime_config
+            else None
+        )
+    except (OSError, RuntimeError) as exc:
+        log(f"[ERROR] Runtime configuration failed: {exc}")
+        return 2
     ensure_database_url()
     py = python_executable()
-    log("[INFO] Power Trading AI Web platform launcher v2.11.2 DB-STATE-V1")
+    branch, sha = git_identity()
+    log("[INFO] Power Trading AI unified RC launcher v2.11.2")
+    log(f"[INFO] RC branch: {branch}")
+    log(f"[INFO] RC SHA: {sha}")
     log(f"[INFO] Python: {py}")
+    if not validate_database_target():
+        return 2
+    heads_ok, head = alembic_heads(py)
+    if not heads_ok:
+        log(f"[ERROR] Alembic head preflight failed: {head}")
+        return 2
+    log(f"[OK] Alembic head: {head}")
+    if args.preflight_only:
+        log("[DONE] Unified RC launcher preflight passed; no service was started.")
+        return 0
     maybe_check_ollama()
 
     ok = True
     if not args.frontend_only:
-        ok = start_backend(py, sync=not args.skip_sync, restart=args.restart) and ok
+        ok = start_backend(py, sync=not args.skip_sync) and ok
     if not args.backend_only:
-        ok = start_frontend(py, restart=args.restart) and ok
+        ok = start_frontend(py) and ok
 
     if ok:
         log(f"[DONE] Web platform ready: {FRONTEND_URL}")

@@ -12,8 +12,8 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-from urllib.parse import urlsplit, urlunsplit
+from typing import Any, Sequence
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +25,7 @@ DEFAULT_QUEUE = "phase4_health"
 DOCKER_TIMEOUT_SECONDS = 20
 WORKER_START_TIMEOUT_SECONDS = 60
 HEALTH_TASK_TIMEOUT_SECONDS = 30
+_RUNTIME_CONFIGS: tuple[Path, ...] = ()
 
 
 def _resolve_project_path(env_name: str, default: str) -> Path:
@@ -52,7 +53,33 @@ def runtime_temp_dir() -> Path:
     return path
 
 
+def _load_env_file(path: Path, *, required: bool = False) -> bool:
+    if not path.exists():
+        if required:
+            raise RuntimeError(f"Runtime config does not exist: {path}")
+        return False
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and (key not in os.environ or os.environ.get(key, "") == ""):
+            os.environ[key] = value
+    return True
+
+
+def configure_runtime(runtime_configs: Sequence[Path] | None) -> None:
+    global _RUNTIME_CONFIGS
+    _RUNTIME_CONFIGS = tuple(path.resolve() for path in runtime_configs or ())
+    for runtime_config in _RUNTIME_CONFIGS:
+        _load_env_file(runtime_config, required=True)
+
+
 def _load_project_env() -> None:
+    for runtime_config in _RUNTIME_CONFIGS:
+        _load_env_file(runtime_config, required=True)
     try:
         from config_loader import load_dotenv
 
@@ -166,6 +193,25 @@ def _docker_base_command() -> list[str]:
 def _docker_env() -> dict[str, str]:
     env = os.environ.copy()
     temp_dir = str(runtime_temp_dir())
+    database_url = urlsplit(env.get("DATABASE_URL", ""))
+    if not env.get("POSTGRES_USER", "").strip():
+        env["POSTGRES_USER"] = (
+            env.get("DB_USER") or unquote(database_url.username or "") or "postgres"
+        )
+    if not env.get("POSTGRES_PASSWORD", "").strip():
+        env["POSTGRES_PASSWORD"] = (
+            env.get("DB_PASSWORD") or unquote(database_url.password or "")
+        )
+    if not env.get("POSTGRES_DB", "").strip():
+        env["POSTGRES_DB"] = (
+            env.get("DB_NAME")
+            or unquote(database_url.path.lstrip("/"))
+            or "postgres"
+        )
+    if not env.get("APP_DB_PASSWORD", "").strip():
+        env["APP_DB_PASSWORD"] = env["POSTGRES_PASSWORD"]
+    if not env.get("SECURITY_DB_PASSWORD", "").strip():
+        env["SECURITY_DB_PASSWORD"] = env["POSTGRES_PASSWORD"]
     env.setdefault("JWT_SECRET_KEY", "phase4_precheck_compose_interpolation_only")
     env.setdefault("ADMIN_INITIALIZED", "1")
     env["TEMP"] = temp_dir
@@ -367,16 +413,23 @@ def _read_pid_record() -> dict[str, Any]:
 def _pid_active(pid: int) -> bool:
     if pid <= 0:
         return False
-    process = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    kernel32.GetExitCodeProcess.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
+    kernel32.GetExitCodeProcess.restype = ctypes.c_int
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.restype = ctypes.c_int
+    process = kernel32.OpenProcess(0x1000, False, pid)
     if not process:
         return False
     try:
         exit_code = ctypes.c_ulong()
-        if not ctypes.windll.kernel32.GetExitCodeProcess(process, ctypes.byref(exit_code)):
+        if not kernel32.GetExitCodeProcess(process, ctypes.byref(exit_code)):
             return False
         return exit_code.value == 259
     finally:
-        ctypes.windll.kernel32.CloseHandle(process)
+        kernel32.CloseHandle(process)
 
 
 def _inspect_health_workers(timeout: float = 5.0) -> list[str]:
@@ -519,14 +572,23 @@ def _terminate_pid(pid: int) -> bool:
         time.sleep(0.25)
     if not _pid_active(pid):
         return True
-    handle = ctypes.windll.kernel32.OpenProcess(0x0001 | 0x00100000, False, pid)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    kernel32.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.TerminateProcess.restype = ctypes.c_int
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.restype = ctypes.c_int
+    handle = kernel32.OpenProcess(0x0001 | 0x00100000, False, pid)
     if not handle:
         return False
     try:
-        ctypes.windll.kernel32.TerminateProcess(handle, 0)
-        ctypes.windll.kernel32.WaitForSingleObject(handle, 5000)
+        kernel32.TerminateProcess(handle, 0)
+        kernel32.WaitForSingleObject(handle, 5000)
     finally:
-        ctypes.windll.kernel32.CloseHandle(handle)
+        kernel32.CloseHandle(handle)
     return not _pid_active(pid)
 
 
@@ -573,10 +635,23 @@ def combined_health() -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="PHASE4-PRECHECK Redis/Celery local runtime helper")
+    parser.add_argument("--runtime-config", type=Path, action="append")
     parser.add_argument("component", choices=["redis", "celery", "combined"])
     parser.add_argument("action", choices=["start", "stop", "status", "ping", "health"])
     parser.add_argument("--url", default="", help="Optional Redis URL for ping/fail-closed verification.")
     args = parser.parse_args()
+
+    try:
+        configure_runtime(args.runtime_config)
+    except (OSError, RuntimeError) as exc:
+        return _emit(
+            _json_result(
+                False,
+                "runtime_config",
+                error_type=exc.__class__.__name__,
+                error=str(exc),
+            )
+        )
 
     if args.component == "redis":
         actions = {

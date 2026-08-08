@@ -759,6 +759,58 @@ def _embedding_cache_key(
     return hashlib.sha256(_canonical(value)).hexdigest()
 
 
+def _embeddings(
+    questions: Sequence[Mapping[str, Any]],
+    contract: Any,
+    cache_path: Path | None,
+) -> tuple[list[dict[str, Any]], float, bool]:
+    """Compatibility batch seam used by the governed AI acceptance runner.
+
+    Retrieval performance evaluation uses the per-question ``_embedding``
+    helper below so its latency accounting remains request-scoped.  The AI
+    acceptance runner deliberately keeps a batch seam that can be replaced by
+    failure-injection tests and that preserves the frozen v1 cache contract.
+    """
+    cache_key = _embedding_cache_key(questions, contract)
+    if cache_path and cache_path.is_file():
+        cached = _read_json(cache_path)
+        values = cached.get("embeddings")
+        if (
+            cached.get("schema_version") != "rag-r1-query-embeddings/v1"
+            or cached.get("cache_key") != cache_key
+            or not isinstance(values, list)
+            or len(values) != len(questions)
+        ):
+            raise CandidateAcceptanceError("query_embedding_cache_invalid")
+        return [dict(item) for item in values], 0.0, True
+
+    started = time.perf_counter()
+    values = embed_batch_with_metadata(
+        [str(item["question"]) for item in questions]
+    )
+    elapsed = round((time.perf_counter() - started) * 1000.0, 3)
+    if len(values) != len(questions):
+        raise CandidateAcceptanceError("query_embedding_count_mismatch")
+    if cache_path:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "rag-r1-query-embeddings/v1",
+                    "cache_key": cache_key,
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "secret_values_emitted": False,
+                    "embeddings": values,
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    return [dict(item) for item in values], elapsed, False
+
+
 def _embedding(
     question: Mapping[str, Any],
     contract: Any,

@@ -1,21 +1,72 @@
 @echo off
+chcp 65001 >nul
 setlocal
 pushd "%~dp0"
 
 set "PYTHONUTF8=1"
 if defined NODE_HOME if exist "%NODE_HOME%\node.exe" set "PATH=%NODE_HOME%;%PATH%"
 if defined NODE_HOME if exist "%NODE_HOME%\npm.cmd" set "NPM_EXE=%NODE_HOME%\npm.cmd"
+for /f "delims=" %%I in ('git -C "%~dp0." rev-parse --git-common-dir 2^>nul') do set "GIT_COMMON_DIR=%%I"
+for %%I in ("%GIT_COMMON_DIR%") do set "GIT_COMMON_DIR=%%~fI"
+if not exist "%GIT_COMMON_DIR%\HEAD" (
+    echo [ERROR] Git common directory could not be resolved.
+    popd
+    exit /b 2
+)
+for %%I in ("%GIT_COMMON_DIR%\..") do set "SHARED_PROJECT_ROOT=%%~fI"
+if defined PYTHON_EXE if exist "%PYTHON_EXE%" goto python_ready
 set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
-if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python"
+if exist "%PYTHON_EXE%" goto python_ready
+set "PYTHON_EXE=%SHARED_PROJECT_ROOT%\.venv\Scripts\python.exe"
+if not exist "%PYTHON_EXE%" (
+    echo [ERROR] Approved E-drive project Python runtime was not found.
+    echo [TIP] Set PYTHON_EXE to the approved project virtual environment.
+    popd
+    exit /b 2
+)
 
-echo [INFO] v2.11.2 DB-STATE-V1: restart Web platform with latest source.
+:python_ready
+if not defined LOCAL_RUNTIME_CONFIG if exist "%~dp0.env" set "LOCAL_RUNTIME_CONFIG=%~dp0.env"
+if not defined LOCAL_RUNTIME_CONFIG if exist "%SHARED_PROJECT_ROOT%\.env" set "LOCAL_RUNTIME_CONFIG=%SHARED_PROJECT_ROOT%\.env"
+if not defined LOCAL_RUNTIME_CONFIG (
+    echo [ERROR] Local runtime config was not found.
+    echo [TIP] Set LOCAL_RUNTIME_CONFIG to an E-drive, Git-ignored env file.
+    popd
+    exit /b 2
+)
+if not defined LOCAL_DATABASE_CONFIG if exist "%SHARED_PROJECT_ROOT%_本地配置\beta10d_day4_runtime.env" set "LOCAL_DATABASE_CONFIG=%SHARED_PROJECT_ROOT%_本地配置\beta10d_day4_runtime.env"
+if not defined LOCAL_DATABASE_CONFIG (
+    echo [ERROR] Least-privilege database identity config was not found.
+    echo [TIP] Set LOCAL_DATABASE_CONFIG to the approved E-drive Day 4 identity file.
+    popd
+    exit /b 2
+)
+if not exist "%~dp0frontend\node_modules" (
+    if not exist "%SHARED_PROJECT_ROOT%\frontend\node_modules" (
+        echo [ERROR] Approved frontend dependencies were not found.
+        echo [TIP] Provision dependencies explicitly before starting the RC; automatic network install is disabled.
+        popd
+        exit /b 2
+    )
+    mklink /J "%~dp0frontend\node_modules" "%SHARED_PROJECT_ROOT%\frontend\node_modules" >nul
+    if errorlevel 1 (
+        echo [ERROR] Failed to reuse the approved frontend dependencies.
+        popd
+        exit /b 2
+    )
+    echo [OK] Reused approved frontend dependencies from the Git common worktree.
+)
+
+echo [INFO] Unified RC Web launcher: reuse healthy services and start missing services.
 echo [INFO] Frontend: http://127.0.0.1:5173
 echo [INFO] Backend docs: http://127.0.0.1:8000/docs
-echo [INFO] Existing backend/frontend dev processes on ports 8000/5173 will be refreshed.
+echo [INFO] Database writes are disabled during launcher startup; data preparation is explicit.
 echo [INFO] Ollama warmup is skipped by default. Set START_OLLAMA=1 only when memory is enough.
 echo.
 
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --restart
+set "WEB_LAUNCHER_BROWSER_ARG="
+if "%NO_BROWSER%"=="1" set "WEB_LAUNCHER_BROWSER_ARG=--no-browser"
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --skip-sync %WEB_LAUNCHER_BROWSER_ARG%
 set "EXIT_CODE=%ERRORLEVEL%"
 
 if not "%EXIT_CODE%"=="0" (

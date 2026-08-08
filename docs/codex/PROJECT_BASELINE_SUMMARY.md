@@ -1,47 +1,47 @@
 # PROJECT_BASELINE_SUMMARY.md
 
-## 1. 当前事实基线
-- 基线日期：2026-07-14。
+## 1. 当前唯一 RC 基线
+
+- 基线日期：2026-08-08。
 - 产品版本：v2.11.2。
-- 当前分支：p5-frontend-ai-experience。
-- HEAD：f8dc0bc；本地分支领先远端 10 个提交。
-- 工作区存在较多未提交和未跟踪文件，因此 Git HEAD 不能单独代表磁盘基线。
-- 当前阶段：开发演示。
-- 工程完成度：64.6%（36 个活动模块中 14 已验证完成、16 部分完成、5 被阻塞、1 尚未开始）。
-- 下一阶段目标：先达到“可稳定本地运行”，再推进企业试点与私有化部署。
+- 唯一 RC 分支：`release/beta10d-agent-rc-20260807`。
+- 集成输入 HEAD：`0f6f1841e64b6f4bd83e01d57584c901254c3302`；最终闭环提交以本文件所在提交为准。
+- RC 工作树：`E:\智能运营分析项目_worktrees\release_beta10d_agent_rc_20260807`。
+- 主工作树 `E:\智能运营分析项目` 的未提交和未跟踪内容属于用户，未被本 RC 修改或接管。
+- 当前阶段：本地统一 RC 基础服务可复现启动；不代表生产发布、模型切换、RAG 发布或外部系统联调完成。
 
-## 2. 当前五项 P0
-1. 模型事实源分裂，读请求可能通过 seed 逻辑改变 Active 状态。
-2. 模型加载与特征契约不安全，运行时存在缺列静默补 0。
-3. 刷新、预测、同步缺少统一 run_id 与原子事务，存在全表覆盖和半成品风险。
-4. 认证默认开放、默认 JWT、前后端认证口径不一致，生产环境必须 fail-closed。
-5. seed/demo/fallback 可能在真实页面或 AI 回答中冒充业务事实。
+## 2. 已集成来源
 
-## 3. 模型与预测事实
-- 唯一最新完整候选 artifact：`model_artifacts/model_20260620_063015`。
-- 模型身份：Candidate，不是 Active。
-- feature_version：`features_140db8af25f9`。
-- 目标：`da_price`；特征数量：170。
-- 当前 `model_registry=0`，`model_versions=5` 条展示/seed 记录。
-- 当前 `forecast_runs=1`、`forecast_results=0`，不能视为有效预测闭环。
-- joblib 尚未完成授权安全加载，快速预测当前不可安全执行。
+- Day 8 基线：`bc36715d6943c212197d2e3dce5d8f2c6949bd08`。
+- RAG-R1 最终集成祖先：`1c8c2b195c01a18eb69715fa3017c0f5015498ce`。
+- 证据闭环：`d5376bf899028b2353b73c84dfac2b25b3e6c7f9`。
+- 检索性能契约：`63fc9fc`，集成提交 `9ff8caebe68f47e9481fa512b7c660af8691fc98`。
+- 检索性能修复：`ef5217b58bb8c888d4f6e2c724775d065c0cd9e8`，集成提交 `0f6f1841e64b6f4bd83e01d57584c901254c3302`。
+- `4a514d34113ee06a5725fa3f23bcf28298374040` 与已集成 `c622754bc2e42e1d488bce9d86c88b8c0084ea32` 补丁等价，未重复合入。
 
-## 4. 已验证能力
-- React/Vite 主页面可启动并构建。
-- FastAPI 最小运行栈、health、DB/task health 可用。
-- Redis/Celery 最小无副作用任务可用。
-- DeepSeek 最小真实调用可用。
-- PJM/Open-Meteo 小窗口采集可用。
+## 3. 当前运行事实
 
-## 5. 当前不可作为稳定能力宣称的内容
-- 真实唯一 Active 快速预测。
-- 统一 run_id 的刷新—预测—同步链。
-- 真实模型中心。
-- 当前 RAG 评分和 AI 100 题通过率。
-- 报告审核/发布/派发状态机和真实收益闭环。
-- Ollama 本地推理。
+- Python：共享 E 盘项目虚拟环境，Python 3.11.9。
+- Node.js：v24.18.0；前端复用 Git 公共工作树中已批准依赖，不自动联网安装。
+- PostgreSQL：仅允许 `localhost:5432/postgres`；Web 运行态使用 `beta10d_app_login`，安全仓储使用 `beta10d_security_login`。
+- Alembic：唯一 head `0018_rag_enterprise_r1`。
+- 数据库只读指纹：73 tables / 8 views / 47 sequences / 37 routines；写入计数 0。
+- Redis：Docker `redis:7-alpine`，仅监听 `127.0.0.1:6379`。
+- Celery：Windows `solo`、并发 1、仅监听 `phase4_health`；组合健康任务已验证结果后端可回读。
+- Web：FastAPI `127.0.0.1:8000`、Vite `127.0.0.1:5173`，均已通过 HTTP 200 冒烟。
 
-## 6. 第一批任务顺序
-- 安全线：T004 可独立实施。
-- 模型预测主线：T001 → T002 → T003 → T005。
-- 完成上述任务并通过双跑、幂等、失败回滚、旧批次共存和来源一致性验收后，才可将状态升级为“可稳定本地运行”。
+## 4. 数据、模型与 RAG 边界
+
+- Active 模型仍为 `model_20260620_063015` / `features_140db8af25f9`；本任务未反序列化模型、未训练、未注册或激活 Candidate。
+- 历史源事实水位仍为 2026-06-18 23:00；不得宣称为当前实时数据。
+- PostgreSQL 中 `RAG-R1` 仍为 `candidate`、`is_current=false`、`validated_at/published_at` 为空。
+- 本任务未启动 Qdrant、未创建 snapshot、未切 alias、未发布 RAG；统一入口当前只承诺基础服务健康。
+- 未执行迁移、Seed、同步、预测、报告、策略、外部网络调用或生产切换。
+
+## 5. 默认入口与证据
+
+- 默认双击：`run_project.bat`。
+- 维护菜单：`run_project.bat menu`。
+- Web 直接入口：`run_web_platform.bat`。
+- Day1 证据：`docs/codex/evidence/DAY1_UNIFIED_RC_20260808_164500`。
+- 集成与运行状态：`docs/codex/RC_INTEGRATION_MANIFEST.md`、`docs/codex/RC_STATUS.md`。

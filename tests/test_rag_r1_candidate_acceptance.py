@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -14,6 +15,44 @@ from scripts.rag_r1_candidate_ai_acceptance import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_batch_embedding_seam_preserves_ai_acceptance_cache_contract(
+    monkeypatch, tmp_path
+) -> None:
+    questions = [
+        {"id": "q-1", "question": "问题一"},
+        {"id": "q-2", "question": "问题二"},
+    ]
+    contract = SimpleNamespace(
+        embedding=SimpleNamespace(
+            provider="bge",
+            model="bge-large-zh-v1.5",
+            version="sha256:test",
+            dimensions=1024,
+        )
+    )
+    generated = [
+        {"embedding": [0.1], "metadata": {"provider": "bge"}},
+        {"embedding": [0.2], "metadata": {"provider": "bge"}},
+    ]
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        module,
+        "embed_batch_with_metadata",
+        lambda texts: calls.append(list(texts)) or generated,
+    )
+    cache_path = tmp_path / "ai-query-embeddings.json"
+
+    first, _, first_hit = module._embeddings(questions, contract, cache_path)
+    second, second_ms, second_hit = module._embeddings(
+        questions, contract, cache_path
+    )
+
+    assert first == second == generated
+    assert calls == [["问题一", "问题二"]]
+    assert first_hit is False
+    assert (second_ms, second_hit) == (0.0, True)
 
 
 def test_candidate_transport_is_exact_collection_read_only() -> None:
