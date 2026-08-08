@@ -681,6 +681,18 @@ def _evaluate_direct(question: dict[str, Any], fixture_run_id: str) -> dict[str,
         if item.get("tool_name") != "search_business_knowledge"
     )
     tool_fact_errors = _validate_tool_facts(payload, fixture_run_id)
+    verified_tool_facts = (
+        [
+            {
+                "tool_name": item.get("tool_name"),
+                "output": item.get("output") or {},
+            }
+            for item in payload.get("tool_calls") or []
+            if item.get("tool_name") != "search_business_knowledge" and item.get("success") is True
+        ]
+        if not tool_fact_errors
+        else []
+    )
     checks = {
         "route": route_ok,
         "domain": domain_ok,
@@ -708,6 +720,7 @@ def _evaluate_direct(question: dict[str, Any], fixture_run_id: str) -> dict[str,
         "business_tool_names": business_tool_names,
         "tool_success": tool_success,
         "tool_fact_errors": tool_fact_errors,
+        "verified_tool_facts": verified_tool_facts,
         "citations": citations,
         "evidence": payload.get("evidence") or [],
         "required_facts_covered": covered,
@@ -757,8 +770,14 @@ def _phase5_b_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _run_phase5_b_direct(questions: list[dict[str, Any]], output_dir: Path, workers: int) -> int:
-    fixture_run_id = "run_20260716T111446497802Z_8e6e75a131"
+def _run_phase5_b_direct(
+    questions: list[dict[str, Any]],
+    output_dir: Path,
+    workers: int,
+    fixture_run_id: str = "run_20260716T111446497802Z_8e6e75a131",
+) -> int:
+    if not str(fixture_run_id or "").startswith("run_"):
+        raise ValueError("fixture_run_id_invalid")
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "ai_100_questions.json").write_text(json.dumps(questions, ensure_ascii=False, indent=2), encoding="utf-8")
     results: list[dict[str, Any]] = []

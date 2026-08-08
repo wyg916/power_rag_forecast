@@ -44,6 +44,9 @@ COMPACT_OUTPUT_CONTRACT = [
     "数据不足时说明缺失项、影响判断和下一步检查建议",
     "天气、尖峰、储能、交易、模型切换问题遵守系统规则中的边界",
     "不要输出内部调试信息、chunk_id、分数或检索过程",
+    "逐项覆盖问题中的业务对象、指标、状态和时间语义，不得只回答其中一部分",
+    "事实性 claim 必须由 authorized_context 或 tool_facts 支持；无支持时删除该 claim 或明确回答 unavailable",
+    "历史或过期来源使用 historical 状态；无可信实时事实使用 unavailable 状态；特征契约不一致使用 fail-closed 状态",
 ]
 
 
@@ -125,9 +128,9 @@ def build_expert_messages(
             "涉及储能或交易建议时说明辅助决策边界，缺少设备参数时不给具体充放电量",
             "涉及模型切换、DeepSeek、Ollama 或 fallback 时自然解释模型路由，不暴露密钥、Trace、workflow 或异常堆栈",
             "不要输出内部调试信息",
+            *COMPACT_OUTPUT_CONTRACT,
         ],
     }
-    payload["output_contract"] = COMPACT_OUTPUT_CONTRACT
     return [
         {"role": "system", "content": EXPERT_SYSTEM_PROMPT},
         {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)},

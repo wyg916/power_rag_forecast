@@ -173,15 +173,16 @@ def test_run_restores_environment_and_monkeypatches_after_failure(monkeypatch, t
         release=object(), embedding=object(), require_available=lambda: None,
     )
     transport = SimpleNamespace(alias_target=lambda: None, write_count=0)
-    monkeypatch.setattr(module.candidate, "_runtime_values", lambda *_: ({"RAG_QDRANT_TLS_CA_PATH": "ca", "RAG_TEST_TEMP": "changed"}, {"QDRANT_READ_ONLY_API_KEY": "reader"}))
+    monkeypatch.setattr(module.candidate, "_runtime_values", lambda *_, **__: ({"RAG_QDRANT_TLS_CA_PATH": "ca", "RAG_TEST_TEMP": "changed"}, {"QDRANT_READ_ONLY_API_KEY": "reader"}))
     monkeypatch.setattr(module, "runtime_contract_status", lambda: contract)
     monkeypatch.setattr(module.candidate, "CandidateQdrantReadOnlyTransport", lambda **_: transport)
     monkeypatch.setattr(module.candidate, "_load_bm25", lambda _: {})
     monkeypatch.setattr(module, "QdrantReadOnlyStore", lambda *_: object())
     monkeypatch.setattr(module.candidate, "_embeddings", lambda questions, *_: ([{} for _ in questions], 0, True))
+    monkeypatch.setattr(module, "_fixture_manifest", lambda run_id: {"run_id": run_id, "record_count": 24})
     corpus = tmp_path / "corpus.json"
     corpus.write_text('{"candidate_manifest":{"chunks":[]}}', encoding="utf-8")
-    def fail_after_patch(*_):
+    def fail_after_patch(*_, **__):
         assert ai_service.answer_chat_accurate is not originals[0]
         assert rag_service.embed_text_with_metadata is not originals[1]
         raise RuntimeError("stop_after_patch")

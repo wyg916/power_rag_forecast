@@ -20,6 +20,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
 from backend.app.services.rag_runtime_contract import RetrievalContext, runtime_contract_status
+from backend.app.ai.identity_context import IdentityContext
 from scripts import rag_r1_candidate_acceptance as candidate
 from tests.evaluation import run_ai_assistant_eval as runner
 
@@ -415,14 +416,36 @@ def _digit_issues(result: Mapping[str, Any]) -> list[str]:
     digits = set(re.findall(r"(?<![A-Za-z0-9_])-?\d+(?:\.\d+)?%?", answer))
     if not digits:
         return []
+    verified_tool_facts = (
+        result.get("verified_tool_facts") or []
+        if not (result.get("tool_fact_errors") or [])
+        else []
+    )
     evidence = "\n".join(
         [
             str(result.get("question") or ""),
             *[str(item.get("quote") or "") for item in result.get("citations") or [] if isinstance(item, Mapping)],
             json.dumps(result.get("evidence") or [], ensure_ascii=False),
+            json.dumps(verified_tool_facts, ensure_ascii=False),
         ]
     )
-    return sorted(digits - set(re.findall(r"(?<![A-Za-z0-9_])-?\d+(?:\.\d+)?%?", evidence)))
+    supported = set(re.findall(r"(?<![A-Za-z0-9_])-?\d+(?:\.\d+)?%?", evidence))
+
+    def add_verified_presentations(value: Any) -> None:
+        if isinstance(value, Mapping):
+            for nested in value.values():
+                add_verified_presentations(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                add_verified_presentations(nested)
+        elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            numeric = float(value)
+            supported.update({f"{numeric:.1f}", f"{numeric:.2f}"})
+            if numeric.is_integer():
+                supported.add(str(int(numeric)))
+
+    add_verified_presentations(verified_tool_facts)
+    return sorted(digits - supported)
 
 def classify_failure(result: Mapping[str, Any]) -> dict[str, Any]:
     signals = {
@@ -481,6 +504,31 @@ def classify_failures(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 def _rate(numerator: int | float, denominator: int | float) -> float:
     return round(float(numerator) / float(denominator), 4) if denominator else 0.0
+
+
+def _fixture_manifest(run_id: str) -> dict[str, Any]:
+    from backend.app.repositories.forecast_repository import (
+        get_forecast_run,
+        load_forecast_results,
+    )
+
+    fixture_run = get_forecast_run(run_id)
+    fixture_rows = load_forecast_results(run_id)
+    if (
+        not fixture_run
+        or str(fixture_run.get("status") or "").lower() != "success"
+        or int(fixture_run.get("record_count") or 0) != 24
+        or len(fixture_rows) != 24
+    ):
+        _fail("fixture_run_incomplete", run_id)
+    return {
+        "run_id": run_id,
+        "record_count": len(fixture_rows),
+        "model_version": fixture_run.get("model_version"),
+        "feature_version": fixture_run.get("feature_version"),
+        "schema_hash": fixture_run.get("schema_hash"),
+        "result_hash": fixture_run.get("result_hash"),
+    }
 
 def _governed_item_check(
     golden: Mapping[str, Any], result: Mapping[str, Any] | None
@@ -747,6 +795,10 @@ def run(
     output_dir: Path,
     workers: int,
     fixture_database: str = "",
+    fixture_run_id: str = "run_20260716T111446497802Z_8e6e75a131",
+    rerank_batch_size: int = 8,
+    rerank_max_length: int = 32,
+    rerank_runtime: str = "torch_fp32",
 ) -> dict[str, Any]:
     questions = load_governed_ai_questions(questions_path)
     environment_before = dict(os.environ)
@@ -754,7 +806,13 @@ def run(
     originals: dict[str, Any] = {}
     settings_clear = reset_db_cache = None
     try:
-        values, qdrant = candidate._runtime_values(qdrant_env, model_env)
+        values, qdrant = candidate._runtime_values(
+            qdrant_env,
+            model_env,
+            rerank_batch_size=rerank_batch_size,
+            rerank_max_length=rerank_max_length,
+            rerank_runtime=rerank_runtime,
+        )
         os.environ.update(values)
         if fixture_database:
             current_url = os.environ.get("DATABASE_URL", "").strip()
@@ -769,6 +827,8 @@ def run(
             settings_clear, reset_db_cache = get_settings.cache_clear, reset_cache
             settings_clear()
             reset_db_cache()
+
+        fixture_manifest = _fixture_manifest(fixture_run_id)
 
         contract = runtime_contract_status()
         contract.require_available()
@@ -836,12 +896,24 @@ def run(
                 release_id=value["release_id"],
             )
 
+        def identity(value: RetrievalContext, run_id: str = "latest") -> IdentityContext:
+            return IdentityContext(
+                tenant_id=value.tenant_id,
+                workspace_id="rag-r1-ai-acceptance",
+                user_id=value.user_id,
+                role_ids=value.roles,
+                agent_id="rag-r1-ai-acceptance",
+                run_id=run_id,
+            )
+
         def injected_answer(*args: Any, **kwargs: Any) -> dict[str, Any]:
             text = str(args[0] if args else kwargs.get("question") or "")
             item = by_question.get(text)
             if item is None:
                 _fail("uncached_question_rejected")
-            kwargs["rag_context"] = context(item, item["acl_expectation"]["primary_scenario"])
+            runtime_context = context(item, item["acl_expectation"]["primary_scenario"])
+            kwargs["rag_context"] = runtime_context
+            kwargs["identity"] = identity(runtime_context, str(kwargs.get("run_id") or "latest"))
             kwargs["enterprise_store"] = store
             return originals["answer"](*args, **kwargs)
 
@@ -854,6 +926,7 @@ def run(
         def evaluate_with_acl(item: dict[str, Any], fixture_run_id: str) -> dict[str, Any]:
             result = originals["evaluate"](item, fixture_run_id)
             try:
+                unauthorized_context = context(item, "unauthorized")
                 payload = originals["answer"](
                     item["question"],
                     session_id=f"rag_r1_acl_{item['question_id'].lower()}",
@@ -865,7 +938,11 @@ def run(
                     answer_style="professional_brief",
                     debug=True,
                     persist=False,
-                    rag_context=context(item, "unauthorized"),
+                    rag_context=unauthorized_context,
+                    identity=identity(
+                        unauthorized_context,
+                        fixture_run_id if item["required_run_id_behavior"] == "explicit" else "latest",
+                    ),
                     enterprise_store=store,
                 )
                 evidence_count = len(payload.get("citations") or []) + len(payload.get("evidence") or [])
@@ -894,7 +971,12 @@ def run(
         runner._validate_citations = immutable_citation_validator(chunks)
         runner._evaluate_direct = evaluate_with_acl
         output_dir.mkdir(parents=True, exist_ok=True)
-        runner._run_phase5_b_direct(questions, output_dir, workers)
+        runner._run_phase5_b_direct(
+            questions,
+            output_dir,
+            workers,
+            fixture_run_id=fixture_run_id,
+        )
         report = _read_json_fail_closed(output_dir / "ai_100_report.json")
         alias_after = transport.alias_target()
         strict_preview = _recompute_governed(report["results"], questions)["summary"]
@@ -933,6 +1015,13 @@ def run(
                 "alias_after": alias_after,
                 "write_count": transport.write_count,
                 "access_mode": contract.qdrant.access_mode,
+                "fixture_run_id": fixture_run_id,
+                "fixture_manifest": fixture_manifest,
+                "retrieval_profile": {
+                    "rerank_batch_size": rerank_batch_size,
+                    "rerank_max_length": rerank_max_length,
+                    "rerank_runtime": rerank_runtime,
+                },
                 "admin_key_loaded_into_runtime": False,
                 "secret_values_emitted": False,
             },
@@ -967,6 +1056,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--fixture-database", default="")
+    parser.add_argument("--fixture-run-id", default="run_20260716T111446497802Z_8e6e75a131")
+    parser.add_argument("--rerank-batch-size", type=int, default=8)
+    parser.add_argument("--rerank-max-length", type=int, default=32)
+    parser.add_argument("--rerank-runtime", default="torch_fp32")
     args = parser.parse_args(argv)
     try:
         report = run(
@@ -978,6 +1071,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_dir=args.output_dir.resolve(),
             workers=args.workers,
             fixture_database=args.fixture_database.strip(),
+            fixture_run_id=args.fixture_run_id.strip(),
+            rerank_batch_size=args.rerank_batch_size,
+            rerank_max_length=args.rerank_max_length,
+            rerank_runtime=args.rerank_runtime.strip(),
         )
     except Exception as exc:
         print(f"RAG-R1 candidate AI acceptance FAILED: {exc}", file=sys.stderr)

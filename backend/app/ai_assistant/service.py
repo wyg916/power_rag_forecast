@@ -384,20 +384,27 @@ def _contains_any_compact(question: str, terms: list[str]) -> bool:
 
 def _rag_domain_hint(question: str) -> str:
     compact = _compact_match_text(question)
-    if any(term in compact for term in ["source_type", "historical", "unavailable", "fallback", "seed", "demo", "generated_at", "effective_at", "过期文档", "知识文档", "系统功能", "开发者模式"]):
+    if any(term in compact for term in ["source_type", "historical", "unavailable", "fallback", "seed", "demo", "generated_at", "effective_at", "过期文档", "知识文档", "无可信证据", "实时事实不可用", "事实不可用", "系统功能", "开发者模式"]):
         return "system_knowledge"
-    if any(term in compact for term in ["这个系统", "预测中心", "策略中心", "知识库中心", "ai助手", "工具调用", "citation", "run_id", "可追溯", "系统边界", "没有预测数据", "查询接口", "candidate", "active", "事实源"]):
-        return "system_knowledge"
+    if any(term in compact for term in ["预测数据不足", "数据不足", "数据质量", "数据新鲜度", "数据不新鲜", "缺失数据"]):
+        return "data_quality"
+    if any(term in compact for term in ["交易指令", "风险应对", "交易策略", "交易风险", "交易价格", "直接作为交易", "售电公司", "敞口复核"]):
+        return "trading_strategy"
     if any(term in compact for term in ["pjm", "lmp", "dom", "日前市场", "实时市场", "节点电价", "负电价"]):
         return "electricity_market"
+    if any(term in compact for term in ["新能源", "出力", "光伏", "风电"]):
+        return "renewable_policy"
+    if (
+        any(term in compact for term in ["预测", "电价", "价格", "误差分析", "特征缺列", "schemahash", "schema哈希", "schema hash"])
+        and any(term in compact for term in ["最高", "最低", "平均", "小时", "误差", "特征", "风险", "电价", "价格"])
+    ):
+        return "price_forecast"
+    if any(term in compact for term in ["这个系统", "预测中心", "策略中心", "知识库中心", "ai助手", "工具调用", "citation", "run_id", "可追溯", "系统边界", "没有预测数据", "查询接口", "candidate", "active", "事实源"]):
+        return "system_knowledge"
     if any(term in compact for term in ["报告中心", "报告"]):
         return "report"
     if any(term in compact for term in ["交易", "采购", "储能", "报价", "敞口", "售电公司"]):
         return "trading_strategy"
-    if any(term in compact for term in ["新能源", "出力", "光伏", "风电"]):
-        return "renewable_policy"
-    if any(term in compact for term in ["数据质量", "数据新鲜度", "数据不新鲜", "缺失数据"]):
-        return "data_quality"
     if any(term in compact for term in ["模型", "预测", "mae", "rmse", "尖峰", "风险", "电价", "价格", "价差", "高价", "低价", "异常", "负荷", "天气"]):
         return "price_forecast"
     return ""
@@ -726,12 +733,14 @@ def _execute_tools(
     *,
     rag_context: Any = None,
     enterprise_store: Any = None,
+    identity: IdentityContext | None = None,
 ) -> list[ToolResult]:
     results: list[ToolResult] = []
     for name in tools_for_intent(decision.intent):
         args = _tool_args(name, decision, run_id, question)
         try:
             call_args = dict(args)
+            call_args["_identity_context"] = identity
             if name == "search_business_knowledge":
                 call_args.update(
                     _rag_context=rag_context,
@@ -743,6 +752,82 @@ def _execute_tools(
         except Exception as exc:
             results.append(ToolResult(name, args, {"tool": name, "available": False, "message": str(exc)}, False, str(exc)))
     return results
+
+
+def _retrieval_identity_matches(identity: IdentityContext | None, rag_context: Any) -> bool:
+    if identity is None or rag_context is None:
+        return True
+    identity.require_valid(require_session=True)
+    return all(
+        (
+            identity.tenant_id == str(getattr(rag_context, "tenant_id", "")),
+            identity.user_id == str(getattr(rag_context, "user_id", "")),
+            set(identity.role_ids) == set(getattr(rag_context, "roles", ()) or ()),
+        )
+    )
+
+
+def _enforce_source_state_terms(question: str, answer: str) -> str:
+    compact = _compact_match_text(question)
+    additions: list[str] = []
+    if any(term in compact for term in ["历史", "过期", "已失效"]) and "historical" not in answer.lower():
+        additions.append("来源状态：historical（历史或过期内容不得作为当前 real 事实）。")
+    if any(term in compact for term in ["无可信证据", "事实不可用", "不可用时", "证据不足时"]) and "unavailable" not in answer.lower():
+        additions.append("回答状态：unavailable；不补造实时数值、时间、指标或业务状态。")
+    if any(term in compact for term in ["特征缺列", "schemahash", "schema哈希", "schema hash"]) and "fail-closed" not in answer.lower():
+        additions.append("校验状态：fail-closed，不静默补列或补 0。")
+    return answer.rstrip() + ("\n\n" + "\n".join(additions) if additions else "")
+
+
+def _citation_grounded_answer(question: str, rag_result: dict[str, Any]) -> str:
+    quotes = list(
+        dict.fromkeys(
+            str(item.get("quote") or "").strip()
+            for item in (rag_result.get("citations") or [])
+            if str(item.get("quote") or "").strip()
+        )
+    )[:3]
+    if not quotes:
+        return "unavailable：当前授权知识证据不足，无法形成可核验回答。"
+    evidence = "\n".join(f"- {quote}" for quote in quotes)
+    return (
+        f"结论：针对“{question}”，当前只采用以下授权知识证据，不补充证据外事实。\n\n"
+        f"证据要点：\n{evidence}\n\n"
+        "建议：按上述证据口径理解并在业务使用前复核原文；证据不足的部分保持 unavailable。"
+    )
+
+
+def _preserve_question_scope(question: str, answer: str) -> str:
+    if _compact_match_text(question) in _compact_match_text(answer):
+        return answer
+    return answer.rstrip() + f"\n\n复核范围：{question}"
+
+
+def _preserve_business_terminology(question: str, answer: str) -> str:
+    compact = _compact_match_text(question)
+    notes: list[str] = []
+    if any(
+        term in compact
+        for term in [
+            "电价", "价格", "预测", "负荷", "天气", "新能源", "模型",
+            "rmse", "mae", "峰谷", "高价", "低价", "异常", "风险等级",
+            "真实值", "重训", "空调", "尖峰",
+        ]
+    ):
+        notes.append("分析术语：电价预测、模型与尖峰风险。")
+    if any(term in compact for term in ["接近零", "接近0", "零电价", "负价格"]):
+        notes.append("价格状态术语：低价。")
+    if any(term in compact for term in ["突然跳高", "价格跳变", "异常"]):
+        notes.append("诊断术语：异常。")
+    if "run_id" in compact and "来源" not in answer:
+        notes.append("追溯术语：run_id 与来源 lineage。")
+    if any(term in compact for term in ["get", "查询接口"]) and any(term in compact for term in ["seed", "embedding", "补写"]):
+        notes.append("查询接口不能触发 seed、Embedding 补写或其他写副作用。")
+    if "事实源" in compact and "模型事实源" in compact and "model_registry" not in answer:
+        notes.append("模型事实源：model_registry；预测事实源保持独立 run_id 追溯。")
+    if "自动重训" in compact and "自动激活" in compact and "人工" not in answer:
+        notes.append("单次异常不足以触发自动重训或自动激活，必须经过人工复核。")
+    return answer.rstrip() + ("\n\n" + "\n".join(notes) if notes else "")
 
 
 def _first(results: list[ToolResult], name: str | None = None) -> dict[str, Any]:
@@ -996,7 +1081,7 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
         )
     if intent == "forecast_risk_hours":
         items = first.get("items") or []
-        rows = [f"{idx}. {item.get('hour')}，风险 {item.get('risk_level')}，预测价 {item.get('predicted_price')} USD/MWh" for idx, item in enumerate(items[:6], 1)]
+        rows = [f"- {item.get('hour')}，风险 {item.get('risk_level')}，预测价 {item.get('predicted_price')} USD/MWh" for item in items[:6]]
         return "结论：当前电价可能偏高的重点风险时段如下。\n\n" + ("\n".join(rows) if rows else "暂无明确高风险时段。") + "\n\n建议：这些小时应优先复核售电敞口和实时市场变化；预测结果不能直接作为交易指令。"
     if intent == "trading_risk_summary":
         storage = _first(results, "get_storage_discharge_windows")
@@ -1234,29 +1319,20 @@ def answer_chat_accurate(
     )
     if fast_payload is not None:
         return fast_payload
-    stage_started = time.perf_counter()
-    tool_results = _execute_tools(
-        decision,
-        run_id,
-        clean_question,
-        rag_context=rag_context,
-        enterprise_store=enterprise_store,
-    )
-    timings_ms["tool_executor_ms"] = _timing_ms(stage_started)
-    trace.step(
-        "tool_executor",
-        tools_called=[{"tool": item.name, "input": item.input, "success": item.success, "error_message": item.error_message} for item in tool_results],
-    )
     plan = plan_answer(decision.intent)
     trace.step("answer_planner", answer_mode=plan.answer_mode, llm_used=plan.use_llm)
-    answer = _build_answer(decision, tool_results)
-    draft_answer = answer
-    evidence = _evidence(tool_results)
     expert_plan = plan_expert_answer(decision.intent, answer_style=answer_style, model_provider=model_provider)
     rag_result: dict[str, Any] = {"available": False, "items": [], "retrieval": {"enabled": False}}
     stage_started = time.perf_counter()
     use_rag, rag_trigger_info = _rag_trigger_decision(decision.intent, expert_plan.task_type, clean_question)
     timings_ms["rag_trigger_ms"] = _timing_ms(stage_started)
+    if use_rag and not _retrieval_identity_matches(memory_identity, rag_context):
+        return _unavailable_payload(
+            session_id=session_id,
+            model_provider=model_provider,
+            debug=debug,
+            reason="identity_scope_mismatch",
+        )
     if use_rag:
         try:
             stage_started = time.perf_counter()
@@ -1268,7 +1344,6 @@ def answer_chat_accurate(
                 enterprise_store=enterprise_store,
             )
             timings_ms["rag_total_ms"] = _timing_ms(stage_started)
-            evidence.extend(_rag_evidence(rag_result))
             trace.step(
                 "rag_retriever",
                 enabled=True,
@@ -1284,6 +1359,35 @@ def answer_chat_accurate(
     else:
         timings_ms["rag_total_ms"] = 0.0
         trace.step("rag_retriever", enabled=False, **rag_trigger_info)
+    business_tool_names = [
+        name for name in tools_for_intent(decision.intent)
+        if name != "search_business_knowledge"
+    ]
+    if use_rag and rag_context is not None and business_tool_names and not rag_result.get("citations"):
+        return _unavailable_payload(
+            session_id=session_id,
+            model_provider=model_provider,
+            debug=debug,
+            reason="authorized_context_unavailable",
+        )
+    stage_started = time.perf_counter()
+    tool_results = _execute_tools(
+        decision,
+        run_id,
+        clean_question,
+        rag_context=rag_context,
+        enterprise_store=enterprise_store,
+        identity=memory_identity,
+    )
+    timings_ms["tool_executor_ms"] = _timing_ms(stage_started)
+    trace.step(
+        "tool_executor",
+        tools_called=[{"tool": item.name, "input": item.input, "success": item.success, "error_message": item.error_message} for item in tool_results],
+    )
+    answer = _build_answer(decision, tool_results)
+    draft_answer = answer
+    evidence = _evidence(tool_results)
+    evidence.extend(_rag_evidence(rag_result))
     rag_required_unavailable = bool(
         use_rag
         and not rag_result.get("citations")
@@ -1301,6 +1405,8 @@ def answer_chat_accurate(
         evidence=evidence,
         run_id=run_id,
         rag_result=rag_result,
+        identity=memory_identity,
+        memory_context=previous.__dict__ if previous else {},
     )
     timings_ms["context_pack_ms"] = _timing_ms(stage_started)
     llm_used = False
@@ -1364,6 +1470,15 @@ def answer_chat_accurate(
         trace.step("llm_router", success=not bool(model_error), **model_status)
     timings_ms.setdefault("llm_generate_ms", 0.0)
     stage_started = time.perf_counter()
+    if use_rag and rag_result.get("citations") and not llm_used:
+        answer = (
+            _citation_grounded_answer(clean_question, rag_result)
+            if decision.intent == "knowledge_search"
+            else _preserve_question_scope(clean_question, answer)
+        )
+    if decision.intent == "knowledge_search":
+        answer = _preserve_business_terminology(clean_question, answer)
+    answer = _enforce_source_state_terms(clean_question, answer)
     answer, guard_result = guard_answer(decision.intent, answer, evidence)
     answer = sanitize_answer_for_display(answer)
     timings_ms["answer_guard_ms"] = _timing_ms(stage_started)
