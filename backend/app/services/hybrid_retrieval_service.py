@@ -165,7 +165,7 @@ def hybrid_retrieve(
     search_limit = (
         max(20, min(top_k * 4, 100))
         if candidate_limit is None
-        else max(8, min(rerank_limit * 4, 100))
+        else max(8, min(rerank_limit * 3, 100))
     )
     cache_key_started = perf_counter()
     cache_key = release_aware_cache_key(

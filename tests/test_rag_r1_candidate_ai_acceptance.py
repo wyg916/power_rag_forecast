@@ -9,6 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from scripts import rag_r1_ai_proxy_consensus as proxy_consensus
 from scripts import rag_r1_candidate_ai_acceptance as module
 
 
@@ -119,6 +120,45 @@ def test_formal_gate_recomputes_and_never_passes_pending(golden) -> None:
     assert (gate["status"], gate["checks"]["summary_consistent"], gate["checks"]["golden_governance_approved"]) == ("PENDING_HUMAN_APPROVAL", True, False)
     tampered = dict(summary, passed=99)
     assert module.formal_gate({"summary": tampered, "results": results}, golden)["checks"]["summary_consistent"] is False
+
+
+def test_proxy_consensus_independently_recounts_without_claiming_human_review(
+    golden,
+) -> None:
+    results = [_passing_result(item) for item in golden]
+    summary = module._recompute_governed(results, golden)["summary"]
+    gate = module.formal_gate({"summary": summary, "results": results}, golden)
+    gate["checks"]["candidate_runtime_read_only"] = True
+    gate["passed"] = sum(gate["checks"].values())
+    gate["total"] = len(gate["checks"])
+    report = {
+        "formal_gate": gate,
+        "summary": summary,
+        "review_summary": module.golden_review_summary(golden),
+        "results": results,
+    }
+    source_sha256 = "a" * 64
+    consensus = proxy_consensus.build_proxy_consensus(report, source_sha256)
+
+    assert consensus["automated_consensus_verified"] is True
+    assert consensus["arbitrator"]["metric_agreement"] is True
+    assert consensus["status"] == "NOT_PASS"
+    assert consensus["governance"]["pending_human_approval"] == 100
+    assert consensus["human_verified"] is False
+    assert consensus["production_human_signoff"] is False
+    assert proxy_consensus.validate_proxy_consensus(
+        consensus, report, source_sha256
+    )["status"] == "PASS"
+
+    tampered = copy.deepcopy(consensus)
+    tampered["status"] = "PASS"
+    with pytest.raises(
+        proxy_consensus.AiProxyConsensusError,
+        match="proxy_consensus_mismatch",
+    ):
+        proxy_consensus.validate_proxy_consensus(
+            tampered, report, source_sha256
+        )
 
 def test_run_restores_environment_and_monkeypatches_after_failure(monkeypatch, tmp_path) -> None:
     from backend.app.ai_assistant import service as ai_service

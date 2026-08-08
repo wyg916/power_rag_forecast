@@ -68,7 +68,7 @@ EXPECTED_R3_QDRANT_ENV = Path(
     "E:/智能运营分析项目_运行资产/rag-r1/performance/r3-qdrant-readonly.env"
 ).resolve()
 R3_QDRANT_ENV_KEYS = frozenset("QDRANT_API_KEY QDRANT_CA_CERT QDRANT_READ_ONLY_API_KEY QDRANT_URL RAG_EMBEDDING_DIM RAG_EMBEDDING_MODEL RAG_QDRANT_COLLECTION RAG_RELEASE_ID RAG_RERANKER_MODEL".split())
-R3_PROCESS_ENV_KEYS = frozenset("ALLUSERSPROFILE APPDATA COMSPEC COMPUTERNAME CUDA_DEVICE_ORDER CUDA_PATH CUDA_VISIBLE_DEVICES HOMEDRIVE HOMEPATH KMP_AFFINITY KMP_DUPLICATE_LIB_OK KMP_INIT_AT_FORK LANG LC_ALL LOCALAPPDATA MKL_NUM_THREADS NO_PROXY NUMBER_OF_PROCESSORS OMP_NUM_THREADS OMP_PROC_BIND OMP_WAIT_POLICY OS PATH PATHEXT PROCESSOR_ARCHITECTURE PROCESSOR_IDENTIFIER PROGRAMDATA PROGRAMFILES PROGRAMFILES(X86) PSMODULEPATH PYTHONHASHSEED PYTHONIOENCODING PYTHONUTF8 SYSTEMDRIVE SYSTEMROOT TEMP TMP TOKENIZERS_PARALLELISM TORCH_HOME TORCH_LOGS TORCHINDUCTOR_CACHE_DIR TZ USERDOMAIN USERNAME USERPROFILE WINDIR".split())
+R3_PROCESS_ENV_KEYS = frozenset("ALLUSERSPROFILE APPDATA APP_ENV COMSPEC COMPUTERNAME CUDA_DEVICE_ORDER CUDA_PATH CUDA_VISIBLE_DEVICES HOMEDRIVE HOMEPATH KMP_AFFINITY KMP_DUPLICATE_LIB_OK KMP_INIT_AT_FORK LANG LC_ALL LOCALAPPDATA MKL_NUM_THREADS NO_PROXY NUMBER_OF_PROCESSORS OMP_NUM_THREADS OMP_PROC_BIND OMP_WAIT_POLICY OS PATH PATHEXT PROCESSOR_ARCHITECTURE PROCESSOR_IDENTIFIER PROGRAMDATA PROGRAMFILES PROGRAMFILES(X86) PSMODULEPATH PYTHONHASHSEED PYTHONIOENCODING PYTHONUTF8 SYSTEMDRIVE SYSTEMROOT TEMP TMP TOKENIZERS_PARALLELISM TORCH_HOME TORCH_LOGS TORCHINDUCTOR_CACHE_DIR TZ USERDOMAIN USERNAME USERPROFILE WINDIR".split())
 
 EXPECTED_RELEASE_ROOT = EXPECTED_PROJECT_ROOT / ".runtime" / "rag" / "releases" / RELEASE_ID
 EXPECTED_EMBEDDING_ROOT = EXPECTED_PROJECT_ROOT / "bge-large-zh-v1.5"
@@ -106,9 +106,12 @@ def _isolated_environment(function: Any) -> Any:
     def wrapped(*args: Any, **kwargs: Any) -> Any:
         import config_loader
         previous = (dict(os.environ), config_loader._ENV_LOADED)
-        r3 = kwargs.get("runtime_profile") == R3_DEVELOPMENT_PROFILE
+        isolate = kwargs.get("runtime_profile") in {
+            "formal50",
+            R3_DEVELOPMENT_PROFILE,
+        }
         try:
-            if r3:
+            if isolate:
                 os.environ.clear()
                 os.environ.update({key: value for key, value in previous[0].items() if key.upper() in R3_PROCESS_ENV_KEYS})
                 config_loader._ENV_LOADED = True
@@ -372,7 +375,7 @@ def _runtime_values(
             raise CandidateAcceptanceError("candidate_reader_key_invalid")
         if rerank_batch_size not in {4, 8}:
             raise CandidateAcceptanceError("r3_rerank_batch_size_rejected")
-        if rerank_max_length not in {64, 96, 128}:
+        if rerank_max_length not in {32, 64, 96, 128}:
             raise CandidateAcceptanceError("r3_rerank_max_length_rejected")
         if rerank_runtime != "torch_fp32":
             raise CandidateAcceptanceError("r3_rerank_runtime_rejected")
@@ -963,7 +966,7 @@ def evaluate(
 ) -> dict[str, Any]:
     if runtime_profile not in {"formal50", R3_DEVELOPMENT_PROFILE}:
         raise CandidateAcceptanceError("runtime_profile_invalid")
-    if rerank_candidate_count not in {0, 3, 5, 8, 12, 16}:
+    if rerank_candidate_count not in {0, 2, 3, 5, 8, 12, 16}:
         raise CandidateAcceptanceError("rerank_candidate_count_invalid")
     if torch_threads not in {1, 2, 4, 6, 8} or torch_interop_threads != 1:
         raise CandidateAcceptanceError("torch_thread_profile_invalid")
@@ -1022,9 +1025,27 @@ def evaluate(
     )
     store = QdrantReadOnlyStore(transport, contract.release, contract.embedding)
     acl_setup_ms = round((time.perf_counter() - acl_setup_started) * 1000.0, 3)
+    prewarmed_embedding = ""
+    embedding_prewarm_ms = 0.0
     prewarmed_reranker = None
     reranker_prewarm_ms = 0.0
     if run_state == "warm":
+        embedding_prewarm_started = time.perf_counter()
+        warmup_embeddings = embed_batch_with_metadata(["RAG-R1 warmup"])
+        embedding_prewarm_ms = round(
+            (time.perf_counter() - embedding_prewarm_started) * 1000.0, 3
+        )
+        warmup_embedding = warmup_embeddings[0] if len(warmup_embeddings) == 1 else {}
+        warmup_metadata = warmup_embedding.get("metadata") or {}
+        if (
+            len(warmup_embedding.get("embedding") or []) != 1024
+            or warmup_metadata.get("provider") != contract.embedding.provider
+            or warmup_metadata.get("model") != contract.embedding.model
+            or warmup_metadata.get("version") != contract.embedding.version
+            or warmup_metadata.get("fallback")
+        ):
+            raise CandidateAcceptanceError("query_embedding_prewarm_profile_mismatch")
+        prewarmed_embedding = str(warmup_metadata.get("provider") or "")
         prewarm_started = time.perf_counter()
         prewarmed_reranker = prewarm_reranker()
         reranker_prewarm_ms = round((time.perf_counter() - prewarm_started) * 1000.0, 3)
@@ -1348,6 +1369,8 @@ def evaluate(
         "embedding_average_ms": round(sum(embedding_times) / len(questions), 3),
         "embedding_cache_hit": bool(embedding_cache_hits) and all(embedding_cache_hits),
         "embedding_cache_total_ms": round(sum(embedding_cache_times), 3),
+        "embedding_prewarm_ms": embedding_prewarm_ms,
+        "prewarmed_embedding": prewarmed_embedding,
         "reranker_prewarm_ms": reranker_prewarm_ms,
         "prewarmed_reranker": getattr(prewarmed_reranker, "name", ""),
         "cold_start_total_ms": results[0]["latency_ms"] if run_state == "cold" else 0.0,

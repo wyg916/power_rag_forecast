@@ -45,6 +45,11 @@ if not defined LOCAL_DATABASE_CONFIG (
     if "%RC_NO_PAUSE%"=="0" pause
     goto end_error
 )
+if not defined RAG_PREPRODUCTION_CONFIG set "RAG_PREPRODUCTION_CONFIG=%~dp0deploy\rag-r1\preproduction-profile.env"
+if not exist "%RAG_PREPRODUCTION_CONFIG%" (
+    echo [ERROR] Git-controlled RAG preproduction profile was not found.
+    goto end_error
+)
 set "RC_JWT_SECRET_FILE=%~dp0.codex_tmp\rc_runtime_jwt.secret"
 if exist "%RC_JWT_SECRET_FILE%" goto jwt_secret_ready
 "%PYTHON_EXE%" -c "import pathlib,secrets; pathlib.Path(r'%RC_JWT_SECRET_FILE%').write_text(secrets.token_urlsafe(48), encoding='utf-8')"
@@ -80,7 +85,7 @@ echo [INFO] RC SHA: %RC_SHA%
 echo [INFO] Logs: %~dp0output\runtime_logs
 echo.
 
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --preflight-only
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --preflight-only
 if errorlevel 1 goto rc_failed
 
 if not exist "%~dp0frontend\node_modules" (
@@ -99,7 +104,7 @@ if not exist "%~dp0frontend\node_modules" (
     echo [OK] Reused approved frontend dependencies from the Git common worktree.
 )
 
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" redis start
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" redis start
 if errorlevel 1 goto rc_failed
 
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_qdrant_preflight.py" --env-file "%QDRANT_RUNTIME_CONFIG%" --require-assets --require-runtime
@@ -119,14 +124,14 @@ echo [WAIT] Qdrant is still recovering, retry %QDRANT_PROBE_ATTEMPT%/12...
 goto qdrant_probe_retry
 :qdrant_ready
 
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" celery start
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" celery start
 if errorlevel 1 goto rc_failed
 
 set "NO_PAUSE=1"
 call run_web_platform.bat
 if errorlevel 1 goto rc_failed
 
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" combined health
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" combined health
 if errorlevel 1 goto rc_failed
 
 echo.

@@ -41,6 +41,12 @@ if not defined LOCAL_DATABASE_CONFIG (
     popd
     exit /b 2
 )
+if not defined RAG_PREPRODUCTION_CONFIG set "RAG_PREPRODUCTION_CONFIG=%~dp0deploy\rag-r1\preproduction-profile.env"
+if not exist "%RAG_PREPRODUCTION_CONFIG%" (
+    echo [ERROR] Git-controlled RAG preproduction profile was not found.
+    popd
+    exit /b 2
+)
 if not exist "%~dp0frontend\node_modules" (
     if not exist "%SHARED_PROJECT_ROOT%\frontend\node_modules" (
         echo [ERROR] Approved frontend dependencies were not found.
@@ -66,7 +72,7 @@ echo.
 
 set "WEB_LAUNCHER_BROWSER_ARG="
 if "%NO_BROWSER%"=="1" set "WEB_LAUNCHER_BROWSER_ARG=--no-browser"
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --skip-sync %WEB_LAUNCHER_BROWSER_ARG%
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --skip-sync %WEB_LAUNCHER_BROWSER_ARG%
 set "EXIT_CODE=%ERRORLEVEL%"
 
 if not "%EXIT_CODE%"=="0" (

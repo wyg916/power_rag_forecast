@@ -42,7 +42,7 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("benchmark_output_exists")
     if (
         args.batch_size not in {4, 8}
-        or args.max_length not in {64, 96, 128}
+        or args.max_length not in {32, 64, 96, 128}
         or args.iterations < 20
     ):
         raise ValueError("benchmark_profile_invalid")

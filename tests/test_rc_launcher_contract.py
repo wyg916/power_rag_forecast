@@ -34,6 +34,32 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert 'combined health' in source
     assert "mklink /J" in source
     assert "automatic network install is disabled" in source
+    assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 4
+    assert "deploy\\rag-r1\\preproduction-profile.env" in source
+
+    web_source = (ROOT / "run_web_platform.bat").read_text(encoding="utf-8")
+    assert 'runtime-config "%RAG_PREPRODUCTION_CONFIG%"' in web_source
+    assert "deploy\\rag-r1\\preproduction-profile.env" in web_source
+
+
+def test_rag_preproduction_profile_is_secret_free_and_frozen() -> None:
+    profile = (
+        ROOT / "deploy" / "rag-r1" / "preproduction-profile.env"
+    ).read_text(encoding="utf-8")
+    values = "\n".join(
+        line for line in profile.splitlines() if not line.lstrip().startswith("#")
+    )
+
+    assert "RAG_PROFILE=enterprise" in profile
+    assert "RAG_RERANK_BATCH_SIZE=8" in profile
+    assert "RAG_RERANK_MAX_LENGTH=32" in profile
+    assert "RAG_RERANK_CANDIDATE_LIMIT=3" in profile
+    assert "RAG_TOP_K=5" in profile
+    assert "OMP_NUM_THREADS=6" in profile
+    assert "MKL_NUM_THREADS=6" in profile
+    assert not any(
+        marker in values.upper() for marker in ("PASSWORD", "SECRET", "API_KEY")
+    )
 
 
 def test_database_target_accepts_only_approved_local_target(

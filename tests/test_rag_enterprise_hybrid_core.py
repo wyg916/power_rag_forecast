@@ -182,8 +182,8 @@ def test_hybrid_candidate_limit_bounds_reranker_and_qdrant_inputs():
     assert len(result.items) == 3
     assert result.candidate_counts["rerank_limit"] == 3
     assert result.candidate_counts["rerank_input"] == 3
-    assert result.candidate_counts["qdrant_per_mode_limit"] == 12
-    assert all(request["limit"] == 12 for _, request in store._transport.requests)
+    assert result.candidate_counts["qdrant_per_mode_limit"] == 9
+    assert all(request["limit"] == 9 for _, request in store._transport.requests)
 
 
 def test_hybrid_core_refuses_when_no_evidence():
@@ -201,6 +201,7 @@ def test_hybrid_core_refuses_when_no_evidence():
 
 def test_enterprise_entry_uses_only_injected_store_and_fails_closed(monkeypatch):
     monkeypatch.setenv("RAG_PROFILE", "enterprise")
+    monkeypatch.setenv("RAG_RERANK_CANDIDATE_LIMIT", "3")
     release = ReleaseIdentity("RAG-R1", "rag_chunks_RAG-R1", "rag_chunks_current")
     status = SimpleNamespace(issues=(), release=release, embedding=_profile())
     monkeypatch.setattr(rag_service, "runtime_contract_status", lambda: status)
@@ -227,8 +228,9 @@ def test_enterprise_entry_uses_only_injected_store_and_fails_closed(monkeypatch)
         monkeypatch.setattr(rag_service, name, forbidden)
 
     assert rag_service.rag_search("问题")["retrieval"]["reason"] == "retrieval_context_missing"
+    limited_store = _store([_point()])
     result = rag_service.rag_search(
-        "什么是尖峰风险", context=_context(), enterprise_store=_store([_point()]),
+        "什么是尖峰风险", context=_context(), enterprise_store=limited_store,
         domain="power_market",
     )
     empty = rag_service.rag_search(
@@ -252,6 +254,10 @@ def test_enterprise_entry_uses_only_injected_store_and_fails_closed(monkeypatch)
     assert result["available"] is True
     assert result["retrieval"]["mode"] == "enterprise_qdrant_hybrid"
     assert result["retrieval"]["cache_key"].startswith("rag2:")
+    assert all(
+        request["limit"] == 9
+        for _, request in limited_store._transport.requests
+    )
     assert empty["available"] is False and empty["retrieval"]["reason"] == "no_evidence"
     assert incomplete["retrieval"]["reason"] == "citation_field_missing"
     assert blocked["retrieval"]["reason"] == "content_security_quarantined"

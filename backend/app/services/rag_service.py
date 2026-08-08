@@ -920,6 +920,7 @@ def _enterprise_rag_search(
         "domain": _enterprise_domain_filter(domain),
         "source_types": source_types or [],
     }
+    candidate_limit = _env_first_int(["RAG_RERANK_CANDIDATE_LIMIT"], 0)
     result = hybrid_retrieve(
         store=store,
         context=context,
@@ -928,6 +929,7 @@ def _enterprise_rag_search(
         sparse_query={"text": query},
         structured_filter={key: value for key, value in filters.items() if value},
         requested_top_k=top_k,
+        candidate_limit=candidate_limit or None,
     )
     if not result.available:
         return _enterprise_unavailable(query, result.reason, release_id=release_id)
