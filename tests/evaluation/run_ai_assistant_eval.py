@@ -634,7 +634,14 @@ def _validate_tool_facts(payload: dict[str, Any], fixture_run_id: str) -> list[s
     return list(dict.fromkeys(errors))
 
 
-def _evaluate_direct(question: dict[str, Any], fixture_run_id: str) -> dict[str, Any]:
+def _evaluate_direct(
+    question: dict[str, Any],
+    fixture_run_id: str,
+    *,
+    identity: Any = None,
+    rag_context: Any = None,
+    enterprise_store: Any = None,
+) -> dict[str, Any]:
     from backend.app.ai_assistant.service import answer_chat_accurate
 
     requested_run_id = fixture_run_id if question["required_run_id_behavior"] == "explicit" else "latest"
@@ -647,6 +654,9 @@ def _evaluate_direct(question: dict[str, Any], fixture_run_id: str) -> dict[str,
         answer_style="professional_brief",
         debug=True,
         persist=False,
+        identity=identity,
+        rag_context=rag_context,
+        enterprise_store=enterprise_store,
     )
     latency_ms = round((time.perf_counter() - started) * 1000, 3)
     answer = str(payload.get("answer") or "")

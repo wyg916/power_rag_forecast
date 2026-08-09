@@ -40,6 +40,10 @@ _UNSET = object()
 _ACTION_LOCK = threading.Lock()
 
 
+def _qdrant_loopback_endpoint(port: str) -> str:
+    return f"https://127.0.0.1:{port}"
+
+
 def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
@@ -82,12 +86,20 @@ class QdrantReleaseAdmin:
         ca_path = root / "tls" / "ca-cert.pem"
         if not ca_path.is_file():
             raise EnterpriseKnowledgeUnavailable("qdrant_admin_ca_unavailable")
-        self.endpoint = f"https://localhost:{port}"
+        # The compose profile is deliberately bound only to 127.0.0.1.  Using
+        # localhost may resolve to ::1 first on Windows and turn a local
+        # readiness read into a 45-second timeout even while Qdrant is healthy.
+        self.endpoint = _qdrant_loopback_endpoint(port)
         self.api_key = admin
         self.context = ssl.create_default_context(cafile=str(ca_path))
 
     def _request(
-        self, path: str, *, method: str = "GET", payload: Mapping[str, Any] | None = None
+        self,
+        path: str,
+        *,
+        method: str = "GET",
+        payload: Mapping[str, Any] | None = None,
+        timeout: float = 45,
     ) -> Mapping[str, Any]:
         request = Request(
             self.endpoint + path,
@@ -100,7 +112,7 @@ class QdrantReleaseAdmin:
             method=method,
         )
         try:
-            with urlopen(request, context=self.context, timeout=45) as response:
+            with urlopen(request, context=self.context, timeout=timeout) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError, HTTPError) as exc:
             raise EnterpriseKnowledgeUnavailable("qdrant_admin_unavailable") from exc
@@ -182,10 +194,48 @@ class QdrantReleaseAdmin:
         values = body.get("result") or []
         return any(isinstance(item, Mapping) and item.get("name") == snapshot_id for item in values)
 
-    def create_snapshot(self, collection: str) -> str:
-        body = self._request(
-            f"/collections/{quote(collection)}/snapshots?wait=true", method="POST"
+    def snapshot_readable(self, collection: str, snapshot_id: str) -> bool:
+        if not self.snapshot_exists(collection, snapshot_id):
+            return False
+        request = Request(
+            self.endpoint
+            + f"/collections/{quote(collection)}/snapshots/{quote(snapshot_id)}",
+            headers={
+                "accept": "application/octet-stream",
+                "api-key": self.api_key,
+                "range": "bytes=0-63",
+            },
+            method="GET",
         )
+        try:
+            with urlopen(request, context=self.context, timeout=120) as response:
+                return response.status in {200, 206} and len(response.read(64)) > 0
+        except (OSError, HTTPError):
+            return False
+
+    def create_snapshot(self, collection: str) -> str:
+        before_body = self._request(f"/collections/{quote(collection)}/snapshots")
+        before = {
+            str(item.get("name") or "")
+            for item in before_body.get("result") or []
+            if isinstance(item, Mapping)
+        }
+        try:
+            body = self._request(
+                f"/collections/{quote(collection)}/snapshots?wait=true",
+                method="POST",
+                timeout=300,
+            )
+        except EnterpriseKnowledgeUnavailable:
+            after_body = self._request(f"/collections/{quote(collection)}/snapshots")
+            created = sorted(
+                str(item.get("name") or "")
+                for item in after_body.get("result") or []
+                if isinstance(item, Mapping) and str(item.get("name") or "") not in before
+            )
+            if len(created) == 1 and self.snapshot_exists(collection, created[0]):
+                return created[0]
+            raise
         name = str((body.get("result") or {}).get("name") or "")
         if not name or not self.snapshot_exists(collection, name):
             raise EnterpriseKnowledgeUnavailable("qdrant_snapshot_create_failed")
@@ -499,6 +549,7 @@ class RagReleaseWorkerRuntime:
         release_id: str,
         gate_report: Mapping[str, Any],
         gate_report_sha256: str,
+        snapshot_id: str = "",
     ) -> dict[str, Any]:
         gates = _gate_rows(gate_report, release_id)
         canonical_hash = hashlib.sha256(_json(gate_report).encode("utf-8")).hexdigest()
@@ -523,12 +574,14 @@ class RagReleaseWorkerRuntime:
             ):
                 raise EnterpriseKnowledgeUnavailable("candidate_collection_admission_failed")
             existing = store._gate_pack(record.tenant_id, record.release_id)
-            snapshot_id = str(existing.get("snapshot_id") or "")
-            if not snapshot_id:
-                snapshot_id = self.qdrant.create_snapshot(record.collection)
-            if not self.qdrant.snapshot_exists(record.collection, snapshot_id):
+            admitted_snapshot_id = str(existing.get("snapshot_id") or snapshot_id)
+            if not admitted_snapshot_id:
+                admitted_snapshot_id = self.qdrant.create_snapshot(record.collection)
+            if not self.qdrant.snapshot_exists(record.collection, admitted_snapshot_id):
                 raise EnterpriseKnowledgeUnavailable("snapshot_missing_after_create")
-            store.admit_gates(record, gates, snapshot_id, gate_report_sha256)
+            if not self.qdrant.snapshot_readable(record.collection, admitted_snapshot_id):
+                raise EnterpriseKnowledgeUnavailable("snapshot_unreadable_after_create")
+            store.admit_gates(record, gates, admitted_snapshot_id, gate_report_sha256)
             return self.summary(store, release_id)
 
     def action(
