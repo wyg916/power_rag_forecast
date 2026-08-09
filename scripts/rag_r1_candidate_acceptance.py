@@ -450,9 +450,18 @@ def _runtime_values(
         admin_key = qdrant.get("QDRANT_ADMIN_API_KEY", "")
         if not read_key or read_key == admin_key:
             raise CandidateAcceptanceError("candidate_reader_key_invalid")
+        if rerank_batch_size not in {4, 8}:
+            raise CandidateAcceptanceError("formal_rerank_batch_size_rejected")
+        if rerank_max_length not in {32, 64, 96, 128}:
+            raise CandidateAcceptanceError("formal_rerank_max_length_rejected")
+        if rerank_runtime != "torch_fp32":
+            raise CandidateAcceptanceError("formal_rerank_runtime_rejected")
         values = dict(model)
         values.update(
             {
+                "RAG_RERANK_BATCH_SIZE": str(rerank_batch_size),
+                "RAG_RERANK_MAX_LENGTH": str(rerank_max_length),
+                "RAG_RERANK_RUNTIME": rerank_runtime,
                 "RAG_QDRANT_API_KEY": read_key,
                 "RAG_QDRANT_IMAGE_DIGEST": qdrant.get("QDRANT_IMAGE_DIGEST", ""),
             }

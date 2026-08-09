@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
-SCHEMA_VERSION = "rag-r1-ai-proxy-consensus/v1"
+SCHEMA_VERSION = "rag-r1-ai-proxy-consensus/v2"
 VERIFICATION_MODE = (
     "equivalent_ai_proxy_consensus_deterministic_independent_passes"
 )
@@ -321,22 +321,45 @@ def build_proxy_consensus(
         and not b_summary["unexpected_result_question_ids"]
     )
     consensus_verified = metric_agreement and identity_exact
-    accepted = (
-        consensus_verified
-        and technical_pass
-        and governance["approval_complete"]
+    development_accepted = consensus_verified and technical_pass
+    production_accepted = (
+        development_accepted and governance["approval_complete"]
     )
     taxonomy = _failure_taxonomy(report)
     result: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
-        "status": "PASS" if accepted else "NOT_PASS",
+        "status": "PASS" if development_accepted else "NOT_PASS",
+        "approval_scope": "DEVELOPMENT_PREPRODUCTION",
         "verification_mode": VERIFICATION_MODE,
         "source_report_sha256": source_sha256,
         "automated_consensus_verified": consensus_verified,
         "consensus_verifies_measurement_not_acceptance": True,
+        "consensus_authorizes_development_preproduction_only": True,
+        "consensus_does_not_authorize_production": True,
         "human_verified": False,
         "production_human_signoff": False,
         "production_cutover": False,
+        "development_preproduction_approval": {
+            "status": "PASS" if development_accepted else "NOT_PASS",
+            "review_sequence": [
+                "REVIEWER_A",
+                "REVIEWER_B",
+                "ARBITRATOR",
+                "DETERMINISTIC_CONSISTENCY_CHECK",
+            ],
+            "metric_agreement": metric_agreement,
+            "identity_exact": identity_exact,
+            "technical_pass": technical_pass,
+            "human_verified": False,
+            "production_human_signoff": False,
+        },
+        "external_production_gate": {
+            "status": "PASS" if production_accepted else "PENDING",
+            "required_for": "PRODUCTION_RELEASE_AND_CUTOVER",
+            "blocks_development_preproduction": False,
+            "human_verified": False,
+            "production_human_signoff": False,
+        },
         "reviewer_a": {
             "origin": "deterministic_governed_formal_gate_reader",
             "input_scope": "formal_gate.recomputed_summary_and_checks",
@@ -357,8 +380,11 @@ def build_proxy_consensus(
             "metric_agreement": metric_agreement,
             "identity_exact": identity_exact,
             "technical_pass": technical_pass,
-            "governance_approved": governance["approval_complete"],
-            "verdict": "PASS" if accepted else "NOT_PASS",
+            "governance_approved_for_production": governance[
+                "approval_complete"
+            ],
+            "verdict_scope": "DEVELOPMENT_PREPRODUCTION",
+            "verdict": "PASS" if development_accepted else "NOT_PASS",
         },
         "governance": governance,
         "failure_taxonomy": taxonomy,
@@ -395,8 +421,8 @@ def build_proxy_consensus(
                 },
             },
             {
-                "code": "GOLDEN_GOVERNANCE_PENDING",
-                "active": not governance["approval_complete"],
+                "code": "EXTERNAL_PRODUCTION_GATE_PENDING",
+                "active": not production_accepted,
                 "evidence": governance,
             },
             {
@@ -410,10 +436,10 @@ def build_proxy_consensus(
             },
         ],
         "release_actions": {
-            "snapshot": "SKIPPED_GATE_NOT_MET",
-            "alias_switch": "SKIPPED_GATE_NOT_MET",
-            "smoke_after_switch": "SKIPPED_GATE_NOT_MET",
-            "rollback": "SKIPPED_GATE_NOT_MET",
+            "snapshot": "SKIPPED_EXTERNAL_PRODUCTION_GATE_PENDING",
+            "alias_switch": "SKIPPED_EXTERNAL_PRODUCTION_GATE_PENDING",
+            "smoke_after_switch": "SKIPPED_EXTERNAL_PRODUCTION_GATE_PENDING",
+            "rollback": "SKIPPED_EXTERNAL_PRODUCTION_GATE_PENDING",
             "rto_rpo_measurement": "NOT_APPLICABLE_NO_RELEASE_DRILL",
         },
     }
@@ -431,9 +457,27 @@ def validate_proxy_consensus(
         "production_human_signoff"
     ) is not False:
         raise AiProxyConsensusError("proxy_consensus_human_provenance_invalid")
+    development = _require_mapping(
+        value.get("development_preproduction_approval"),
+        "development_preproduction_approval",
+    )
+    production = _require_mapping(
+        value.get("external_production_gate"), "external_production_gate"
+    )
+    if (
+        development.get("human_verified") is not False
+        or development.get("production_human_signoff") is not False
+        or production.get("human_verified") is not False
+        or production.get("production_human_signoff") is not False
+        or production.get("blocks_development_preproduction") is not False
+    ):
+        raise AiProxyConsensusError("proxy_consensus_approval_scope_invalid")
     return {
         "status": "PASS",
         "consensus_status": value["status"],
+        "approval_scope": value["approval_scope"],
+        "development_preproduction_status": development["status"],
+        "external_production_gate_status": production["status"],
         "automated_consensus_verified": value[
             "automated_consensus_verified"
         ],

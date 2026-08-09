@@ -142,7 +142,16 @@ def test_proxy_consensus_independently_recounts_without_claiming_human_review(
 
     assert consensus["automated_consensus_verified"] is True
     assert consensus["arbitrator"]["metric_agreement"] is True
-    assert consensus["status"] == "NOT_PASS"
+    assert consensus["status"] == "PASS"
+    assert consensus["approval_scope"] == "DEVELOPMENT_PREPRODUCTION"
+    assert consensus["development_preproduction_approval"]["status"] == "PASS"
+    assert consensus["external_production_gate"]["status"] == "PENDING"
+    assert (
+        consensus["external_production_gate"][
+            "blocks_development_preproduction"
+        ]
+        is False
+    )
     assert consensus["governance"]["pending_human_approval"] == 100
     assert consensus["human_verified"] is False
     assert consensus["production_human_signoff"] is False
@@ -151,7 +160,7 @@ def test_proxy_consensus_independently_recounts_without_claiming_human_review(
     )["status"] == "PASS"
 
     tampered = copy.deepcopy(consensus)
-    tampered["status"] = "PASS"
+    tampered["external_production_gate"]["status"] = "PASS"
     with pytest.raises(
         proxy_consensus.AiProxyConsensusError,
         match="proxy_consensus_mismatch",

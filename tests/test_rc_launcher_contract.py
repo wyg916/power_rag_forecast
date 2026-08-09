@@ -36,6 +36,7 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert "automatic network install is disabled" in source
     assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 4
     assert "deploy\\rag-r1\\preproduction-profile.env" in source
+    assert "rag_r1_qdrant_runtime_probe.py\" --mode health" in source
 
     web_source = (ROOT / "run_web_platform.bat").read_text(encoding="utf-8")
     assert 'runtime-config "%RAG_PREPRODUCTION_CONFIG%"' in web_source

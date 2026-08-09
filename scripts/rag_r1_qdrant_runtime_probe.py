@@ -24,17 +24,22 @@ class QdrantProbeError(RuntimeError):
     pass
 
 
-def _load(env_file: Path) -> dict[str, str]:
+def _load(env_file: Path, *, require_admin: bool = True) -> dict[str, str]:
     values = {key: str(value or "") for key, value in dotenv_values(env_file).items()}
-    required = (
+    required = [
         "RAG_R1_QDRANT_ROOT",
-        "QDRANT_ADMIN_API_KEY",
         "QDRANT_READ_ONLY_API_KEY",
         "QDRANT_IMAGE_DIGEST",
-    )
+        "RAG_QDRANT_COLLECTION",
+    ]
+    if require_admin:
+        required.append("QDRANT_ADMIN_API_KEY")
     if any(not values.get(key) for key in required):
         raise QdrantProbeError("qdrant_probe_configuration_incomplete")
-    if values["QDRANT_ADMIN_API_KEY"] == values["QDRANT_READ_ONLY_API_KEY"]:
+    if (
+        values.get("QDRANT_ADMIN_API_KEY")
+        and values["QDRANT_ADMIN_API_KEY"] == values["QDRANT_READ_ONLY_API_KEY"]
+    ):
         raise QdrantProbeError("qdrant_probe_keys_not_distinct")
     return values
 
@@ -74,8 +79,10 @@ def _request(
         return exc.code, parsed
 
 
-def run_probe(env_file: Path) -> dict[str, Any]:
-    values = _load(env_file)
+def _read_only_context(
+    env_file: Path, *, require_admin: bool
+) -> tuple[dict[str, str], str, ssl.SSLContext]:
+    values = _load(env_file, require_admin=require_admin)
     root = Path(values["RAG_R1_QDRANT_ROOT"]).resolve()
     ca_path = root / "tls" / "ca-cert.pem"
     if not ca_path.is_file():
@@ -84,7 +91,93 @@ def run_probe(env_file: Path) -> dict[str, Any]:
     parsed = urlsplit(endpoint)
     if parsed.scheme != "https" or parsed.hostname != "127.0.0.1" or parsed.port != 6333:
         raise QdrantProbeError("qdrant_probe_endpoint_invalid")
-    context = ssl.create_default_context(cafile=str(ca_path))
+    return values, endpoint, ssl.create_default_context(cafile=str(ca_path))
+
+
+def _vector_dimension(vectors: Any) -> int | None:
+    if isinstance(vectors, Mapping) and isinstance(vectors.get("size"), int):
+        return int(vectors["size"])
+    if isinstance(vectors, Mapping):
+        sizes = {
+            int(config["size"])
+            for config in vectors.values()
+            if isinstance(config, Mapping) and isinstance(config.get("size"), int)
+        }
+        if len(sizes) == 1:
+            return sizes.pop()
+    return None
+
+
+def run_health_probe(env_file: Path) -> dict[str, Any]:
+    """Read-only startup readiness check; it never creates or mutates data."""
+    values, endpoint, context = _read_only_context(env_file, require_admin=False)
+    reader = values["QDRANT_READ_ONLY_API_KEY"]
+    collection = values["RAG_QDRANT_COLLECTION"]
+    checks: dict[str, Any] = {}
+
+    status, root_payload = _request(endpoint, context, "/", key=reader)
+    checks["tls_version_read"] = status == 200 and root_payload.get("version") == "1.18.2"
+    status, _ = _request(endpoint, context, "/collections")
+    checks["no_key_read_denied"] = status in {401, 403}
+    status, collections_payload = _request(
+        endpoint, context, "/collections", key=reader
+    )
+    collection_names = {
+        item.get("name")
+        for item in collections_payload.get("result", {}).get("collections", [])
+        if isinstance(item, Mapping)
+    }
+    checks["read_only_key_read_allowed"] = status == 200
+    checks["formal_collection_listed"] = collection in collection_names
+
+    status, inspection = _request(
+        endpoint, context, f"/collections/{collection}", key=reader
+    )
+    result = inspection.get("result", {})
+    vectors = result.get("config", {}).get("params", {}).get("vectors", {})
+    strict = result.get("strict_mode_config") or result.get("config", {}).get(
+        "strict_mode_config", {}
+    )
+    checks["formal_collection_metadata_read"] = status == 200
+    checks["formal_vector_dimension_1024"] = _vector_dimension(vectors) == 1024
+    checks["formal_strict_mode_enabled"] = strict.get("enabled") is True
+
+    status, aliases_payload = _request(endpoint, context, "/aliases", key=reader)
+    aliases = aliases_payload.get("result", {}).get("aliases", [])
+    alias_targets = sorted(
+        {
+            str(item.get("collection_name"))
+            for item in aliases
+            if isinstance(item, Mapping) and item.get("collection_name")
+        }
+    )
+    checks["alias_metadata_read"] = status == 200
+    checks["alias_targets_not_probe_assets"] = not any(
+        PROBE_RE.fullmatch(target) for target in alias_targets
+    )
+
+    if not all(checks.values()):
+        failed = sorted(name for name, passed in checks.items() if not passed)
+        raise QdrantProbeError(f"qdrant_health_probe_failed:{failed}")
+    return {
+        "status": "PASS",
+        "mode": "health",
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "endpoint": endpoint,
+        "image_version": "1.18.2",
+        "image_digest": values["QDRANT_IMAGE_DIGEST"],
+        "checks": checks,
+        "formal_collection": collection,
+        "formal_collection_points_count": result.get("points_count"),
+        "alias_targets": alias_targets,
+        "secret_values_emitted": False,
+        "write_operations": 0,
+        "persistent_candidate_mutations": 0,
+    }
+
+
+def run_probe(env_file: Path) -> dict[str, Any]:
+    values, endpoint, context = _read_only_context(env_file, require_admin=True)
     admin = values["QDRANT_ADMIN_API_KEY"]
     reader = values["QDRANT_READ_ONLY_API_KEY"]
     collection = _probe_name()
@@ -183,9 +276,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Probe RAG-R1 Qdrant TLS and key roles")
     parser.add_argument("--env-file", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--mode", choices=("health", "security"), default="security")
     args = parser.parse_args(argv)
     try:
-        result = run_probe(args.env_file.resolve())
+        result = (
+            run_health_probe(args.env_file.resolve())
+            if args.mode == "health"
+            else run_probe(args.env_file.resolve())
+        )
     except Exception as exc:
         print(f"Qdrant runtime probe FAILED: {exc}", file=sys.stderr)
         return 1

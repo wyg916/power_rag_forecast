@@ -116,7 +116,7 @@ if errorlevel 1 goto rc_failed
 set /a QDRANT_PROBE_ATTEMPT=0
 :qdrant_probe_retry
 set /a QDRANT_PROBE_ATTEMPT+=1
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_qdrant_runtime_probe.py" --env-file "%QDRANT_RUNTIME_CONFIG%" --output "%~dp0output\runtime_logs\qdrant_runtime_probe.json"
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_qdrant_runtime_probe.py" --mode health --env-file "%QDRANT_RUNTIME_CONFIG%" --output "%~dp0output\runtime_logs\qdrant_runtime_probe.json"
 if not errorlevel 1 goto qdrant_ready
 if %QDRANT_PROBE_ATTEMPT% GEQ 12 goto rc_failed
 echo [WAIT] Qdrant is still recovering, retry %QDRANT_PROBE_ATTEMPT%/12...

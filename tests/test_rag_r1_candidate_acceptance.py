@@ -17,6 +17,57 @@ from scripts.rag_r1_candidate_ai_acceptance import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_formal_runtime_cli_overrides_frozen_rerank_values(
+    monkeypatch, tmp_path
+) -> None:
+    qdrant_env = tmp_path / "qdrant.env"
+    model_env = tmp_path / "model.env"
+    qdrant_env.write_text(
+        "QDRANT_READ_ONLY_API_KEY=" + "r" * 32 + "\n"
+        "QDRANT_ADMIN_API_KEY=" + "a" * 32 + "\n"
+        "QDRANT_IMAGE_DIGEST=sha256:test\n",
+        encoding="utf-8",
+    )
+    model_env.write_text(
+        "RAG_RERANK_BATCH_SIZE=8\n"
+        "RAG_RERANK_MAX_LENGTH=128\n"
+        "RAG_RERANK_RUNTIME=torch_fp32\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "qdrant_control_plane_issues", lambda _values: [])
+    monkeypatch.setattr(
+        module,
+        "runtime_contract_status",
+        lambda values: SimpleNamespace(
+            issues=[],
+            release=SimpleNamespace(
+                release_id=module.RELEASE_ID,
+                collection=module.COLLECTION,
+                alias=module.ALIAS,
+            ),
+            embedding=SimpleNamespace(model="BAAI/bge-large-zh-v1.5"),
+            reranker=SimpleNamespace(model="bge-reranker-v2-m3"),
+        ),
+    )
+    monkeypatch.setattr(
+        module,
+        "qdrant_security_status",
+        lambda values: SimpleNamespace(issues=[], access_mode="read_only"),
+    )
+
+    values, _ = module._runtime_values(
+        qdrant_env,
+        model_env,
+        rerank_batch_size=8,
+        rerank_max_length=32,
+        rerank_runtime="torch_fp32",
+    )
+
+    assert values["RAG_RERANK_BATCH_SIZE"] == "8"
+    assert values["RAG_RERANK_MAX_LENGTH"] == "32"
+    assert values["RAG_RERANK_RUNTIME"] == "torch_fp32"
+
+
 def test_batch_embedding_seam_preserves_ai_acceptance_cache_contract(
     monkeypatch, tmp_path
 ) -> None:
