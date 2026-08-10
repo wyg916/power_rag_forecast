@@ -127,6 +127,7 @@ def save_assistant_turn(
     trace_id: str,
     trace_payload: dict[str, Any],
     guard_result: dict[str, Any],
+    memory_usages: list[dict[str, Any]] | None = None,
 ) -> None:
     """Persist one assistant turn atomically and idempotently."""
     if not trace_id:
@@ -288,6 +289,15 @@ def save_assistant_turn(
             ).first()
             if not trace_row:
                 raise MemoryConflictError("trace id belongs to another identity")
+            if memory_usages:
+                from ..ai_assistant.memory.enterprise_memory import insert_memory_usages
+
+                insert_memory_usages(
+                    connection,
+                    identity,
+                    trace_id=trace_id,
+                    items=memory_usages,
+                )
     except (MemoryConflictError, MemoryNotFoundError):
         raise
     except Exception as exc:

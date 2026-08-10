@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from ..ai.chat_memory import save_assistant_turn
+from ..ai.chat_memory import MemoryPersistenceError, save_assistant_turn
 from ..ai.identity_context import IdentityContext
 from ..data_access import jsonable
 from .core.answer_guard import guard_answer
@@ -22,6 +22,16 @@ from .context_pack_builder import build_context_pack
 from .expert_answer_planner import normalize_answer_style, plan_expert_answer
 from .llm_router import LLMRouter, sanitize_error
 from .memory.conversation_state import get_conversation_state
+from .memory.enterprise_memory import (
+    MemoryCoreError,
+    admit_memory,
+    build_memory_context,
+    is_memory_recall_question,
+    memory_answer,
+    parse_explicit_memory_request,
+    retrieve_memories,
+    usage_items,
+)
 from .prompts import build_expert_messages
 from .schemas import ConversationState, IntentDecision, ToolResult
 from ..services.rag_service import rag_enabled, rag_search
@@ -1288,6 +1298,31 @@ def answer_chat_accurate(
     trace.step("input_normalizer", normalized_question=clean_question)
     stage_started = time.perf_counter()
     previous = get_conversation_state(memory_identity) if memory_identity else None
+    explicit_memory_content = parse_explicit_memory_request(clean_question)
+    memory_admission: dict[str, Any] | None = None
+    long_term_memories: list[dict[str, Any]] = []
+    recall_requested = is_memory_recall_question(clean_question)
+    try:
+        if explicit_memory_content and memory_identity and persist:
+            memory_admission = admit_memory(
+                memory_identity,
+                content=explicit_memory_content,
+                summary=explicit_memory_content,
+                memory_type="semantic",
+                subject_type="user_fact",
+                source_type="explicit_user",
+                confidence=0.95,
+                importance=0.8,
+                business_value=0.8,
+            )
+        if memory_identity and persist:
+            long_term_memories = retrieve_memories(memory_identity, clean_question, limit=5)
+    except MemoryCoreError as exc:
+        raise MemoryPersistenceError("enterprise memory unavailable") from exc
+    long_term_context = build_memory_context(
+        previous.__dict__ if previous else {},
+        long_term_memories,
+    )
     resolved_decision = resolve_followup(clean_question, previous)
     timings_ms["context_resolver_ms"] = _timing_ms(stage_started)
     trace.step(
@@ -1317,7 +1352,7 @@ def answer_chat_accurate(
         timings_ms=timings_ms,
         total_started=total_started,
     )
-    if fast_payload is not None:
+    if fast_payload is not None and memory_admission is None and not recall_requested:
         return fast_payload
     plan = plan_answer(decision.intent)
     trace.step("answer_planner", answer_mode=plan.answer_mode, llm_used=plan.use_llm)
@@ -1325,6 +1360,9 @@ def answer_chat_accurate(
     rag_result: dict[str, Any] = {"available": False, "items": [], "retrieval": {"enabled": False}}
     stage_started = time.perf_counter()
     use_rag, rag_trigger_info = _rag_trigger_decision(decision.intent, expert_plan.task_type, clean_question)
+    if memory_admission is not None or recall_requested:
+        use_rag = False
+        rag_trigger_info = {"reason": "long_term_memory_path"}
     timings_ms["rag_trigger_ms"] = _timing_ms(stage_started)
     if use_rag and not _retrieval_identity_matches(memory_identity, rag_context):
         return _unavailable_payload(
@@ -1385,11 +1423,24 @@ def answer_chat_accurate(
         tools_called=[{"tool": item.name, "input": item.input, "success": item.success, "error_message": item.error_message} for item in tool_results],
     )
     answer = _build_answer(decision, tool_results)
+    if memory_admission is not None:
+        if memory_admission.get("idempotent"):
+            answer = "这条内容已在你的长期记忆中，无需重复记录。"
+        elif memory_admission.get("decision") == "LONG_TERM_ACCEPTED":
+            answer = "已按你的明确要求记录，可在后续会话中继续调用。"
+        elif memory_admission.get("decision") == "LONG_TERM_CANDIDATE":
+            answer = "这条内容已进入长期记忆候选，尚未作为可直接召回的有效事实。"
+        else:
+            answer = "这条内容未通过长期记忆准入，不会写入可召回记忆。"
+    elif recall_requested:
+        answer = memory_answer(long_term_memories)
     draft_answer = answer
     evidence = _evidence(tool_results)
     evidence.extend(_rag_evidence(rag_result))
     rag_required_unavailable = bool(
         use_rag
+        and memory_admission is None
+        and not recall_requested
         and not rag_result.get("citations")
         and decision.intent in {"knowledge_search", "general_query"}
         and not _storage_boundary_note(clean_question)
@@ -1406,7 +1457,7 @@ def answer_chat_accurate(
         run_id=run_id,
         rag_result=rag_result,
         identity=memory_identity,
-        memory_context=previous.__dict__ if previous else {},
+        memory_context=long_term_context,
     )
     timings_ms["context_pack_ms"] = _timing_ms(stage_started)
     llm_used = False
@@ -1417,14 +1468,18 @@ def answer_chat_accurate(
     if use_rag and llm_task_type == "daily_chat":
         llm_task_type = "business_answer"
     skip_daily_llm = _should_skip_llm_for_daily_chat(decision.intent, llm_task_type, clean_question)
-    if rag_required_unavailable or not _should_use_llm(decision.intent) or skip_daily_llm:
+    if memory_admission is not None or recall_requested or rag_required_unavailable or not _should_use_llm(decision.intent) or skip_daily_llm:
         model_status = {"provider": "deterministic", "model": "tool_answer", "fallback": False}
         trace.step(
             "llm_router",
             success=True,
             provider="deterministic",
             reason=(
-                "rag_evidence_unavailable"
+                "long_term_memory_admission"
+                if memory_admission is not None
+                else "long_term_memory_recall"
+                if recall_requested
+                else "rag_evidence_unavailable"
                 if rag_required_unavailable
                 else "daily_chat_fast_path"
                 if skip_daily_llm
@@ -1503,6 +1558,10 @@ def answer_chat_accurate(
             trace_payload=trace_payload,
             guard_result={"result": guard_result},
             state=_state_from_answer(session_id, decision, answer, tool_results, run_id),
+            memory_usages=usage_items(
+                long_term_memories,
+                used_in_answer=bool(recall_requested or (llm_used and long_term_memories)),
+            ),
         )
     focus_periods = [
         item.get("time") or item.get("hour")
@@ -1613,6 +1672,11 @@ def answer_chat_accurate(
         "risk_level": str(_first(tool_results).get("risk_level") or ""),
         "focus_periods": focus_periods,
         "created_at": datetime.now().isoformat(sep=" ", timespec="seconds"),
+        "memory": {
+            "retrieved_count": len(long_term_memories),
+            "used_in_answer": bool(recall_requested or (llm_used and long_term_memories)),
+            "admission": memory_admission.get("decision") if memory_admission else None,
+        },
     }
     if debug:
         public_payload.update(

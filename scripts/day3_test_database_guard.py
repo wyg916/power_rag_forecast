@@ -28,6 +28,7 @@ EXPECTED_USER = "postgres"
 EXPECTED_HOSTS = {"localhost", "127.0.0.1", "::1"}
 EXPECTED_PORT = 5432
 EXPECTED_ALEMBIC_HEAD = "0018_rag_enterprise_r1"
+EXPECTED_ALEMBIC_HEAD_ENV = "BETA10D_TEST_EXPECTED_ALEMBIC_HEAD"
 ISOLATION_FLAG = "BETA10D_TEST_ISOLATION_ACTIVE"
 SCHEMA_ENV = "BETA10D_TEST_SCHEMA"
 ROLE_ENV = "BETA10D_TEST_ROLE"
@@ -176,7 +177,8 @@ def verify_isolated_runtime(database_url: str, schema: str, role: str) -> dict[s
             head = connection.execute(
                 text(f"SELECT version_num FROM {_quote_identifier(schema)}.alembic_version")
             ).scalar_one()
-            if head != EXPECTED_ALEMBIC_HEAD:
+            expected_head = os.environ.get(EXPECTED_ALEMBIC_HEAD_ENV, EXPECTED_ALEMBIC_HEAD).strip()
+            if head != expected_head:
                 raise DatabaseIsolationError("隔离 Schema Alembic head 不正确")
 
             role_flags = dict(
