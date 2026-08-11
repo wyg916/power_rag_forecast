@@ -3051,11 +3051,13 @@ a {
 
 .assistant-input-box {
   flex: 0 0 auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   border: 1px solid rgba(0, 184, 148, 0.45);
   box-shadow: 0 8px 18px rgba(12, 40, 48, 0.06);
 }
 
 .assistant-input-box .ant-input {
+  grid-column: 1 / -1;
   min-height: auto;
 }
 
@@ -3068,12 +3070,22 @@ a {
   font-size: 11px;
 }
 
+.assistant-input-box .chat-input-tools {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.assistant-input-box > .ant-btn-primary {
+  align-self: end;
+}
+
 .assistant-hidden-input {
   display: none;
 }
 
 .assistant-context-tags {
   display: flex;
+  grid-column: 1 / -1;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 6px;

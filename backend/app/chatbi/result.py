@@ -107,6 +107,9 @@ def _column(field: str) -> ResultColumn:
 def _state(plan: AnalysisPlan, rows: list[dict[str, Any]]) -> ResultState:
     if not rows:
         return "empty"
+    current_missing = all(row.get(field) is None for row in rows for field in plan.metrics)
+    if current_missing and not plan.comparison:
+        return "empty"
     if plan.comparison:
         current_fields = list(plan.metrics)
         comparison_fields = [f"{item}__comparison" for item in plan.metrics]

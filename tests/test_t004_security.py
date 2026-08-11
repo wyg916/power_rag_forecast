@@ -223,13 +223,17 @@ def test_day2_preflight_static_gates_pass():
 
     assert config_failures == []
     assert migration_failures == []
-    assert migration_result["files_scanned"] == 21
+    assert migration_result["files_scanned"] == 22
     assert any(
         record["file"] == "0020_enterprise_memory_core_v1.py"
         for record in migration_result["records"]
     )
     assert any(
         record["file"] == "0021_enterprise_memory_lifecycle_v1.py"
+        for record in migration_result["records"]
+    )
+    assert any(
+        record["file"] == "0022_chatbi_semantic_analysis_v1.py"
         for record in migration_result["records"]
     )
 

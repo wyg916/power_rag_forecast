@@ -149,7 +149,7 @@ def test_prediction_latest_data_messages_contract(monkeypatch):
     assert calls == ["read"]
 
 
-def test_model_gateway_health_and_chat_feedback():
+def test_model_gateway_health_and_unknown_chat_feedback_is_hidden():
     gateway = client.get("/api/model-gateway/health")
     assert gateway.status_code == 200
     gateway_payload = gateway.json()
@@ -160,8 +160,13 @@ def test_model_gateway_health_and_chat_feedback():
         "/api/ai/chat/feedback",
         json={"session_id": "test_session", "trace_id": "trace_test", "rating": "up", "comment": "ok"},
     )
-    assert feedback.status_code == 200
-    assert feedback.json()["ok"] is True
+    assert feedback.status_code in {404, 503}
+    expected_detail = (
+        "assistant_memory_not_found"
+        if feedback.status_code == 404
+        else "assistant_memory_unavailable"
+    )
+    assert feedback.json()["detail"] == expected_detail
 
 
 def test_stage2_agent_endpoint_shape():
