@@ -1174,7 +1174,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
           width={560}
           open={developerOpen}
           onClose={() => setDeveloperOpen(false)}
-          destroyOnClose
+          destroyOnHidden
         >
           <div className="assistant-dev-drawer">
             <Alert type="info" showIcon message="普通用户默认不展示 Trace、工具调用日志和原始 JSON。" />
@@ -1282,7 +1282,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
         width={560}
         open={Boolean(detailPanel)}
         onClose={() => setDetailPanel(null)}
-        destroyOnClose
+        destroyOnHidden
       >
         {detailPanel === 'evidence' ? (
           <Table size="small" pagination={false} rowKey="key" dataSource={evidenceRows} columns={evidenceColumns} />

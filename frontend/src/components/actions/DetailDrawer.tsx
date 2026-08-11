@@ -11,7 +11,7 @@ interface DetailDrawerProps {
 
 export function DetailDrawer({ title, open, data, children, onClose }: DetailDrawerProps) {
   return (
-    <Drawer className="detail-drawer" width={720} title={title} open={open} onClose={onClose} destroyOnClose>
+    <Drawer className="detail-drawer" width={720} title={title} open={open} onClose={onClose} destroyOnHidden>
       {children}
       {data && (
         <Descriptions className="detail-drawer-descriptions" bordered size="small" column={1}>

@@ -558,7 +558,7 @@ export function ModelCenterPage(_props: PageProps) {
         open={eventsOpen}
         footer={null}
         onCancel={() => setEventsOpen(false)}
-        destroyOnClose
+        destroyOnHidden
       >
         <Table
           size="small"
