@@ -85,10 +85,34 @@ def validate_analysis_plan(plan: AnalysisPlan, *, permissions: tuple[str, ...] |
             issue("dimension_dataset_mismatch", "dimensions", "维度不属于所选数据集。")
         if not wildcard and dimension.permission not in permission_set:
             issue("dimension_forbidden", "dimensions", "缺少维度访问权限。")
+        if dimension.sensitivity != "public_business" and not wildcard and "model:read" not in permission_set:
+            issue("sensitive_dimension_forbidden", "dimensions", "缺少内部业务维度访问权限。")
+    for item in plan.filters:
+        dimension = dimensions.get(item.dimension)
+        if not dimension:
+            continue
+        dataset = datasets.get(dimension.dataset)
+        if not dataset:
+            continue
+        field = dataset.field_map[dimension.field]
+        if not field.filterable:
+            issue("filter_dimension_forbidden", "filters", "筛选维度不可过滤。")
+        if item.operator == "contains" and field.data_type != "string":
+            issue("filter_operator_forbidden", "filters", "contains 仅允许字符串维度。")
+        if item.operator == "in" and (not isinstance(item.value, list) or not item.value or len(item.value) > 50):
+            issue("filter_value_invalid", "filters", "in 必须使用 1..50 个值。")
+        if item.operator != "in" and isinstance(item.value, list):
+            issue("filter_value_invalid", "filters", "仅 in 允许数组筛选值。")
     if not set(plan.group_by).issubset(plan.dimensions):
         issue("group_by_not_selected", "group_by", "分组维度必须出现在 dimensions。")
     if plan.drill_level and plan.drill_level not in plan.dimensions:
         issue("drill_level_not_selected", "drill_level", "下钻层级必须出现在 dimensions。")
+    if plan.drill_level and plan.drill_level not in plan.group_by:
+        issue("drill_level_not_grouped", "drill_level", "下钻层级必须作为分组维度。")
+    if plan.drill_level and plan.drill_level in dimensions:
+        hierarchy = dimensions[plan.drill_level].hierarchy
+        if not hierarchy or hierarchy[-1] != plan.drill_level or not set(hierarchy).issubset(plan.dimensions):
+            issue("drill_hierarchy_forbidden", "drill_level", "下钻必须遵循完整注册层级。")
 
     joins = {}
     for join_id in plan.joins:
@@ -119,7 +143,16 @@ def validate_analysis_plan(plan: AnalysisPlan, *, permissions: tuple[str, ...] |
             issue("order_field_forbidden", "order_by", "排序字段必须是已选指标或维度。")
     if plan.comparison and not plan.time_range:
         issue("comparison_time_range_required", "comparison", "同比、环比或上期比较必须指定时间范围。")
+    if plan.time_range and not any(item.data_type == "datetime" for item in dimensions.values()):
+        issue("time_dimension_required", "time_range", "时间范围查询必须选择注册时间维度。")
     if plan.chart_intent == "pie" and (len(plan.metrics) != 1 or len(plan.group_by) != 1):
         issue("pie_semantics_invalid", "chart_intent", "饼图只允许单指标和单分组维度。")
+    if plan.analysis_mode in {"ranking", "contribution"}:
+        if len(plan.metrics) != 1 or len(plan.group_by) != 1 or not plan.time_range:
+            issue("analysis_mode_semantics_invalid", "analysis_mode", "排名和贡献分析必须明确单指标、单分组维度和时间范围。")
+    if plan.analysis_mode == "ranking" and (
+        not plan.order_by or plan.order_by[0].field not in plan.metrics
+    ):
+        issue("ranking_order_required", "order_by", "排名必须按所选指标明确排序方向。")
 
     return PlanValidation("invalid" if issues else "valid", not issues, tuple(issues))

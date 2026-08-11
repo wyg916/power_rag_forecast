@@ -72,7 +72,7 @@ def test_validator_requires_permissions_and_whitelist_join() -> None:
     joined = plan(
         datasets=["market_price_history", "load_history"],
         metrics=["avg_day_ahead_price", "avg_actual_load"],
-        dimensions=["market_code", "load_market_code"],
+        dimensions=["market_observed_at", "market_code", "load_market_code"],
         group_by=["market_code"],
         joins=["market_load_by_time_market"],
     )

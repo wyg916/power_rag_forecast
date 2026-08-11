@@ -15,6 +15,7 @@ FilterOperator = Literal["eq", "ne", "gt", "gte", "lt", "lte", "in", "contains"]
 TimeGrain = Literal["hour", "day", "week", "month"]
 Comparison = Literal["previous_period", "yoy", "mom"]
 ChartIntent = Literal["line", "bar", "table", "pie"]
+AnalysisMode = Literal["aggregate", "ranking", "contribution"]
 
 
 class ContractModel(BaseModel):
@@ -79,6 +80,7 @@ class AnalysisPlan(ContractModel):
     joins: list[str] = Field(default_factory=list, max_length=3)
     drill_level: str | None = None
     chart_intent: ChartIntent = "table"
+    analysis_mode: AnalysisMode = "aggregate"
     clarification_required: bool = False
     clarification_question: str | None = Field(default=None, max_length=300)
 
