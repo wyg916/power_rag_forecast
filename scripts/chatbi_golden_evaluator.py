@@ -64,8 +64,14 @@ class FrozenPlanLLM:
         }
 
 
+def canonical_golden_bytes(raw: bytes) -> bytes:
+    """Return platform-independent bytes for the frozen JSONL asset."""
+
+    return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
 def load_golden() -> list[dict[str, Any]]:
-    raw = GOLDEN_PATH.read_bytes()
+    raw = canonical_golden_bytes(GOLDEN_PATH.read_bytes())
     expected_hash = HASH_PATH.read_text(encoding="utf-8").split()[0]
     actual_hash = hashlib.sha256(raw).hexdigest()
     if actual_hash != expected_hash:
@@ -252,7 +258,7 @@ def evaluate(output_path: Path) -> dict[str, Any]:
         "schema_version": "chatbi-golden-evaluation/v1",
         "evaluated_at": datetime.now(timezone.utc).isoformat(),
         "asset": str(GOLDEN_PATH.relative_to(PROJECT_ROOT)).replace("\\", "/"),
-        "asset_sha256": hashlib.sha256(GOLDEN_PATH.read_bytes()).hexdigest(),
+        "asset_sha256": hashlib.sha256(canonical_golden_bytes(GOLDEN_PATH.read_bytes())).hexdigest(),
         "result": "PASS" if passed == 50 else "FAIL",
         "question_count": 50,
         "passed": passed,
