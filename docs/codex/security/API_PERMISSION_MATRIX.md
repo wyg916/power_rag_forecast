@@ -1,8 +1,8 @@
 # Day 3 API 权限矩阵
 
-- 方法+路径总数：204
-- 唯一路径数：189
-- 风险分布：{'admin': 31, 'business': 108, 'public': 7, 'sensitive': 58}
+- 方法+路径总数：205
+- 唯一路径数：190
+- 风险分布：{'admin': 31, 'business': 109, 'public': 7, 'sensitive': 58}
 - 公共白名单：7
 - 规范：CSV 为机器可读事实源；本文件由脚本同步生成。
 
@@ -18,6 +18,7 @@
 | GET | /api/ai/chat/sessions/{session_id} | backend.app.api.v1.endpoints.assistant | ai_chat_session | ai_chat_session | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | no | frontend/src/services/assistantApi.ts:147 | same-path methods=DELETE\|GET\|PATCH |
 | PATCH | /api/ai/chat/sessions/{session_id} | backend.app.api.v1.endpoints.assistant | ai_update_chat_session | ai_update_chat_session | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | frontend/src/services/assistantApi.ts:147 | same-path methods=DELETE\|GET\|PATCH |
 | POST | /api/ai/chat/stream | backend.app.api.v1.endpoints.assistant | ai_chat_stream | ai_chat_stream | None | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | frontend/src/services/assistantApi.ts:91 | SSE stream |
+| POST | /api/ai/chatbi/analyze | backend.app.api.v1.endpoints.chatbi | analyze_chatbi | analyze_chatbi | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | none | none |
 | POST | /api/ai/feedback | backend.app.api.v1.endpoints.assistant | ai_answer_feedback | ai_answer_feedback | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | frontend/src/api.ts:304 | none |
 | GET | /api/ai/insights | backend.app.api.v1.endpoints.assistant | ai_insights | ai_insights | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | no | frontend/src/api.ts:306 | none |
 | GET | /api/ai/local-model/status | backend.app.api.v1.endpoints.system | local_model_status | local_model_status | <class 'dict'> | sensitive | auth:get_current_user\|permission:model:read | authenticated+permission:model:read | model:read | admin\|analyst\|developer | no | no | frontend/src/api.ts:379 | none |

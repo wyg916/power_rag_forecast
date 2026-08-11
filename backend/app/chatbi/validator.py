@@ -147,6 +147,8 @@ def validate_analysis_plan(plan: AnalysisPlan, *, permissions: tuple[str, ...] |
         issue("time_dimension_required", "time_range", "时间范围查询必须选择注册时间维度。")
     if plan.chart_intent == "pie" and (len(plan.metrics) != 1 or len(plan.group_by) != 1):
         issue("pie_semantics_invalid", "chart_intent", "饼图只允许单指标和单分组维度。")
+    if plan.chart_intent in {"line", "bar"} and not plan.group_by:
+        issue("chart_dimension_required", "chart_intent", "折线图和柱状图必须指定分组维度。")
     if plan.analysis_mode in {"ranking", "contribution"}:
         if len(plan.metrics) != 1 or len(plan.group_by) != 1 or not plan.time_range:
             issue("analysis_mode_semantics_invalid", "analysis_mode", "排名和贡献分析必须明确单指标、单分组维度和时间范围。")
