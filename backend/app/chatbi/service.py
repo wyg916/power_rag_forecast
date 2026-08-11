@@ -15,6 +15,8 @@ from backend.app.db.session import get_engine
 from .catalog import CATALOG_VERSION
 from .compiler import QueryCompileError, compile_analysis_plan
 from .contracts import AnalysisPlan
+from .memory import apply_remembered_context, recall_analysis_context, remember_analysis_context
+from .planner import AnalysisPlanGenerationError, PlanLLM, generate_analysis_plan
 from .result import QueryExecutionError, build_chart_spec, build_grounded_narrative, execute_result_dataset
 from .validator import PlanValidation, validate_analysis_plan
 
@@ -70,7 +72,11 @@ def _insert_audit(
             "plan_json": json.dumps(plan.model_dump(mode="json"), ensure_ascii=False, sort_keys=True),
             "validation_status": validation.status,
             "validation_errors": json.dumps(validation.public_dict()["issues"], ensure_ascii=False),
-            "status": "validated" if validation.valid else "rejected",
+            "status": (
+                "validated" if validation.valid
+                else "clarification_required" if validation.status == "clarification_required"
+                else "rejected"
+            ),
         },
     )
 
@@ -156,6 +162,27 @@ def execute_chatbi_analysis(
     except Exception as exc:
         raise ChatBIServiceError("analysis_audit_unavailable", "分析审计记录不可用。", status_code=503) from exc
     if not validation.valid:
+        if validation.status == "clarification_required":
+            return {
+                "available": False,
+                "state": "clarification_required",
+                "analysis_plan": server_plan.model_dump(mode="json"),
+                "validation": validation.public_dict(),
+                "clarification": {
+                    "required": True,
+                    "question": server_plan.clarification_question,
+                },
+                "lineage": {
+                    "analysis_plan_id": server_plan.analysis_plan_id,
+                    "run_id": identity.run_id,
+                    "session_id": identity.session_id,
+                    "catalog_version": CATALOG_VERSION,
+                    "tenant_id": identity.tenant_id,
+                    "workspace_id": identity.workspace_id,
+                    "user_id": identity.user_id,
+                    "agent_id": identity.agent_id,
+                },
+            }
         raise ChatBIServiceError("analysis_plan_invalid", "AnalysisPlan 未通过验证。", status_code=422)
     try:
         compiled = compile_analysis_plan(server_plan, permissions=permissions)
@@ -203,3 +230,55 @@ def execute_chatbi_analysis(
             "joins": list(server_plan.joins),
         },
     }
+
+
+def execute_chatbi_turn(
+    *,
+    question: str,
+    plan: AnalysisPlan | None,
+    identity: IdentityContext,
+    permissions: tuple[str, ...] | list[str] | set[str],
+    requested_provider: str = "auto",
+    engine: Engine | None = None,
+    planner_router: PlanLLM | None = None,
+) -> dict[str, Any]:
+    """Plan, resolve, validate, execute, and remember one governed ChatBI turn."""
+    active_engine = engine or get_engine()
+    try:
+        remembered = recall_analysis_context(identity, engine=active_engine)
+    except Exception as exc:
+        raise ChatBIServiceError("analysis_memory_unavailable", "分析上下文当前不可用。", status_code=503) from exc
+    planner_meta: dict[str, Any]
+    if plan is None:
+        try:
+            draft, planner_meta = generate_analysis_plan(
+                question,
+                remembered,
+                requested_provider=requested_provider,
+                router=planner_router,
+            )
+        except AnalysisPlanGenerationError as exc:
+            raise ChatBIServiceError("analysis_plan_generation_unavailable", str(exc), status_code=503) from exc
+    else:
+        draft = plan
+        planner_meta = {"source": "provided_analysis_plan", "provider": None, "model": None, "fallback": False}
+
+    resolved, memory_meta = apply_remembered_context(draft, remembered)
+    response = execute_chatbi_analysis(
+        question=question,
+        plan=resolved,
+        identity=identity,
+        permissions=permissions,
+        engine=active_engine,
+    )
+    response["planner"] = planner_meta
+    response["memory_context"] = {**memory_meta, "persisted": False}
+    if response["state"] != "clarification_required":
+        try:
+            admission = remember_analysis_context(identity, AnalysisPlan.model_validate(response["analysis_plan"]), engine=active_engine)
+        except Exception as exc:
+            raise ChatBIServiceError("analysis_memory_write_failed", "分析上下文保存失败。", status_code=503) from exc
+        if admission.get("decision") != "LONG_TERM_ACCEPTED" or admission.get("status") != "active":
+            raise ChatBIServiceError("analysis_memory_write_rejected", "分析上下文未通过记忆准入。", status_code=503)
+        response["memory_context"]["persisted"] = True
+    return response

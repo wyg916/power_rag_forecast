@@ -244,6 +244,7 @@ def admit_memory(
     expires_at: datetime | None = None,
     metadata: dict[str, Any] | None = None,
     occurred_at: datetime | None = None,
+    engine: Engine | None = None,
 ) -> dict[str, Any]:
     params = _identity_params(identity)
     value = str(content or "").strip()
@@ -253,7 +254,7 @@ def admit_memory(
         raise MemoryCoreError("episodic memory requires session_id, run_id and occurred_at")
     digest = content_hash(value)
     try:
-        with _engine().begin() as connection:
+        with (engine or _engine()).begin() as connection:
             duplicate = connection.execute(
                 text(
                     """
@@ -421,7 +422,7 @@ def admit_memory(
         raise
     except IntegrityError as exc:
         try:
-            with _engine().connect() as connection:
+            with (engine or _engine()).connect() as connection:
                 existing = connection.execute(
                     text(
                         """
@@ -645,6 +646,8 @@ def retrieve_memories(
     memory_types: Iterable[str] = ("semantic", "episodic"),
     limit: int = 5,
     include_archived: bool = False,
+    engine: Engine | None = None,
+    session_id: str | None = None,
 ) -> list[dict[str, Any]]:
     types = [item for item in memory_types if item in {"semantic", "episodic"}]
     if not types:
@@ -652,7 +655,7 @@ def retrieve_memories(
     limit = max(1, min(int(limit), 12))
     wildcard = f"%{str(query or '').strip()[:300]}%"
     try:
-        with _engine().connect() as connection:
+        with (engine or _engine()).connect() as connection:
             rows = connection.execute(
                 text(
                     """
@@ -663,6 +666,10 @@ def retrieve_memories(
                           ON v.memory_id=r.memory_id AND v.version_no=r.current_version
                         WHERE r.tenant_id=:tenant_id AND r.workspace_id=:workspace_id
                           AND r.user_id=:user_id AND r.agent_id=:agent_id
+                          AND (
+                            CAST(:memory_session_id AS varchar) IS NULL
+                            OR r.session_id=CAST(:memory_session_id AS varchar)
+                          )
                           AND (r.status IN ('active', 'cold') OR (:include_archived AND r.status='archived'))
                           AND (r.expires_at IS NULL OR r.expires_at > CURRENT_TIMESTAMP OR (:include_archived AND r.status='archived'))
                           AND r.memory_type = ANY(CAST(:memory_types AS varchar[]))
@@ -678,6 +685,7 @@ def retrieve_memories(
                     "memory_types": types,
                     "wildcard": wildcard,
                     "include_archived": include_archived,
+                    "memory_session_id": session_id,
                 },
             ).mappings().all()
         from .lifecycle import effective_score, ttl_state
@@ -699,8 +707,13 @@ def retrieve_memories(
                 "version_no": int(row["current_version"]),
                 "memory_type": row["memory_type"],
                 "subject_type": row["subject_type"],
+                "source_type": row["source_type"],
+                "source_id": row["source_id"],
+                "session_id": row["session_id"],
+                "run_id": row["run_id"],
                 "content": row["content"],
                 "summary": row["summary"],
+                "metadata": jsonable(row["metadata"]),
                 "confidence": float(row["confidence"]),
                 "importance": float(row["importance"]),
                 "status": row["status"],

@@ -2995,6 +2995,45 @@ a {
   margin-bottom: 0;
 }
 
+.assistant-chatbi-artifacts {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--color-border-soft);
+  background: #fbfefd;
+}
+
+.assistant-chatbi-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--color-secondary);
+  font-size: 12px;
+}
+
+.assistant-chatbi-status strong {
+  color: var(--color-title);
+  font-size: 13px;
+}
+
+.assistant-chatbi-chart,
+.assistant-chatbi-table {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.assistant-chatbi-table .ant-table {
+  font-size: 12px;
+}
+
+.assistant-chatbi-state {
+  margin: 12px 14px 14px;
+}
+
 .assistant-business-empty {
   min-height: 100%;
 }

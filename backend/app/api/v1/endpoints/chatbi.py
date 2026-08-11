@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ....ai.identity_context import IdentityContext
 from ....chatbi.contracts import AnalysisPlan
-from ....chatbi.service import ChatBIServiceError, execute_chatbi_analysis
+from ....chatbi.service import ChatBIServiceError, execute_chatbi_turn
 from ....core.security import CurrentUser, require_permission
 
 
@@ -22,7 +22,8 @@ class ChatBIAnalysisRequest(BaseModel):
 
     question: str = Field(min_length=1, max_length=2000)
     session_id: str = Field(min_length=1, max_length=128)
-    plan: AnalysisPlan
+    plan: AnalysisPlan | None = None
+    model_provider: Literal["auto", "deepseek", "ollama"] = "auto"
 
     @field_validator("question", "session_id")
     @classmethod
@@ -49,11 +50,12 @@ def analyze_chatbi(
         agent_id="chatbi",
     )
     try:
-        return execute_chatbi_analysis(
+        return execute_chatbi_turn(
             question=payload.question,
             plan=payload.plan,
             identity=identity,
             permissions=user.permissions,
+            requested_provider=payload.model_provider,
         )
     except ChatBIServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail={"code": exc.code, "message": exc.message}) from exc

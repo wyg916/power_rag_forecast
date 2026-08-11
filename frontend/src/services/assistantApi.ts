@@ -15,7 +15,8 @@ async function readError(response: Response) {
   const text = await response.text();
   try {
     const payload = JSON.parse(text);
-    return payload?.detail || payload?.message || text || `HTTP ${response.status}`;
+    const detail = payload?.detail;
+    return detail?.message || detail?.code || detail || payload?.message || text || `HTTP ${response.status}`;
   } catch {
     return text || `HTTP ${response.status}`;
   }
@@ -79,6 +80,19 @@ export async function getAssistantData() {
 
 export async function askAssistant(question: string, sessionId?: string, options: any = {}) {
   return api.chat(question, sessionId, options);
+}
+
+export async function askChatBI(question: string, sessionId: string, options: any = {}) {
+  const response = await fetch(downloadUrl('/api/ai/chatbi/analyze'), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ question, session_id: sessionId, model_provider: options.model_provider || 'auto' })
+  });
+  if (!response.ok) {
+    handleUnauthorized(response);
+    throw new Error(String(await readError(response)));
+  }
+  return response.json();
 }
 
 export async function askAssistantStream(

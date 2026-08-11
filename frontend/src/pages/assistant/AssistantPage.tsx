@@ -23,11 +23,13 @@ import { Alert, Button, Drawer, Empty, Input, List, Modal, Select, Space, Switch
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import { SectionCard } from '../../components/cards/SectionCard';
+import { AppChart } from '../../components/charts/AppChart';
 import { TracePanel } from '../../components/common/TracePanel';
 import { useAuth } from '../../context/AuthContext';
 import {
   askAssistant,
   askAssistantStream,
+  askChatBI,
   exportAssistantConversation,
   getAssistantData,
   getAssistantReferenceOptions,
@@ -36,6 +38,7 @@ import {
 import type { PageProps } from '../../types/ui';
 
 const answerModeTabs = [
+  { key: 'chatbi', label: '经营分析' },
   { key: 'professional_brief', label: '专业解读' },
   { key: 'plain_language', label: '通俗解释' },
   { key: 'business_advice', label: '业务建议' },
@@ -125,6 +128,7 @@ type AnswerState = {
   attachments?: AssistantAttachment[];
   references?: AssistantReference[];
   streamEvents?: Array<{ event: string; message: string }>;
+  chatbi?: any;
 };
 
 type AssistantAttachment = {
@@ -243,6 +247,16 @@ function extractBusinessMeta(response: any) {
 }
 
 function normalizeTrace(response: any): TraceView {
+  if (response?.analysis_plan && response?.lineage) {
+    return {
+      intent: '经营分析',
+      tools: ['AnalysisPlan', 'Validator', ...(response.result_dataset ? ['Query Compiler'] : [])],
+      sources: (response.result_dataset?.schema || []).map((item: any) => item.business_name).filter(Boolean),
+      refs: response.lineage.result_hash ? [`result_hash:${response.lineage.result_hash}`] : [],
+      traceId: response.lineage.run_id || '',
+      confidence: response.validation?.valid ? 100 : 0
+    };
+  }
   const rawConfidence = Number(response.confidence ?? 0);
   const confidence = rawConfidence <= 1 && rawConfidence > 0 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence || 0);
   return {
@@ -258,11 +272,25 @@ function normalizeTrace(response: any): TraceView {
 }
 
 function normalizeAnswerState(response: any): AnswerState {
+  const isChatBI = Boolean(response?.analysis_plan && response?.validation);
+  const chatbiMeta = isChatBI
+    ? {
+        tables: response.result_dataset ? ['受控业务指标查询'] : [],
+        fields: (response.result_dataset?.schema || []).map((item: any) => item.business_name).filter(Boolean),
+        timeRange: response.analysis_plan?.time_range
+          ? `${response.analysis_plan.time_range.start} ~ ${response.analysis_plan.time_range.end}`
+          : '',
+        rowCount: response.result_dataset?.row_count,
+        querySummary: response.state === 'clarification_required' ? '等待补充分析条件' : '分析计划已验证并执行',
+        available: response.available,
+        knowledgeEvidence: []
+      }
+    : extractBusinessMeta(response);
   const rawSource = response.dataSource || response.model_provider_used || response.intent;
   return {
-    source: providerDisplayName(rawSource),
+    source: isChatBI ? '经营分析' : providerDisplayName(rawSource),
     rawSource,
-    businessMeta: extractBusinessMeta(response),
+    businessMeta: chatbiMeta,
     evidenceSummary: compactEvidenceItems(response.evidence_summary || []),
     knowledgeEvidenceSummary: compactEvidenceItems(response.knowledge_evidence_summary || []),
     keyMetrics: response.key_metrics || response.metrics || response.business_metrics || {},
@@ -274,8 +302,95 @@ function normalizeAnswerState(response: any): AnswerState {
     warnings: response.warnings || [],
     rag: response.rag,
     debugPayload: response,
-    degraded: Boolean(response.model_fallback || response.warnings?.length)
+    degraded: Boolean(response.model_fallback || response.warnings?.length),
+    chatbi: isChatBI ? response : undefined
   };
+}
+
+function buildChatBIChartOption(payload: any) {
+  const dataset = payload?.result_dataset;
+  const spec = payload?.chart_spec;
+  if (!dataset || !spec || spec.chart_type === 'table' || spec.data_hash !== dataset.result_hash) return null;
+  const labels = Object.fromEntries((dataset.schema || []).map((item: any) => [item.field, item.business_name]));
+  const rows = dataset.rows || [];
+  if (spec.chart_type === 'pie') {
+    const field = spec.y?.[0];
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0 },
+      series: [{
+        name: labels[field] || field,
+        type: 'pie',
+        radius: ['42%', '68%'],
+        data: rows.map((row: any) => ({ name: String(row[spec.x] ?? '--'), value: row[field] }))
+      }]
+    };
+  }
+  const xValues = Array.from(new Set(rows.map((row: any) => String(row[spec.x] ?? '--'))));
+  const seriesValues = spec.series
+    ? Array.from(new Set(rows.map((row: any) => String(row[spec.series] ?? '--'))))
+    : [null];
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    grid: { left: 48, right: 20, top: 24, bottom: 52 },
+    xAxis: { type: 'category', data: xValues },
+    yAxis: { type: 'value', name: spec.unit || '' },
+    series: (spec.y || []).flatMap((field: string) => seriesValues.map((seriesValue: any) => ({
+        name: seriesValue === null ? (labels[field] || field) : `${seriesValue} · ${labels[field] || field}`,
+        type: spec.chart_type,
+        smooth: spec.chart_type === 'line',
+        data: xValues.map((xValue) => rows.find((row: any) =>
+          String(row[spec.x] ?? '--') === xValue
+          && (seriesValue === null || String(row[spec.series] ?? '--') === seriesValue)
+        )?.[field] ?? null)
+      })))
+  };
+}
+
+function ChatBIArtifacts({ payload }: { payload: any }) {
+  if (!payload) return null;
+  if (payload.state === 'clarification_required') {
+    return <Alert className="assistant-chatbi-state" type="info" showIcon message="需要补充分析条件" description={payload.clarification?.question} />;
+  }
+  const dataset = payload.result_dataset;
+  const spec = payload.chart_spec;
+  if (!dataset || !spec) return null;
+  const hashesMatch = dataset.result_hash === spec.data_hash && dataset.result_hash === payload.narrative?.result_hash;
+  if (!hashesMatch) {
+    return <Alert className="assistant-chatbi-state" type="error" showIcon message="结果一致性校验未通过" description="表格、图表与分析结论未共享同一结果版本，本次结果已停止展示。" />;
+  }
+  const schema = dataset.schema || [];
+  const columns = schema.map((item: any) => ({
+    title: `${item.business_name}${item.unit ? `（${item.unit}）` : ''}`,
+    dataIndex: item.field,
+    key: item.field,
+    ellipsis: true
+  }));
+  const chartOption = buildChatBIChartOption(payload);
+  return (
+    <section className="assistant-chatbi-artifacts">
+      <div className="assistant-chatbi-status">
+        <strong>分析计划</strong>
+        <Tag color={payload.validation?.valid ? 'success' : 'default'}>{payload.validation?.valid ? '验证通过' : '未执行'}</Tag>
+        {payload.memory_context?.used && <Tag color="blue">已承接上一轮条件</Tag>}
+        <span>{dataset.row_count} 条结果 · {String(dataset.executed_at || '').replace('T', ' ').slice(0, 19)}</span>
+      </div>
+      {dataset.state === 'empty' && <Alert type="info" showIcon message="所选条件暂无数据" />}
+      {dataset.state === 'insufficient_data' && <Alert type="warning" showIcon message="对比数据不足" />}
+      {chartOption && dataset.state === 'success' && <div className="assistant-chatbi-chart"><AppChart option={chartOption} height={260} /></div>}
+      <Table
+        className="assistant-chatbi-table"
+        size="small"
+        pagination={dataset.row_count > 12 ? { pageSize: 12, size: 'small' } : false}
+        rowKey={(_: any, index?: number) => String(index ?? 0)}
+        dataSource={dataset.rows || []}
+        columns={columns}
+        scroll={{ x: true }}
+        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无可展示结果" /> }}
+      />
+    </section>
+  );
 }
 
 function fallbackBusinessAnswer(error: unknown) {
@@ -525,7 +640,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   }
 
   function finalizeAssistantMessage(id: string, response: any, context?: { attachments: AssistantAttachment[]; references: AssistantReference[] }) {
-    const content = String(response.answer || '').trim() || '本次请求未返回回答内容。';
+    const content = String(response.answer || response.narrative?.text || response.clarification?.question || '').trim() || '本次请求未返回回答内容。';
     const answerState = {
       ...normalizeAnswerState(response),
       attachments: context?.attachments,
@@ -592,6 +707,31 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       },
       debug: developerMode && canUseDeveloperMode
     };
+
+    if (answerStyle === 'chatbi') {
+      const activeSessionId = sessionId || `chatbi_${Date.now().toString(36)}`;
+      setSessionId(activeSessionId);
+      try {
+        const response = await withAssistantTimeout(askChatBI(text, activeSessionId, { model_provider: modelProvider }));
+        finalizeAssistantMessage(assistantId, response);
+      } catch (error) {
+        updateAssistantMessage(assistantId, (item) => ({
+          ...item,
+          content: fallbackBusinessAnswer(error),
+          status: 'error',
+          answerState: {
+            error: error instanceof Error ? error.message : String(error || ''),
+            degraded: true,
+            debugPayload: { error: error instanceof Error ? error.message : String(error || '') }
+          },
+          trace: emptyTrace
+        }));
+        message.error('经营分析请求失败，请检查条件后重试');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       const controller = new AbortController();
@@ -893,6 +1033,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                               </div>
                             </section>
                           ))}
+                          <ChatBIArtifacts payload={item.answerState?.chatbi} />
                         </div>
                       </div>
                     );
