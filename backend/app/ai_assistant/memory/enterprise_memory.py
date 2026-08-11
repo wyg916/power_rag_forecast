@@ -18,7 +18,7 @@ from ...repositories.base import jsonable, postgres_engine
 MEMORY_TYPES = {"semantic", "episodic", "procedural"}
 SUBJECT_TYPES = {"user_fact", "business_fact", "system_fact", "task_episode"}
 RELATION_TYPES = {"SUPPORTS", "CONTRADICTS", "SUPERSEDES", "DERIVED_FROM", "RELATED_TO"}
-MEMORY_STATUSES = {"draft", "pending", "active", "cold", "archived", "deleted"}
+MEMORY_STATUSES = {"draft", "pending", "active", "cold", "archived", "delete_pending", "deleted"}
 ADMISSION_DECISIONS = {"REJECT", "SESSION_ONLY", "LONG_TERM_CANDIDATE", "LONG_TERM_ACCEPTED"}
 ACCEPTED_SOURCES = {"explicit_user", "verified_business", "system_verified", "tool_verified"}
 CONTEXT_BUDGET = {
@@ -33,7 +33,8 @@ STATE_TRANSITIONS = {
     "pending": {"active", "archived"},
     "active": {"cold", "archived"},
     "cold": {"active", "archived"},
-    "archived": {"active", "deleted"},
+    "archived": {"active", "delete_pending"},
+    "delete_pending": set(),
     "deleted": set(),
 }
 _SENSITIVE_PATTERNS = (
@@ -480,6 +481,8 @@ def update_memory(
     try:
         with _engine().begin() as connection:
             record = _owned_record(connection, identity, memory_id, lock=True)
+            if record["status"] not in {"pending", "active", "cold"}:
+                raise MemoryCoreError("memory status rejects update")
             if record["content_hash"] == digest:
                 return {"memory_id": memory_id, "version_no": record["current_version"], "idempotent": True}
             previous = connection.execute(
@@ -619,7 +622,7 @@ def transition_memory(identity: IdentityContext, memory_id: str, to_status: str,
                 {"status": to_status, "memory_id": memory_id},
             )
             _state_event(connection, identity, memory_id=memory_id, from_status=from_status, to_status=to_status, reason=reason)
-            event_type = "MEMORY_ARCHIVED" if to_status == "archived" else "MEMORY_DELETE_REQUESTED" if to_status == "deleted" else "MEMORY_UPDATED"
+            event_type = "MEMORY_ARCHIVED" if to_status == "archived" else "MEMORY_DELETE_REQUESTED" if to_status == "delete_pending" else "MEMORY_UPDATED"
             _outbox(
                 connection,
                 identity,
@@ -641,6 +644,7 @@ def retrieve_memories(
     *,
     memory_types: Iterable[str] = ("semantic", "episodic"),
     limit: int = 5,
+    include_archived: bool = False,
 ) -> list[dict[str, Any]]:
     types = [item for item in memory_types if item in {"semantic", "episodic"}]
     if not types:
@@ -659,28 +663,35 @@ def retrieve_memories(
                           ON v.memory_id=r.memory_id AND v.version_no=r.current_version
                         WHERE r.tenant_id=:tenant_id AND r.workspace_id=:workspace_id
                           AND r.user_id=:user_id AND r.agent_id=:agent_id
-                          AND r.status IN ('active', 'cold')
-                          AND (r.expires_at IS NULL OR r.expires_at > CURRENT_TIMESTAMP)
+                          AND (r.status IN ('active', 'cold') OR (:include_archived AND r.status='archived'))
+                          AND (r.expires_at IS NULL OR r.expires_at > CURRENT_TIMESTAMP OR (:include_archived AND r.status='archived'))
                           AND r.memory_type = ANY(CAST(:memory_types AS varchar[]))
                     )
-                    SELECT *,
-                        (CASE WHEN content ILIKE :wildcard OR summary ILIKE :wildcard THEN 1.0 ELSE 0.0 END)
-                        + importance::double precision * 0.45
-                        + confidence::double precision * 0.25
-                        + 0.30 / (1.0 + EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP-updated_at))/86400.0)
-                        AS retrieval_score
+                    SELECT *, (content ILIKE :wildcard OR summary ILIKE :wildcard) AS lexical_match
                     FROM scoped
-                    ORDER BY retrieval_score DESC, updated_at DESC
-                    LIMIT :limit
+                    ORDER BY updated_at DESC
+                    LIMIT 200
                     """
                 ),
                 {
                     **_identity_params(identity),
                     "memory_types": types,
                     "wildcard": wildcard,
-                    "limit": limit,
+                    "include_archived": include_archived,
                 },
             ).mappings().all()
+        from .lifecycle import effective_score, ttl_state
+
+        ranked = []
+        for row in rows:
+            decay = effective_score(
+                importance=float(row["importance"]), confidence=float(row["confidence"]),
+                created_at=row["created_at"], last_used_at=row["last_used_at"],
+                usage_count=int(row["usage_count"]), memory_type=str(row["memory_type"]),
+                status=str(row["status"]),
+            )
+            ranked.append((float(bool(row["lexical_match"])) + decay, decay, row))
+        ranked.sort(key=lambda item: (item[0], item[2]["updated_at"]), reverse=True)
         return [
             {
                 "memory_id": row["memory_id"],
@@ -695,9 +706,11 @@ def retrieve_memories(
                 "status": row["status"],
                 "occurred_at": jsonable(row["occurred_at"]),
                 "updated_at": jsonable(row["updated_at"]),
-                "retrieval_score": float(row["retrieval_score"]),
+                "effective_score": decay,
+                "retrieval_score": retrieval_score,
+                "ttl_state": ttl_state(row["expires_at"]),
             }
-            for row in rows
+            for retrieval_score, decay, row in ranked[:limit]
         ]
     except Exception as exc:
         raise MemoryCoreError("scoped memory retrieval failed") from exc
@@ -814,3 +827,11 @@ def insert_memory_usages(
             ).first()
             if not existing:
                 raise MemoryCoreError("memory usage identity mismatch")
+        else:
+            connection.execute(
+                text(
+                    "UPDATE ai_memory_records SET last_used_at=:retrieved_at,usage_count=usage_count+1 "
+                    "WHERE memory_id=:memory_id"
+                ),
+                item,
+            )

@@ -34,7 +34,10 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert 'combined health' in source
     assert "mklink /J" in source
     assert "automatic network install is disabled" in source
-    assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 4
+    assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 6
+    assert source.count('day5_memory_worker_runtime.py" --runtime-config') == 2
+    assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" start' in source
+    assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status' in source
     assert "deploy\\rag-r1\\preproduction-profile.env" in source
     assert "rag_r1_qdrant_runtime_probe.py\" --mode health" in source
 

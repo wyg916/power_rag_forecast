@@ -127,11 +127,17 @@ goto qdrant_probe_retry
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" celery start
 if errorlevel 1 goto rc_failed
 
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" start
+if errorlevel 1 goto rc_failed
+
 set "NO_PAUSE=1"
 call run_web_platform.bat
 if errorlevel 1 goto rc_failed
 
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" combined health
+if errorlevel 1 goto rc_failed
+
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status
 if errorlevel 1 goto rc_failed
 
 echo.
