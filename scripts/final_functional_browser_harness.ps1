@@ -29,10 +29,18 @@ $env:VITE_AUTH_REQUIRED = '1'
 $env:VITE_API_PROXY_TARGET = "http://127.0.0.1:$ApiPort"
 $env:AI_ASSISTANT_LLM_ENABLED = '1'
 $env:TASK_EXECUTION_MODE = 'local_thread'
-$env:RAG_PROFILE = 'balanced'
-$env:RAG_FILE_FALLBACK_ENABLED = '0'
-$env:RAG_PREWARM_ON_STARTUP = '1'
-if ($env:RAG_EMBEDDING_DIM -ne '1024' -or -not $env:RAG_QDRANT_API_KEY -or $env:QDRANT_ADMIN_API_KEY) {
+if (
+    $env:RAG_PROFILE -ne 'enterprise' -or
+    $env:RAG_RUNTIME_TARGET_MODE -ne 'preproduction_candidate' -or
+    $env:RAG_RELEASE_ID -ne 'RAG-R1' -or
+    $env:RAG_QDRANT_COLLECTION -ne 'rag_chunks_RAG-R1' -or
+    $env:RAG_QDRANT_ALIAS -or
+    $env:RAG_FILE_FALLBACK_ENABLED -ne '0' -or
+    $env:RAG_PREWARM_ON_STARTUP -ne '1' -or
+    $env:RAG_EMBEDDING_DIM -ne '1024' -or
+    -not $env:RAG_QDRANT_API_KEY -or
+    $env:QDRANT_ADMIN_API_KEY
+) {
     throw 'Approved API-only RAG runtime profile was not inherited by the browser harness.'
 }
 

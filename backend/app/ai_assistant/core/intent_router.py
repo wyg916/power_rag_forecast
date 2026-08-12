@@ -96,6 +96,22 @@ def route_intent(question: str) -> IntentDecision:
         if limit:
             query_entities["limit"] = limit
         return IntentDecision("data_sql_query", 0.9, query_entities, normalized)
+    analytical_query_terms = ["查询", "统计", "计算", "汇总"]
+    analytical_metric_terms = [
+        "平均值", "均值", "合计", "总和", "最大值", "最小值", "数量", "记录数",
+        "同比", "环比", "占比", "趋势", "排名",
+    ]
+    analytical_shape_terms = [
+        "分组", "按市场", "按地区", "按日期", "按时段", "表格", "柱状图", "折线图",
+    ]
+    analytical_domain_terms = ["电价", "负荷", "天气", "预测", "风险", "任务", "模型"]
+    if (
+        any(term in q for term in analytical_query_terms)
+        and any(term in q for term in analytical_metric_terms)
+        and any(term in q for term in analytical_domain_terms)
+        and (any(term in q for term in analytical_shape_terms) or _grid_date(normalized))
+    ):
+        return IntentDecision("data_sql_query", 0.94, {}, normalized)
     hour = _hour(normalized)
     if hour is not None:
         entities["hour"] = hour

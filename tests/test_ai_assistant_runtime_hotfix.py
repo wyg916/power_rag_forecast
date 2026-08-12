@@ -19,6 +19,13 @@ def test_required_questions_are_routed_before_enterprise_runtime() -> None:
     assert route_assistant_request("解释高价风险原因") == AssistantRoute.BUSINESS_ANALYSIS
 
 
+def test_grouped_metric_query_is_stably_routed_to_chatbi() -> None:
+    question = "查询 2020-01-01 全天日前电价平均值，按市场分组并用表格展示。"
+
+    assert route_intent(question).intent == "data_sql_query"
+    assert route_assistant_request(question) == AssistantRoute.CHATBI
+
+
 def test_business_tool_routes_do_not_open_rag_as_a_hard_prerequisite() -> None:
     assert route_requires_rag(AssistantRoute.BUSINESS_ANALYSIS) is False
     assert route_requires_rag(AssistantRoute.BUSINESS_ADVICE) is False
@@ -122,6 +129,34 @@ def test_planner_reserves_reasoning_budget_for_structured_output() -> None:
     plan, _ = generate_analysis_plan("分析数据", {}, requested_provider="deepseek", router=router)
     assert plan.clarification_required is True
     assert router.max_tokens == [6000]
+
+
+def test_complete_grouped_market_query_recovers_from_bad_llm_clarification() -> None:
+    class BadClarificationRouter:
+        def generate_answer(self, messages, **kwargs):
+            return json.dumps({
+                "clarification_required": True,
+                "clarification_question": "请补充指标、时间范围和分组维度。",
+            }, ensure_ascii=False), {
+                "provider": "deepseek",
+                "model": "deepseek-v4-flash",
+                "finish_reason": "stop",
+            }
+
+    question = "查询 2020-01-01 全天日前电价平均值，按市场分组并用表格展示。"
+    plan, metadata = generate_analysis_plan(
+        question, None, router=BadClarificationRouter()
+    )
+
+    assert plan.datasets == ["market_price_history"]
+    assert plan.metrics == ["avg_day_ahead_price"]
+    assert plan.dimensions == ["market_observed_at", "market_code"]
+    assert plan.group_by == ["market_code"]
+    assert plan.time_range.start == "2020-01-01T00:00:00"
+    assert plan.time_range.end == "2020-01-01T23:59:59"
+    assert plan.chart_intent == "table"
+    assert plan.clarification_required is False
+    assert metadata["complete_market_plan_normalized"] is True
 
 
 def test_deterministic_validation_repair_is_single_call() -> None:

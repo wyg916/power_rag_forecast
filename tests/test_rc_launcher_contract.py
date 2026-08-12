@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from scripts import web_platform_launcher as launcher
+from scripts import final_functional_isolated_launcher as acceptance_launcher
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -71,6 +73,34 @@ def test_rag_preproduction_profile_is_secret_free_and_frozen() -> None:
     assert not any(
         marker in values.upper() for marker in ("PASSWORD", "SECRET", "API_KEY")
     )
+
+
+def test_isolated_acceptance_loads_frozen_preproduction_contract(
+    monkeypatch, tmp_path
+) -> None:
+    profile = tmp_path / "preproduction.env"
+    profile.write_text(
+        "\n".join(
+            (
+                "RAG_PROFILE=enterprise",
+                "RAG_RUNTIME_TARGET_MODE=preproduction_candidate",
+                "RAG_RELEASE_ID=RAG-R1",
+                "RAG_QDRANT_COLLECTION=rag_chunks_RAG-R1",
+                "RAG_QDRANT_ALIAS=",
+                "TOKENIZERS_PARALLELISM=false",
+            )
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("RAG_RUNTIME_TARGET_MODE", "production_alias")
+    monkeypatch.setenv("RAG_QDRANT_API_KEY", "reader-key-must-be-preserved")
+
+    acceptance_launcher.load_frozen_rag_profile(profile)
+
+    assert os.environ["RAG_PROFILE"] == "enterprise"
+    assert os.environ["RAG_RUNTIME_TARGET_MODE"] == "preproduction_candidate"
+    assert os.environ["RAG_QDRANT_ALIAS"] == ""
+    assert os.environ["RAG_QDRANT_API_KEY"] == "reader-key-must-be-preserved"
 
 
 def test_database_target_accepts_only_approved_local_target(

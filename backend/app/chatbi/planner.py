@@ -188,6 +188,40 @@ def _normalize_latest_fact_plan(question: str, plan: AnalysisPlan) -> tuple[Anal
     return plan, False
 
 
+def _normalize_complete_market_price_plan(
+    question: str, plan: AnalysisPlan
+) -> tuple[AnalysisPlan, bool]:
+    """Recover an explicit registered market-price request from a bad LLM plan."""
+
+    normalized = re.sub(r"\s+", "", question)
+    date_match = re.search(r"(20\d{2})[-/.年]([01]?\d)[-/.月]([0-3]?\d)日?", question)
+    if not (
+        date_match
+        and "日前电价" in normalized
+        and any(token in normalized for token in ("平均值", "均值", "平均电价"))
+        and any(token in normalized for token in ("按市场", "市场分组"))
+    ):
+        return plan, False
+    year, month, day = (int(value) for value in date_match.groups())
+    day_value = f"{year:04d}-{month:02d}-{day:02d}"
+    return AnalysisPlan.model_validate(
+        {
+            "datasets": ["market_price_history"],
+            "metrics": ["avg_day_ahead_price"],
+            "dimensions": ["market_observed_at", "market_code"],
+            "time_range": {
+                "start": f"{day_value}T00:00:00",
+                "end": f"{day_value}T23:59:59",
+            },
+            "group_by": ["market_code"],
+            "chart_intent": "table" if "表格" in normalized else "bar",
+            "analysis_mode": "aggregate",
+            "clarification_required": False,
+            "clarification_question": None,
+        }
+    ), True
+
+
 def generate_analysis_plan(
     question: str,
     remembered: dict[str, Any] | None,
@@ -231,6 +265,9 @@ def generate_analysis_plan(
             metadata = repaired_metadata
             repaired = True
         plan, latest_fact_normalized = _normalize_latest_fact_plan(question, plan)
+        plan, complete_market_plan_normalized = _normalize_complete_market_price_plan(
+            question, plan
+        )
         return plan, {
             "source": "llm_analysis_plan",
             "provider": output.provider or metadata.get("provider"),
@@ -239,6 +276,7 @@ def generate_analysis_plan(
             "finish_reason": output.finish_reason,
             "repair_attempted": repaired,
             "latest_fact_normalized": latest_fact_normalized,
+            "complete_market_plan_normalized": complete_market_plan_normalized,
         }
     except AnalysisPlanGenerationError:
         raise
