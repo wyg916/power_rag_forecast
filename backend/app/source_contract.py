@@ -428,6 +428,7 @@ _TOOL_DOMAINS = {
     "get_storage_discharge_windows": "strategy",
     "get_storage_charge_windows": "strategy",
     "get_weather_summary": "weather",
+    "get_load_summary": "forecast_load",
     "get_report_summary": "report",
     "get_model_error_summary": "model_registry",
     "get_data_freshness": "data_quality",

@@ -45,8 +45,8 @@ COMPACT_OUTPUT_CONTRACT = [
     "天气、尖峰、储能、交易、模型切换问题遵守系统规则中的边界",
     "不要输出内部调试信息、chunk_id、分数或检索过程",
     "逐项覆盖问题中的业务对象、指标、状态和时间语义，不得只回答其中一部分",
-    "事实性 claim 必须由 authorized_context 或 tool_facts 支持；无支持时删除该 claim 或明确回答 unavailable",
-    "历史或过期来源使用 historical 状态；无可信实时事实使用 unavailable 状态；特征契约不一致使用 fail-closed 状态",
+    "事实性 claim 必须由 authorized_context 或 tool_facts 支持；无支持时删除该 claim，或用中性业务语言说明当前没有可核验依据",
+    "历史或过期内容只说明业务时间已结束；无可信当前事实只说明当前缺少可核验依据；字段契约不一致只说明校验未通过并停止本次生成。不要向用户展示 historical、real、unavailable、fail-closed、source_type 等工程分类词",
 ]
 
 

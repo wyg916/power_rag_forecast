@@ -18,7 +18,7 @@ from .tariff_tools import (
 )
 from .text_tools import explain_user_provided_text
 from .time_tools import get_current_date_context
-from .weather_tools import get_weather_summary
+from .weather_tools import get_load_summary, get_weather_summary
 
 
 TOOLS = {
@@ -32,6 +32,7 @@ TOOLS = {
     "get_storage_discharge_windows": get_storage_discharge_windows,
     "get_storage_charge_windows": get_storage_charge_windows,
     "get_weather_summary": get_weather_summary,
+    "get_load_summary": get_load_summary,
     "get_report_summary": get_report_summary,
     "get_model_error_summary": get_model_error_summary,
     "explain_user_provided_text": explain_user_provided_text,

@@ -209,6 +209,19 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("database_table_freshness", 0.92, {"domain": "master_table"}, normalized)
     if any(k in q for k in ["预测窗口", "本次预测是哪天", "预测是哪天", "预测范围"]):
         return IntentDecision("prediction_window_query", 0.96, {}, normalized)
+    if (
+        "日前" in q
+        and "实时" in q
+        and "电价" in q
+        and any(k in q for k in ["区别", "不同", "差异", "解释", "说明"])
+    ):
+        return IntentDecision("market_price_explanation", 0.97, {}, normalized)
+    if "负荷" in q and "电价" in q and any(k in q for k in ["为什么", "影响", "上涨", "推高"]):
+        return IntentDecision("load_price_explanation", 0.96, {}, normalized)
+    if "预测误差" in q and any(k in q for k in ["人工复核", "为什么", "影响", "说明", "解释"]):
+        return IntentDecision("forecast_error_explanation", 0.96, {}, normalized)
+    if "负荷" in q and "天气" in q and any(k in q for k in ["摘要", "影响", "例会", "报告"]):
+        return IntentDecision("load_weather_summary", 0.96, {}, normalized)
     if any(k in q for k in ["适合储能放电", "储能放电", "放电时段", "哪些时段放电"]):
         return IntentDecision("storage_discharge_advice", 0.96, {}, normalized)
     if any(k in q for k in ["适合储能充电", "储能充电", "充电时段", "哪些时段充电"]):

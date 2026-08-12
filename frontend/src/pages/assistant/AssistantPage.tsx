@@ -433,8 +433,9 @@ function buildAnswerModules(message?: AssistantMessage) {
     new RegExp(`${title}[：:]`).test(answerText)
   );
   const warningLines = splitContent(sectionText(answerText, '风险提示'));
-  if (state.modelFallback) warningLines.push('模型未完成标准生成流程，建议人工复核后再用于业务判断。');
-  if (state.warnings?.length) warningLines.push(...state.warnings);
+  if (state.modelFallback || state.warnings?.length) {
+    warningLines.push('本次回答未完成标准生成流程，当前仅保留可核验的业务依据，请人工复核。');
+  }
 
   const modules: Array<{ key: string; title: string; icon: any; tone: string; lines: string[] }> = [
     {

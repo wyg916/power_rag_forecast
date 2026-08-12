@@ -91,14 +91,26 @@ def test_context_pack_declares_fixed_authorization_order():
     assert pack["system_policy"]["current_authorized_facts_override_memory"] is True
 
 
-def test_source_state_contract_uses_canonical_status_terms():
+def test_source_state_contract_uses_neutral_business_language_for_display():
     answer = service._enforce_source_state_terms("历史或过期文档如何处理？", "不作为当前事实。")
     unavailable = service._enforce_source_state_terms("实时事实不可用时如何回答？", "说明数据缺口。")
     closed = service._enforce_source_state_terms("schema hash 不一致怎么办？", "停止处理。")
 
-    assert "historical" in answer
-    assert "unavailable" in unavailable
-    assert "fail-closed" in closed
+    assert "业务时间状态" in answer and "historical" not in answer and " real " not in answer
+    assert "当前依据状态" in unavailable and "unavailable" not in unavailable
+    assert "字段校验状态" in closed and "fail-closed" not in closed
+
+
+def test_answer_guard_hides_engineering_source_classification_from_user():
+    answer, status = service.guard_answer(
+        "general_query",
+        "来源状态：historical；source_type=simulated；事实 unavailable；校验 fail-closed。",
+        [],
+    )
+
+    assert status == "passed"
+    assert all(term not in answer for term in ["historical", "source_type", "simulated", "unavailable", "fail-closed"])
+    assert "历史窗口" in answer and "业务记录" in answer and "停止本次结果生成" in answer
 
 
 def test_domain_rules_prioritize_primary_business_semantics():
@@ -153,3 +165,26 @@ def test_risk_hour_answer_uses_bullets_without_synthetic_row_numbers():
 
     assert "1. 18:00" not in answer
     assert "- 18:00" in answer
+
+
+def test_business_explanations_and_report_summary_do_not_return_raw_objects():
+    market = service._build_answer(IntentDecision("market_price_explanation", 1.0, {}, "日前实时区别"), [])
+    load = service._build_answer(IntentDecision("load_price_explanation", 1.0, {}, "负荷高为什么推高电价"), [])
+    report = service._build_answer(
+        IntentDecision("report_summary", 1.0, {}, "报告审核三项要点"),
+        [
+            SimpleNamespace(
+                name="get_report_summary",
+                output={
+                    "report_id": "report-1",
+                    "available": True,
+                    "summary": {"executive_summary": {"record_count": 24, "average_price": 103.0}},
+                },
+            )
+        ],
+    )
+
+    assert "日前电价" in market and "实时电价" in market
+    assert "负荷升高" in load and "可用供给" in load
+    assert "小时记录 24 条" in report and "平均价 103.0 USD/MWh" in report
+    assert "{'record_count'" not in report

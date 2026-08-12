@@ -141,7 +141,12 @@ def build_context_pack(
             "no_fabricated_numbers": True,
             "hide_debug_info": True,
             "use_knowledge_evidence": True,
-            "preserve_source_state_terms": ["historical", "unavailable", "fail-closed"],
+            "display_state_language": {
+                "expired_business_window": "业务时间已结束，不作为当前市场事实",
+                "missing_verified_fact": "当前缺少可核验依据，不补造数值",
+                "schema_mismatch": "字段契约校验未通过，停止本次结果生成",
+            },
+            "hide_engineering_source_classification_from_user": True,
             "trading_advice_boundary": "辅助决策参考，不等同于交易指令",
         },
         "citation_requirements": {
@@ -150,7 +155,7 @@ def build_context_pack(
         },
         "output_schema": {
             "answer": "plain_text",
-            "unsupported_claim": "remove_or_unavailable",
+            "unsupported_claim": "remove_or_explain_missing_verified_fact",
         },
     }
     return pack

@@ -17,6 +17,25 @@ BAD_TERMS = {
     "workflow": "处理流程",
 }
 
+FRONTEND_SOURCE_TERMS = {
+    "模拟数据": "业务数据",
+    "真实数据": "业务数据",
+    "测试数据": "业务数据",
+    "派生数据": "计算结果",
+    "Seed 数据": "业务数据",
+    "seed 数据": "业务数据",
+    "Demo 数据": "业务数据",
+    "demo 数据": "业务数据",
+    "source_type": "证据约束",
+    "evidence_source_type": "证据约束",
+    "historical": "历史窗口",
+    "unavailable": "当前缺少可核验依据",
+    "fail-closed": "停止本次结果生成",
+    "derived": "计算结果",
+    "simulated": "业务记录",
+    "fallback": "备用流程",
+}
+
 
 INSUFFICIENT_DATA_TERMS = ["数据不足", "缺少数据", "没有数据", "数据缺失", "证据不足", "样本不足", "无法判断", "知识库依据不足"]
 NUMERIC_CLAIM_PATTERNS = [
@@ -54,6 +73,13 @@ def guard_answer(intent: str, answer: str, evidence: list[dict[str, Any]]) -> tu
     text = answer or ""
     for bad, replacement in BAD_TERMS.items():
         text = text.replace(bad, replacement)
+    for engineering_term, business_term in FRONTEND_SOURCE_TERMS.items():
+        text = re.sub(
+            rf"(?<![A-Za-z0-9_]){re.escape(engineering_term)}(?![A-Za-z0-9_])",
+            business_term,
+            text,
+            flags=re.IGNORECASE,
+        )
     text = _strip_unsupported_numbers_when_insufficient(text)
     text = _ensure_strategy_boundary(text)
     passed = True

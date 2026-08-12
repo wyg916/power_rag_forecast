@@ -139,7 +139,7 @@ def _security_refusal_payload(
 def _unavailable_payload(*, session_id: str, model_provider: str, debug: bool, reason: str) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "session_id": session_id,
-        "answer": "unavailable：缺少可信证据或关键业务约束，不能编造实时数值、收益或精确充放电量。",
+        "answer": "当前缺少可核验依据或关键业务约束，不能给出实时数值、收益判断或精确充放电量。",
         "source_type": "unavailable",
         "domain": "system_knowledge",
         "run_id": None,
@@ -181,6 +181,10 @@ RAG_INTENTS = {
     "trading_risk_summary",
     "weather_summary",
     "weather_impact_on_price",
+    "market_price_explanation",
+    "load_price_explanation",
+    "forecast_error_explanation",
+    "load_weather_summary",
     "model_error_status",
     "model_retrain_suggestion",
     "report_summary",
@@ -708,6 +712,11 @@ def _preserve_required_business_terms(intent: str, answer: str, draft_answer: st
         "storage_spread_analysis": ["低价充电参考", "峰谷价差"],
         "storage_charge_advice": ["高价放电参考", "峰谷价差"],
         "user_provided_text_explain": ["预测窗口", "最高价", "最低价", "峰谷价差"],
+        "market_price_explanation": ["日前电价", "实时电价"],
+        "load_price_explanation": ["负荷", "电价"],
+        "forecast_error_explanation": ["预测误差", "人工复核"],
+        "load_weather_summary": ["负荷", "天气"],
+        "report_summary": ["报告"],
     }
     missing = [term for term in required_by_intent.get(intent, []) if term not in answer]
     if not missing:
@@ -793,12 +802,12 @@ def _retrieval_identity_matches(identity: IdentityContext | None, rag_context: A
 def _enforce_source_state_terms(question: str, answer: str) -> str:
     compact = _compact_match_text(question)
     additions: list[str] = []
-    if any(term in compact for term in ["历史", "过期", "已失效"]) and "historical" not in answer.lower():
-        additions.append("来源状态：historical（历史或过期内容不得作为当前 real 事实）。")
-    if any(term in compact for term in ["无可信证据", "事实不可用", "不可用时", "证据不足时"]) and "unavailable" not in answer.lower():
-        additions.append("回答状态：unavailable；不补造实时数值、时间、指标或业务状态。")
-    if any(term in compact for term in ["特征缺列", "schemahash", "schema哈希", "schema hash"]) and "fail-closed" not in answer.lower():
-        additions.append("校验状态：fail-closed，不静默补列或补 0。")
+    if any(term in compact for term in ["历史", "过期", "已失效"]) and "业务时间状态" not in answer:
+        additions.append("业务时间状态：该历史窗口已结束，不作为当前市场事实。")
+    if any(term in compact for term in ["无可信证据", "事实不可用", "不可用时", "证据不足时"]) and "当前依据状态" not in answer:
+        additions.append("当前依据状态：没有足够的可核验业务事实，不补造数值、时间、指标或业务状态。")
+    if any(term in compact for term in ["特征缺列", "schemahash", "schema哈希", "schema hash"]) and "字段校验状态" not in answer:
+        additions.append("字段校验状态：字段契约不一致，已停止本次结果生成，不静默补列或补 0。")
     return answer.rstrip() + ("\n\n" + "\n".join(additions) if additions else "")
 
 
@@ -811,12 +820,12 @@ def _citation_grounded_answer(question: str, rag_result: dict[str, Any]) -> str:
         )
     )[:3]
     if not quotes:
-        return "unavailable：当前授权知识证据不足，无法形成可核验回答。"
+        return "当前授权知识证据不足，无法形成可核验回答。"
     evidence = "\n".join(f"- {quote}" for quote in quotes)
     return (
         f"结论：针对“{question}”，当前只采用以下授权知识证据，不补充证据外事实。\n\n"
         f"证据要点：\n{evidence}\n\n"
-        "建议：按上述证据口径理解并在业务使用前复核原文；证据不足的部分保持 unavailable。"
+        "建议：按上述证据口径理解并在业务使用前复核原文；证据不足的部分不作确定结论。"
     )
 
 
@@ -869,6 +878,10 @@ def _evidence(results: list[ToolResult]) -> list[dict[str, Any]]:
             continue
         if result.name == "get_high_risk_hours" and result.output.get("items"):
             evidence.append({"source": "result_forward_24h_formal", "fields": ["datetime", "predicted_price", "risk_level"], "tool": result.name})
+        elif result.name == "get_load_summary" and result.output.get("available"):
+            evidence.append({"source": "raw_load", "fields": ["datetime", "forecast_load"], "tool": result.name})
+        elif result.name == "get_weather_summary" and result.output.get("available"):
+            evidence.append({"source": "raw_weather", "fields": ["datetime", "temperature"], "tool": result.name})
         elif result.name == "get_report_summary" and result.output.get("report_id"):
             evidence.append({"source": "ai_report_status", "report_id": result.output.get("report_id"), "tool": result.name})
         elif result.name == "get_model_error_summary":
@@ -897,6 +910,8 @@ def _data_used(results: list[ToolResult]) -> dict[str, bool]:
             used["prediction"] = True
         if name == "get_weather_summary":
             used["weather"] = True
+        if name == "get_load_summary":
+            used["load"] = True
         if name == "get_data_freshness":
             used["data_freshness"] = True
             domain = result.output.get("domain")
@@ -1102,10 +1117,65 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
             f"电价依据：预测均价约 {forecast.get('avg_price')} USD/MWh，最高价约 {forecast.get('max_price')} USD/MWh。\n\n"
             "业务解释：高温、低温或降雨等因素可能改变用电负荷，进而影响高峰时段价格，需要结合负荷预测一起判断。"
         )
+    if intent == "market_price_explanation":
+        return (
+            "结论：日前电价是在交付日前一天形成的分时价格，主要用于提前安排购售电计划；"
+            "实时电价是在实际运行时根据最新供需偏差形成的价格，用于反映计划与实际之间的变化。\n\n"
+            "原因解释：日前市场解决的是“提前怎么安排”，实时市场解决的是“实际运行发生偏差后怎么平衡”。"
+            "同一时段两者可能不同，常见影响包括负荷偏差、新能源出力偏差、机组或线路状态和临时天气变化。\n\n"
+            "业务建议：购电决策要同时看日前计划价、实时偏差风险和自身合同敞口，不能把任一价格单独当作最终结算判断。"
+        )
+    if intent == "load_price_explanation":
+        return (
+            "结论：负荷升高意味着同一时段需要更多电力，如果可用供给没有同步增加，就要调用成本更高的电源，电价因此可能上涨。\n\n"
+            "原因解释：可以把电力系统理解为随时要保持供需平衡的市场。需求接近可用供给上限时，备用空间变小，"
+            "边际机组成本、拥塞和偏差风险会更容易反映到价格中；但新能源出力、机组可用率和网络约束也会改变最终结果。\n\n"
+            "业务建议：判断负荷高是否会推高电价时，应联看小时负荷、可用供给、新能源出力和网络约束，不能只看负荷一个指标。"
+        )
+    if intent == "forecast_error_explanation":
+        rows = first.get("error_rows") or []
+        status = (
+            f"当前已登记 {rows[0].get('sample_count')} 条误差样本，可结合 MAE 和 RMSE 检查偏差。"
+            if rows
+            else "当前真实值回填样本不足，不能对最近误差水平作确定判断。"
+        )
+        return (
+            f"结论：预测误差需要人工复核，因为模型给出的是基于已知输入的估计，不会自动知道临时停机、突发天气、"
+            f"交易规则变化或异常数据。{status}\n\n"
+            "影响：负荷预测偏低可能导致日前购电不足、实时补购成本增加；预测偏高则可能造成多购和敞口调整压力。\n\n"
+            "复核步骤：先检查真实值回填、更新时间和字段契约，再按时段比较偏差是否持续，最后结合天气、供给和合同敞口决定是否调整计划。"
+            "人工复核负责确认业务事件和执行边界，不能用单次误差直接自动切换模型或触发交易动作。"
+        )
+    if intent == "load_weather_summary":
+        load = _first(results, "get_load_summary")
+        weather = _first(results, "get_weather_summary")
+        load_text = (
+            f"负荷窗口平均约 {load.get('avg_load'):.2f} MW，最高约 {load.get('max_load'):.2f} MW，最低约 {load.get('min_load'):.2f} MW"
+            if all(load.get(key) is not None for key in ("avg_load", "max_load", "min_load"))
+            else "当前负荷窗口缺少完整统计"
+        )
+        weather_text = (
+            f"{weather.get('city') or '-'} 气温约 {weather.get('min_temperature'):.2f} 至 {weather.get('max_temperature'):.2f} 摄氏度，平均约 {weather.get('avg_temperature'):.2f} 摄氏度"
+            if all(weather.get(key) is not None for key in ("avg_temperature", "max_temperature", "min_temperature"))
+            else "当前天气窗口缺少完整统计"
+        )
+        return (
+            f"摘要：{load_text}；{weather_text}。\n\n"
+            "风险判断：天气变化可能通过制冷、采暖或生产负荷改变用电需求，但仅凭温度不能直接认定价格变化原因。\n\n"
+            "建议动作：经营例会应核对负荷与天气的时间窗口是否一致，并联看新能源出力、可用供给和分时价格后再形成业务判断。"
+        )
     if intent == "forecast_risk_hours":
         items = first.get("items") or []
         rows = [f"- {item.get('hour')}，风险 {item.get('risk_level')}，预测价 {item.get('predicted_price')} USD/MWh" for item in items[:6]]
-        return "结论：当前电价可能偏高的重点风险时段如下。\n\n" + ("\n".join(rows) if rows else "暂无明确高风险时段。") + "\n\n建议：这些小时应优先复核售电敞口和实时市场变化；预测结果不能直接作为交易指令。"
+        advice = "这些小时应优先复核售电敞口和实时市场变化；预测结果不能直接作为交易指令。"
+        if any(term in _compact_match_text(decision.normalized_question) for term in ["建议", "三条", "3条", "可执行"]):
+            advice = (
+                "1. 锁定上述风险窗口，逐小时复核售电合同覆盖、日前持仓和实时敞口；"
+                "2. 对照最新负荷、天气和新能源出力，确认风险是否仍成立；"
+                "3. 预设偏差处置阈值和复核责任人，达到阈值后由人工确认采购或储能安排。"
+                "以上动作仅作辅助决策，不等同于交易或调度指令。"
+            )
+        return "结论：当前电价可能偏高的重点风险时段如下。\n\n" + ("\n".join(rows) if rows else "暂无明确高风险时段。") + f"\n\n建议：{advice}"
     if intent == "trading_risk_summary":
         storage = _first(results, "get_storage_discharge_windows")
         risk = _first(results, "get_high_risk_hours")
@@ -1144,14 +1214,52 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
         return base + _storage_boundary_note(decision.normalized_question)
     if intent == "model_error_status":
         rows = first.get("error_rows") or []
+        asks_for_actions = any(
+            term in _compact_match_text(decision.normalized_question)
+            for term in ["如何处置", "怎么办", "处理", "建议", "扩大", "变大"]
+        )
         if rows:
             row = rows[0]
-            return f"结论：最新模型误差样本为 {row.get('model_version')}，样本数 {row.get('sample_count')}，MAE 约 {row.get('mae')}，RMSE 约 {row.get('rmse')}。\n\n数据依据：prediction_tracking 真实值回填记录。"
-        return "结论：当前真实值回填样本不足，暂不能严谨判断模型误差状态。"
+            base = f"结论：最新模型误差样本为 {row.get('model_version')}，样本数 {row.get('sample_count')}，MAE 约 {row.get('mae')}，RMSE 约 {row.get('rmse')}。\n\n数据依据：prediction_tracking 真实值回填记录。"
+        else:
+            base = "结论：当前真实值回填样本不足，暂不能严谨判断模型误差状态。"
+        if asks_for_actions:
+            base += (
+                "\n\n处置建议：1. 先核对真实值回填完整性、更新时间和字段契约；"
+                "2. 按小时与业务场景分组比较误差，确认是否持续扩大；"
+                "3. 在样本充分前保留人工复核并审慎调整购电安全余量，补齐样本后重新评估模型。"
+                "不要因单次偏差自动切换模型或执行交易。"
+            )
+        return base
     if intent == "report_summary":
         summary = first.get("summary") or {}
-        core = summary.get("executive_summary") or summary.get("management_summary") or summary.get("market_overview") or "当前报告摘要字段不足。"
-        return f"结论：最新报告 {first.get('report_id') or '-'} 当前{'可用' if first.get('available') else '未生成'}。\n\n{core}"
+        core = summary.get("executive_summary") or summary.get("management_summary") or summary.get("market_overview") or {}
+        if isinstance(core, dict):
+            metrics = []
+            metric_labels = (
+                ("record_count", "小时记录", "条"),
+                ("average_price", "平均价", "USD/MWh"),
+                ("maximum_price", "最高价", "USD/MWh"),
+                ("minimum_price", "最低价", "USD/MWh"),
+                ("peak_valley_spread", "峰谷价差", "USD/MWh"),
+                ("spike_risk_hour_count", "尖峰风险时段", "个"),
+                ("negative_price_hour_count", "负价时段", "个"),
+            )
+            for key, label, unit in metric_labels:
+                if core.get(key) is not None:
+                    metrics.append(f"{label} {core.get(key)} {unit}")
+            core_text = "；".join(metrics) or "当前报告摘要字段不足。"
+        else:
+            core_text = str(core or "当前报告摘要字段不足。")
+        q = _compact_match_text(decision.normalized_question)
+        review = ""
+        if any(term in q for term in ["三项", "3项", "审核"]):
+            review = "\n\n审核要点：1. 核对 24 小时记录、运行标识和时间范围是否一致；2. 复核最高价、最低价、峰谷价差与风险时段；3. 确认指标、知识引用和限制说明完整。"
+        elif "储能" in q:
+            review = "\n\n储能复核：重点检查低价充电与高价放电窗口，同时补齐 SOC、容量、功率、效率和合同约束。该摘要仅作辅助决策，不等同于交易或调度指令。"
+        elif any(term in q for term in ["证据完整", "发布前"]):
+            review = "\n\n发布前检查：报告需同时具备指标、时间范围、运行标识、知识引用和限制说明；任一项缺失都应退回复核，不把未核验推测写成确定事实。"
+        return f"结论：最新报告 {first.get('report_id') or '-'} 当前{'可用' if first.get('available') else '未生成'}。\n\n业务摘要：{core_text}。{review}"
     if intent == "tariff_query":
         if not first.get("available"):
             return f"结论：未匹配到对应光伏电价规则。\n\n数据依据：{first.get('message') or '电价规则表暂无可用记录。'}\n\n业务建议：请补充省、市和具体并网日期后复核。\n\n风险提示：缺少精确并网日期时，按年份匹配可能存在口径偏差。"
@@ -1204,7 +1312,7 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
         return (
             "结论：已完成知识库检索。\n\n"
             "数据依据：\n" + ("\n".join(rows) if rows else "未检索到高相关文档。")
-            + "\n\n原因解释：系统通过当前混合检索链路返回可追溯知识片段。\n\n业务建议：将检索结果作为 AI 回答依据，并在正式引用前打开原文复核。\n\n风险提示：回答必须受 citation 和 source_type 约束；证据不足时返回 unavailable。"
+            + "\n\n原因解释：系统通过当前混合检索链路返回可追溯知识片段。\n\n业务建议：将检索结果作为 AI 回答依据，并在正式引用前打开原文复核。\n\n风险提示：回答必须绑定可核验引用；依据不足时不作确定结论。"
         )
     if intent == "general_query":
         if _storage_boundary_note(decision.normalized_question):
@@ -1538,6 +1646,17 @@ def answer_chat_accurate(
         trace.step("llm_router", success=not bool(model_error), **model_status)
     timings_ms.setdefault("llm_generate_ms", 0.0)
     stage_started = time.perf_counter()
+    deterministic_quality_intents = {
+        "market_price_explanation",
+        "load_price_explanation",
+        "forecast_error_explanation",
+        "load_weather_summary",
+        "forecast_risk_hours",
+        "model_error_status",
+        "report_summary",
+    }
+    if model_error and decision.intent in deterministic_quality_intents:
+        answer = draft_answer
     if use_rag and rag_result.get("citations") and not llm_used:
         answer = (
             _citation_grounded_answer(clean_question, rag_result)
