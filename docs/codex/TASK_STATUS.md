@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-13 Final Functional Acceptance
+
+| 任务 | 状态 | 分支 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 全站所有页面/所有功能最终可用性审计与修复 | PASS；`FULL_UI_FUNCTIONAL_ACCEPTANCE=PASS` | `codex/final-functional-acceptance-20260812` | `docs/codex/final_functional/`；`docs/codex/evidence/FINAL_FUNCTIONAL_ACCEPTANCE_20260812_153751673/` | 无发布阻断；32 页、1,345 FUNC-ID、1,247 PASS、0 FAIL、98 Disabled-by-design、Unexpected 4xx/5xx=0、Console Error=0、四视口 PASS。未推送、未生产发布、未切 RAG production alias、未激活模型。 |
+
 ## 2026-08-13 Provider Completion
 
 | 任务 | 状态 | 分支 | 证据 | 阻塞项 |
