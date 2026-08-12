@@ -23,7 +23,7 @@ class ChatBIAnalysisRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     session_id: str = Field(min_length=1, max_length=128)
     plan: AnalysisPlan | None = None
-    model_provider: Literal["auto", "deepseek", "ollama"] = "auto"
+    model_provider: Literal["auto", "kimi", "mimo", "deepseek", "ollama"] = "auto"
 
     @field_validator("question", "session_id")
     @classmethod

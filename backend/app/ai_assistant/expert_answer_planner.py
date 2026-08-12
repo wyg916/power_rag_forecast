@@ -63,7 +63,7 @@ def plan_expert_answer(intent: str, answer_style: str | None = None, model_provi
     else:
         task_type = "business_answer"
 
-    preferred = forced if forced in {"deepseek", "ollama"} else "auto"
+    preferred = forced if forced in {"deepseek", "kimi", "mimo", "ollama"} else "auto"
     max_tokens = 1800 if task_type == "complex_analysis" else 900
     temperature = 0.25 if task_type != "daily_chat" else 0.45
     return ExpertAnswerPlan(task_type=task_type, preferred_provider=preferred, temperature=temperature, max_tokens=max_tokens)

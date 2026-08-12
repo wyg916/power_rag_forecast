@@ -12,12 +12,24 @@ class FakeDeepSeekProvider:
     def chat(self, messages, **kwargs):
         return "deepseek answer"
 
+    def complete(self, messages, **kwargs):
+        return type("Result", (), {
+            "content": "deepseek answer",
+            "finish_reason": "stop",
+            "reasoning_content": "",
+            "tool_calls": (),
+        })()
+
     def health(self):
         return {"available": True, "provider": "deepseek", "model": self.default_model}
 
 
 class BrokenDeepSeekProvider(FakeDeepSeekProvider):
     def chat(self, messages, **kwargs):
+        fake_key = "sk" + "-" + "abcdefghijklmnopqrstuvwxyz"
+        raise RuntimeError(f"bad key {fake_key}")
+
+    def complete(self, messages, **kwargs):
         fake_key = "sk" + "-" + "abcdefghijklmnopqrstuvwxyz"
         raise RuntimeError(f"bad key {fake_key}")
 
@@ -62,21 +74,22 @@ def test_llm_router_prefers_ollama_for_daily_chat_in_auto_mode(monkeypatch):
     assert status["provider"] == "ollama"
 
 
-def test_llm_router_falls_back_to_ollama(monkeypatch):
+def test_llm_router_does_not_fall_back_for_explicit_provider(monkeypatch):
     monkeypatch.setenv("LLM_ROUTER_MODE", "auto")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setattr("backend.app.ai_assistant.llm_router.DeepSeekProvider", BrokenDeepSeekProvider)
     monkeypatch.setattr("backend.app.ai_assistant.llm_router.OllamaProvider", FakeOllamaProvider)
 
-    content, status = LLMRouter().generate_answer(
-        [{"role": "user", "content": "复杂分析"}],
-        task_type="complex_analysis",
-        requested_provider="deepseek",
-    )
-
-    assert content == "ollama answer"
-    assert status["provider"] == "ollama"
-    assert status["fallback"] is True
+    try:
+        LLMRouter().generate_answer(
+            [{"role": "user", "content": "复杂分析"}],
+            task_type="complex_analysis",
+            requested_provider="deepseek",
+        )
+    except RuntimeError as exc:
+        assert "deepseek" in str(exc)
+    else:
+        raise AssertionError("explicit provider failure must not silently fall back")
 
 
 def test_sanitize_error_masks_api_key_like_values():

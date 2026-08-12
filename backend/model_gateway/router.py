@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,7 +17,7 @@ class GatewayChatRequest(BaseModel):
 
     messages: list[dict[str, str]] = Field(default_factory=list)
     model: str | None = None
-    model_provider: str = "auto"
+    model_provider: Literal["auto", "kimi", "mimo", "deepseek", "ollama"] = "auto"
     temperature: float = 0.2
     max_tokens: int = 1200
 

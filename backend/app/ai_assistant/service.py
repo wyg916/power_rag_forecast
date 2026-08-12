@@ -1523,7 +1523,20 @@ def answer_chat_accurate(
             elif llm_answer:
                 trace.step("llm_router", success=True, used_for_answer=False, reason="reasoning_leak", **model_status)
         except Exception as exc:
-            model_error = f"模型调用失败，已使用工具事实模板兜底：{sanitize_error(exc)}"
+            requested = (model_provider or "auto").strip().lower()
+            explicit_provider = requested in {"kimi", "mimo", "deepseek", "ollama"}
+            model_error = (
+                f"所选模型 {requested} 当前不可用，已保留可核验的工具事实回答。"
+                if explicit_provider
+                else "自动模型路由当前不可用，已保留可核验的工具事实回答。"
+            )
+            model_status = {
+                "provider": requested if explicit_provider else "unavailable",
+                "model": "",
+                "available": False,
+                "fallback": False,
+                "reason": sanitize_error(exc),
+            }
             trace.step("llm_router", success=False, error=model_error, requested_provider=model_provider)
     else:
         model_status = {"provider": "template", "model": "tool_fallback", "fallback": True}
