@@ -33,7 +33,7 @@ export async function getSettingsData(options: { interfaceKeyword?: string } = {
     auditLogs
   ] = await Promise.all([
     optional('当前用户', api.securityMe, partialErrors, null),
-    optional('最近成功事实来源', api.sourceContext, partialErrors, null),
+    optional('最近成功业务上下文', api.sourceContext, partialErrors, null),
     optional('系统状态概览', api.settingsStatusOverview, partialErrors, {}),
     optional('运行状态摘要', api.settingsStatusSummary, partialErrors, { items: [] }),
     optional('系统健康明细', api.settingsHealthDetails, partialErrors, { items: [] }),

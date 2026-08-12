@@ -47,7 +47,7 @@ export function Sidebar({ collapsed, route, activeSubKey, onCollapse, onNavigate
         </div>
       )}
       <div className="sidebar-utility">
-        <Button type="text" icon={<ThunderboltOutlined />}>
+        <Button type="text" icon={<ThunderboltOutlined />} onClick={() => onNavigate('assistant', 'assistant-chat')}>
           {!collapsed && (
             <>
               <span>快捷操作</span>

@@ -87,8 +87,8 @@ export function DataOverviewMetrics({ data, loading }: { data: any; loading: boo
   const summary = data?.summary || {};
   const completeness = summary.missingRate == null ? null : Math.max(0, 100 - Number(summary.missingRate));
   const items = [
-    { title: '可用数据源', value: summary.sourceCount ?? '--', note: `本次检查 ${summary.checkedSourceCount ?? '--'} 个`, status: 'success' },
-    { title: '同步任务', value: summary.syncCount ?? '--', note: '来自 task_runs', status: 'info' },
+    { title: '可用接入项', value: summary.sourceCount ?? '--', note: `本次检查 ${summary.checkedSourceCount ?? '--'} 个`, status: 'success' },
+    { title: '同步任务', value: summary.syncCount ?? '--', note: '当前任务数量', status: 'info' },
     { title: '异常对象', value: summary.exceptionCount ?? '--', note: '质量与新鲜度检查', status: summary.exceptionCount ? 'warning' : 'success' },
     { title: '数据完整率', value: completeness == null ? '--' : completeness.toFixed(2), unit: completeness == null ? undefined : '%', note: '基于实际登记字段', status: completeness != null && completeness < 99 ? 'warning' : 'success' },
     { title: '最近同步', value: summary.latestSyncAt ? String(summary.latestSyncAt).slice(5, 16) : '--', note: summary.latestSyncRunId || '暂无 run_id', status: summary.latestSyncAt ? 'info' : 'warning' },
@@ -104,9 +104,9 @@ export function DataOverviewMetrics({ data, loading }: { data: any; loading: boo
 export function DataFlowPanel({ data, onCatalog }: { data: any; onCatalog: () => void }) {
   const summary = data?.summary || {};
   const steps = [
-    { title: '采集', value: `${summary.sourceCount || 0} 个数据源`, icon: <CloudDownloadOutlined />, note: '外部数据接入' },
+    { title: '采集', value: `${summary.sourceCount || 0} 个接入项`, icon: <CloudDownloadOutlined />, note: '外部业务接入' },
     { title: '清洗', value: `${compact(summary.totalRows)} 条记录`, icon: <FilterOutlined />, note: '当前入库记录口径' },
-    { title: '校验', value: summary.passRate == null ? '--' : `${Number(summary.passRate).toFixed(2)}%`, icon: <SafetyCertificateOutlined />, note: '真实聚合检查' },
+    { title: '校验', value: summary.passRate == null ? '--' : `${Number(summary.passRate).toFixed(2)}%`, icon: <SafetyCertificateOutlined />, note: '聚合质量检查' },
     { title: '入库', value: `${summary.tableCount || 0} 张表`, icon: <DatabaseOutlined />, note: 'PostgreSQL' },
     { title: '特征/服务', value: `${summary.catalogCount || 0} 个目录项`, icon: <ApiOutlined />, note: '预测与策略服务' }
   ];
@@ -477,7 +477,7 @@ export function CatalogPanel({
 export function SourceStatusBar({ rows }: { rows: any[] }) {
   return (
     <div className="data-source-status">
-      <strong>数据源状态</strong>
+      <strong>接入状态</strong>
       {rows.slice(0, 6).map((row) => (
         <div key={row.dataset_id}>
           <span>{row.source_name || row.dataset_id}</span>

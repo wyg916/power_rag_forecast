@@ -1,4 +1,4 @@
-import { Button, message } from 'antd';
+import { App, Button } from 'antd';
 import type { ButtonProps } from 'antd';
 import { useState } from 'react';
 
@@ -9,6 +9,7 @@ interface ActionButtonProps extends ButtonProps {
 }
 
 export function ActionButton({ action, successText = '操作成功', errorText = '操作失败', children, ...props }: ActionButtonProps) {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
 
   async function run() {

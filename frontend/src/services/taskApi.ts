@@ -55,7 +55,7 @@ export async function getTaskCenterData(params: Record<string, any> = {}) {
         partialErrors.push(errorMessage(error));
         return { items: [] };
       }),
-      api.taskTrend(7).catch((error) => {
+      api.taskTrend(Number(params.trend_days || 7)).catch((error) => {
         partialErrors.push(errorMessage(error));
         return { items: [] };
       }),
@@ -87,9 +87,9 @@ export async function getTaskCenterData(params: Record<string, any> = {}) {
         metrics: [
           { title: '任务总数', value: Number(overview?.task_total || 0).toLocaleString(), note: percentNote(change.task_total), status: 'info' },
           { title: '成功任务', value: Number(overview?.success_total || 0).toLocaleString(), note: `成功率 ${successRate.toFixed(2)}%`, status: 'success' },
-          { title: '运行中 / 排队', value: `${Number(overview?.running_total || 0)} / ${Number(overview?.pending_total || 0)}`, note: '来自任务运行表', status: 'running' },
-          { title: '失败 / 超时', value: `${Number(overview?.failed_total || 0)} / ${Number(overview?.timeout_total || 0)}`, note: '来自任务运行表', status: Number(overview?.failed_total || 0) || Number(overview?.timeout_total || 0) ? 'danger' : 'success' },
-          { title: '队列数', value: Number(overview?.queue_total || queueRows.length || 0).toLocaleString(), note: '来自队列聚合', status: 'info' }
+          { title: '运行中 / 排队', value: `${Number(overview?.running_total || 0)} / ${Number(overview?.pending_total || 0)}`, note: '当前运行状态', status: 'running' },
+          { title: '失败 / 超时', value: `${Number(overview?.failed_total || 0)} / ${Number(overview?.timeout_total || 0)}`, note: '当前异常状态', status: Number(overview?.failed_total || 0) || Number(overview?.timeout_total || 0) ? 'danger' : 'success' },
+          { title: '队列数', value: Number(overview?.queue_total || queueRows.length || 0).toLocaleString(), note: '当前队列数量', status: 'info' }
         ],
         dataSource: 'postgresql.task_runs'
       },

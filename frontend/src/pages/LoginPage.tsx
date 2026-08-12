@@ -38,7 +38,7 @@ export function LoginPage() {
           </Button>
           {!authRequired && (
             <Button type="link" block onClick={closeLogin}>
-              继续使用开发模式
+              继续使用访客模式
             </Button>
           )}
         </Form>

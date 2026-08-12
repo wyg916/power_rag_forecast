@@ -95,27 +95,9 @@ export function InlineError({ message }: { message?: ReactNode }) {
 }
 
 export function DataSourceTag({ source }: { source?: unknown }) {
-  const sourceObject = source && typeof source === 'object' ? source as Record<string, unknown> : null;
-  const value = String(sourceObject?.source_type || sourceObject?.data_origin || sourceObject?.source_name || source || 'unknown');
-  const lower = value.toLowerCase();
-  const labels: Record<string, [string, string]> = {
-    real: ['业务事实', 'success'],
-    historical: ['历史业务记录', 'blue'],
-    simulated: ['规则测算', 'processing'],
-    mixed: ['业务汇总', 'warning'],
-    demo: ['开发样例（受限）', 'warning'],
-    seed: ['初始化样例（受限）', 'warning'],
-    fallback: ['服务降级', 'warning'],
-    derived: ['业务派生结果', 'processing'],
-    ai_inferred: ['AI 推断结果', 'processing'],
-    unavailable: ['暂不可用', 'default']
-  };
-  const normalized: SourceType | string =
-    Object.keys(labels).find((item) => lower === item || lower.includes(item))
-    || (lower.includes('postgres') || lower.includes('registry') ? 'real' : value);
-  const [label, color] = labels[normalized] || ['业务事实', 'default'];
-  const isMock = ['demo', 'seed', 'fallback'].includes(normalized);
-  return <Tag className={`data-source-tag ${isMock ? 'data-source-warning' : ''}`} color={color}>{label}</Tag>;
+  // 工程来源元数据仍由 API、日志和审计链路保留，但业务界面不展示来源分类。
+  void source;
+  return null;
 }
 
 function freshnessReasonText(value?: string | null) {
@@ -141,7 +123,6 @@ function timeText(value?: string | null) {
 
 function PageStateMeta({ meta }: { meta: PageDataMeta }) {
   const items = [
-    ['来源', meta.source],
     ['生成时间', timeText(meta.generatedAt)],
     ['更新时间', timeText(meta.updatedAt)],
     ['run_id', meta.runId],
@@ -150,11 +131,11 @@ function PageStateMeta({ meta }: { meta: PageDataMeta }) {
   ].filter(([, value]) => value && value !== '--');
   if (!items.length) return null;
   return (
-    <div className="page-state-meta" aria-label="数据来源与版本">
+    <div className="page-state-meta" aria-label="业务时间与版本">
       {items.map(([label, value]) => (
         <span key={label}>
           <small>{label}</small>
-          <b title={label === '来源' ? undefined : String(value)}>{label === '来源' ? <DataSourceTag source={value} /> : value}</b>
+          <b title={String(value)}>{value}</b>
         </span>
       ))}
     </div>
@@ -173,7 +154,7 @@ export function PageDataState({
   mockFallback?: boolean;
 }) {
   if (mockFallback) {
-    return <ErrorState code="MOCK_FALLBACK_BLOCKED" message="页面状态契约禁止使用模拟或固定业务值填充成功态。" />;
+    return <ErrorState code="DATA_CONTRACT_INVALID" message="页面数据未通过可用性校验，请稍后重试。" />;
   }
   if (meta.state === 'loading') {
     return (
@@ -257,7 +238,7 @@ export function SourceContextPanel({
   onRefresh?: () => void;
 }) {
   if (loading && !meta) {
-    return <Alert className="source-context-panel-state" type="info" showIcon message="正在核对业务事实与最近成功批次" />;
+    return <Alert className="source-context-panel-state" type="info" showIcon message="正在加载业务时间与版本信息" />;
   }
   if (error || !meta || meta.source_type === 'unavailable') {
     return (
@@ -265,22 +246,21 @@ export function SourceContextPanel({
         className="source-context-panel-state"
         type="warning"
         showIcon
-        message="当前无可用预测事实"
-        description={`原因：${meta?.unavailable_reason || error || '来源元数据不可用'}；操作建议：执行预测任务或查看明确标识的历史批次。`}
+        message="当前业务信息暂不可用"
+        description={`原因：${meta?.unavailable_reason || error || '业务上下文不可用'}；操作建议：刷新后重试或查看已有业务批次。`}
         action={onRefresh ? <Button size="small" onClick={onRefresh}>重新核对</Button> : undefined}
       />
     );
   }
   const warning = ['simulated', 'demo', 'seed', 'fallback'].includes(meta.source_type) || meta.is_stale || meta.source_type === 'historical';
   return (
-    <section className={`source-context-panel ${warning ? 'source-context-panel-warning' : ''}`} aria-label="最近成功事实来源">
+    <section className={`source-context-panel ${warning ? 'source-context-panel-warning' : ''}`} aria-label="业务时间与版本">
       <div className="source-context-panel-head">
         <div>
-          <small>来源与时效</small>
-          <strong>最近成功事实来源</strong>
+          <small>时间与版本</small>
+          <strong>当前业务上下文</strong>
         </div>
         <Space size={8} wrap>
-          <span className="source-context-panel-source"><small>数据来源</small><DataSourceTag source={meta.source_type} /></span>
           {onRefresh && <Button size="small" loading={loading} onClick={() => onRefresh()}>重新核对</Button>}
         </Space>
       </div>
@@ -290,8 +270,8 @@ export function SourceContextPanel({
         <span><small>模型版本</small><b title={meta.model_version || '--'}>{meta.model_version || '--'}</b></span>
         <span><small>特征版本</small><b title={meta.feature_version || '--'}>{meta.feature_version || '--'}</b></span>
         <span>
-          <small>事实状态</small>
-          <b>{meta.source_type === 'historical' ? '历史批次' : meta.is_stale ? `已过期：${freshnessReasonText(meta.stale_reason)}` : '最近成功批次'}</b>
+          <small>批次状态</small>
+          <b>{meta.is_stale ? `已过期：${freshnessReasonText(meta.stale_reason)}` : '可用'}</b>
         </span>
         <span><small>最后刷新</small><b>{timeText(lastRefreshedAt)}</b></span>
       </div>
@@ -322,7 +302,7 @@ export function DataStateBanner({
 }) {
   const action = onRetry ? <Button size="small" onClick={onRetry}>重试</Button> : undefined;
   if (loading) {
-    return <Alert className="data-state-banner" type="info" showIcon message={`${scope}正在读取真实接口数据`} />;
+    return <Alert className="data-state-banner" type="info" showIcon message={`${scope}正在加载业务信息`} />;
   }
   if (error || mockFallback || String(source || '').includes('mock')) {
     return (
@@ -333,9 +313,8 @@ export function DataStateBanner({
         message={`${scope}数据加载失败`}
         description={
           <Space direction="vertical" size={4}>
-            <span>{fallbackReason || (mockFallback ? '检测到前端静态兜底数据，已阻止其作为成功结果展示。' : '真实接口暂不可用。')}</span>
-            {error ? <span>接口错误：{error}</span> : null}
-            {source ? <span>当前数据源：<DataSourceTag source={source} /></span> : null}
+            <span>{fallbackReason || '业务请求暂不可用。'}</span>
+            {error ? <span>错误信息：{error}</span> : null}
           </Space>
         }
         action={action}
@@ -361,18 +340,12 @@ export function DataStateBanner({
         type="info"
         showIcon
         message={`${scope}暂无可用业务记录`}
-        description={source ? <span>当前数据源：<DataSourceTag source={source} /></span> : '接口返回为空，页面保留结构但不隐藏空状态。'}
+        description="当前查询返回为空，页面保留结构并如实展示空状态。"
         action={action}
       />
     );
   }
-  if (!source) return null;
-  return (
-    <div className="data-state-inline">
-      <span>数据源</span>
-      <DataSourceTag source={source} />
-    </div>
-  );
+  return null;
 }
 
 export function RiskTag({ value }: { value?: string }) {

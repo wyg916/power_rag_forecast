@@ -34,7 +34,7 @@ export async function getDashboardData() {
     value: item.value,
     unit: item.unit,
     status: statusLabel(item.status),
-    note: item.trend_label || item.data_source || '来自首页聚合 API'
+    note: item.trend_label || '当前统计周期'
   }));
   const priceCurve = series.map((row: any) => ({
     time: hourText(row.datetime || row.time),

@@ -35,7 +35,7 @@ const emptyAssistantAnswer = {
   evidence: ['尚未发起问题，暂无数据依据。'],
   reason: '当前处于待提问状态，不展示任何预测数值、交易结论或业务回填结果。',
   suggestion: ['可从左侧常用问题开始，或直接输入电价预测、风险识别、策略建议、政策解读等问题。'],
-  warning: '未返回真实接口证据前，本页面不会生成或展示业务数值。'
+  warning: '未取得可核验业务依据前，本页面不会生成或展示业务数值。'
 };
 
 export async function getAssistantData() {
@@ -184,13 +184,13 @@ export async function getAssistantReferenceOptions(query = '') {
 
   const [forecast, strategy, report, datasets, knowledge] = settled;
   if (forecast.status === 'fulfilled') {
-    options.push({ id: 'forecast_24h', label: '24小时预测结果', type: 'forecast', summary: '来自预测中心数据服务', payload: forecast.value });
+    options.push({ id: 'forecast_24h', label: '24小时预测结果', type: 'forecast', summary: '最新可用预测结果', payload: forecast.value });
   }
   if (strategy.status === 'fulfilled') {
-    options.push({ id: 'strategy_latest', label: '最新购电策略', type: 'strategy', summary: '来自策略中心数据服务', payload: strategy.value });
+    options.push({ id: 'strategy_latest', label: '最新购电策略', type: 'strategy', summary: '最新可用策略记录', payload: strategy.value });
   }
   if (report.status === 'fulfilled') {
-    options.push({ id: 'report_latest', label: '最新分析报告', type: 'report', summary: '来自报告中心数据服务', payload: report.value });
+    options.push({ id: 'report_latest', label: '最新分析报告', type: 'report', summary: '最新可用分析报告', payload: report.value });
   }
   if (datasets.status === 'fulfilled') {
     const rows = Array.isArray(datasets.value?.datasets) ? datasets.value.datasets : [];
@@ -200,7 +200,7 @@ export async function getAssistantReferenceOptions(query = '') {
         id: `dataset_${datasetId}`,
         label: item.display_name || datasetId,
         type: 'dataset',
-        summary: item.description || '来自数据中心受控数据集',
+        summary: item.description || '可用业务数据集',
         payload: item
       });
     });
@@ -212,7 +212,7 @@ export async function getAssistantReferenceOptions(query = '') {
         id: `knowledge_${item.id || item.title || index}`,
         label: item.title || item.source || `知识引用 ${index + 1}`,
         type: 'knowledge',
-        summary: item.summary || item.content || '来自知识库检索服务',
+        summary: item.summary || item.content || '可用知识内容',
         payload: item
       });
     });

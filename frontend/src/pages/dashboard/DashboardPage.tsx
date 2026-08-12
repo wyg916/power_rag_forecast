@@ -1,5 +1,5 @@
 import { FileTextOutlined, ReloadOutlined, RobotOutlined } from '@ant-design/icons';
-import { message, Space, Tag } from 'antd';
+import { App, Space, Tag } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
@@ -30,6 +30,7 @@ function formatTaskLogs(payload: any) {
 }
 
 export function DashboardPage(_: PageProps) {
+  const { message } = App.useApp();
   const [data, setData] = useState<HomeDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [logOpen, setLogOpen] = useState(false);
@@ -190,7 +191,7 @@ export function DashboardPage(_: PageProps) {
               </section>
             </div>
             <aside className="home-side-rail">
-              <section className="home-card home-side-card"><div className="home-card-head compact"><div><h2>历史策略边界</h2><p>预测派生建议仅供回看</p></div></div><p>候选建议 {data.strategy?.summary?.strategy_count ?? '--'} 条；历史高价风险线索 {data.strategy?.summary?.must_watch_count ?? '--'} 条。</p><p className="home-derived-note">预测价差不等同收益，过期策略不可执行。</p></section>
+              <section className="home-card home-side-card"><div className="home-card-head compact"><div><h2>历史策略边界</h2><p>预测计算建议仅供回看</p></div></div><p>候选建议 {data.strategy?.summary?.strategy_count ?? '--'} 条；历史高价风险线索 {data.strategy?.summary?.must_watch_count ?? '--'} 条。</p><p className="home-derived-note">预测价差不等同收益，过期策略不可执行。</p></section>
               <section className="home-card home-side-card"><div className="home-card-head compact"><div><h2>当前任务事实</h2><p>任务状态不由历史预测窗口推断</p></div></div><p>运行 {data.tasks?.health?.running_task_count ?? '--'} · 排队 {data.tasks?.health?.pending_task_count ?? '--'} · 失败 {data.tasks?.health?.failed_task_count ?? '--'} · 超时 {data.tasks?.health?.timeout_task_count ?? '--'}</p></section>
             </aside>
           </>

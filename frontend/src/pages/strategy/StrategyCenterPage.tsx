@@ -1,5 +1,5 @@
 import { DownloadOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
-import { Button, Form, Input, InputNumber, Modal, Select, Switch, Tag, Tooltip, message } from 'antd';
+import { App, Button, Form, Input, InputNumber, Modal, Select, Switch, Tag, Tooltip } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { PageHeader, type PageHeaderAction } from '../../components/common/PageHeader';
@@ -46,9 +46,9 @@ const strategyTabs = [
   { key: 'strategy-review', label: '人工复核' }
 ];
 
-function exportCsv(filename: string, rows: Record<string, unknown>[]) {
+function exportCsv(filename: string, rows: Record<string, unknown>[], notifyEmpty: () => void) {
   if (!rows.length) {
-    message.info('当前没有可导出的策略记录');
+    notifyEmpty();
     return;
   }
   const keys = Object.keys(rows[0]);
@@ -64,6 +64,7 @@ function exportCsv(filename: string, rows: Record<string, unknown>[]) {
 }
 
 export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
+  const { message } = App.useApp();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [configOpen, setConfigOpen] = useState(false);
@@ -223,7 +224,8 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
             ? filteredReviewRows
             : mode === 'storage'
               ? (data?.executionItems || []).filter((item: any) => !selectedDevice || item.device_id === selectedDevice)
-              : (data?.hourlyPlan || [])
+              : (data?.hourlyPlan || []),
+          () => message.info('当前没有可导出的策略记录')
         )
       }
     ];
@@ -269,9 +271,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       ? '展示处于有效窗口且通过治理门禁的策略事实；执行前仍须人工复核。'
       : '展示可追溯的历史策略记录；当前记录已过期或未通过，不可作为当前策略。'
     : mode === 'storage'
-      ? data?.isSimulated
-        ? '展示模拟设备、模拟执行与测算收益；所有结果均不代表实际执行或结算。'
-        : '展示设备运行、执行反馈与收益口径，支持只读复核。'
+      ? '展示设备状态、计划反馈与收益口径，支持只读复核。'
       : '承接高风险策略的人工审核与人机协同闭环，确保关键交易决策安全、合规、可追溯。';
 
   return (
@@ -298,12 +298,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               <small>生成时间</small>
               <strong>{displayTimestamp(data?.generatedAt)}</strong>
             </span>
-            <span>
-              <small>业务事实</small>
-              <Tag color={data?.isStale ? 'warning' : data?.isSimulated ? 'processing' : data?.sourceType === 'unavailable' ? 'default' : 'success'}>
-                {data?.sourceLabel || '--'}
-              </Tag>
-            </span>
+            <span><small>批次状态</small><Tag color={data?.isStale ? 'warning' : 'success'}>{data?.isStale ? '适用窗口已结束' : '可用'}</Tag></span>
             <span><small>审核状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
             <span className="strategy-meta-run"><small>适用窗口</small><Tooltip title={`${data?.strategyValidFrom || '--'} 至 ${data?.strategyValidTo || '--'}`}><strong>{data?.strategyValidFrom && data?.strategyValidTo ? `${String(data.strategyValidFrom).slice(5, 16)} 至 ${String(data.strategyValidTo).slice(5, 16)}` : '--'}</strong></Tooltip></span>
             {data?.isStale && (

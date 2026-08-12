@@ -156,7 +156,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       collapseAtNarrow: true,
       disabled: true,
       disabledReason: canGenerateStrategy
-        ? '当前预测页缺少报告上下文；请前往策略中心基于真实 run_id 与 report_id 发起'
+        ? '当前预测页缺少报告上下文；请前往策略中心基于有效 run_id 与 report_id 发起'
         : '需要 strategy:generate 权限'
     }
   ], [canGenerateStrategy, canRunForecast, data, exportRows, loading, loadData, message, runningForecast, view]);
@@ -285,14 +285,12 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           预测电价: `${selectedHour.price} 元/kWh`,
           风险等级: selectedHour.risk,
           风险概率: selectedHour.riskProbability == null ? '接口未返回' : selectedHour.riskProbability,
-          建议来源: selectedHour.actionSource || '接口未返回',
           建议动作: selectedHour.action || '接口未返回',
           置信度: selectedHour.confidence === '--' ? '接口未返回' : `${selectedHour.confidence}%`,
           正式置信区间: selectedHour.interval,
           预测批次: data?.runId || '--',
           模型版本: data?.modelVersion || '--',
-          特征版本: data?.featureVersion || '--',
-          业务来源: data?.freshnessStatus === 'stale' ? '历史预测批次' : data?.runId ? '预测批次' : '暂不可用'
+          特征版本: data?.featureVersion || '--'
         } : null}
         onClose={() => setSelectedHour(null)}
       />

@@ -89,7 +89,7 @@ function normalizeStrategy(payload: any) {
       storage_count: summary.low_price_storage_windows ?? payload?.strategy?.summary?.storage_count ?? 0,
       estimated_revenue: summary.expected_spread ?? payload?.strategy?.summary?.estimated_revenue,
       estimated_revenue_unit: payload?.strategy?.summary?.estimated_revenue_unit || '元/kWh 价差',
-      estimated_revenue_note: payload?.strategy?.summary?.estimated_revenue_note || '由绑定预测曲线派生，不代表收益'
+      estimated_revenue_note: payload?.strategy?.summary?.estimated_revenue_note || '按绑定预测曲线计算，不代表结算收益'
     }
   };
 }

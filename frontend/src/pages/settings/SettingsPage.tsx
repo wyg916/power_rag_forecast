@@ -21,7 +21,7 @@ import {
   UsergroupAddOutlined
 } from '@ant-design/icons';
 import type { Dispatch, Key, ReactNode, SetStateAction } from 'react';
-import { Alert, Button, Form, Input, InputNumber, Modal, Popconfirm, Progress, Select, Space, Switch, Table, Tag, Tooltip, message } from 'antd';
+import { Alert, App, Button, Form, Input, InputNumber, Modal, Popconfirm, Progress, Select, Space, Switch, Table, Tag, Tooltip } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { SectionCard } from '../../components/cards/SectionCard';
@@ -92,7 +92,21 @@ function formatTime(value: unknown) {
   return value ? String(value).replace('T', ' ').slice(0, 19) : '--';
 }
 
+function exportSystemStatus(rows: any[]) {
+  const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+  const csv = [['模块', '状态', '摘要', '最近检查时间', '观测指标'], ...rows.map((row) => [row.module, row.status, row.summary, row.checkedAt, row.metric])]
+    .map((row) => row.map(escape).join(','))
+    .join('\r\n');
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = '系统运行状态.csv';
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
+  const { message } = App.useApp();
   const { hasPermission } = useAuth();
   const [data, setData] = useState<any>({ dataSource: 'backend_api', mockFallback: false });
   const [loading, setLoading] = useState(true);
@@ -282,7 +296,7 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
     { title: '在线用户数', value: data.statusOverview?.online_users ?? 0, unit: '人', trendLabel: '用户表活跃状态', note: data.currentUser?.username || '', status: data.statusOverview?.online_users ? 'success' : 'warning', icon: <UsergroupAddOutlined /> },
     { title: '正常服务数', value: `${data.statusOverview?.healthy_services ?? okCount} / ${data.statusOverview?.total_services ?? systemRows.length}`, trendLabel: '实时健康检查', status: (data.statusOverview?.warning_count ?? alertCount) ? 'warning' : 'success', icon: <SafetyCertificateOutlined /> },
     { title: '异常告警数', value: (data.statusOverview?.warning_count ?? 0) + (data.statusOverview?.error_count ?? 0), trendLabel: '需关注模块', status: (data.statusOverview?.warning_count ?? alertCount) ? 'warning' : 'success', icon: <BellOutlined /> },
-    { title: '系统健康度', value: (data.statusOverview?.system_health_score ?? systemHealth).toFixed(2), unit: '%', trendLabel: '按真实探针计算', status: (data.statusOverview?.system_health_score ?? systemHealth) >= 90 ? 'success' : 'warning', icon: <HeartOutlined /> }
+    { title: '系统健康度', value: (data.statusOverview?.system_health_score ?? systemHealth).toFixed(2), unit: '%', trendLabel: '按健康探针计算', status: (data.statusOverview?.system_health_score ?? systemHealth) >= 90 ? 'success' : 'warning', icon: <HeartOutlined /> }
   ];
 
   const userMetrics = [
@@ -315,6 +329,10 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
           canCreate={canWriteUsers}
           canSave={canWriteSettings}
           selectedCount={selectedUserKeys.length}
+          onExportStatus={() => {
+            exportSystemStatus(systemRows);
+            message.success('系统运行状态已导出');
+          }}
         />
       </div>
       <DataStateBanner
@@ -431,7 +449,8 @@ function SettingsToolbar({
   onTestAll,
   canCreate,
   canSave,
-  selectedCount
+  selectedCount,
+  onExportStatus
 }: {
   activeKey: string;
   keyword: string;
@@ -444,6 +463,7 @@ function SettingsToolbar({
   canCreate: boolean;
   canSave: boolean;
   selectedCount: number;
+  onExportStatus: () => void;
 }) {
   if (activeKey === 'settings-user') {
     return (
@@ -458,7 +478,7 @@ function SettingsToolbar({
         />
         <Button type="primary" icon={<PlusOutlined />} disabled={!canCreate} onClick={onCreate}>新增用户</Button>
         <Button icon={<ReloadOutlined />} onClick={onRefresh}>刷新</Button>
-        <Tooltip title={selectedCount ? '后端当前提供单用户启禁与编辑，批量接口待接入' : '请选择用户后再执行批量操作'}>
+        <Tooltip title={selectedCount ? '当前仅支持逐个处理已选用户' : '请选择用户后再执行批量操作'}>
           <Button disabled>批量操作</Button>
         </Tooltip>
       </Space>
@@ -494,7 +514,7 @@ function SettingsToolbar({
         style={{ width: 280 }}
       />
       <Button icon={<ReloadOutlined />} onClick={onRefresh}>刷新</Button>
-      <Button icon={<SaveOutlined />}>导出报告</Button>
+      <Button icon={<SaveOutlined />} onClick={onExportStatus}>导出报告</Button>
     </Space>
   );
 }
@@ -554,7 +574,7 @@ function SystemStatusTab({
                   <p>{item.summary}</p>
                 </div>
                 <Tag color={statusColors[item.status] || 'default'}>{item.status}</Tag>
-                <Button type="link" size="small">详情</Button>
+                <Button type="link" size="small" onClick={() => Modal.info({ title: item.module, content: `${item.summary || '--'}\n${item.metric || ''}` })}>详情</Button>
               </div>
             ))}
           </div>
@@ -717,7 +737,7 @@ function UserPermissionTab({
               <SwitchParam label="强制定期修改密码" checked={Boolean(policyValues.force_periodic_password_change)} disabled />
               <SwitchParam label="管理员重置密码" checked={Boolean(policyValues.admin_reset_password_enabled)} disabled />
             </div>
-            <Alert type="info" showIcon message="安全策略来自后端接口与 PostgreSQL 配置表；用户密码重置已通过真实 API 可用。" />
+            <Alert type="info" showIcon message="安全策略由平台配置服务统一管理；用户密码重置已接入持久化接口。" />
           </SectionCard>
         </div>
       </div>

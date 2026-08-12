@@ -1,5 +1,5 @@
 import { CheckCircleOutlined, CopyOutlined } from '@ant-design/icons';
-import { Button, Empty, Progress, Space, Tag, message } from 'antd';
+import { App, Button, Empty, Progress, Space, Tag } from 'antd';
 
 interface TracePanelProps {
   intent: string;
@@ -11,6 +11,7 @@ interface TracePanelProps {
 }
 
 export function TracePanel({ intent, tools, sources, refs, traceId, confidence }: TracePanelProps) {
+  const { message } = App.useApp();
   async function copyTraceId() {
     if (!traceId) {
       message.warning('暂无 Trace ID');
@@ -39,7 +40,7 @@ export function TracePanel({ intent, tools, sources, refs, traceId, confidence }
         )}
       </div>
       <div className="trace-block">
-        <h4>数据来源</h4>
+        <h4>数据依据</h4>
         {sources.length ? (
           sources.map((item) => (
             <p key={item}>
@@ -47,7 +48,7 @@ export function TracePanel({ intent, tools, sources, refs, traceId, confidence }
             </p>
           ))
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据来源" />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据依据" />
         )}
       </div>
       <div className="trace-block">

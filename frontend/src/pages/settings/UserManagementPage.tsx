@@ -1,5 +1,5 @@
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, message } from 'antd';
+import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userApi } from '../../services/userApi';
@@ -17,6 +17,7 @@ function userKey(row: UserItem) {
 }
 
 export function UserManagementPage() {
+  const { message } = App.useApp();
   const { hasPermission } = useAuth();
   const canWrite = hasPermission('user:write');
   const [loading, setLoading] = useState(false);

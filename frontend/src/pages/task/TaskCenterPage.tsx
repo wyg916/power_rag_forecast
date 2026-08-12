@@ -18,8 +18,8 @@ import {
   TeamOutlined,
   WarningOutlined
 } from '@ant-design/icons';
-import { Button, DatePicker, Descriptions, Dropdown, Form, Input, Modal, Progress, Select, Space, Table, Tag, Timeline, Typography, message } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { App, Button, Checkbox, DatePicker, Descriptions, Dropdown, Form, Input, Modal, Progress, Select, Space, Table, Tag, Timeline, Typography } from 'antd';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
@@ -170,11 +170,23 @@ function jsonPreview(value: unknown) {
   }
 }
 
+function downloadCsv(filename: string, headers: string[], rows: Array<Array<unknown>>) {
+  const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map((row) => row.map(escape).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function TaskCenterPage(_props: PageProps) {
+  const { message } = App.useApp();
   const [taskData, setTaskData] = useState<any>({ tasks: [], metrics: [], health: {}, retryQueue: [], recentLogs: [], queueRows: [], trendRows: [] });
   const [loading, setLoading] = useState(true);
   const { authRequired, hasPermission } = useAuth();
-  const canRunTask = !authRequired || hasPermission('task:manage');
+  const canRunTask = !authRequired || hasPermission('task:run');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
@@ -187,8 +199,14 @@ export function TaskCenterPage(_props: PageProps) {
   const [selectedQueue, setSelectedQueue] = useState('all');
   const [keyword, setKeyword] = useState('');
   const [dateRange, setDateRange] = useState<any>(null);
+  const [trendDays, setTrendDays] = useState(7);
+  const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(['name', 'status', 'progress', 'queue', 'created', 'started', 'finished', 'retries', 'mode', 'actions']);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [cancelReason] = useState('前端用户请求取消');
   const [scheduleDraft, setScheduleDraft] = useState(defaultSchedule);
+  const keywordRef = useRef<any>(null);
+  const taskListRef = useRef<HTMLElement | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -201,13 +219,14 @@ export function TaskCenterPage(_props: PageProps) {
         keyword,
         start_date: startDate,
         end_date: endDate,
+        trend_days: trendDays,
         page: 1,
         page_size: 100
       }));
     } finally {
       setLoading(false);
     }
-  }, [dateRange, keyword, selectedQueue, selectedTaskKind]);
+  }, [dateRange, keyword, selectedQueue, selectedTaskKind, trendDays]);
 
   useEffect(() => {
     loadData();
@@ -296,6 +315,10 @@ export function TaskCenterPage(_props: PageProps) {
   }
 
   async function createSchedule() {
+    if (!canRunTask) {
+      message.warning('当前账号没有任务运行权限');
+      return;
+    }
     await api.createScheduledTask(scheduleDraft);
     message.success('定时任务已保存');
     setCreateOpen(false);
@@ -316,6 +339,24 @@ export function TaskCenterPage(_props: PageProps) {
   const pendingCount = Number(overview.pending_total ?? health.pending_task_count ?? 0);
   const failedCount = Number(overview.failed_total ?? health.failed_task_count ?? 0);
   const timeoutCount = Number(overview.timeout_total ?? health.timeout_task_count ?? 0);
+
+  function exportTrend() {
+    downloadCsv(
+      `任务执行趋势_${trendDays}天.csv`,
+      ['日期', '成功', '失败', '运行中'],
+      trendRows.map((row: any) => [row.date, row.success, row.failed, row.running])
+    );
+    message.success('任务趋势已导出');
+  }
+
+  function openTaskListFullscreen() {
+    taskListRef.current?.requestFullscreen?.().catch(() => message.error('当前浏览器未允许全屏显示'));
+  }
+
+  function openRecentLogs() {
+    setLogText(recentLogRows.map((row: any) => `[${String(row.status || 'info').toUpperCase()}] ${shortDateTime(row.updated_at || row.created_at)} ${taskName(row)} ${row.error_message || row.message || statusText(row.status)}`).join('\n') || '暂无最近运行日志');
+    setLogOpen(true);
+  }
 
   const metricIcons = [<ScheduleOutlined />, <CheckCircleOutlined />, <PlayCircleOutlined />, <AlertOutlined />, <DatabaseOutlined />];
   const metricTones = ['green', 'green', 'blue', 'red', 'purple'];
@@ -366,17 +407,21 @@ export function TaskCenterPage(_props: PageProps) {
   ];
 
   const taskColumns = [
-    { title: '', width: 34, render: () => <input type="checkbox" aria-label="选择任务" /> },
-    { title: '任务名称', width: 168, render: (_: any, record: any) => taskName(record) },
-    { title: '状态', width: 80, dataIndex: 'status', render: (value: string) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> },
-    { title: '进度', width: 116, render: (_: any, record: any) => <Progress percent={taskProgress(record)} size="small" showInfo={false} strokeColor={progressColor(record.status)} /> },
-    { title: '队列', width: 118, render: (_: any, record: any) => queueName(record) },
-    { title: '创建时间', width: 160, dataIndex: 'created_at', render: shortDateTime },
-    { title: '开始时间', width: 92, dataIndex: 'started_at', render: shortTime },
-    { title: '完成时间', width: 92, render: (_: any, record: any) => shortTime(record.finished_at || record.ended_at) },
-    { title: '重试次数', width: 86, render: (_: any, record: any) => record.retry_count ?? 0 },
-    { title: '执行模式', width: 92, dataIndex: 'execution_mode', render: (value: string) => value || '定时任务' },
+    { key: 'select', title: '', width: 34, render: (_: any, record: any) => {
+      const id = String(record.task_id || '');
+      return <input type="checkbox" aria-label={`选择任务 ${id || taskName(record)}`} disabled={!id} checked={Boolean(id && selectedTaskIds.includes(id))} onChange={(event) => setSelectedTaskIds((current) => event.target.checked ? [...new Set([...current, id])] : current.filter((item) => item !== id))} />;
+    } },
+    { key: 'name', title: '任务名称', width: 168, render: (_: any, record: any) => taskName(record) },
+    { key: 'status', title: '状态', width: 80, dataIndex: 'status', render: (value: string) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> },
+    { key: 'progress', title: '进度', width: 116, render: (_: any, record: any) => <Progress percent={taskProgress(record)} size="small" showInfo={false} strokeColor={progressColor(record.status)} /> },
+    { key: 'queue', title: '队列', width: 118, render: (_: any, record: any) => queueName(record) },
+    { key: 'created', title: '创建时间', width: 160, dataIndex: 'created_at', render: shortDateTime },
+    { key: 'started', title: '开始时间', width: 92, dataIndex: 'started_at', render: shortTime },
+    { key: 'finished', title: '完成时间', width: 92, render: (_: any, record: any) => shortTime(record.finished_at || record.ended_at) },
+    { key: 'retries', title: '重试次数', width: 86, render: (_: any, record: any) => record.retry_count ?? 0 },
+    { key: 'mode', title: '执行模式', width: 92, dataIndex: 'execution_mode', render: (value: string) => value || '定时任务' },
     {
+      key: 'actions',
       title: '操作',
       width: 150,
       fixed: 'right' as const,
@@ -385,6 +430,7 @@ export function TaskCenterPage(_props: PageProps) {
           <Button type="link" size="small" onClick={() => openDetail(record)}>详情</Button>
           <Button type="link" size="small" onClick={() => openLogs(record.task_id)}>日志</Button>
           <Dropdown
+            trigger={['click']}
             menu={{
               items: [
                 { key: 'cancel', label: '取消任务', disabled: !canCancelTask(record.status) },
@@ -402,6 +448,7 @@ export function TaskCenterPage(_props: PageProps) {
       )
     }
   ];
+  const displayedTaskColumns = taskColumns.filter((column) => column.key === 'select' || visibleColumnKeys.includes(String(column.key)));
 
   const logColumns = [
     { title: '时间', width: 76, render: (_: any, record: any) => shortTime(record.updated_at || record.created_at) },
@@ -438,7 +485,7 @@ export function TaskCenterPage(_props: PageProps) {
           <span>日期范围</span>
           <RangePicker value={dateRange} onChange={setDateRange} />
           <span>关键词</span>
-          <Input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="请输入任务名称/任务ID" allowClear />
+          <Input ref={keywordRef} value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="请输入任务名称/任务ID" allowClear />
           <span>队列标签</span>
           <Select value={selectedQueue} options={queueOptions} onChange={setSelectedQueue} />
         </div>}
@@ -471,16 +518,16 @@ export function TaskCenterPage(_props: PageProps) {
             ))}
           </div>
 
-          <section className="task-card task-list-card">
+          <section className="task-card task-list-card" ref={taskListRef}>
             <div className="task-card-head">
               <div>
                 <h2>任务列表</h2>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建定时任务</Button>
+                <Button type="primary" icon={<PlusOutlined />} disabled={!canRunTask} title={!canRunTask ? '需要 task:run 权限' : undefined} onClick={() => setCreateOpen(true)}>新建定时任务</Button>
               </div>
               <Space size={8}>
-                <Button icon={<ColumnHeightOutlined />}>列设置</Button>
-                <Button icon={<FilterOutlined />}>筛选</Button>
-                <Button icon={<FullscreenOutlined />} />
+                <Button icon={<ColumnHeightOutlined />} onClick={() => setColumnSettingsOpen(true)}>列设置</Button>
+                <Button icon={<FilterOutlined />} onClick={() => keywordRef.current?.focus?.()}>筛选</Button>
+                <Button aria-label="全屏查看任务列表" title="全屏查看任务列表" icon={<FullscreenOutlined />} onClick={openTaskListFullscreen} />
               </Space>
             </div>
             <Table
@@ -489,8 +536,8 @@ export function TaskCenterPage(_props: PageProps) {
               rowKey={(record) => record.task_id || `${taskName(record)}-${record.created_at}`}
               loading={loading}
               dataSource={tasks}
-              columns={taskColumns}
-              pagination={{ total: Math.max(8, tasks.length), pageSize: 8, showSizeChanger: false, showQuickJumper: true }}
+              columns={displayedTaskColumns}
+              pagination={{ total: tasks.length, pageSize: 8, showSizeChanger: false, showQuickJumper: true }}
               scroll={{ x: 1250, y: 520 }}
             />
           </section>
@@ -506,9 +553,9 @@ export function TaskCenterPage(_props: PageProps) {
                 </div>
               </div>
               <Space size={6}>
-                <Button className="active">近 7 天</Button>
-                <Button>近 30 天</Button>
-                <Button icon={<ExportOutlined />} />
+                <Button type={trendDays === 7 ? 'primary' : 'default'} onClick={() => setTrendDays(7)}>近 7 天</Button>
+                <Button type={trendDays === 30 ? 'primary' : 'default'} onClick={() => setTrendDays(30)}>近 30 天</Button>
+                <Button aria-label="导出任务趋势" title="导出任务趋势" icon={<ExportOutlined />} onClick={exportTrend} />
               </Space>
             </div>
             <AppChart option={trendOption} height={168} />
@@ -520,7 +567,7 @@ export function TaskCenterPage(_props: PageProps) {
             <section className="task-card task-health-card">
               <div className="task-card-head">
                 <h2>任务健康</h2>
-                <Button type="link">详情</Button>
+                <Button type="link" onClick={() => { setDetailData(health); setDetailOpen(true); }}>详情</Button>
               </div>
               <div className="task-health-grid">
                 {healthCards.map((item) => (
@@ -534,18 +581,18 @@ export function TaskCenterPage(_props: PageProps) {
             </section>
 
             <section className="task-card task-side-table-card">
-              <div className="task-card-head"><h2>运行日志（最近）</h2><Button type="link">更多</Button></div>
-              <Table size="small" rowKey={(record) => record.task_id || record.created_at} pagination={false} dataSource={recentLogRows} columns={logColumns} scroll={{ y: 88, x: 650 }} />
+              <div className="task-card-head"><h2>运行日志（最近）</h2><Button type="link" onClick={openRecentLogs}>更多</Button></div>
+              <Table size="small" rowKey={(record) => record.id || `${record.task_id || 'log'}-${record.created_at || record.updated_at || ''}-${record.step || ''}-${record.message || ''}`} pagination={false} dataSource={recentLogRows} columns={logColumns} scroll={{ y: 88, x: 650 }} />
             </section>
 
             <section className="task-card task-side-table-card">
-              <div className="task-card-head"><h2>失败重试（最近）</h2><Button type="link">更多</Button></div>
+              <div className="task-card-head"><h2>失败重试（最近）</h2><Button type="link" onClick={() => { setDetailData({ failed_tasks: retryRows }); setDetailOpen(true); }}>更多</Button></div>
               <Table size="small" rowKey={(record) => record.task_id || record.created_at} pagination={false} dataSource={retryRows.slice(0, 10)} columns={retryColumns} scroll={{ y: 88, x: 720 }} />
             </section>
           </div>
 
           <section className="task-card task-queue-card">
-            <div className="task-card-head"><h2>队列概览</h2><Button type="link">更多</Button></div>
+            <div className="task-card-head"><h2>队列概览</h2><Button type="link" onClick={() => { setDetailData({ queues: queueRows }); setDetailOpen(true); }}>更多</Button></div>
             <div className="task-queue-content">
               <AppChart option={queueOption} height={158} />
               <Table size="small" rowKey="queue_name" pagination={false} dataSource={queueRows.slice(0, 6)} columns={queueColumns} scroll={{ y: 120 }} />
@@ -574,6 +621,17 @@ export function TaskCenterPage(_props: PageProps) {
             <Select value={scheduleDraft.run_time} onChange={(value) => setScheduleDraft((prev) => ({ ...prev, run_time: value }))} options={[{ value: '06:30', label: '06:30' }, { value: '08:00', label: '08:00' }]} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal title="任务列表列设置" open={columnSettingsOpen} onCancel={() => setColumnSettingsOpen(false)} onOk={() => setColumnSettingsOpen(false)} okText="应用">
+        <Checkbox.Group
+          value={visibleColumnKeys}
+          onChange={(values) => setVisibleColumnKeys(values.map(String))}
+          options={[
+            ['name', '任务名称'], ['status', '状态'], ['progress', '进度'], ['queue', '队列'], ['created', '创建时间'],
+            ['started', '开始时间'], ['finished', '完成时间'], ['retries', '重试次数'], ['mode', '执行模式'], ['actions', '操作']
+          ].map(([value, label]) => ({ value, label }))}
+        />
       </Modal>
 
       <DetailDrawer title="任务详情" open={detailOpen} data={detailData} onClose={() => setDetailOpen(false)}>

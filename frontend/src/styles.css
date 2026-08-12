@@ -4780,7 +4780,7 @@ a {
 .task-list-card {
   display: flex;
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 360px;
   flex-direction: column;
   overflow: hidden;
 }

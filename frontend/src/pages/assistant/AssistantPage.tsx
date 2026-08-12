@@ -19,7 +19,7 @@ import {
   SettingOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
-import { Alert, Button, Drawer, Empty, Input, List, Modal, Select, Space, Switch, Table, Tag, message } from 'antd';
+import { Alert, App, Button, Drawer, Empty, Input, List, Modal, Select, Space, Switch, Table, Tag } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import { SectionCard } from '../../components/cards/SectionCard';
@@ -52,10 +52,10 @@ const modelProviderOptions = [
 ];
 
 const dataSourceOptions = [
-  { value: 'all', label: '全部数据源' },
-  { value: 'prediction', label: '预测数据' },
-  { value: 'knowledge', label: '知识库' },
-  { value: 'strategy', label: '策略数据' }
+  { value: 'all', label: '全部业务范围' },
+  { value: 'prediction', label: '预测分析' },
+  { value: 'knowledge', label: '知识检索' },
+  { value: 'strategy', label: '策略分析' }
 ];
 
 const businessQuestions = [
@@ -83,7 +83,7 @@ const providerDisplayLabels: Record<string, string> = {
   deterministic: '快速回答',
   deepseek: '在线模型',
   ollama: '本地模型',
-  fallback: '降级回答',
+  fallback: '回答链路异常',
   template: '规则回答',
   auto: '自动'
 };
@@ -393,19 +393,9 @@ function ChatBIArtifacts({ payload }: { payload: any }) {
   );
 }
 
-function fallbackBusinessAnswer(error: unknown) {
+function assistantErrorMessage(error: unknown) {
   const detail = error instanceof Error ? error.message : String(error || '');
-  return [
-    '结论：当前 AI 服务暂时不可用，未生成可用于业务决策的回答。',
-    '',
-    '数据依据：本次请求没有取得后端 AI/RAG/工具链返回结果。',
-    '',
-    '原因解释：可能是网络、认证、后端服务或模型服务暂时异常。',
-    '',
-    '业务建议：请稍后重试，或先查看预测中心、策略中心和知识库中的已有业务结果。',
-    '',
-    `风险提示：本次失败不代表供需、电价或交易风险发生变化。${detail ? `错误摘要：${detail}` : ''}`
-  ].join('\n');
+  return detail ? `请求未完成：${detail}` : '请求未完成，请稍后重试。';
 }
 
 function withAssistantTimeout<T>(promise: Promise<T>, timeoutMs = ASSISTANT_CHAT_TIMEOUT_MS) {
@@ -442,7 +432,7 @@ function buildAnswerModules(message?: AssistantMessage) {
     new RegExp(`${title}[：:]`).test(answerText)
   );
   const warningLines = splitContent(sectionText(answerText, '风险提示'));
-  if (state.modelFallback) warningLines.push('模型生成发生降级，建议结合数据依据复核后再用于业务判断。');
+  if (state.modelFallback) warningLines.push('模型未完成标准生成流程，建议人工复核后再用于业务判断。');
   if (state.warnings?.length) warningLines.push(...state.warnings);
 
   const modules: Array<{ key: string; title: string; icon: any; tone: string; lines: string[] }> = [
@@ -555,12 +545,13 @@ function buildKnowledgeItems(message?: AssistantMessage) {
     ...(message?.trace?.refs || [])
   ]);
   if (returnedItems.length) {
-    return returnedItems.map((item) => ({ title: item, tag: '本次引用', date: '来自回答依据' }));
+    return returnedItems.map((item) => ({ title: item, tag: '本次引用', date: '本次回答' }));
   }
   return [];
 }
 
 export function AssistantPage({ onSubNavigate }: PageProps) {
+  const { message } = App.useApp();
   const { hasPermission, user } = useAuth();
   const [assistantData, setAssistantData] = useState<any>({
     conversations: [],
@@ -717,7 +708,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       } catch (error) {
         updateAssistantMessage(assistantId, (item) => ({
           ...item,
-          content: fallbackBusinessAnswer(error),
+          content: assistantErrorMessage(error),
           status: 'error',
           answerState: {
             error: error instanceof Error ? error.message : String(error || ''),
@@ -765,7 +756,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
         setAttachments([]);
         message.warning('实时输出暂不可用，已切换普通回答');
       } catch (fallbackError) {
-        const content = fallbackBusinessAnswer(fallbackError);
+        const content = assistantErrorMessage(fallbackError);
         updateAssistantMessage(assistantId, (item) => ({
           ...item,
           content,
@@ -904,7 +895,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
 
   const sessionItems = assistantData.conversations || [];
   const evidenceColumns = [
-    { title: '数据表 / 来源', dataIndex: 'source', key: 'source', ellipsis: true },
+    { title: '数据表 / 指标', dataIndex: 'source', key: 'source', ellipsis: true },
     { title: '时间范围', dataIndex: 'timeRange', key: 'timeRange', width: 148 },
     {
       title: '状态',
@@ -989,7 +980,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
             }
             extra={
               <Space className="assistant-chat-tools" size={8}>
-                <span>数据源：</span>
+                <span>分析范围：</span>
                 <Select size="small" value={selectedDataSource} options={dataSourceOptions} style={{ width: 126 }} onChange={setSelectedDataSource} />
                 <Button icon={<DownloadOutlined />} onClick={() => setExportOpen(true)}>导出本次会话</Button>
               </Space>
@@ -1022,7 +1013,9 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                               <Button type="text" size="small" icon={<CopyOutlined />} aria-label="复制回答" title="复制回答" onClick={() => copyText(item.content)}>复制</Button>
                             </Space>
                           </div>
-                          {buildAnswerModules(item).map((module) => (
+                          {item.status === 'error' ? (
+                            <Alert type="error" showIcon message="AI 助手请求失败" description={item.content} />
+                          ) : buildAnswerModules(item).map((module) => (
                             <section className={`assistant-answer-module module-${module.tone}`} key={module.key}>
                               <div className="assistant-module-title">
                                 <span>{module.icon}</span>
@@ -1033,7 +1026,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                               </div>
                             </section>
                           ))}
-                          <ChatBIArtifacts payload={item.answerState?.chatbi} />
+                          {item.status !== 'error' && <ChatBIArtifacts payload={item.answerState?.chatbi} />}
                         </div>
                       </div>
                     );
@@ -1188,7 +1181,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
               <Space wrap>
                 <Tag icon={<InfoCircleOutlined />}>{activeAssistant?.status || '待提问'}</Tag>
                 <Tag icon={<ClockCircleOutlined />}>{activeAssistant?.createdAt || '--'}</Tag>
-                {activeAssistant?.answerState?.modelFallback && <Tag color="warning">model_fallback</Tag>}
+                {activeAssistant?.answerState?.modelFallback && <Tag color="warning">生成链路异常</Tag>}
                 {activeAssistant?.answerState?.llmUsed !== undefined && <Tag>{activeAssistant.answerState.llmUsed ? 'llm_used' : 'template_or_tool'}</Tag>}
               </Space>
             </SectionCard>

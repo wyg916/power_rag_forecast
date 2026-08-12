@@ -16,7 +16,7 @@ import {
   SyncOutlined,
   WarningOutlined
 } from '@ant-design/icons';
-import { Alert, Button, Empty, Input, Select, Space, Table, Tag, Upload, message } from 'antd';
+import { Alert, App, Button, Empty, Input, Select, Space, Table, Tag, Upload } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
@@ -136,6 +136,7 @@ function blockIcon(key: string) {
 }
 
 export function KnowledgeBasePage(_: PageProps) {
+  const { message } = App.useApp();
   const [data, setData] = useState<KnowledgeData>(defaultKnowledgeData);
   const [loading, setLoading] = useState(true);
   const { hasPermission } = useAuth();
@@ -427,7 +428,7 @@ export function KnowledgeBasePage(_: PageProps) {
             scroll={{ y: 220 }}
             columns={[
               { title: '文档名称', dataIndex: 'name', ellipsis: true },
-              { title: '来源', dataIndex: 'source', width: 96, render: (value) => <Tag>{value}</Tag> },
+              { title: '文档分类', dataIndex: 'source', width: 96, render: (value) => <Tag>{value}</Tag> },
               { title: '更新时间', dataIndex: 'updatedAt', width: 132 },
               { title: 'Chunk', dataIndex: 'chunks', width: 82 },
               { title: '状态', dataIndex: 'status', width: 92, render: documentStatusTag },

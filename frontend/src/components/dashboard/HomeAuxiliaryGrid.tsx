@@ -77,8 +77,8 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
           <div className="home-health-body">
             <Progress type="circle" percent={Math.round(dataScore)} strokeColor="#00B894" size={78} />
             <div className="home-health-list">
-              <p><CheckCircleOutlined /> 数据源覆盖 <strong>{dataHealth.source_count || 0}</strong></p>
-              <p>异常数据源 <strong>{dataHealth.exception_count || 0}</strong></p>
+              <p><CheckCircleOutlined /> 接入项覆盖 <strong>{dataHealth.source_count || 0}</strong></p>
+              <p>异常接入项 <strong>{dataHealth.exception_count || 0}</strong></p>
               <p>健康得分 <strong>{formatPercent(dataHealth.score)}</strong></p>
             </div>
           </div>

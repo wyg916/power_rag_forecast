@@ -225,7 +225,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     updatedAt: lastUpdatedAt,
     isStale: Boolean(data?.isStale),
     staleReason: data?.staleReason,
-    emptyReason: '所选页面与搜索条件下，接口未返回可用数据源、目录或数据库表记录。',
+    emptyReason: '所选页面与搜索条件下，接口未返回可用接入项、目录或数据库表记录。',
     queryScope: `${qualityMode ? '数据质量 / 数据目录' : '数据总览'}${search ? `；关键词：${search}` : '；全部记录'}`
   }), [data, lastUpdatedAt, loading, qualityMode, requestError, search]);
   const showContent = viewMeta.state === 'success' || viewMeta.state === 'stale';

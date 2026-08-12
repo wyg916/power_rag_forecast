@@ -18,14 +18,14 @@ import {
   SendOutlined,
   SyncOutlined
 } from '@ant-design/icons';
-import { Button, Empty, Input, Pagination, Select, Space, Table, Tag, Timeline, Tooltip, message } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { App, Button, Empty, Input, Pagination, Select, Space, Table, Tag, Timeline, Tooltip } from 'antd';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import { AppChart } from '../../components/charts/AppChart';
 import { SectionCard } from '../../components/cards/SectionCard';
 import { PageHeader } from '../../components/common/PageHeader';
 import { PageTabs } from '../../components/common/PageTabs';
-import { DataSourceTag, PageDataState } from '../../components/common/States';
+import { PageDataState } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
 import { useAuth } from '../../context/AuthContext';
 import { getReportCenterData, getReportFacts } from '../../services/reportApi';
@@ -93,6 +93,7 @@ const reportTabs = [
 ];
 
 export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
+  const { message } = App.useApp();
   const { hasPermission, user } = useAuth();
   const isReviewPage = activeSubKey === 'report-review' || activeSubKey === 'report-publish';
   const activeTabKey = isReviewPage ? 'report-review' : 'report-daily';
@@ -100,6 +101,10 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
   const [keyword, setKeyword] = useState('');
+  const [reportType, setReportType] = useState(activeSubKey === 'report-weekly' ? 'weekly' : activeSubKey === 'report-daily' ? 'daily' : '');
+  const [reportStatus, setReportStatus] = useState('');
+  const [reviewer, setReviewer] = useState('');
+  const [reportPage, setReportPage] = useState(1);
   const [reviewComment, setReviewComment] = useState('');
   const permissions = {
     canDownload: hasPermission('report:download'),
@@ -107,31 +112,45 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     canReview: hasPermission('report:review')
   };
 
-  async function loadData(nextKeyword = keyword) {
+  async function loadData(nextKeyword = keyword, nextPage = reportPage, nextType = reportType, nextStatus = reportStatus) {
     setLoading(true);
     try {
-      const payload = await getReportCenterData({ keyword: nextKeyword });
+      const payload = await getReportCenterData({
+        keyword: nextKeyword,
+        page: nextPage,
+        page_size: 20,
+        report_type: nextType,
+        status: nextStatus
+      });
       setData(payload);
       const first = payload.reports?.[0] || payload.activeReport;
-      setSelectedId((current) => current || first?.report_id || '');
+      setSelectedId(first?.report_id || '');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadData();
-  }, []);
+    const nextType = activeSubKey === 'report-weekly' ? 'weekly' : activeSubKey === 'report-daily' ? 'daily' : '';
+    setReportType(nextType);
+    setReportPage(1);
+    loadData(keyword, 1, nextType, reportStatus);
+  }, [activeSubKey]);
 
   const reports = data.reports || [];
+  const reviewerOptions = useMemo(() => Array.from(new Set(reports.map((item: any) => item.latestReview?.reviewer).filter(Boolean))) as string[], [reports]);
+  const visibleReports = useMemo(
+    () => reviewer ? reports.filter((item: any) => item.latestReview?.reviewer === reviewer) : reports,
+    [reports, reviewer]
+  );
   const activeReport = useMemo(
     () => data.activeReport?.report_id === selectedId
       ? data.activeReport
-      : reports.find((item: any) => item.report_id === selectedId) || data.activeReport || reports[0],
-    [reports, selectedId, data.activeReport]
+      : visibleReports.find((item: any) => item.report_id === selectedId) || visibleReports[0] || (!reviewer ? data.activeReport : null),
+    [visibleReports, reviewer, selectedId, data.activeReport]
   );
   useEffect(() => {
-    const selected = reports.find((item: any) => item.report_id === selectedId);
+    const selected = visibleReports.find((item: any) => item.report_id === selectedId);
     if (!selected) return;
     let cancelled = false;
     getReportFacts(selected).then((facts) => {
@@ -154,7 +173,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       if (!cancelled) setData((current: any) => ({ ...current, partialErrors: [...(current.partialErrors || []), String(error)] }));
     });
     return () => { cancelled = true; };
-  }, [reports, selectedId]);
+  }, [visibleReports, selectedId]);
   const metrics = isReviewPage ? reviewMetrics(data.summary) : mainMetrics(data.summary);
   const viewMeta = useMemo(() => resolvePageDataMeta({
     loading,
@@ -215,6 +234,18 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     URL.revokeObjectURL(url);
   }
 
+  function changeFilters(nextType: string, nextStatus: string) {
+    setReportType(nextType);
+    setReportStatus(nextStatus);
+    setReportPage(1);
+    loadData(keyword, 1, nextType, nextStatus);
+  }
+
+  function changePage(page: number) {
+    setReportPage(page);
+    loadData(keyword, page, reportType, reportStatus);
+  }
+
   function copyLink() {
     const text = `${window.location.origin}${window.location.pathname}#/report/report-daily?report_id=${activeReport?.report_id || ''}`;
     navigator.clipboard?.writeText(text);
@@ -234,11 +265,24 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           review={isReviewPage}
           keyword={keyword}
           setKeyword={setKeyword}
-          onSearch={() => loadData(keyword)}
+          onSearch={() => { setReportPage(1); loadData(keyword, 1); }}
           onGenerate={generateReport}
+          onDownload={downloadReport}
           canGenerate={permissions.canGenerate}
           source={data.dataSource}
           windowText={activeReport?.data_window}
+          reportType={reportType}
+          reportStatus={reportStatus}
+          reviewer={reviewer}
+          reviewerOptions={reviewerOptions}
+          onReportTypeChange={(value: string) => changeFilters(value, reportStatus)}
+          onReportStatusChange={(value: string) => changeFilters(reportType, value)}
+          onReviewerChange={setReviewer}
+          onReset={() => {
+            setKeyword('');
+            setReviewer('');
+            changeFilters('', '');
+          }}
         />}
       />
       <PageDataState meta={viewMeta} onRetry={() => loadData(keyword)} />
@@ -247,8 +291,11 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       </div> : null}
       {showContent && isReviewPage ? (
         <ReviewPublishView
-          reports={reports}
+          reports={visibleReports}
           total={data.total || reports.length}
+          page={reportPage}
+          onPageChange={changePage}
+          onReload={() => loadData(keyword)}
           activeReport={activeReport}
           selectedId={selectedId}
           setSelectedId={setSelectedId}
@@ -263,11 +310,15 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onRegenerate={regenerateReport}
           onDownload={downloadReport}
           permissions={permissions}
+          onFullscreenError={() => message.error('当前浏览器未允许全屏显示')}
         />
       ) : showContent ? (
         <ReportPreviewView
-          reports={reports}
+          reports={visibleReports}
           total={data.total || reports.length}
+          page={reportPage}
+          onPageChange={changePage}
+          onReload={() => loadData(keyword)}
           activeReport={activeReport}
           selectedId={selectedId}
           setSelectedId={setSelectedId}
@@ -277,6 +328,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onDownload={downloadReport}
           onRegenerate={regenerateReport}
           onCopyLink={copyLink}
+          onReview={() => onSubNavigate?.('report-review')}
           permissions={permissions}
         />
       ) : null}
@@ -284,22 +336,46 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   );
 }
 
-function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, canGenerate, source, windowText }: any) {
+function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, onDownload, canGenerate, source, windowText, reportType, reportStatus, reviewer, reviewerOptions, onReportTypeChange, onReportStatusChange, onReviewerChange, onReset }: any) {
   return (
     <section className={`report-filter-bar ${review ? 'is-review' : 'is-list'}`}>
       <div className="report-filter-controls">
         <label>
           {review ? '报告批次' : '报告类型'}
-          <Select disabled value="全部" options={[{ value: '全部', label: '全部（接口筛选待接入）' }]} />
+          <Select
+            value={reportType}
+            onChange={onReportTypeChange}
+            options={[
+              { value: '', label: '全部' },
+              { value: 'daily', label: '日报' },
+              { value: 'weekly', label: '周报' },
+              { value: 'operation_decision', label: '运营决策报告' }
+            ]}
+          />
         </label>
         <label>
           {review ? '报告版本' : '状态'}
-          <Select disabled value="全部" options={[{ value: '全部', label: '全部（接口筛选待接入）' }]} />
+          <Select
+            value={reportStatus}
+            onChange={onReportStatusChange}
+            options={[
+              { value: '', label: '全部' },
+              { value: 'ready', label: '待审核' },
+              { value: 'approved', label: '已通过' },
+              { value: 'rejected', label: '驳回' },
+              { value: 'published', label: '已发布' },
+              { value: 'archived', label: '已归档' }
+            ]}
+          />
         </label>
         {review && (
           <label>
             审核人
-            <Select disabled value="全部审核人" options={[{ value: '全部审核人', label: '全部审核人（接口筛选待接入）' }]} />
+            <Select
+              value={reviewer}
+              onChange={onReviewerChange}
+              options={[{ value: '', label: '全部审核人' }, ...reviewerOptions.map((value: string) => ({ value, label: value }))]}
+            />
           </label>
         )}
         <label>
@@ -330,19 +406,19 @@ function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, ca
             placeholder="搜索报告名称 / 版本号 / 批次号"
           />
         )}
-        {source ? <span className="report-source-pill">业务来源 <DataSourceTag source={source} /></span> : null}
+        {source ? <span className="report-source-pill">业务批次已加载</span> : null}
         <div className="report-filter-actions">
-          {review ? <Button onClick={() => setKeyword('')}>重置</Button> : <Button type="primary" icon={<PlusCircleOutlined />} disabled={!canGenerate} onClick={onGenerate}>生成报告</Button>}
-          {!review && <Button icon={<DownloadOutlined />}>导出</Button>}
+          {review ? <Button onClick={onReset}>重置</Button> : <Button type="primary" icon={<PlusCircleOutlined />} disabled={!canGenerate} onClick={onGenerate}>生成报告</Button>}
+          {!review && <Button icon={<DownloadOutlined />} disabled={!source} onClick={onDownload}>导出</Button>}
         </div>
       </div>
     </section>
   );
 }
 
-function ReportListCard({ title, reports, selectedId, setSelectedId, total }: any) {
+function ReportListCard({ title, reports, selectedId, setSelectedId, total, page, onPageChange, onReload }: any) {
   return (
-    <SectionCard title={title} extra={<ReloadOutlined />} className="report-list-card">
+    <SectionCard title={title} extra={<Button type="text" size="small" aria-label="刷新报告列表" title="刷新报告列表" icon={<ReloadOutlined />} onClick={onReload} />} className="report-list-card">
       <div className="report-list-head">
         <span>报告名称 / 报告 ID</span>
         <span>生成时间</span>
@@ -369,16 +445,17 @@ function ReportListCard({ title, reports, selectedId, setSelectedId, total }: an
       </div>
       <div className="report-pagination">
         <span>共 {total} 条</span>
-        <Pagination size="small" current={1} total={total} pageSize={10} showSizeChanger={false} />
+        <Pagination size="small" current={page} total={total} pageSize={20} showSizeChanger={false} onChange={onPageChange} />
       </div>
     </SectionCard>
   );
 }
 
-function ReportPreviewView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink, permissions }: any) {
+function ReportPreviewView({ reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink, onReview, permissions }: any) {
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
   return (
     <div className="report-main-grid">
-      <ReportListCard title={`报告列表（共 ${total} 份）`} reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} />
+      <ReportListCard title={`报告列表（共 ${total} 份）`} reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
       <SectionCard title="报告预览" className="report-preview-card">
         <ReportBaseInfo report={activeReport} />
         <div className="report-mini-metrics">{previewMetrics.map((item: any) => <MiniMetric key={item.label} {...item} />)}</div>
@@ -407,23 +484,25 @@ function ReportPreviewView({ reports, total, activeReport, selectedId, setSelect
         </div>
         <div className="report-summary-block">
           <strong>摘要</strong>
-          <p>{activeReport?.summaryText || '暂无报告摘要'}</p>
-          <Button type="link">展开全部</Button>
+          <p className={summaryExpanded ? 'is-expanded' : ''}>{activeReport?.summaryText || '暂无报告摘要'}</p>
+          <Button type="link" onClick={() => setSummaryExpanded((value) => !value)}>{summaryExpanded ? '收起摘要' : '展开全部'}</Button>
         </div>
       </SectionCard>
       <div className="report-side-stack">
-        <QuickActions onDownload={onDownload} onRegenerate={onRegenerate} onCopyLink={onCopyLink} permissions={permissions} />
+        <QuickActions onDownload={onDownload} onRegenerate={onRegenerate} onCopyLink={onCopyLink} onReview={onReview} permissions={permissions} />
         <PublishTimeline report={activeReport} />
       </div>
     </div>
   );
 }
 
-function ReviewPublishView({ reports, total, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviews, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions }: any) {
+function ReviewPublishView({ reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviews, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions, onFullscreenError }: any) {
+  const previewRef = useRef<HTMLElement | null>(null);
   return (
     <div className="report-review-grid">
-      <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} />
-      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />}>全屏预览</Button><Button icon={<DownloadOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview">
+      <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
+      <section ref={previewRef}>
+      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />} onClick={() => previewRef.current?.requestFullscreen?.().catch(onFullscreenError)}>全屏预览</Button><Button icon={<DownloadOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview">
         <div className="report-review-title">
           <h3>{activeReport?.title || '--'}</h3>
           <Tag color="blue">{activeReport?.reportSchemaVersion || '报告版本未提供'}</Tag>
@@ -445,12 +524,13 @@ function ReviewPublishView({ reports, total, activeReport, selectedId, setSelect
           </div>
           <div>
             <h3>事实边界</h3>
-            <p>报告仅展示绑定 run_id 的预测与报告内容。</p>
+            <p>报告内容与业务批次保持一致。</p>
             <p>当前无上一版本或同比基线，不生成对比结论。</p>
             <p>{activeReport?.isStale ? '适用窗口已结束，仅用于审计与复盘。' : '适用窗口内仍须核对最新市场事实。'}</p>
           </div>
         </div>
       </SectionCard>
+      </section>
       <div className="report-review-side">
         <SectionCard title="审核操作区" className="report-review-action-card">
           <div className="report-review-tabs"><b>待审核</b><span>待发布</span></div>
@@ -485,7 +565,7 @@ function ReportBaseInfo({ report, compact }: any) {
       <p><span>关联批次</span><strong>{report?.batch || report?.run_id || '--'}</strong></p>
       <p><span>数据时间</span><strong>{report?.data_window || '--'}</strong></p>
       <p><span>模型 / 特征</span><strong>{report?.modelVersion || '--'} / {report?.featureVersion || '--'}</strong></p>
-      <p><span>事实状态</span><strong>{report?.isStale ? '历史窗口已结束' : report?.validFrom && report?.validTo ? '报告窗口有效' : '有效期未提供，不判定为当前'}</strong></p>
+      <p><span>业务状态</span><strong>{report?.isStale ? '历史窗口已结束' : report?.validFrom && report?.validTo ? '报告窗口有效' : '有效期未提供，不判定为当前'}</strong></p>
     </div>
   );
 }
@@ -496,20 +576,20 @@ function MiniMetric({ label, value, unit }: any) {
       <span>{label}</span>
       <strong>{value}</strong>
       <em>{unit}</em>
-      <small>当前报告事实 · 无对比基线</small>
+      <small>当前报告周期 · 无对比基线</small>
     </div>
   );
 }
 
-function QuickActions({ onDownload, onRegenerate, onCopyLink, permissions }: any) {
-  const disabledTip = '当前后端接口待接入';
+function QuickActions({ onDownload, onRegenerate, onCopyLink, onReview, permissions }: any) {
+  const disabledTip = '当前业务流程不支持此操作';
   return (
     <SectionCard title="快捷操作" className="report-quick-card">
       <div className="report-action-grid">
         <Button icon={<FilePdfOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载报告（PDF）</Button>
         <Tooltip title={disabledTip}><Button icon={<FileExcelOutlined />} disabled>下载报告（Excel）</Button></Tooltip>
-        <Button icon={<EyeOutlined />}>查看详情</Button>
-        <Tooltip title={disabledTip}><Button type="primary" icon={<SendOutlined />} disabled>提交审核</Button></Tooltip>
+        <Button icon={<EyeOutlined />} onClick={() => document.querySelector('.report-preview-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>查看详情</Button>
+        <Button type="primary" icon={<SendOutlined />} onClick={onReview}>进入审核</Button>
         <Button icon={<SyncOutlined />} disabled={!permissions.canGenerate} onClick={onRegenerate}>重新生成</Button>
         <Button icon={<CopyOutlined />} onClick={onCopyLink}>复制报告链接</Button>
         <Tooltip title={disabledTip}><Button icon={<InboxOutlined />} disabled>归档报告</Button></Tooltip>

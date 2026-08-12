@@ -58,7 +58,6 @@ export function ForecastContextBar({ data }: { data: any }) {
         <span className="forecast-meta-feature">特征版本 <strong title={data?.featureVersion || undefined}>{data?.featureVersion || '--'}</strong></span>
         <span className="forecast-meta-window">适用窗口 <strong title={data?.validFrom && data?.validTo ? `${data.validFrom} 至 ${data.validTo}` : undefined}>{data?.validFrom && data?.validTo ? `${String(data.validFrom).slice(0, 16)} 至 ${String(data.validTo).slice(0, 16)}` : '--'}</strong></span>
         <span className="forecast-meta-status">批次状态 <Tag color={unavailable ? 'default' : data?.isStale ? 'warning' : 'success'}>{unavailable ? '暂不可用' : data?.isStale ? '历史窗口已结束' : '当前可用'}</Tag></span>
-        {data?.developmentMode ? <span className="forecast-meta-boundary">运行边界 <Tag color="warning">开发/演示闭环（非生产）</Tag></span> : null}
       </div>
     </div>
   );
@@ -82,7 +81,7 @@ export function ForecastMetricCards({ metrics }: { metrics: any[] }) {
               <span className={Number(item.trend) >= 0 ? 'trend-up' : 'trend-down'}>{Number(item.trend) >= 0 ? '↑' : '↓'} {Math.abs(Number(item.trend)).toFixed(2)}%</span>
             ) : null}
           </p>
-          <span className="forecast-metric-source">{item.sourceLabel || '当前预测批次'}</span>
+          <span className="forecast-metric-source">当前预测批次</span>
         </div>
       ))}
     </div>
@@ -166,7 +165,7 @@ export function StrategyInsightPanel({ data }: { data: any }) {
         ))}
       </StrategyBlock>
       <StrategyBlock type="info" title="风险提示 / 可信度说明">
-        该预测批次可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%（{data?.confidence?.source || '来源待接入'}）；
+        该预测批次可信度为 {data?.confidence?.value == null ? '--' : data.confidence.value.toFixed(1)}%；
         {data?.quality?.confidenceIntervalAvailable ? '接口已返回正式置信区间。' : data?.quality?.confidenceIntervalReason || '置信区间待接入。'}
       </StrategyBlock>
     </div>
@@ -187,7 +186,7 @@ export function ForecastDetailTable({ rows, compact = false, onExplain }: { rows
     { title: '时间', dataIndex: 'time', width: 120 },
     { title: '预测电价（元/kWh）', dataIndex: 'price', align: 'right' },
     { title: '风险等级', dataIndex: 'risk', render: (value) => <RiskTag value={value} /> },
-    { title: '接口建议', dataIndex: 'action', width: 240, ellipsis: true, render: (value, row) => <span title={`${value}；来源：${row.actionSource}`}>{value}</span> },
+    { title: '接口建议', dataIndex: 'action', width: 240, ellipsis: true, render: (value) => <span title={value}>{value}</span> },
     { title: '置信度（%）', dataIndex: 'confidence', align: 'right' },
     { title: '置信区间', dataIndex: 'interval', width: 190 },
     { title: '操作', render: (_, row) => <Button type="link" size="small" onClick={() => onExplain?.(row)}>小时解释</Button> }
@@ -210,7 +209,7 @@ function ModelStatusCard({ model, data }: { model: any; data: any }) {
   const activeVersion = data?.activeModel?.model_version || data?.activeModel?.version || '';
   const inferenceVersion = model?.model_version || data?.modelVersion || '';
   const isActive = Boolean(inferenceVersion && activeVersion && inferenceVersion === activeVersion && !data?.developmentMode);
-  const statusLabel = data?.developmentMode ? 'Candidate · 开发演示' : isActive ? 'Active' : inferenceVersion ? '本次推理模型' : '待接入';
+  const statusLabel = data?.developmentMode ? 'Candidate' : isActive ? 'Active' : inferenceVersion ? '本次推理模型' : '待接入';
   return (
     <div className="forecast-card compact-card">
       <div className="forecast-card-head"><h2>本次推理模型</h2><Tag color={data?.developmentMode ? 'warning' : inferenceVersion ? 'success' : 'default'}>{statusLabel}</Tag></div>

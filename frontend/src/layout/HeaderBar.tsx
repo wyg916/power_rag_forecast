@@ -18,13 +18,13 @@ import { useAuth } from '../context/AuthContext';
 export function HeaderBar() {
   const { openLogin, user, logout } = useAuth();
   const [context, setContext] = useState<any>(null);
-  const displayName = user?.display_name || user?.username || '超级管理员';
-  const role = user?.role || 'dev';
-  const projectName = context?.project?.name || '华东虚拟电厂示范项目';
-  const region = context?.region || '浙江省';
+  const displayName = user?.display_name || user?.username || '当前用户';
+  const role = user?.role || '未登录';
+  const projectName = context?.project?.name || '--';
+  const region = context?.region || '--';
   const dataTime = context?.data_time || context?.generated_at || '--';
-  const modelVersion = context?.model?.version || 'v3.2.1';
-  const notificationCount = Number(context?.notification_count ?? 12);
+  const modelVersion = context?.model?.version || '--';
+  const notificationCount = Number(context?.notification_count ?? 0);
 
   useEffect(() => {
     let active = true;
@@ -46,7 +46,7 @@ export function HeaderBar() {
       label: (
         <div>
           <strong>{displayName}</strong>
-          <div className="user-menu-subtitle">{user?.username || 'dev_header_fallback'} · {role}</div>
+          <div className="user-menu-subtitle">{user?.username || '未登录'} · {role}</div>
         </div>
       ),
       disabled: true
@@ -68,10 +68,9 @@ export function HeaderBar() {
         <Select
           className="project-select"
           value={projectName}
-          options={[
-            { value: projectName, label: `项目：${projectName}` },
-            { value: '浙江新能源聚合项目', label: '项目：浙江新能源聚合项目' }
-          ]}
+          disabled
+          title="当前会话项目"
+          options={[{ value: projectName, label: `项目：${projectName}` }]}
         />
         <span className="header-meta header-meta-card">
           <ClockCircleOutlined />
@@ -81,7 +80,6 @@ export function HeaderBar() {
           <GlobalOutlined />
           当前地区：
           <strong>{region}</strong>
-          <DownOutlined className="header-down" />
         </span>
         <span className="header-meta header-meta-card header-model-meta">
           模型版本：
@@ -92,14 +90,14 @@ export function HeaderBar() {
       <Space size={10} className="header-actions">
         <Tooltip title="通知中心">
           <Badge count={notificationCount} size="small" offset={[-2, 4]}>
-            <Button type="text" shape="circle" icon={<BellOutlined />} />
+            <Button type="text" shape="circle" aria-label="通知中心" icon={<BellOutlined />} onClick={() => { window.location.hash = '/task/task-alert'; }} />
           </Badge>
         </Tooltip>
         <Tooltip title="帮助中心">
-          <Button type="text" shape="circle" icon={<QuestionCircleOutlined />} onClick={() => { window.location.hash = '/knowledge/knowledge-search'; }} />
+          <Button type="text" shape="circle" aria-label="帮助中心" icon={<QuestionCircleOutlined />} onClick={() => { window.location.hash = '/assistant/assistant-faq'; }} />
         </Tooltip>
         <Tooltip title="刷新当前视图">
-          <Button type="text" shape="circle" icon={<SyncOutlined />} onClick={() => window.location.reload()} />
+          <Button type="text" shape="circle" aria-label="刷新当前视图" icon={<SyncOutlined />} onClick={() => window.location.reload()} />
         </Tooltip>
         <Dropdown trigger={['click']} menu={{ items: menuItems }}>
           <Button type="text" className="user-area">

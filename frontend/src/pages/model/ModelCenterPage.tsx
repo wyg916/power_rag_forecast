@@ -14,7 +14,7 @@ import {
   SafetyCertificateOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
-import { Button, Descriptions, Empty, Input, Modal, Select, Space, Table, Tag, message } from 'antd';
+import { App, Button, Descriptions, Empty, Input, Modal, Select, Space, Table, Tag } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
@@ -123,6 +123,7 @@ function formatTaskLogPayload(payload: any) {
 }
 
 export function ModelCenterPage(_props: PageProps) {
+  const { message } = App.useApp();
   const [data, setData] = useState<ModelCenterOverview>(emptyOverview);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -328,7 +329,7 @@ export function ModelCenterPage(_props: PageProps) {
     { title: '时间', dataIndex: 'created_at', width: 150, render: shortDateTime },
     { title: '动作', dataIndex: 'action', width: 130 },
     { title: '目标版本', dataIndex: 'target_version', width: 130, render: (value: unknown) => value || '--' },
-    { title: '来源版本', dataIndex: 'source_version', width: 130, render: (value: unknown) => value || '--' },
+    { title: '基线版本', dataIndex: 'source_version', width: 130, render: (value: unknown) => value || '--' },
     { title: '操作人', dataIndex: 'operator', width: 100, render: (value: unknown) => value || '--' },
     { title: '状态', dataIndex: 'status', width: 90, render: (value: unknown) => <Tag color={value === 'success' ? 'success' : 'processing'}>{String(value || '--')}</Tag> },
     { title: '原因', dataIndex: 'reason', ellipsis: true, render: (value: unknown) => value || '--' }

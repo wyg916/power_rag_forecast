@@ -100,7 +100,7 @@ function buildSeries(forecast24h: any, latest: any) {
       upper: intervalIsDerived ? null : upper,
       intervalAvailable: !intervalIsDerived && lower != null && upper != null,
       intervalReason: intervalIsDerived
-        ? '后端标记为派生区间，不作为正式置信区间展示'
+        ? '当前区间未通过正式置信区间校验'
         : lower == null || upper == null ? '接口未返回正式置信区间' : '',
       load: toNumber(row.load ?? row.forecast_load),
       riskProbability: toNumber(row.risk_probability ?? row.spike_risk_prob),
@@ -198,7 +198,7 @@ function buildComparison(series: any[], previousForecast: any, marketHistory: an
     avgChange: changeRates.length ? changeRates.reduce((sum, item) => sum + item, 0) / changeRates.length : null,
     previousAvailable: previousRows.length === 24,
     previousRunId: previousForecast?.run_id || '',
-    previousUnavailableReason: previousRows.length === 24 ? '' : '当前只有一个成功预测批次，无法形成真实上一批次对比。',
+    previousUnavailableReason: previousRows.length === 24 ? '' : '当前只有一个成功预测批次，无法形成上一批次对比。',
     historyRecordCount: (marketHistory?.records || []).length,
     source: marketHistory?.available ? 'api_market_history' : 'api_market_history_empty',
     derivedSource: previousRows.length === 24 ? 'api_forecast_previous_success_run' : 'api_forecast_previous_run_unavailable'
