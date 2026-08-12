@@ -16,6 +16,7 @@ def test_web_batch_is_read_only_on_startup() -> None:
     assert "set \"PYTHON_EXE=python\"" not in source
     assert "rev-parse --git-common-dir" in source
     assert "mklink /J" in source
+    assert "RAG_READER_CONFIG is validated by web_platform_launcher.py" in source
 
     for legacy_name in ("run_web_backend.bat", "run_web_frontend.bat"):
         legacy_source = (ROOT / legacy_name).read_text(encoding="utf-8")
@@ -103,6 +104,32 @@ def test_missing_frontend_dependencies_fail_without_install(
     assert launcher.ensure_frontend_deps() is False
     output = capsys.readouterr().out
     assert "automatic network installation is disabled" in output
+
+
+def test_web_ports_are_configurable_without_changing_defaults() -> None:
+    source = (ROOT / "scripts" / "web_platform_launcher.py").read_text(
+        encoding="utf-8"
+    )
+    project_batch = (ROOT / "run_project.bat").read_text(encoding="utf-8")
+
+    assert '_configured_port("WEB_BACKEND_PORT", 8000)' in source
+    assert '_configured_port("WEB_FRONTEND_PORT", 5173)' in source
+    assert 'f"http://127.0.0.1:{BACKEND_PORT}"' in source
+    assert 'if not defined WEB_BACKEND_PORT set "WEB_BACKEND_PORT=8000"' in project_batch
+    assert 'if not defined WEB_FRONTEND_PORT set "WEB_FRONTEND_PORT=5173"' in project_batch
+    assert "timeout=60" in source
+
+
+def test_rag_reader_config_is_discovered_once_and_fail_closed() -> None:
+    source = (ROOT / "scripts" / "web_platform_launcher.py").read_text(
+        encoding="utf-8"
+    )
+    project_batch = (ROOT / "run_project.bat").read_text(encoding="utf-8")
+
+    assert "resolve_rag_reader_config(args.rag_reader_config)" in source
+    assert 'shared_root.parent.glob(f"{shared_root.name}_*")' in source
+    assert "discovery must resolve exactly one file" in source
+    assert '--rag-reader-config "%RAG_READER_CONFIG%"' not in project_batch
 
 
 def test_runtime_config_layers_keep_least_privilege_identity_first(

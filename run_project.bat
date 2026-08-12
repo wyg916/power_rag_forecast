@@ -7,6 +7,8 @@ pushd "%~dp0"
 set "PYTHONUTF8=1"
 set "RC_NO_PAUSE=0"
 if "%NO_PAUSE%"=="1" set "RC_NO_PAUSE=1"
+if not defined WEB_BACKEND_PORT set "WEB_BACKEND_PORT=8000"
+if not defined WEB_FRONTEND_PORT set "WEB_FRONTEND_PORT=5173"
 set "TEMP=%~dp0.codex_tmp\rc_runtime_tmp"
 set "TMP=%TEMP%"
 if not exist "%TEMP%" mkdir "%TEMP%"
@@ -69,11 +71,8 @@ if not defined QDRANT_RUNTIME_CONFIG (
     if "%RC_NO_PAUSE%"=="0" pause
     goto end_error
 )
-if not defined RAG_READER_CONFIG if exist "%SHARED_PROJECT_ROOT%_运行资产\rag-r1\performance\r3-qdrant-readonly.env" set "RAG_READER_CONFIG=%SHARED_PROJECT_ROOT%_运行资产\rag-r1\performance\r3-qdrant-readonly.env"
-if not defined RAG_READER_CONFIG (
-    echo [ERROR] Approved read-only RAG runtime config was not found.
-    goto end_error
-)
+rem RAG_READER_CONFIG is validated by web_platform_launcher.py; keep batch parsing
+rem independent from non-ASCII paths and fail closed in the Python preflight.
 
 if /I "%~1"=="menu" goto menu
 goto rcstart
@@ -90,7 +89,7 @@ echo [INFO] RC SHA: %RC_SHA%
 echo [INFO] Logs: %~dp0output\runtime_logs
 echo.
 
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --rag-reader-config "%RAG_READER_CONFIG%" --preflight-only
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --preflight-only
 if errorlevel 1 goto rc_failed
 
 if not exist "%~dp0frontend\node_modules" (
@@ -115,7 +114,7 @@ if errorlevel 1 goto rc_failed
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_qdrant_preflight.py" --env-file "%QDRANT_RUNTIME_CONFIG%" --require-assets --require-runtime
 if errorlevel 1 goto rc_failed
 
-docker compose --env-file "%QDRANT_RUNTIME_CONFIG%" -f "%~dp0deploy\rag-r1\docker-compose.qdrant.yml" --profile rag-r1-qdrant up -d qdrant
+docker compose --env-file "%QDRANT_RUNTIME_CONFIG%" -f "%~dp0deploy\rag-r1\docker-compose.qdrant.yml" --profile rag-r1-qdrant up -d qdrant 2>&1
 if errorlevel 1 goto rc_failed
 
 set /a QDRANT_PROBE_ATTEMPT=0
@@ -147,8 +146,8 @@ if errorlevel 1 goto rc_failed
 
 echo.
 echo [DONE] Unified RC base services are healthy.
-echo [INFO] Frontend: http://127.0.0.1:5173
-echo [INFO] Backend health: http://127.0.0.1:8000/api/health
+echo [INFO] Frontend: http://127.0.0.1:%WEB_FRONTEND_PORT%
+echo [INFO] Backend health: http://127.0.0.1:%WEB_BACKEND_PORT%/api/health
 echo [INFO] Qdrant: https://127.0.0.1:6333 ^(TLS + API key^)
 echo [INFO] Use "run_project.bat menu" for maintenance actions.
 if "%RC_NO_PAUSE%"=="0" pause

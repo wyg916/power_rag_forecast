@@ -16,7 +16,7 @@ from .catalog import CATALOG_VERSION
 from .compiler import QueryCompileError, compile_analysis_plan
 from .contracts import AnalysisPlan
 from .memory import apply_remembered_context, recall_analysis_context, remember_analysis_context
-from .planner import AnalysisPlanGenerationError, PlanLLM, generate_analysis_plan
+from .planner import AnalysisPlanGenerationError, PlanLLM, generate_analysis_plan, repair_analysis_plan
 from .result import QueryExecutionError, build_chart_spec, build_grounded_narrative, execute_result_dataset
 from .validator import PlanValidation, validate_analysis_plan
 
@@ -279,6 +279,19 @@ def execute_chatbi_turn(
                 requested_provider=requested_provider,
                 router=planner_router,
             )
+            initial_validation = validate_analysis_plan(draft, permissions=permissions)
+            if not initial_validation.valid and not planner_meta.get("repair_attempted"):
+                draft, planner_meta = repair_analysis_plan(
+                    question,
+                    remembered,
+                    draft,
+                    [
+                        {"code": item.code, "field": item.field, "message": item.message}
+                        for item in initial_validation.issues
+                    ],
+                    requested_provider=requested_provider,
+                    router=planner_router,
+                )
         except AnalysisPlanGenerationError as exc:
             raise ChatBIServiceError("analysis_plan_generation_unavailable", str(exc), status_code=503) from exc
     else:

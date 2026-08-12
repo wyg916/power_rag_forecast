@@ -4,7 +4,7 @@ import json
 
 from backend.app.ai_assistant.runtime_router import AssistantRoute, route_assistant_request
 from backend.app.ai_assistant.templates.fallback_answers import answer_high_price_reason
-from backend.app.chatbi.planner import generate_analysis_plan, parse_analysis_plan
+from backend.app.chatbi.planner import generate_analysis_plan, parse_analysis_plan, repair_analysis_plan
 from backend.app.services.rag_qdrant_transport import _preproduction_candidate_is_accepted
 
 
@@ -58,6 +58,80 @@ def test_planner_performs_one_targeted_repair() -> None:
     assert plan.metrics == ["avg_temperature"]
     assert metadata["repair_attempted"] is True
     assert metadata["finish_reason"] == "stop"
+
+
+def test_planner_reserves_reasoning_budget_for_structured_output() -> None:
+    class BudgetRouter:
+        def __init__(self) -> None:
+            self.max_tokens: list[int] = []
+
+        def generate_answer(self, messages, **kwargs):
+            self.max_tokens.append(kwargs["max_tokens"])
+            return '{"datasets":[],"metrics":[],"dimensions":[],"filters":[],"group_by":[],"order_by":[],"limit":100,"joins":[],"chart_intent":"table","analysis_mode":"aggregate","clarification_required":true,"clarification_question":"请补充指标"}', {"provider": "deepseek", "model": "deepseek-v4-flash"}
+
+    router = BudgetRouter()
+    plan, _ = generate_analysis_plan("分析数据", {}, requested_provider="deepseek", router=router)
+    assert plan.clarification_required is True
+    assert router.max_tokens == [6000]
+
+
+def test_deterministic_validation_repair_is_single_call() -> None:
+    class RepairRouter:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def generate_answer(self, messages, **kwargs):
+            self.calls += 1
+            assert '"metric_required"' in messages[-1]["content"]
+            return json.dumps({
+                "datasets": ["weather_observations"],
+                "metrics": ["avg_temperature"],
+                "dimensions": ["weather_observed_at"],
+                "order_by": [{"field": "weather_observed_at", "direction": "desc"}],
+                "limit": 1,
+                "chart_intent": "table",
+                "analysis_mode": "aggregate",
+            }), {"provider": "deepseek", "model": "deepseek-v4-flash", "finish_reason": "stop"}
+
+    invalid = parse_analysis_plan(json.dumps({
+        "datasets": ["weather_observations"],
+        "metrics": [],
+        "dimensions": ["weather_observed_at"],
+    }))
+    router = RepairRouter()
+    plan, metadata = repair_analysis_plan(
+        "数据库最新的天气数据是哪天？",
+        {},
+        invalid,
+        [{"code": "metric_required", "field": "metrics", "message": "指标必填"}],
+        requested_provider="deepseek",
+        router=router,
+    )
+    assert router.calls == 1
+    assert plan.metrics == ["avg_temperature"]
+    assert metadata["repair_attempted"] is True
+
+
+def test_latest_weather_plan_is_normalized_to_registered_contract() -> None:
+    class LatestWeatherRouter:
+        def generate_answer(self, messages, **kwargs):
+            return json.dumps({
+                "datasets": ["weather_observations"],
+                "metrics": [],
+                "dimensions": ["weather_observed_at"],
+                "order_by": [{"field": "weather_observed_at", "direction": "desc"}],
+                "limit": 1,
+                "chart_intent": "table",
+                "analysis_mode": "ranking",
+            }), {"provider": "deepseek", "model": "deepseek-v4-flash", "finish_reason": "stop"}
+
+    plan, metadata = generate_analysis_plan(
+        "数据库最新的天气数据是哪天？", {}, requested_provider="deepseek", router=LatestWeatherRouter()
+    )
+    assert plan.metrics == ["avg_temperature"]
+    assert plan.group_by == ["weather_observed_at"]
+    assert plan.analysis_mode == "aggregate"
+    assert metadata["latest_fact_normalized"] is True
 
 
 def test_high_price_empty_fact_is_explicit_and_contains_no_none() -> None:

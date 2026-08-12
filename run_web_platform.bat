@@ -47,12 +47,8 @@ if not exist "%RAG_PREPRODUCTION_CONFIG%" (
     popd
     exit /b 2
 )
-if not defined RAG_READER_CONFIG if exist "%SHARED_PROJECT_ROOT%_运行资产\rag-r1\performance\r3-qdrant-readonly.env" set "RAG_READER_CONFIG=%SHARED_PROJECT_ROOT%_运行资产\rag-r1\performance\r3-qdrant-readonly.env"
-if not defined RAG_READER_CONFIG (
-    echo [ERROR] Approved read-only RAG runtime config was not found.
-    popd
-    exit /b 2
-)
+rem RAG_READER_CONFIG is validated by web_platform_launcher.py; keep batch parsing
+rem independent from non-ASCII paths and fail closed in the Python preflight.
 if not exist "%~dp0frontend\node_modules" (
     if not exist "%SHARED_PROJECT_ROOT%\frontend\node_modules" (
         echo [ERROR] Approved frontend dependencies were not found.
@@ -70,15 +66,17 @@ if not exist "%~dp0frontend\node_modules" (
 )
 
 echo [INFO] Unified RC Web launcher: reuse healthy services and start missing services.
-echo [INFO] Frontend: http://127.0.0.1:5173
-echo [INFO] Backend docs: http://127.0.0.1:8000/docs
+if not defined WEB_BACKEND_PORT set "WEB_BACKEND_PORT=8000"
+if not defined WEB_FRONTEND_PORT set "WEB_FRONTEND_PORT=5173"
+echo [INFO] Frontend: http://127.0.0.1:%WEB_FRONTEND_PORT%
+echo [INFO] Backend docs: http://127.0.0.1:%WEB_BACKEND_PORT%/docs
 echo [INFO] Database writes are disabled during launcher startup; data preparation is explicit.
 echo [INFO] Ollama warmup is skipped by default. Set START_OLLAMA=1 only when memory is enough.
 echo.
 
 set "WEB_LAUNCHER_BROWSER_ARG="
 if "%NO_BROWSER%"=="1" set "WEB_LAUNCHER_BROWSER_ARG=--no-browser"
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --rag-reader-config "%RAG_READER_CONFIG%" --skip-sync %WEB_LAUNCHER_BROWSER_ARG%
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --skip-sync %WEB_LAUNCHER_BROWSER_ARG%
 set "EXIT_CODE=%ERRORLEVEL%"
 
 if not "%EXIT_CODE%"=="0" (

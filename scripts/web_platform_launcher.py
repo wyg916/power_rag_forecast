@@ -18,8 +18,23 @@ ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = ROOT / "frontend"
 FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 LOG_DIR = ROOT / "output" / "runtime_logs"
-BACKEND_URL = "http://127.0.0.1:8000/api/health"
-FRONTEND_URL = "http://127.0.0.1:5173"
+
+
+def _configured_port(name: str, default: int) -> int:
+    raw_value = os.environ.get(name, str(default)).strip()
+    try:
+        port = int(raw_value)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be an integer port") from exc
+    if not 1 <= port <= 65535:
+        raise RuntimeError(f"{name} must be between 1 and 65535")
+    return port
+
+
+BACKEND_PORT = _configured_port("WEB_BACKEND_PORT", 8000)
+FRONTEND_PORT = _configured_port("WEB_FRONTEND_PORT", 5173)
+BACKEND_URL = f"http://127.0.0.1:{BACKEND_PORT}/api/health"
+FRONTEND_URL = f"http://127.0.0.1:{FRONTEND_PORT}"
 
 
 def load_env_file(env_path: Path, *, required: bool = False) -> bool:
@@ -47,7 +62,7 @@ def load_dotenv(runtime_configs: Sequence[Path] | None = None) -> None:
 
 def load_rag_reader_env(env_path: Path | None) -> None:
     if env_path is None:
-        return
+        raise RuntimeError("Approved read-only RAG runtime config was not found")
     if not env_path.exists():
         raise RuntimeError(f"RAG reader config does not exist: {env_path}")
     values: dict[str, str] = {}
@@ -74,6 +89,34 @@ def load_rag_reader_env(env_path: Path | None) -> None:
     }
     for key, value in mappings.items():
         os.environ.setdefault(key, value)
+
+
+def resolve_rag_reader_config(explicit: Path | None) -> Path:
+    if explicit is not None:
+        return explicit.resolve()
+    configured = os.environ.get("RAG_READER_CONFIG", "").strip()
+    if configured:
+        return Path(configured).resolve()
+    try:
+        common_dir = subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "--git-common-dir"],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        ).strip()
+        shared_root = (ROOT / common_dir).resolve().parent
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError("Git common worktree could not be resolved") from exc
+    matches = sorted(
+        candidate
+        for sibling in shared_root.parent.glob(f"{shared_root.name}_*")
+        if (candidate := sibling / "rag-r1" / "performance" / "r3-qdrant-readonly.env").is_file()
+    )
+    if len(matches) != 1:
+        raise RuntimeError(
+            "Approved read-only RAG runtime config discovery must resolve exactly one file"
+        )
+    return matches[0]
 
 
 def ensure_database_url() -> None:
@@ -180,7 +223,7 @@ def alembic_heads(py: str) -> tuple[bool, str]:
             encoding="utf-8",
             errors="replace",
             capture_output=True,
-            timeout=30,
+            timeout=60,
             check=False,
         )
     except (OSError, subprocess.SubprocessError) as exc:
@@ -285,14 +328,32 @@ def sync_core_data(py: str) -> bool:
 
 def start_backend(py: str, sync: bool) -> bool:
     if http_ok(BACKEND_URL):
-        log("[INFO] Backend is already healthy on port 8000.")
+        log(f"[INFO] Backend is already healthy on port {BACKEND_PORT}.")
         return True
-    if port_open(8000):
-        log("[WARN] Port 8000 is open but health check failed. Check output/runtime_logs/web_backend.log.")
+    if port_open(BACKEND_PORT):
+        log(
+            f"[WARN] Port {BACKEND_PORT} is open but health check failed. "
+            "Check output/runtime_logs/web_backend.log."
+        )
         return False
     if sync and not sync_core_data(py):
         return False
-    popen_detached([py, "-X", "utf8", "-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8000"], ROOT, "web_backend.log")
+    popen_detached(
+        [
+            py,
+            "-X",
+            "utf8",
+            "-m",
+            "uvicorn",
+            "backend.app.main:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(BACKEND_PORT),
+        ],
+        ROOT,
+        "web_backend.log",
+    )
     return wait_http(BACKEND_URL, "Backend", 90)
 
 
@@ -323,7 +384,7 @@ def start_static_frontend(py: str) -> bool:
             "--host",
             "127.0.0.1",
             "--port",
-            "5173",
+            str(FRONTEND_PORT),
             "--directory",
             str(FRONTEND_DIST_DIR),
         ],
@@ -335,17 +396,37 @@ def start_static_frontend(py: str) -> bool:
 
 def start_frontend(py: str) -> bool:
     if http_ok(FRONTEND_URL):
-        log("[INFO] Frontend is already healthy on port 5173.")
+        log(f"[INFO] Frontend is already healthy on port {FRONTEND_PORT}.")
         return True
-    if port_open(5173):
-        log("[WARN] Port 5173 is open but frontend HTTP check failed. Check output/runtime_logs/web_frontend.log.")
+    if port_open(FRONTEND_PORT):
+        log(
+            f"[WARN] Port {FRONTEND_PORT} is open but frontend HTTP check failed. "
+            "Check output/runtime_logs/web_frontend.log."
+        )
         return False
     npm = npm_executable()
     if not npm:
         return start_static_frontend(py)
     if not ensure_frontend_deps():
         return False
-    popen_detached([npm, "run", "dev", "--", "--force"], FRONTEND_DIR, "web_frontend.log")
+    os.environ.setdefault(
+        "VITE_API_PROXY_TARGET", f"http://127.0.0.1:{BACKEND_PORT}"
+    )
+    popen_detached(
+        [
+            npm,
+            "run",
+            "dev",
+            "--",
+            "--force",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(FRONTEND_PORT),
+        ],
+        FRONTEND_DIR,
+        "web_frontend.log",
+    )
     return wait_http(FRONTEND_URL, "Frontend", 90)
 
 
@@ -387,7 +468,7 @@ def main() -> int:
             if args.runtime_config
             else None
         )
-        load_rag_reader_env(args.rag_reader_config.resolve() if args.rag_reader_config else None)
+        load_rag_reader_env(resolve_rag_reader_config(args.rag_reader_config))
     except (OSError, RuntimeError) as exc:
         log(f"[ERROR] Runtime configuration failed: {exc}")
         return 2

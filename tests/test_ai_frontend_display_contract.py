@@ -69,3 +69,11 @@ def test_assistant_page_wires_real_interactions() -> None:
     assert "exportConversation('docx')" in content
     assert "exportConversation('pdf')" in content
     assert "assistant-context-tags" in content
+
+
+def test_assistant_messages_use_the_app_context_api() -> None:
+    content = ASSISTANT_PAGE.read_text(encoding="utf-8")
+
+    assert "App.useApp()" in content
+    assert "Tag, message } from 'antd'" not in content
+    assert "rowKey={(_: any, index?: number)" not in content

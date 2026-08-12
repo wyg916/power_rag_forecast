@@ -19,7 +19,7 @@ import {
   SettingOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
-import { Alert, Button, Drawer, Empty, Input, List, Modal, Select, Space, Switch, Table, Tag, message } from 'antd';
+import { Alert, App, Button, Drawer, Empty, Input, List, Modal, Select, Space, Switch, Table, Tag } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import { SectionCard } from '../../components/cards/SectionCard';
@@ -390,7 +390,7 @@ function ChatBIArtifacts({ payload }: { payload: any }) {
         className="assistant-chatbi-table"
         size="small"
         pagination={dataset.row_count > 12 ? { pageSize: 12, size: 'small' } : false}
-        rowKey={(_: any, index?: number) => String(index ?? 0)}
+        rowKey={(row: any) => JSON.stringify(row)}
         dataSource={dataset.rows || []}
         columns={columns}
         scroll={{ x: true }}
@@ -568,6 +568,7 @@ function buildKnowledgeItems(message?: AssistantMessage) {
 }
 
 export function AssistantPage({ onSubNavigate }: PageProps) {
+  const { message } = App.useApp();
   const { hasPermission, user } = useAuth();
   const [assistantData, setAssistantData] = useState<any>({
     conversations: [],

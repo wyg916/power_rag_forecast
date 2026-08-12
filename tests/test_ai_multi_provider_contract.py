@@ -10,6 +10,7 @@ from backend.app.ai_assistant.llm_providers.openai_compatible import (
     ProviderRequestError,
 )
 from backend.app.ai_assistant.llm_router import LLMRouter
+from backend.app.ai_assistant.llm_providers import DeepSeekProvider, KimiProvider, MiMoProvider
 
 
 class _Response:
@@ -116,3 +117,12 @@ def test_auto_does_not_fallback_on_auth_or_contract_failure(monkeypatch):
     monkeypatch.setattr(router, "_configured", lambda name: True)
     with pytest.raises(RuntimeError, match="http_401"):
         router.generate_answer([], task_type="complex_analysis", requested_provider="auto")
+
+
+def test_product_provider_model_ids_are_not_overridden_by_legacy_env(monkeypatch):
+    monkeypatch.setenv("KIMI_MODEL", "legacy-kimi")
+    monkeypatch.setenv("MIMO_MODEL", "legacy-mimo")
+    monkeypatch.setenv("DEEPSEEK_MODEL", "deepseek-chat")
+    assert KimiProvider().default_model == "kimi-k2.6"
+    assert MiMoProvider().default_model == "mimo-v2.5"
+    assert DeepSeekProvider().default_model == "deepseek-v4-flash"

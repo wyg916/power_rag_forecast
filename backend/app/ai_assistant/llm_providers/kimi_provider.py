@@ -16,6 +16,6 @@ class KimiProvider(OpenAICompatibleProvider):
         super().__init__(
             api_key=os.environ.get("KIMI_API_KEY", ""),
             base_url=os.environ.get("KIMI_BASE_URL", "https://api.moonshot.cn/v1"),
-            model=os.environ.get("KIMI_MODEL", "kimi-k2.6"),
+            model="kimi-k2.6",
             timeout_seconds=int(os.environ.get("KIMI_TIMEOUT", os.environ.get("LLM_TIMEOUT", "120"))),
         )

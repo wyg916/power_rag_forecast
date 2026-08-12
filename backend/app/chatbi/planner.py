@@ -160,6 +160,34 @@ def parse_analysis_plan(raw: Any) -> AnalysisPlan:
         raise AnalysisPlanGenerationError("LLM 返回的 AnalysisPlan 不符合受控契约。") from exc
 
 
+def _normalize_latest_fact_plan(question: str, plan: AnalysisPlan) -> tuple[AnalysisPlan, bool]:
+    """Map latest-timestamp facts onto the registered aggregate contract."""
+    normalized_question = re.sub(r"\s+", "", question)
+    if not any(token in normalized_question for token in ("最新", "最近")):
+        return plan, False
+    mappings = (
+        (("天气", "气象"), "weather_observations", "avg_temperature", "weather_observed_at"),
+        (("负荷",), "load_history", "avg_actual_load", "load_observed_at"),
+        (("电价", "价格"), "market_price_history", "avg_day_ahead_price", "market_observed_at"),
+    )
+    for keywords, dataset, metric, dimension in mappings:
+        if any(keyword in normalized_question for keyword in keywords):
+            return AnalysisPlan.model_validate({
+                **plan.model_dump(mode="json"),
+                "datasets": [dataset],
+                "metrics": [metric],
+                "dimensions": [dimension],
+                "group_by": [dimension],
+                "order_by": [{"field": dimension, "direction": "desc"}],
+                "limit": 1,
+                "chart_intent": "table",
+                "analysis_mode": "aggregate",
+                "clarification_required": False,
+                "clarification_question": None,
+            }), True
+    return plan, False
+
+
 def generate_analysis_plan(
     question: str,
     remembered: dict[str, Any] | None,
@@ -174,7 +202,7 @@ def generate_analysis_plan(
             task_type="simple_data_answer",
             requested_provider=requested_provider,
             temperature=0.0,
-            max_tokens=900,
+            max_tokens=6000,
         )
         output = _planner_output(raw, metadata)
         try:
@@ -196,12 +224,13 @@ def generate_analysis_plan(
                 task_type="simple_data_answer",
                 requested_provider=requested_provider,
                 temperature=0.0,
-                max_tokens=900,
+                max_tokens=6000,
             )
             output = _planner_output(repaired_raw, repaired_metadata)
             plan = parse_analysis_plan(output.raw_text)
             metadata = repaired_metadata
             repaired = True
+        plan, latest_fact_normalized = _normalize_latest_fact_plan(question, plan)
         return plan, {
             "source": "llm_analysis_plan",
             "provider": output.provider or metadata.get("provider"),
@@ -209,6 +238,53 @@ def generate_analysis_plan(
             "fallback": bool(metadata.get("fallback")),
             "finish_reason": output.finish_reason,
             "repair_attempted": repaired,
+            "latest_fact_normalized": latest_fact_normalized,
+        }
+    except AnalysisPlanGenerationError:
+        raise
+    except Exception as exc:
+        raise AnalysisPlanGenerationError("AnalysisPlan 生成服务当前不可用。") from exc
+
+
+def repair_analysis_plan(
+    question: str,
+    remembered: dict[str, Any] | None,
+    invalid_plan: AnalysisPlan,
+    validation_errors: list[dict[str, str]],
+    *,
+    requested_provider: str = "auto",
+    router: PlanLLM | None = None,
+) -> tuple[AnalysisPlan, dict[str, Any]]:
+    """Perform the single repair allowed after deterministic validation."""
+    active_router = router or LLMRouter()
+    messages = build_plan_messages(question, remembered)
+    messages.append({
+        "role": "user",
+        "content": json.dumps({
+            "repair": True,
+            "validation_errors": validation_errors,
+            "invalid_output": invalid_plan.model_dump(mode="json"),
+            "legal_schema": AnalysisPlan.model_json_schema(),
+        }, ensure_ascii=False, separators=(",", ":")),
+    })
+    try:
+        raw, metadata = active_router.generate_answer(
+            messages,
+            task_type="simple_data_answer",
+            requested_provider=requested_provider,
+            temperature=0.0,
+            max_tokens=6000,
+        )
+        output = _planner_output(raw, metadata)
+        plan = parse_analysis_plan(output.raw_text)
+        return plan, {
+            "source": "llm_analysis_plan",
+            "provider": output.provider or metadata.get("provider"),
+            "model": output.model or metadata.get("model"),
+            "fallback": bool(metadata.get("fallback")),
+            "finish_reason": output.finish_reason,
+            "repair_attempted": True,
+            "repair_reason": "deterministic_validation",
         }
     except AnalysisPlanGenerationError:
         raise

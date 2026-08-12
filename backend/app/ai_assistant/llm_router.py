@@ -54,7 +54,7 @@ class LLMRouter:
         try:
             provider = self._get_provider(name)
             if name == "ollama":
-                return True
+                return bool(provider.health().get("available"))
             return bool(provider.available)
         except Exception:
             return False

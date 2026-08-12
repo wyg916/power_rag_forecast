@@ -74,6 +74,25 @@ def test_llm_router_prefers_ollama_for_daily_chat_in_auto_mode(monkeypatch):
     assert status["provider"] == "ollama"
 
 
+def test_llm_router_skips_unhealthy_ollama_for_chatbi_plans(monkeypatch):
+    class UnhealthyOllamaProvider(FakeOllamaProvider):
+        def health(self):
+            return {"available": False, "provider": "ollama", "model": None}
+
+    monkeypatch.setenv("LLM_ROUTER_MODE", "auto")
+    monkeypatch.setenv("LLM_PROVIDER", "deepseek")
+    monkeypatch.setattr("backend.app.ai_assistant.llm_router.DeepSeekProvider", FakeDeepSeekProvider)
+    monkeypatch.setattr("backend.app.ai_assistant.llm_router.OllamaProvider", UnhealthyOllamaProvider)
+
+    content, status = LLMRouter().generate_answer(
+        [{"role": "user", "content": "查询数据库最新天气日期"}],
+        task_type="simple_data_answer",
+    )
+
+    assert content == "deepseek answer"
+    assert status["provider"] == "deepseek"
+
+
 def test_llm_router_does_not_fall_back_for_explicit_provider(monkeypatch):
     monkeypatch.setenv("LLM_ROUTER_MODE", "auto")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
