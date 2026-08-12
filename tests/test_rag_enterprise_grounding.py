@@ -7,6 +7,7 @@ import pytest
 
 from backend.app.services.rag_grounding_service import (
     CITATION_FIELDS,
+    citation_from_retrieval_item,
     validate_candidate_citation,
     validate_candidate_citations,
     validate_claim_bindings,
@@ -51,6 +52,31 @@ def test_complete_citation_recomputes_quote_hash_and_stable_id():
     assert batch.citations[0]["quote"] == item["parent_content"][locator["char_start"]:locator["char_end"]]
     assert batch.citations[0]["citation_id"].startswith("cit-")
     assert batch == validate_candidate_citations([_item()])
+
+
+def test_repository_retrieval_item_gets_the_same_immutable_contract():
+    item = {
+        "doc_id": "doc-pg-1",
+        "chunk_id": "chunk-pg-1",
+        "title": "业务规则",
+        "section_title": "风险边界",
+        "content": "高价风险需要结合负荷、新能源出力与可调资源共同判断。",
+        "metadata": {"document_version": "v3"},
+        "final_score": 0.88,
+    }
+
+    citation, reason = citation_from_retrieval_item(item)
+
+    assert reason == ""
+    assert citation is not None
+    assert set(CITATION_FIELDS) <= set(citation)
+    assert citation["citation_id"].startswith("cit-")
+    assert citation["version_id"] == "v3"
+    grounded = validate_claim_bindings(
+        [{"claim_id": "claim-pg-1", "text": "存在高价风险边界。", "citation_ids": [citation["citation_id"]]}],
+        [citation],
+    )
+    assert grounded.available is True
 
 
 def test_chunk_hash_and_quote_hash_are_independently_verified():

@@ -77,7 +77,7 @@ const assistantQuickQuestions = [
   '生成完整分析报告'
 ];
 
-const ASSISTANT_CHAT_TIMEOUT_MS = 60000;
+const ASSISTANT_CHAT_TIMEOUT_MS = 120000;
 
 const providerDisplayLabels: Record<string, string> = {
   deterministic: '快速回答',
@@ -749,29 +749,21 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       finalizeAssistantMessage(assistantId, response, { attachments: contextAttachments, references: contextReferences });
       setAttachments([]);
     } catch (error) {
-      try {
-        appendStreamEvent(assistantId, 'fallback', { message: '实时输出暂不可用，正在切换普通回答。' });
-        const response = await withAssistantTimeout(askAssistant(text, sessionId, options));
-        finalizeAssistantMessage(assistantId, response, { attachments: contextAttachments, references: contextReferences });
-        setAttachments([]);
-        message.warning('实时输出暂不可用，已切换普通回答');
-      } catch (fallbackError) {
-        const content = assistantErrorMessage(fallbackError);
-        updateAssistantMessage(assistantId, (item) => ({
-          ...item,
-          content,
-          status: 'error',
-          answerState: {
-            error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError || ''),
-            degraded: true,
-            attachments: contextAttachments,
-            references: contextReferences,
-            debugPayload: { error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError || '') }
-          },
-          trace: emptyTrace
-        }));
-        message.error('AI 助手请求失败，请稍后重试');
-      }
+      const content = assistantErrorMessage(error);
+      updateAssistantMessage(assistantId, (item) => ({
+        ...item,
+        content,
+        status: 'error',
+        answerState: {
+          error: error instanceof Error ? error.message : String(error || ''),
+          degraded: true,
+          attachments: contextAttachments,
+          references: contextReferences,
+          debugPayload: { error: error instanceof Error ? error.message : String(error || '') }
+        },
+        trace: emptyTrace
+      }));
+      message.error('AI 助手请求失败，请稍后重试');
     } finally {
       setLoading(false);
     }

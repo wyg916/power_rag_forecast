@@ -171,6 +171,66 @@ def validate_candidate_citations(items: Sequence[Mapping[str, Any]]) -> Citation
     return CitationBatch(True, "", citations)
 
 
+def citation_from_retrieval_item(
+    item: Mapping[str, Any], *, quote_limit: int = 240
+) -> tuple[dict[str, Any] | None, str]:
+    """Build the immutable citation contract for a PostgreSQL retrieval row.
+
+    The balanced/keyword retrieval path returns persisted chunks rather than the
+    richer enterprise-Qdrant candidate DTO.  Normalize that trusted repository
+    row into the same locator contract before claim binding instead of emitting
+    a weaker, display-only citation shape.
+    """
+
+    if not isinstance(item, Mapping):
+        return None, "citation_candidate_invalid"
+    document_id = str(item.get("document_id") or item.get("doc_id") or "").strip()
+    chunk_id = str(item.get("chunk_id") or "").strip()
+    content = item.get("content")
+    if not document_id or not chunk_id or not isinstance(content, str) or not content:
+        return None, "citation_identity_invalid"
+
+    raw_metadata = item.get("metadata")
+    metadata = raw_metadata if isinstance(raw_metadata, Mapping) else {}
+    version_id = str(
+        item.get("version_id")
+        or metadata.get("document_version")
+        or f"sha256:{_sha256(content)[:16]}"
+    ).strip()
+    section = str(item.get("section_title") or item.get("section") or "").strip()
+    raw_section_path = item.get("section_path") or metadata.get("section_path")
+    if raw_section_path is None:
+        section_path: list[str] = [section] if section else []
+    elif isinstance(raw_section_path, (list, tuple)):
+        section_path = [str(value).strip() for value in raw_section_path]
+    else:
+        return None, "citation_section_path_invalid"
+
+    limit = max(1, int(quote_limit or 240))
+    quote = content[:limit]
+    candidate = {
+        **dict(item),
+        "document_id": document_id,
+        "chunk_id": chunk_id,
+        "version_id": version_id,
+        "content": content,
+        "content_hash": _sha256(content),
+        "citation_base": content,
+        "citation": {
+            "version_id": version_id,
+            "page": item.get("page", metadata.get("page")),
+            "section_path": section_path,
+            "char_start": 0,
+            "char_end": len(quote),
+            "bbox": item.get("bbox", metadata.get("bbox")),
+            "asset_id": item.get("asset_id", metadata.get("asset_id")),
+            "quote": quote,
+            "content_hash": _sha256(quote),
+        },
+    }
+    return validate_candidate_citation(candidate)
+
+
 def validate_claim_bindings(
     claims: Sequence[Mapping[str, Any]],
     citations: Sequence[Mapping[str, Any]],

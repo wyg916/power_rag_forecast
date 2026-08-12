@@ -249,6 +249,6 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("model_error_status", 0.9, entities, normalized)
     if any(k in q for k in ["重训", "退化"]):
         return IntentDecision("model_retrain_suggestion", 0.9, entities, normalized)
-    if any(k in q for k in ["电价", "交易", "售电", "风险", "上涨", "下跌", "原因", "因素影响", "预测结果", "新能源", "出力", "负荷"]):
+    if any(k in q for k in ["电价", "交易", "售电", "风险", "上涨", "下跌", "原因", "因素影响", "预测结果", "新能源", "出力", "负荷", "供需"]):
         return IntentDecision("trading_risk_summary", 0.75, entities, normalized)
     return IntentDecision("general_query", 0.6, entities, normalized)

@@ -53,7 +53,7 @@ const defaultKnowledgeData: KnowledgeData = {
   releases: [],
   empty: false,
   metrics: [
-    { key: 'documents', title: '文档总数', value: 0, unit: '份', trend: '数据库文档', tone: 'info' },
+    { key: 'documents', title: '文档总数', value: 0, unit: '份', trend: '可检索资料', tone: 'info' },
     { key: 'indexed', title: '已索引', value: 0, unit: 'chunks', trend: '知识片段', tone: 'success' },
     { key: 'pending', title: '待处理', value: 0, unit: '份', trend: '索引队列', tone: 'success' },
     { key: 'qa', title: 'QA 通过率', value: 0, unit: '%', trend: '最近校验', tone: 'warning' }
@@ -84,6 +84,7 @@ function statusLabel(status?: string, fallback?: boolean) {
   if (fallback || value === 'fallback') return { text: '降级', color: 'warning' };
   if (value === 'normal') return { text: '正常', color: 'success' };
   if (value === 'partial') return { text: '部分完成', color: 'processing' };
+  if (value === 'unavailable') return { text: '不可用', color: 'error' };
   if (value === 'disabled') return { text: '未启用', color: 'default' };
   if (value === 'not_configured') return { text: '需配置', color: 'default' };
   return { text: '运行中', color: 'processing' };
@@ -275,13 +276,20 @@ export function KnowledgeBasePage(_: PageProps) {
   const ragHealth = data.ragHealth || {};
   const ragStatus = statusLabel(ragHealth.status, Boolean(ragHealth.fallback_enabled));
   const activeRelease = (data.releases || []).find((item) => item.is_current) || data.releases?.[0];
-  const retrievalAvailable = Boolean(activeRelease?.is_current && activeRelease.status === 'published' && ragHealth.available !== false);
+  const runtimeHealthy = ragHealth.ok === true && ragHealth.status === 'normal';
+  const retrievalAvailable = Boolean(
+    runtimeHealthy
+    && (
+      ragHealth.enterprise_profile !== true
+      || (activeRelease?.is_current && activeRelease.status === 'published')
+    )
+  );
   const documentRows = useMemo(
     () =>
       (data.documents || []).map((row: any, index: number) => ({
         key: row.doc_id || `${row.title}-${index}`,
         name: row.title,
-        source: row.category || row.source_type || '-',
+        category: row.category || row.domain || row.metadata?.domain || '业务知识',
         updatedAt: formatDate(row.updated_at || row.indexed_at),
         chunks: row.chunk_count ?? 0,
         status: row.status_label || row.status,
@@ -428,7 +436,7 @@ export function KnowledgeBasePage(_: PageProps) {
             scroll={{ y: 220 }}
             columns={[
               { title: '文档名称', dataIndex: 'name', ellipsis: true },
-              { title: '文档分类', dataIndex: 'source', width: 96, render: (value) => <Tag>{value}</Tag> },
+              { title: '文档分类', dataIndex: 'category', width: 96, render: (value) => <Tag>{value}</Tag> },
               { title: '更新时间', dataIndex: 'updatedAt', width: 132 },
               { title: 'Chunk', dataIndex: 'chunks', width: 82 },
               { title: '状态', dataIndex: 'status', width: 92, render: documentStatusTag },
@@ -576,7 +584,7 @@ export function KnowledgeBasePage(_: PageProps) {
         </SectionCard>
 
         <SectionCard
-          title={<Space size={8}>AI 整理答案 <Tag color="processing">后端生成</Tag></Space>}
+          title={<Space size={8}>AI 整理答案 <Tag color="processing">智能整理</Tag></Space>}
           className="knowledge-answer-card"
           extra={<Button type="link" size="small" icon={<CopyOutlined />} onClick={() => navigator.clipboard?.writeText(answerBlocks.map((item) => `${item.title}：${item.content}`).join('\n'))}>复制</Button>}
         >

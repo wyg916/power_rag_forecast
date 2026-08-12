@@ -58,7 +58,7 @@ export async function getKnowledgeBaseData(): Promise<KnowledgeData> {
     releases: releasesPayload?.items || [],
     empty: !Number(documentCount) && !Number(chunkCount),
     metrics: [
-      { key: 'documents', title: '文档总数', value: documentCount, unit: '份', trend: '数据库文档', tone: 'info' },
+      { key: 'documents', title: '文档总数', value: documentCount, unit: '份', trend: '可检索资料', tone: 'info' },
       { key: 'indexed', title: '已索引', value: chunkCount, unit: 'chunks', trend: '知识片段', tone: 'success' },
       { key: 'pending', title: '待处理', value: pendingCount, unit: '份', trend: '索引队列', tone: pendingCount > 0 ? 'warning' : 'success' },
       { key: 'qa', title: 'QA 通过率', value: qaRate, unit: '%', trend: '最近校验', tone: Number(qaRate) >= 80 ? 'success' : 'warning' }

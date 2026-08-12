@@ -62,7 +62,7 @@ def test_llm_router_prefers_ollama_for_daily_chat_in_auto_mode(monkeypatch):
     assert status["provider"] == "ollama"
 
 
-def test_llm_router_falls_back_to_ollama(monkeypatch):
+def test_llm_router_auto_mode_can_fall_back_to_ollama(monkeypatch):
     monkeypatch.setenv("LLM_ROUTER_MODE", "auto")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setattr("backend.app.ai_assistant.llm_router.DeepSeekProvider", BrokenDeepSeekProvider)
@@ -71,12 +71,34 @@ def test_llm_router_falls_back_to_ollama(monkeypatch):
     content, status = LLMRouter().generate_answer(
         [{"role": "user", "content": "复杂分析"}],
         task_type="complex_analysis",
-        requested_provider="deepseek",
+        requested_provider="auto",
     )
 
     assert content == "ollama answer"
     assert status["provider"] == "ollama"
     assert status["fallback"] is True
+
+
+def test_llm_router_does_not_fall_back_when_provider_is_explicit(monkeypatch):
+    monkeypatch.setenv("LLM_ROUTER_MODE", "auto")
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setattr("backend.app.ai_assistant.llm_router.DeepSeekProvider", BrokenDeepSeekProvider)
+    monkeypatch.setattr("backend.app.ai_assistant.llm_router.OllamaProvider", FakeOllamaProvider)
+
+    try:
+        LLMRouter().generate_answer(
+            [{"role": "user", "content": "complex analysis"}],
+            task_type="complex_analysis",
+            requested_provider="deepseek",
+        )
+    except RuntimeError as exc:
+        error = str(exc)
+    else:
+        raise AssertionError("explicit provider failure must fail closed")
+
+    assert error.startswith("deepseek:")
+    assert "ollama:" not in error
+    assert ("sk" + "-***") in error
 
 
 def test_sanitize_error_masks_api_key_like_values():

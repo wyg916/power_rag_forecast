@@ -69,6 +69,13 @@ if not defined QDRANT_RUNTIME_CONFIG (
     if "%RC_NO_PAUSE%"=="0" pause
     goto end_error
 )
+if not defined RAG_MODEL_CONFIG if exist "%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\model-profile.env" set "RAG_MODEL_CONFIG=%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\model-profile.env"
+if not defined RAG_MODEL_CONFIG (
+    echo [ERROR] Approved RAG model profile was not found.
+    echo [TIP] Set RAG_MODEL_CONFIG to the approved E-drive model-profile.env.
+    if "%RC_NO_PAUSE%"=="0" pause
+    goto end_error
+)
 
 if /I "%~1"=="menu" goto menu
 goto rcstart
@@ -85,7 +92,10 @@ echo [INFO] RC SHA: %RC_SHA%
 echo [INFO] Logs: %~dp0output\runtime_logs
 echo.
 
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --preflight-only
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%" --rag-model-config "%RAG_MODEL_CONFIG%" --preflight-only
+if errorlevel 1 goto rc_failed
+
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_runtime_profile_check.py" --qdrant-env "%QDRANT_RUNTIME_CONFIG%" --model-env "%RAG_MODEL_CONFIG%" --output "%~dp0output\runtime_logs\rag_runtime_profile.json"
 if errorlevel 1 goto rc_failed
 
 if not exist "%~dp0frontend\node_modules" (

@@ -138,6 +138,46 @@ def test_role_manifest_never_grants_all_tables_or_ddl():
     assert '"users"' in script and '"audit_logs"' in script
 
 
+def test_role_manifest_covers_runtime_rag_memory_and_chatbi_tables():
+    from scripts.day4_apply_database_security import (
+        BUSINESS_READ_ONLY_TABLES,
+        BUSINESS_TABLES,
+        DELETE_TABLES,
+    )
+
+    assert {
+        "kb_document_versions",
+        "kb_rag_audit_events",
+        "kb_release_items",
+        "kb_releases",
+        "chatbi_dimension_catalog",
+        "chatbi_join_catalog",
+        "chatbi_metric_catalog",
+    }.issubset(BUSINESS_READ_ONLY_TABLES)
+    assert {
+        "ai_memory_records",
+        "ai_memory_versions",
+        "ai_memory_relations",
+        "ai_memory_usage",
+        "ai_memory_outbox",
+        "ai_memory_admissions",
+        "ai_memory_state_transitions",
+        "ai_memory_legal_holds",
+        "ai_memory_deletion_jobs",
+        "ai_memory_deletion_proofs",
+        "chatbi_analysis_plans",
+    }.issubset(BUSINESS_TABLES)
+    assert {
+        "ai_chat_sessions",
+        "ai_chat_messages",
+        "ai_conversation_state",
+        "ai_tool_call_logs",
+        "ai_chat_feedback",
+        "ai_answer_feedback",
+        "ai_traces",
+    }.issubset(DELETE_TABLES)
+
+
 def test_internal_dynamic_object_helpers_are_allowlisted():
     from backend.app.ai_assistant.tools.tariff_tools import _read_table
     from backend.app.repositories.market_data_repository import load_table_rows, table_exists

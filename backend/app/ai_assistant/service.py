@@ -194,6 +194,7 @@ RAG_INTENTS = {
 
 
 PROFESSIONAL_RAG_TERMS = [
+    "供需",
     "电价",
     "现货",
     "日前",

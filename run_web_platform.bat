@@ -47,6 +47,18 @@ if not exist "%RAG_PREPRODUCTION_CONFIG%" (
     popd
     exit /b 2
 )
+if not defined QDRANT_RUNTIME_CONFIG if exist "%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\runtime.env" set "QDRANT_RUNTIME_CONFIG=%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\runtime.env"
+if not defined QDRANT_RUNTIME_CONFIG (
+    echo [ERROR] Approved Qdrant runtime config was not found.
+    popd
+    exit /b 2
+)
+if not defined RAG_MODEL_CONFIG if exist "%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\model-profile.env" set "RAG_MODEL_CONFIG=%SHARED_PROJECT_ROOT%_运行资产\rag-r1\qdrant\secrets\model-profile.env"
+if not defined RAG_MODEL_CONFIG (
+    echo [ERROR] Approved RAG model profile was not found.
+    popd
+    exit /b 2
+)
 if not exist "%~dp0frontend\node_modules" (
     if not exist "%SHARED_PROJECT_ROOT%\frontend\node_modules" (
         echo [ERROR] Approved frontend dependencies were not found.
@@ -72,7 +84,7 @@ echo.
 
 set "WEB_LAUNCHER_BROWSER_ARG="
 if "%NO_BROWSER%"=="1" set "WEB_LAUNCHER_BROWSER_ARG=--no-browser"
-"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --skip-sync %WEB_LAUNCHER_BROWSER_ARG%
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\web_platform_launcher.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%" --rag-model-config "%RAG_MODEL_CONFIG%" --skip-sync %WEB_LAUNCHER_BROWSER_ARG%
 set "EXIT_CODE=%ERRORLEVEL%"
 
 if not "%EXIT_CODE%"=="0" (

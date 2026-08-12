@@ -11,6 +11,7 @@ from sqlalchemy import text
 
 from .base import dumps_json, jsonable, loads_json, mapping_list, postgres_engine
 from backend.app.services.embedding_service import embed_batch_with_metadata, embed_text_with_metadata, get_embedding_provider
+from backend.app.services.rag_grounding_service import citation_from_retrieval_item
 
 KNOWLEDGE_STATUSES = frozenset({"draft", "active", "superseded", "archived", "invalid"})
 
@@ -518,7 +519,7 @@ def search_keyword_chunks(
                     "source_uri": metadata.get("source_uri") if isinstance(metadata, dict) else "",
                     "source_type": row.get("source_type"),
                     "chunk_index": row.get("chunk_index"),
-                    "content": content[:700],
+                    "content": content,
                     "keyword_score": float(score),
                     "vector_score": 0.0,
                     "rerank_score": 0.0,
@@ -598,7 +599,7 @@ def list_embedded_chunks(
                     "source_uri": metadata.get("source_uri") if isinstance(metadata, dict) else "",
                     "source_type": row.get("source_type"),
                     "chunk_index": row.get("chunk_index"),
-                    "content": str(row.get("content") or "")[:900],
+                    "content": str(row.get("content") or ""),
                     "embedding": embedding,
                     "embedding_meta": embedding_meta if isinstance(embedding_meta, dict) else {},
                     "keyword_score": 0.0,
@@ -707,7 +708,7 @@ def get_chunks_by_ids(
                 "source_uri": metadata.get("source_uri", ""),
                 "source_type": row.get("source_type"),
                 "chunk_index": row.get("chunk_index"),
-                "content": str(row.get("content") or "")[:900],
+                "content": str(row.get("content") or ""),
                 "section_title": metadata.get("section_title", ""),
                 "domain": metadata.get("domain", ""),
                 "evidence_source_type": metadata.get("source_type", "real"),
@@ -1312,23 +1313,16 @@ def build_qa_answer(question: str, search_result: dict[str, Any]) -> dict[str, A
     items = list(search_result.get("items") or [])
     citations: list[dict[str, Any]] = []
     for item in items[:8]:
-        content = str(item.get("content") or "").strip()
-        if not content or not item.get("chunk_id") or not item.get("doc_id"):
+        citation, _ = citation_from_retrieval_item(item)
+        if citation is None:
             continue
-        quote = content[:240]
-        if quote not in content:
-            continue
-        citations.append(
-            {
-                "document_id": item.get("doc_id"),
-                "chunk_id": item.get("chunk_id"),
-                "title": item.get("title"),
-                "section": item.get("section_title") or "",
-                "source": item.get("source"),
-                "score": float(item.get("final_score") or item.get("score") or 0.0),
-                "quote": quote,
-            }
+        citation.update(
+            section=item.get("section_title") or "",
+            source=item.get("source"),
+            domain=item.get("domain") or "",
+            source_type=item.get("evidence_source_type") or "real",
         )
+        citations.append(citation)
     top = items[0] if items and citations else {}
     high_score = float(top.get("final_score") or top.get("score") or 0.0) if top else 0.0
     source_types = list(

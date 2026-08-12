@@ -40,8 +40,19 @@ BUSINESS_TABLES = (
     "ai_report_review_runs",
     "ai_tool_call_logs",
     "ai_traces",
+    "ai_memory_admissions",
+    "ai_memory_deletion_jobs",
+    "ai_memory_deletion_proofs",
+    "ai_memory_legal_holds",
+    "ai_memory_outbox",
+    "ai_memory_records",
+    "ai_memory_relations",
+    "ai_memory_state_transitions",
+    "ai_memory_usage",
+    "ai_memory_versions",
     "analysis_runs",
     "anomaly_explanations",
+    "chatbi_analysis_plans",
     "feature_importance",
     "forecast_results",
     "forecast_runs",
@@ -84,6 +95,15 @@ BUSINESS_TABLES = (
     "task_logs",
     "task_runs",
 )
+BUSINESS_READ_ONLY_TABLES = (
+    "chatbi_dimension_catalog",
+    "chatbi_join_catalog",
+    "chatbi_metric_catalog",
+    "kb_document_versions",
+    "kb_rag_audit_events",
+    "kb_release_items",
+    "kb_releases",
+)
 BUSINESS_VIEWS = (
     "model_feature_importance",
     "raw_actual_load",
@@ -95,7 +115,21 @@ BUSINESS_VIEWS = (
     "vw_recent_model_errors",
 )
 BUSINESS_WRITE_TABLES = frozenset(BUSINESS_TABLES)
-DELETE_TABLES = frozenset({"raw_load", "raw_market", "raw_renewable", "raw_weather"})
+DELETE_TABLES = frozenset(
+    {
+        "ai_answer_feedback",
+        "ai_chat_feedback",
+        "ai_chat_messages",
+        "ai_chat_sessions",
+        "ai_conversation_state",
+        "ai_tool_call_logs",
+        "ai_traces",
+        "raw_load",
+        "raw_market",
+        "raw_renewable",
+        "raw_weather",
+    }
+)
 
 
 def _migration_url() -> URL:
@@ -222,7 +256,13 @@ def apply_security(local_config: Path) -> dict[str, object]:
             database = base.database or "postgres"
             _role(cur, RUNTIME_GROUP, RUNTIME_LOGIN, runtime_password)
             _role(cur, SECURITY_GROUP, SECURITY_LOGIN, security_password)
-            all_objects = (*BUSINESS_TABLES, *BUSINESS_VIEWS, *SECURITY_TABLES, *MIGRATION_TABLES)
+            all_objects = (
+                *BUSINESS_TABLES,
+                *BUSINESS_READ_ONLY_TABLES,
+                *BUSINESS_VIEWS,
+                *SECURITY_TABLES,
+                *MIGRATION_TABLES,
+            )
             project_roles = (RUNTIME_GROUP, RUNTIME_LOGIN, SECURITY_GROUP, SECURITY_LOGIN)
             _revoke_objects(cur, all_objects, project_roles)
             for role in project_roles:
@@ -230,7 +270,12 @@ def apply_security(local_config: Path) -> dict[str, object]:
                 cur.execute(sql.SQL("REVOKE CREATE ON SCHEMA public FROM {}").format(sql.Identifier(role)))
                 cur.execute(sql.SQL("GRANT CONNECT ON DATABASE {} TO {}").format(sql.Identifier(database), sql.Identifier(role)))
                 cur.execute(sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(role)))
-            _grant(cur, "SELECT", (*BUSINESS_TABLES, *BUSINESS_VIEWS), RUNTIME_GROUP)
+            _grant(
+                cur,
+                "SELECT",
+                (*BUSINESS_TABLES, *BUSINESS_READ_ONLY_TABLES, *BUSINESS_VIEWS),
+                RUNTIME_GROUP,
+            )
             _grant(cur, "INSERT, UPDATE", BUSINESS_WRITE_TABLES, RUNTIME_GROUP)
             _grant(cur, "DELETE", DELETE_TABLES, RUNTIME_GROUP)
             _grant(cur, "INSERT", ("audit_logs",), RUNTIME_GROUP)
@@ -253,7 +298,9 @@ def apply_security(local_config: Path) -> dict[str, object]:
         "runtime_login": RUNTIME_LOGIN,
         "security_group": SECURITY_GROUP,
         "security_login": SECURITY_LOGIN,
-        "business_select_objects": len(BUSINESS_TABLES) + len(BUSINESS_VIEWS),
+        "business_select_objects": len(BUSINESS_TABLES)
+        + len(BUSINESS_READ_ONLY_TABLES)
+        + len(BUSINESS_VIEWS),
         "security_objects": len(SECURITY_TABLES),
         "local_config": str(config_path),
     }

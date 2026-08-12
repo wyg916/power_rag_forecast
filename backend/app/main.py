@@ -20,6 +20,36 @@ from .observability import configure_app_logging
 from .services.dataset_query_service import validate_registry_against_database
 
 
+def _runtime_flag(name: str) -> bool:
+    return os.getenv(name, "0").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def prewarm_rag_runtime_if_configured() -> None:
+    """Fail startup closed when an explicitly requested RAG runtime cannot warm."""
+
+    if not _runtime_flag("RAG_PREWARM_ON_STARTUP"):
+        return
+    from .services.embedding_service import embed_text_with_metadata
+    from .services.rerank_service import prewarm_reranker
+
+    result = embed_text_with_metadata("运行就绪检查")
+    vector = list(result.get("embedding") or [])
+    metadata = dict(result.get("metadata") or {})
+    expected_dim = int(
+        os.getenv("RAG_EMBEDDING_EXPECTED_DIM")
+        or os.getenv("RAG_EMBEDDING_DIM")
+        or "0"
+    )
+    if (
+        not vector
+        or (expected_dim and len(vector) != expected_dim)
+        or bool(metadata.get("fallback"))
+        or metadata.get("error")
+    ):
+        raise RuntimeError("RAG embedding prewarm failed admission checks")
+    prewarm_reranker()
+
+
 def _cors_allowed_origins() -> list[str]:
     configured = os.getenv("CORS_ALLOWED_ORIGINS") or os.getenv("WEB_CORS_ALLOWED_ORIGINS")
     if configured:
@@ -72,6 +102,7 @@ def create_app() -> FastAPI:
             runtime_engine = get_engine()
             validate_runtime_database_roles(runtime_engine, get_security_engine())
             validate_registry_against_database(runtime_engine)
+        prewarm_rag_runtime_if_configured()
 
     return app
 

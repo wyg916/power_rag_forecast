@@ -40,10 +40,15 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status' in source
     assert "deploy\\rag-r1\\preproduction-profile.env" in source
     assert "rag_r1_qdrant_runtime_probe.py\" --mode health" in source
+    assert '--rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%"' in source
+    assert '--rag-model-config "%RAG_MODEL_CONFIG%"' in source
+    assert "rag_r1_runtime_profile_check.py" in source
 
     web_source = (ROOT / "run_web_platform.bat").read_text(encoding="utf-8")
     assert 'runtime-config "%RAG_PREPRODUCTION_CONFIG%"' in web_source
     assert "deploy\\rag-r1\\preproduction-profile.env" in web_source
+    assert '--rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%"' in web_source
+    assert '--rag-model-config "%RAG_MODEL_CONFIG%"' in web_source
 
 
 def test_rag_preproduction_profile_is_secret_free_and_frozen() -> None:
@@ -126,3 +131,73 @@ def test_runtime_config_layers_keep_least_privilege_identity_first(
 
     assert "beta10d_app_login" in launcher.os.environ["DATABASE_URL"]
     assert "beta10d_security_login" in launcher.os.environ["SECURITY_DATABASE_URL"]
+
+
+def test_enterprise_rag_profile_overrides_stale_local_values_without_admin_key(
+    monkeypatch, tmp_path
+) -> None:
+    embedding = tmp_path / "bge-large-zh-v1.5"
+    reranker = tmp_path / "bge-reranker-v2-m3"
+    embedding.mkdir()
+    reranker.mkdir()
+    ca = tmp_path / "ca.pem"
+    ca.write_text("test-only", encoding="utf-8")
+    qdrant = tmp_path / "qdrant.env"
+    qdrant.write_text(
+        "\n".join(
+            (
+                "QDRANT_READ_ONLY_API_KEY=readonly-" + "r" * 40,
+                "QDRANT_ADMIN_API_KEY=admin-" + "a" * 40,
+                "QDRANT_IMAGE_DIGEST=sha256:" + "d" * 64,
+                f"RAG_R1_QDRANT_ROOT={tmp_path.as_posix()}",
+            )
+        ),
+        encoding="utf-8",
+    )
+    model = tmp_path / "model.env"
+    model.write_text(
+        "\n".join(
+            (
+                "RAG_ENABLED=1",
+                "RAG_PROFILE=enterprise",
+                "RAG_FILE_FALLBACK_ENABLED=0",
+                "RAG_EMBEDDING_PROVIDER=sentence_transformers",
+                "RAG_EMBEDDING_MODEL=BAAI/bge-large-zh-v1.5",
+                "RAG_EMBEDDING_MODEL_NAME=BAAI/bge-large-zh-v1.5",
+                f"RAG_EMBEDDING_MODEL_PATH={embedding.as_posix()}",
+                "RAG_EMBEDDING_DIM=1024",
+                "RAG_EMBEDDING_EXPECTED_DIM=1024",
+                "RAG_EMBEDDING_VERSION=v1",
+                "RAG_EMBEDDING_EXPECTED_VERSION=v1",
+                "RAG_EMBEDDING_ALLOW_FALLBACK=0",
+                "RAG_EMBEDDING_FALLBACK_PROVIDER=disabled",
+                "RAG_RERANK_ENABLED=1",
+                "RAG_RERANK_PROVIDER=bge",
+                "RAG_RERANK_MODEL=bge-reranker-v2-m3",
+                "RAG_RERANK_MODEL_NAME=bge-reranker-v2-m3",
+                f"RAG_RERANK_MODEL_PATH={reranker.as_posix()}",
+                "RAG_RERANK_VERSION=v1",
+                "RAG_RERANK_EXPECTED_VERSION=v1",
+                "RAG_RERANK_FALLBACK_PROVIDER=disabled",
+                "RAG_RELEASE_ID=RAG-R1",
+                "RAG_QDRANT_COLLECTION=rag_chunks_RAG-R1",
+                "RAG_QDRANT_ALIAS=rag_chunks_current",
+                "RAG_PROCESS_ROLE=api",
+                "RAG_QDRANT_ACCESS_MODE=read_only",
+                "RAG_QDRANT_TLS_ENABLED=1",
+                "RAG_QDRANT_STRICT_MODE=1",
+                "RAG_QDRANT_URL=https://127.0.0.1:6333",
+                f"RAG_QDRANT_TLS_CA_PATH={ca.as_posix()}",
+                "RAG_QDRANT_IMAGE_VERSION=1.18.2",
+            )
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("RAG_EMBEDDING_DIM", "256")
+    monkeypatch.setenv("QDRANT_ADMIN_API_KEY", "must-not-survive")
+
+    launcher.load_enterprise_rag_runtime(qdrant, model)
+
+    assert launcher.os.environ["RAG_EMBEDDING_DIM"] == "1024"
+    assert launcher.os.environ["RAG_QDRANT_API_KEY"].startswith("readonly-")
+    assert "QDRANT_ADMIN_API_KEY" not in launcher.os.environ

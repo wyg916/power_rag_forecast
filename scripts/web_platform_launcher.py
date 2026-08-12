@@ -13,6 +13,17 @@ from pathlib import Path
 from typing import Sequence
 from urllib.parse import quote_plus, unquote, urlparse
 
+try:
+    from .rag_r1_runtime_profile_check import (
+        RuntimeProfileCheckError,
+        merge_runtime_values,
+    )
+except ImportError:  # pragma: no cover - direct script execution
+    from rag_r1_runtime_profile_check import (
+        RuntimeProfileCheckError,
+        merge_runtime_values,
+    )
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = ROOT / "frontend"
@@ -20,6 +31,14 @@ FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 LOG_DIR = ROOT / "output" / "runtime_logs"
 BACKEND_URL = "http://127.0.0.1:8000/api/health"
 FRONTEND_URL = "http://127.0.0.1:5173"
+
+RAG_RUNTIME_EXPORT_KEYS = frozenset(
+    {
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "TOKENIZERS_PARALLELISM",
+    }
+)
 
 
 def load_env_file(env_path: Path, *, required: bool = False) -> bool:
@@ -43,6 +62,45 @@ def load_dotenv(runtime_configs: Sequence[Path] | None = None) -> None:
     for runtime_config in runtime_configs or ():
         load_env_file(runtime_config, required=True)
     load_env_file(ROOT / ".env")
+
+
+def _read_env_values(path: Path) -> dict[str, str]:
+    if not path.is_file():
+        raise RuntimeError(f"Runtime config does not exist: {path}")
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key:
+            values[key] = value.strip().strip('"').strip("'")
+    return values
+
+
+def load_enterprise_rag_runtime(qdrant_config: Path, model_config: Path) -> None:
+    """Load the API-only RAG profile without exposing the Qdrant admin key."""
+
+    try:
+        values = merge_runtime_values(
+            _read_env_values(qdrant_config),
+            _read_env_values(model_config),
+        )
+    except RuntimeProfileCheckError as exc:
+        raise RuntimeError(f"RAG runtime profile is unavailable: {exc}") from exc
+    if "QDRANT_ADMIN_API_KEY" in values:
+        raise RuntimeError("RAG runtime profile rejected an admin-key leak")
+    exported = {
+        key: value
+        for key, value in values.items()
+        if key.startswith("RAG_") or key in RAG_RUNTIME_EXPORT_KEYS
+    }
+    if not exported.get("RAG_QDRANT_API_KEY"):
+        raise RuntimeError("RAG runtime profile does not contain a read-only API key")
+    os.environ.pop("QDRANT_ADMIN_API_KEY", None)
+    for key, value in exported.items():
+        os.environ[key] = value
 
 
 def ensure_database_url() -> None:
@@ -346,6 +404,8 @@ def main() -> int:
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--skip-sync", action="store_true")
     parser.add_argument("--runtime-config", type=Path, action="append")
+    parser.add_argument("--rag-qdrant-config", type=Path)
+    parser.add_argument("--rag-model-config", type=Path)
     parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
 
@@ -355,6 +415,15 @@ def main() -> int:
             if args.runtime_config
             else None
         )
+        if bool(args.rag_qdrant_config) != bool(args.rag_model_config):
+            raise RuntimeError(
+                "--rag-qdrant-config and --rag-model-config must be provided together"
+            )
+        if args.rag_qdrant_config and args.rag_model_config:
+            load_enterprise_rag_runtime(
+                args.rag_qdrant_config.resolve(),
+                args.rag_model_config.resolve(),
+            )
     except (OSError, RuntimeError) as exc:
         log(f"[ERROR] Runtime configuration failed: {exc}")
         return 2

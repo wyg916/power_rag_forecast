@@ -29,7 +29,10 @@ from backend.app.services.embedding_service import cosine_similarity, embed_text
 from backend.app.services.hybrid_retrieval_service import hybrid_retrieve
 from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
 from backend.app.services.rag_content_security import secure_candidates
-from backend.app.services.rag_grounding_service import validate_candidate_citations
+from backend.app.services.rag_grounding_service import (
+    citation_from_retrieval_item,
+    validate_candidate_citations,
+)
 from backend.app.services.rag_runtime_contract import (
     RetrievalContext,
     enterprise_mode,
@@ -775,22 +778,24 @@ def _merge_candidates(keyword_items: list[dict[str, Any]], vector_items: list[di
     return output
 
 def _citations_from_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [
-        {
-            "document_id": item.get("doc_id"),
-            "chunk_id": item.get("chunk_id"),
-            "title": item.get("title"),
-            "section": item.get("section_title") or "",
-            "source": item.get("source"),
-            "domain": item.get("domain") or "",
-            "source_type": item.get("evidence_source_type") or "real",
-            "evidence_level": item.get("evidence_level") or "",
-            "score": item.get("final_score", item.get("score")),
-            "quote": str(item.get("content") or "")[:240],
-        }
-        for item in items
-        if item.get("doc_id") and item.get("chunk_id") and item.get("content") and item.get("domain")
-    ]
+    citations: list[dict[str, Any]] = []
+    for item in items:
+        if not item.get("domain"):
+            continue
+        citation, _ = citation_from_retrieval_item(item)
+        if citation is None:
+            continue
+        citation.update(
+            {
+                "section": item.get("section_title") or "",
+                "source": item.get("source"),
+                "domain": item.get("domain") or "",
+                "source_type": item.get("evidence_source_type") or "real",
+                "evidence_level": item.get("evidence_level") or "",
+            }
+        )
+        citations.append(citation)
+    return citations
 
 def _domain_consistent_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     domains = {str(item.get("domain") or "").strip() for item in items if item.get("domain")}

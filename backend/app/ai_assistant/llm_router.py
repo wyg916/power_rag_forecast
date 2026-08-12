@@ -75,8 +75,12 @@ class LLMRouter:
         max_tokens: int = 1200,
     ) -> tuple[str, dict[str, Any]]:
         preferred = self._select_provider(task_type=task_type, requested_provider=requested_provider)
+        requested = (requested_provider or "auto").strip().lower()
+        provider_order = [preferred]
+        if requested not in {"deepseek", "ollama"}:
+            provider_order.append("ollama" if preferred != "ollama" else "deepseek")
         errors: list[dict[str, str]] = []
-        for provider_name in [preferred, "ollama" if preferred != "ollama" else "deepseek"]:
+        for provider_name in provider_order:
             try:
                 if provider_name == "deepseek":
                     provider = self._get_deepseek()
