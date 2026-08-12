@@ -18,6 +18,7 @@ from .data_registry import validate_dataset_registry
 from .db.session import get_engine, get_security_engine, validate_runtime_database_roles
 from .observability import configure_app_logging
 from .services.dataset_query_service import validate_registry_against_database
+from .services.rag_runtime_warmup import prewarm_enterprise_rag_runtime
 
 
 def _runtime_flag(name: str) -> bool:
@@ -25,7 +26,12 @@ def _runtime_flag(name: str) -> bool:
 
 
 def prewarm_rag_runtime_if_configured() -> None:
-    """Fail startup closed when an explicitly requested RAG runtime cannot warm."""
+    """Compatibility probe for callers that only validate embedding admission.
+
+    The unified RC startup uses ``prewarm_enterprise_rag_runtime`` below. This
+    helper remains available to older diagnostics without weakening the
+    enterprise provider/model/version contract enforced at startup.
+    """
 
     if not _runtime_flag("RAG_PREWARM_ON_STARTUP"):
         return
@@ -102,7 +108,7 @@ def create_app() -> FastAPI:
             runtime_engine = get_engine()
             validate_runtime_database_roles(runtime_engine, get_security_engine())
             validate_registry_against_database(runtime_engine)
-        prewarm_rag_runtime_if_configured()
+        prewarm_enterprise_rag_runtime()
 
     return app
 

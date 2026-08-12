@@ -1,0 +1,31 @@
+{
+  "schema_version": "ai-assistant-runtime-hotfix-final/v1",
+  "starting_sha": "fefb72f6c56e387a10bd2a4d798813593f1f2334",
+  "implementation_sha": "85f93fa7b613e0bf4e81948b47bc04501eec6efb",
+  "ai_assistant_runtime_hotfix": "PARTIAL",
+  "local_preproduction_rc": "PARTIAL",
+  "release_blocking": 2,
+  "unclassified_fail": 0,
+  "unclassified_error": 0,
+  "scenario_matrix": {"total": 11, "passed": 11, "http_200": 11},
+  "providers": {
+    "kimi": "BLOCKED_MISSING_KEY",
+    "mimo": "BLOCKED_MISSING_KEY",
+    "deepseek": "PASS"
+  },
+  "regression": {
+    "ai_assistant_isolated": "20 passed",
+    "targeted": "33 passed",
+    "chatbi_golden": "50/50 PASS",
+    "memory": "PASS",
+    "rag": "PASS",
+    "security": "PASS",
+    "frontend": "PASS",
+    "browser": "PASS"
+  },
+  "production_cutover": "NOT_EXECUTED",
+  "production_model_activation": "NOT_EXECUTED",
+  "production_rag_alias_switch": "NOT_EXECUTED",
+  "remote_push": "NOT_EXECUTED",
+  "rc_tag": "NOT_CREATED_RELEASE_BLOCKED"
+}

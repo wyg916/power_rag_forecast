@@ -16,7 +16,7 @@ from .catalog import CATALOG_VERSION
 from .compiler import QueryCompileError, compile_analysis_plan
 from .contracts import AnalysisPlan
 from .memory import apply_remembered_context, recall_analysis_context, remember_analysis_context
-from .planner import AnalysisPlanGenerationError, PlanLLM, generate_analysis_plan
+from .planner import AnalysisPlanGenerationError, PlanLLM, generate_analysis_plan, repair_analysis_plan
 from .result import QueryExecutionError, build_chart_spec, build_grounded_narrative, execute_result_dataset
 from .validator import PlanValidation, validate_analysis_plan
 
@@ -147,6 +147,7 @@ def execute_chatbi_analysis(
     identity: IdentityContext,
     permissions: tuple[str, ...] | list[str] | set[str],
     engine: Engine | None = None,
+    generated_plan: bool = False,
 ) -> dict[str, Any]:
     clean_question = question.strip()
     if not clean_question or len(clean_question) > 2000:
@@ -183,7 +184,28 @@ def execute_chatbi_analysis(
                     "agent_id": identity.agent_id,
                 },
             }
-        raise ChatBIServiceError("analysis_plan_invalid", "AnalysisPlan 未通过验证。", status_code=422)
+        if not generated_plan:
+            raise ChatBIServiceError("analysis_plan_invalid", "AnalysisPlan 未通过验证。", status_code=422)
+        return {
+            "available": False,
+            "state": "unavailable",
+            "analysis_plan": server_plan.model_dump(mode="json"),
+            "validation": validation.public_dict(),
+            "error": {
+                "code": "PLANNER_INVALID",
+                "message": "当前分析条件未能形成可执行计划，请补充指标、时间范围或比较对象后重试。",
+            },
+            "lineage": {
+                "analysis_plan_id": server_plan.analysis_plan_id,
+                "run_id": identity.run_id,
+                "session_id": identity.session_id,
+                "catalog_version": CATALOG_VERSION,
+                "tenant_id": identity.tenant_id,
+                "workspace_id": identity.workspace_id,
+                "user_id": identity.user_id,
+                "agent_id": identity.agent_id,
+            },
+        }
     try:
         compiled = compile_analysis_plan(server_plan, permissions=permissions)
         result = execute_result_dataset(server_plan, compiled, identity=identity, engine=active_engine)
@@ -261,7 +283,26 @@ def execute_chatbi_turn(
                     requested_provider=requested_provider,
                     router=planner_router,
                 )
-                planner_meta["attempts"] = attempt
+                initial_validation = validate_analysis_plan(draft, permissions=permissions)
+                if not initial_validation.valid and not planner_meta.get("repair_attempted"):
+                    draft, planner_meta = repair_analysis_plan(
+                        question,
+                        remembered,
+                        draft,
+                        [
+                            {
+                                "code": item.code,
+                                "field": item.field,
+                                "message": item.message,
+                            }
+                            for item in initial_validation.issues
+                        ],
+                        requested_provider=requested_provider,
+                        router=planner_router,
+                    )
+                planner_meta["attempts"] = attempt + int(
+                    bool(planner_meta.get("repair_attempted"))
+                )
                 break
             except AnalysisPlanGenerationError as exc:
                 last_error = exc
@@ -303,10 +344,11 @@ def execute_chatbi_turn(
         identity=identity,
         permissions=permissions,
         engine=active_engine,
+        generated_plan=plan is None,
     )
     response["planner"] = planner_meta
     response["memory_context"] = {**memory_meta, "persisted": False}
-    if response["state"] != "clarification_required":
+    if response["state"] not in {"clarification_required", "unavailable"}:
         try:
             admission = remember_analysis_context(identity, AnalysisPlan.model_validate(response["analysis_plan"]), engine=active_engine)
         except Exception as exc:

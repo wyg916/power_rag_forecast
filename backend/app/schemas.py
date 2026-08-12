@@ -55,7 +55,7 @@ class ChatRequest(BaseModel):
     scenario: str = Field(default="power_trading", max_length=64)
     user_role: str = Field(default="trader", max_length=64)
     answer_style: str = Field(default="professional_brief", max_length=64)
-    model_provider: str = Field(default="auto", max_length=64)
+    model_provider: Literal["auto", "kimi", "mimo", "deepseek", "ollama"] = "auto"
     debug: bool = False
 
 
@@ -71,7 +71,7 @@ class AgentAnalyzeRequest(BaseModel):
     scenario: str = Field(default="power_trading", max_length=64)
     user_role: str = Field(default="trader", max_length=64)
     answer_style: str = Field(default="professional_brief", max_length=64)
-    model_provider: str = Field(default="auto", max_length=64)
+    model_provider: Literal["auto", "kimi", "mimo", "deepseek", "ollama"] = "auto"
     debug: bool = False
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import socket
@@ -29,8 +30,25 @@ ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = ROOT / "frontend"
 FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
 LOG_DIR = ROOT / "output" / "runtime_logs"
-BACKEND_URL = "http://127.0.0.1:8000/api/health"
-FRONTEND_URL = "http://127.0.0.1:5173"
+
+
+def _configured_port(name: str, default: int) -> int:
+    raw_value = os.environ.get(name, str(default)).strip()
+    try:
+        port = int(raw_value)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be an integer port") from exc
+    if not 1 <= port <= 65535:
+        raise RuntimeError(f"{name} must be between 1 and 65535")
+    return port
+
+
+BACKEND_PORT = _configured_port("WEB_BACKEND_PORT", 8000)
+FRONTEND_PORT = _configured_port("WEB_FRONTEND_PORT", 5173)
+BACKEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_BACKEND_STARTUP_TIMEOUT", "720"))
+FRONTEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_FRONTEND_STARTUP_TIMEOUT", "180"))
+BACKEND_URL = f"http://127.0.0.1:{BACKEND_PORT}/api/health"
+FRONTEND_URL = f"http://127.0.0.1:{FRONTEND_PORT}"
 
 RAG_RUNTIME_EXPORT_KEYS = frozenset(
     {
@@ -101,6 +119,57 @@ def load_enterprise_rag_runtime(qdrant_config: Path, model_config: Path) -> None
     os.environ.pop("QDRANT_ADMIN_API_KEY", None)
     for key, value in exported.items():
         os.environ[key] = value
+
+
+def load_rag_reader_env(env_path: Path | None) -> None:
+    if env_path is None:
+        raise RuntimeError("Approved read-only RAG runtime config was not found")
+    values = _read_env_values(env_path)
+    if any(key in values for key in ("QDRANT_ADMIN_API_KEY", "QDRANT_ADMIN_KEY")):
+        raise RuntimeError("RAG reader config contains an admin credential")
+    required = {"QDRANT_API_KEY", "QDRANT_CA_CERT", "QDRANT_URL", "QDRANT_READ_ONLY_API_KEY"}
+    if set(values) != required | {
+        "RAG_EMBEDDING_DIM", "RAG_EMBEDDING_MODEL", "RAG_QDRANT_COLLECTION",
+        "RAG_RELEASE_ID", "RAG_RERANKER_MODEL",
+    }:
+        raise RuntimeError("RAG reader config key set is invalid")
+    if values["QDRANT_API_KEY"] != values["QDRANT_READ_ONLY_API_KEY"]:
+        raise RuntimeError("RAG reader key identity mismatch")
+    mappings = {
+        "RAG_QDRANT_API_KEY": values["QDRANT_API_KEY"],
+        "RAG_QDRANT_TLS_CA_PATH": values["QDRANT_CA_CERT"],
+        "RAG_QDRANT_URL": values["QDRANT_URL"],
+    }
+    for key, value in mappings.items():
+        os.environ.setdefault(key, value)
+
+
+def resolve_rag_reader_config(explicit: Path | None) -> Path:
+    if explicit is not None:
+        return explicit.resolve()
+    configured = os.environ.get("RAG_READER_CONFIG", "").strip()
+    if configured:
+        return Path(configured).resolve()
+    try:
+        common_dir = subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "--git-common-dir"],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        ).strip()
+        shared_root = (ROOT / common_dir).resolve().parent
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError("Git common worktree could not be resolved") from exc
+    matches = sorted(
+        candidate
+        for sibling in shared_root.parent.glob(f"{shared_root.name}_*")
+        if (candidate := sibling / "rag-r1" / "performance" / "r3-qdrant-readonly.env").is_file()
+    )
+    if len(matches) != 1:
+        raise RuntimeError(
+            "Approved read-only RAG runtime config discovery must resolve exactly one file"
+        )
+    return matches[0]
 
 
 def ensure_database_url() -> None:
@@ -207,7 +276,7 @@ def alembic_heads(py: str) -> tuple[bool, str]:
             encoding="utf-8",
             errors="replace",
             capture_output=True,
-            timeout=30,
+            timeout=60,
             check=False,
         )
     except (OSError, subprocess.SubprocessError) as exc:
@@ -272,6 +341,25 @@ def http_ok(url: str, timeout: float = 2.0) -> bool:
         return False
 
 
+def backend_http_ok(timeout: float = 2.0) -> bool:
+    try:
+        with urllib.request.urlopen(BACKEND_URL, timeout=timeout) as response:
+            if not 200 <= int(response.status) < 500:
+                return False
+            payload = json.loads(response.read().decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, urllib.error.URLError, TimeoutError, OSError):
+        return False
+    if not bool(payload.get("ok")):
+        return False
+    prewarm_required = os.environ.get("RAG_PREWARM_ON_STARTUP", "0").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+    if not prewarm_required:
+        return True
+    warmup = payload.get("rag_runtime_warmup") or {}
+    return bool(warmup.get("required")) and warmup.get("status") == "ready"
+
+
 def wait_http(url: str, name: str, seconds: int) -> bool:
     deadline = time.time() + seconds
     while time.time() < deadline:
@@ -280,6 +368,17 @@ def wait_http(url: str, name: str, seconds: int) -> bool:
             return True
         time.sleep(2)
     log(f"[WARN] {name} is not ready after {seconds}s: {url}")
+    return False
+
+
+def wait_backend_ready(seconds: int) -> bool:
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if backend_http_ok():
+            log(f"[OK] Backend is ready with required RAG warmup: {BACKEND_URL}")
+            return True
+        time.sleep(2)
+    log(f"[WARN] Backend is not ready after {seconds}s: {BACKEND_URL}")
     return False
 
 
@@ -311,16 +410,34 @@ def sync_core_data(py: str) -> bool:
 
 
 def start_backend(py: str, sync: bool) -> bool:
-    if http_ok(BACKEND_URL):
-        log("[INFO] Backend is already healthy on port 8000.")
+    if backend_http_ok():
+        log(f"[INFO] Backend is already healthy on port {BACKEND_PORT}.")
         return True
-    if port_open(8000):
-        log("[WARN] Port 8000 is open but health check failed. Check output/runtime_logs/web_backend.log.")
+    if port_open(BACKEND_PORT):
+        log(
+            f"[WARN] Port {BACKEND_PORT} is open but health check failed. "
+            "Check output/runtime_logs/web_backend.log."
+        )
         return False
     if sync and not sync_core_data(py):
         return False
-    popen_detached([py, "-X", "utf8", "-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8000"], ROOT, "web_backend.log")
-    return wait_http(BACKEND_URL, "Backend", 90)
+    popen_detached(
+        [
+            py,
+            "-X",
+            "utf8",
+            "-m",
+            "uvicorn",
+            "backend.app.main:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(BACKEND_PORT),
+        ],
+        ROOT,
+        "web_backend.log",
+    )
+    return wait_backend_ready(BACKEND_STARTUP_TIMEOUT)
 
 
 def ensure_frontend_deps() -> bool:
@@ -350,7 +467,7 @@ def start_static_frontend(py: str) -> bool:
             "--host",
             "127.0.0.1",
             "--port",
-            "5173",
+            str(FRONTEND_PORT),
             "--directory",
             str(FRONTEND_DIST_DIR),
         ],
@@ -362,18 +479,38 @@ def start_static_frontend(py: str) -> bool:
 
 def start_frontend(py: str) -> bool:
     if http_ok(FRONTEND_URL):
-        log("[INFO] Frontend is already healthy on port 5173.")
+        log(f"[INFO] Frontend is already healthy on port {FRONTEND_PORT}.")
         return True
-    if port_open(5173):
-        log("[WARN] Port 5173 is open but frontend HTTP check failed. Check output/runtime_logs/web_frontend.log.")
+    if port_open(FRONTEND_PORT):
+        log(
+            f"[WARN] Port {FRONTEND_PORT} is open but frontend HTTP check failed. "
+            "Check output/runtime_logs/web_frontend.log."
+        )
         return False
     npm = npm_executable()
     if not npm:
         return start_static_frontend(py)
     if not ensure_frontend_deps():
         return False
-    popen_detached([npm, "run", "dev", "--", "--force"], FRONTEND_DIR, "web_frontend.log")
-    return wait_http(FRONTEND_URL, "Frontend", 90)
+    os.environ.setdefault(
+        "VITE_API_PROXY_TARGET", f"http://127.0.0.1:{BACKEND_PORT}"
+    )
+    popen_detached(
+        [
+            npm,
+            "run",
+            "dev",
+            "--",
+            "--force",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(FRONTEND_PORT),
+        ],
+        FRONTEND_DIR,
+        "web_frontend.log",
+    )
+    return wait_http(FRONTEND_URL, "Frontend", FRONTEND_STARTUP_TIMEOUT)
 
 
 def maybe_check_ollama() -> None:
@@ -406,6 +543,7 @@ def main() -> int:
     parser.add_argument("--runtime-config", type=Path, action="append")
     parser.add_argument("--rag-qdrant-config", type=Path)
     parser.add_argument("--rag-model-config", type=Path)
+    parser.add_argument("--rag-reader-config", type=Path)
     parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
 
@@ -424,6 +562,8 @@ def main() -> int:
                 args.rag_qdrant_config.resolve(),
                 args.rag_model_config.resolve(),
             )
+        else:
+            load_rag_reader_env(resolve_rag_reader_config(args.rag_reader_config))
     except (OSError, RuntimeError) as exc:
         log(f"[ERROR] Runtime configuration failed: {exc}")
         return 2

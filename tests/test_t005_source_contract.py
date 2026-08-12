@@ -257,9 +257,11 @@ def test_frontend_contract_migrates_fact_status_out_of_global_layout():
     settings_api = (ROOT / "frontend/src/services/settingsApi.ts").read_text(encoding="utf-8")
     api = (ROOT / "frontend/src/api.ts").read_text(encoding="utf-8")
     assert "SourceContextPanel" in states
-    for label in ["数据来源", "运行批次", "生成时间", "模型版本", "特征版本", "最后刷新"]:
-        assert label in states
-    assert "当前无可用预测事实" in states
+    for forbidden_label in ["数据来源", "模拟数据", "真实数据", "测试数据", "Seed 数据"]:
+        assert forbidden_label not in states
+    for neutral_label in ["业务时间", "更新时间", "批次状态"]:
+        assert neutral_label in states
+    assert "当前业务信息暂不可用" in states
     assert "当前无可用真实预测" not in states
     assert "FactStatusBar" not in layout
     assert "api.sourceContext()" not in layout

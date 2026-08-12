@@ -1,0 +1,14 @@
+{
+  "schema_version": "browser-ai-assistant-final/v1",
+  "status": "PASS",
+  "providers": {
+    "kimi": {"six_scenarios": "PASS", "chatbi": "PASS", "multi_turn": "PASS", "actual_model": "Kimi K2.6"},
+    "mimo": {"six_scenarios": "PASS", "chatbi": "PASS", "multi_turn": "PASS", "actual_model": "MiMo V2.5"},
+    "deepseek": {"six_scenarios": "PASS", "chatbi": "PASS", "multi_turn": "PASS", "actual_model": "DeepSeek V4-Flash", "forecast_budget_regression": "CLOSED"},
+    "auto": {"six_scenarios": "PASS", "chatbi": "PASS", "multi_turn": "PASS", "actual_provider": "deepseek"}
+  },
+  "analysis_plan_validation": {"kimi": "PASS", "mimo": "PASS", "deepseek": "PASS", "auto": "PASS"},
+  "unexpected_4xx_5xx": 0,
+  "console_errors": 0,
+  "forbidden_messages": 0
+}

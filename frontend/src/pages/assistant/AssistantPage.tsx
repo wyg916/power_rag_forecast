@@ -46,9 +46,10 @@ const answerModeTabs = [
 ];
 
 const modelProviderOptions = [
-  { value: 'auto', label: '自动' },
-  { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'ollama', label: '本地 Qwen3' }
+  { value: 'auto', label: 'AUTO（推荐）' },
+  { value: 'kimi', label: 'Kimi K2.6' },
+  { value: 'mimo', label: 'MiMo V2.5' },
+  { value: 'deepseek', label: 'DeepSeek V4-Flash' }
 ];
 
 const dataSourceOptions = [
@@ -81,7 +82,9 @@ const ASSISTANT_CHAT_TIMEOUT_MS = 120000;
 
 const providerDisplayLabels: Record<string, string> = {
   deterministic: '快速回答',
-  deepseek: '在线模型',
+  kimi: 'Kimi K2.6',
+  mimo: 'MiMo V2.5',
+  deepseek: 'DeepSeek V4-Flash',
   ollama: '本地模型',
   fallback: '回答链路异常',
   template: '规则回答',
@@ -118,6 +121,8 @@ type AnswerState = {
   dataUsed?: Record<string, boolean>;
   llmUsed?: boolean;
   modelFallback?: boolean;
+  modelProviderUsed?: string;
+  modelProviderRequested?: string;
   riskLevel?: string;
   focusPeriods?: string[];
   warnings?: string[];
@@ -297,6 +302,8 @@ function normalizeAnswerState(response: any): AnswerState {
     dataUsed: response.data_used || {},
     llmUsed: response.llm_used,
     modelFallback: response.model_fallback,
+    modelProviderUsed: response.model_provider_used || response.planner?.provider,
+    modelProviderRequested: response.model_provider_requested,
     riskLevel: response.risk_level,
     focusPeriods: response.focus_periods || [],
     warnings: response.warnings || [],
@@ -571,6 +578,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const [answerStyle, setAnswerStyle] = useState('professional_brief');
   const [selectedDataSource, setSelectedDataSource] = useState('all');
   const [modelProvider, setModelProvider] = useState('auto');
+  const [sessionProviders, setSessionProviders] = useState<Record<string, string>>({});
   const [traceRows, setTraceRows] = useState<any[]>([]);
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [selectedReferences, setSelectedReferences] = useState<AssistantReference[]>([]);
@@ -593,6 +601,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const kpiCards = useMemo(() => buildKpiCards(activeAssistant), [activeAssistant]);
   const knowledgeItems = useMemo(() => buildKnowledgeItems(activeAssistant), [activeAssistant]);
   const answerModules = useMemo(() => buildAnswerModules(activeAssistant), [activeAssistant]);
+  const providerSessionKey = sessionId || 'new-conversation';
 
   useEffect(() => {
     let mounted = true;
@@ -640,7 +649,10 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       references: context?.references
     };
     const trace = normalizeTrace(response);
-    if (response.session_id) setSessionId(response.session_id);
+    if (response.session_id) {
+      setSessionId(response.session_id);
+      setSessionProviders((current) => ({ ...current, [response.session_id]: modelProvider }));
+    }
     updateAssistantMessage(id, (item) => ({
       ...item,
       content,
@@ -704,6 +716,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     if (answerStyle === 'chatbi') {
       const activeSessionId = sessionId || `chatbi_${Date.now().toString(36)}`;
       setSessionId(activeSessionId);
+      setSessionProviders((current) => ({ ...current, [activeSessionId]: modelProvider }));
       try {
         const response = await withAssistantTimeout(askChatBI(text, activeSessionId, { model_provider: modelProvider }));
         finalizeAssistantMessage(assistantId, response);
@@ -776,7 +789,18 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     setMessages([]);
     setActiveAssistantId(undefined);
     setInput('');
+    setModelProvider('auto');
     message.success('已创建新会话');
+  }
+
+  function selectConversation(nextSessionId: string) {
+    setSessionId(nextSessionId);
+    setModelProvider(sessionProviders[nextSessionId] || 'auto');
+  }
+
+  function changeModelProvider(value: string) {
+    setModelProvider(value);
+    setSessionProviders((current) => ({ ...current, [providerSessionKey]: value }));
   }
 
   function rotateQuestions() {
@@ -940,7 +964,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
               dataSource={sessionItems}
               renderItem={(item: any, index) => (
                 <List.Item className={index === 0 ? 'active-session' : ''}>
-                  <button type="button" onClick={() => setSessionId(item.session_id)}>
+                  <button type="button" onClick={() => selectConversation(item.session_id)}>
                     <strong>{item.title || item.session_id || 'AI 会话'}</strong>
                     <span>{String(item.updated_at || item.created_at || '').slice(5, 16) || '当前'}</span>
                     <Tag color={index === 0 ? 'success' : 'default'}>{index === 0 ? '进行中' : '已完成'}</Tag>
@@ -1002,6 +1026,13 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                           <div className="assistant-answer-intro">
                             <strong>{item.status === 'pending' || item.status === 'streaming' ? 'AI 助手正在生成业务研判' : '本次业务研判结果'}</strong>
                             <Space size={6}>
+                              {item.answerState?.modelProviderUsed && item.answerState.modelProviderUsed !== 'unavailable' && (
+                                <Tag color={item.answerState.modelFallback ? 'warning' : 'blue'}>
+                                  实际模型：{providerDisplayName(item.answerState.modelProviderUsed)}
+                                </Tag>
+                              )}
+                              {item.answerState?.modelProviderUsed === 'unavailable' && <Tag color="error">所选模型不可用</Tag>}
+                              {item.answerState?.modelFallback && <Tag color="warning">AUTO 已降级</Tag>}
                               {item.status === 'streaming' && <Tag color="processing">实时输出</Tag>}
                               {item.status === 'error' && <Tag color="error">请求失败</Tag>}
                               <Button type="text" size="small" icon={<CopyOutlined />} aria-label="复制回答" title="复制回答" onClick={() => copyText(item.content)}>复制</Button>
@@ -1083,6 +1114,16 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                   onChange={(event) => handleUploadFiles(event.target.files, 'image')}
                 />
                 <Space className="chat-input-tools">
+                  <span className="assistant-model-label">AI 对话模型</span>
+                  <Select
+                    className="assistant-model-selector"
+                    size="small"
+                    aria-label="AI 对话模型"
+                    value={modelProvider}
+                    options={modelProviderOptions}
+                    style={{ width: 178 }}
+                    onChange={changeModelProvider}
+                  />
                   <Button icon={<PaperClipOutlined />} loading={uploadingAttachment} onClick={() => attachmentInputRef.current?.click()}>上传附件</Button>
                   <Button icon={<DatabaseOutlined />} onClick={openReferencePicker}>引用数据</Button>
                   <Button icon={<PictureOutlined />} loading={uploadingAttachment} onClick={() => imageInputRef.current?.click()}>截图/图表</Button>
@@ -1168,7 +1209,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
             <div className="assistant-dev-toolbar">
               <span>调试模式</span>
               <Switch size="small" checked={developerMode} onChange={setDeveloperMode} checkedChildren="开发" unCheckedChildren="普通" />
-              <Select size="small" value={modelProvider} options={modelProviderOptions} style={{ width: 140 }} onChange={setModelProvider} />
+              <Select size="small" value={modelProvider} options={modelProviderOptions} style={{ width: 178 }} onChange={changeModelProvider} />
             </div>
             <TracePanel {...activeTrace} />
             <SectionCard title="当前回答状态" compact>

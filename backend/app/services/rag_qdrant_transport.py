@@ -22,7 +22,11 @@ from backend.app.core.security import CurrentUser
 from backend.app.repositories.base import postgres_engine
 from backend.app.services.qdrant_security_contract import qdrant_security_status
 from backend.app.services.qdrant_vector_store import QdrantReadOnlyStore
-from backend.app.services.rag_runtime_contract import RetrievalContext, runtime_contract_status
+from backend.app.services.rag_runtime_contract import (
+    PREPRODUCTION_CANDIDATE_MODE,
+    RetrievalContext,
+    runtime_contract_status,
+)
 
 
 EXPECTED_RELEASE_ROOT = Path("E:/智能运营分析项目/.runtime/rag/releases/RAG-R1").resolve()
@@ -201,6 +205,7 @@ class QdrantHttpsReadOnlyTransport:
         self.context = _cached_ssl_context(ca_path)
         self.api_key = api_key
         self.bm25 = _load_bm25()
+        self.target_mode = os.environ.get("RAG_RUNTIME_TARGET_MODE", "production_alias").strip().lower()
         self._alias_lock = Lock()
         self._alias_checked = False
         self._alias_error = ""
@@ -261,7 +266,11 @@ class QdrantHttpsReadOnlyTransport:
     def query(self, *, collection: str, request: Mapping[str, Any]) -> Mapping[str, Any]:
         if collection != "rag_chunks_RAG-R1":
             raise QdrantReadError("collection_rejected")
-        self._require_current_alias(collection)
+        if getattr(self, "target_mode", "production_alias") == PREPRODUCTION_CANDIDATE_MODE:
+            target = quote(collection)
+        else:
+            self._require_current_alias(collection)
+            target = quote(CURRENT_ALIAS)
         mode = str(request.get("mode") or "")
         common = {
             "filter": request.get("filter"),
@@ -271,7 +280,7 @@ class QdrantHttpsReadOnlyTransport:
         }
         if mode == "dense":
             payload = {**common, "query": request.get("query"), "using": "dense"}
-            return self._request(f"/collections/{quote(CURRENT_ALIAS)}/points/query", payload)
+            return self._request(f"/collections/{target}/points/query", payload)
         if mode == "sparse":
             source = request.get("query")
             query_text = str(source.get("text") or "") if isinstance(source, Mapping) else ""
@@ -279,10 +288,10 @@ class QdrantHttpsReadOnlyTransport:
             if not sparse["indices"]:
                 return {"points": []}
             payload = {**common, "query": sparse, "using": "bm25"}
-            return self._request(f"/collections/{quote(CURRENT_ALIAS)}/points/query", payload)
+            return self._request(f"/collections/{target}/points/query", payload)
         if mode == "structured":
             payload = {**common, "limit": common["limit"]}
-            return self._request(f"/collections/{quote(CURRENT_ALIAS)}/points/scroll", payload)
+            return self._request(f"/collections/{target}/points/scroll", payload)
         raise QdrantReadError("query_mode_invalid")
 
 
@@ -318,12 +327,43 @@ def _postgres_release_is_current(
     )
 
 
+def _preproduction_candidate_is_accepted(release_id: str, collection: str) -> bool:
+    root = EXPECTED_RELEASE_ROOT
+    try:
+        build = json.loads((root / "candidate_build_report.json").read_text(encoding="utf-8"))
+        candidate_collection = json.loads((root / "candidate_collection_report.json").read_text(encoding="utf-8"))
+        embedding = json.loads((root / "embedding_manifest.json").read_text(encoding="utf-8"))
+        envelope = json.loads((root / "candidate_release_envelope.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return False
+    return bool(
+        build.get("status") == "PASS"
+        and build.get("release_id") == release_id
+        and candidate_collection.get("status") == "PASS"
+        and candidate_collection.get("release_id") == release_id
+        and candidate_collection.get("collection") == collection
+        and candidate_collection.get("point_count") == 8339
+        and candidate_collection.get("alias_before") is None
+        and candidate_collection.get("alias_after") is None
+        and embedding.get("release_id") == release_id
+        and embedding.get("chunk_count") == 8339
+        and embedding.get("dimension") == 1024
+        and envelope.get("candidate_release_id") == release_id
+        and envelope.get("release_status") == "candidate"
+    )
+
+
 def enterprise_runtime_for_user(
     user: CurrentUser,
 ) -> tuple[RetrievalContext, QdrantReadOnlyStore]:
     contract = runtime_contract_status()
     contract.require_available()
-    if not _postgres_release_is_current(
+    if contract.release.target_mode == PREPRODUCTION_CANDIDATE_MODE:
+        if not _preproduction_candidate_is_accepted(
+            contract.release.release_id, contract.release.collection
+        ):
+            raise QdrantReadError("preproduction_candidate_acceptance_mismatch")
+    elif not _postgres_release_is_current(
         contract.release.release_id,
         contract.release.collection,
         tenant_id=user.tenant_id,

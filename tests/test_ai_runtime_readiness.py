@@ -11,8 +11,8 @@ def test_brief_answers_use_a_bounded_generation_budget() -> None:
     deep = plan_expert_answer("trading_risk_summary", "professional_deep", "deepseek")
 
     assert brief.task_type == "complex_analysis"
-    assert brief.max_tokens == 700
-    assert deep.max_tokens == 1200
+    assert brief.max_tokens == 4096
+    assert deep.max_tokens == 4096
 
 
 def test_opt_in_rag_prewarm_admits_only_non_fallback_expected_dimension(monkeypatch) -> None:

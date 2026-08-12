@@ -11,7 +11,9 @@ def test_provider_display_labels_are_productized() -> None:
     content = ASSISTANT_PAGE.read_text(encoding="utf-8")
 
     assert "deterministic: '快速回答'" in content
-    assert "deepseek: '在线模型'" in content
+    assert "kimi: 'Kimi K2.6'" in content
+    assert "mimo: 'MiMo V2.5'" in content
+    assert "deepseek: 'DeepSeek V4-Flash'" in content
     assert "ollama: '本地模型'" in content
     assert "fallback: '回答链路异常'" in content
     assert "普通用户默认不展示 Trace、工具调用日志和原始 JSON。" in content
@@ -30,6 +32,19 @@ def test_assistant_page_uses_messages_and_drawer_without_layout_debug_panel() ->
     assert "assistant-dev-collapse" not in content
     assert "开发者信息" in content
     assert "TracePanel {...activeTrace}" in content
+
+
+def test_ai_conversation_model_selector_is_four_way_and_session_scoped() -> None:
+    content = ASSISTANT_PAGE.read_text(encoding="utf-8")
+
+    for label in ["AUTO（推荐）", "Kimi K2.6", "MiMo V2.5", "DeepSeek V4-Flash"]:
+        assert label in content
+    assert "const [sessionProviders, setSessionProviders]" in content
+    assert "setModelProvider(sessionProviders[nextSessionId] || 'auto')" in content
+    assert 'aria-label="AI 对话模型"' in content
+    assert "实际模型：{providerDisplayName(item.answerState.modelProviderUsed)}" in content
+    assert "AUTO 已降级" in content
+    assert "model_20260620_063015" not in content
 
 
 def test_normal_mode_does_not_create_fake_business_answer() -> None:
@@ -55,3 +70,11 @@ def test_assistant_page_wires_real_interactions() -> None:
     assert "exportConversation('docx')" in content
     assert "exportConversation('pdf')" in content
     assert "assistant-context-tags" in content
+
+
+def test_assistant_messages_use_the_app_context_api() -> None:
+    content = ASSISTANT_PAGE.read_text(encoding="utf-8")
+
+    assert "App.useApp()" in content
+    assert "Tag, message } from 'antd'" not in content
+    assert "rowKey={(_: any, index?: number)" not in content

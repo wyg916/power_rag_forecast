@@ -16,6 +16,7 @@ def test_web_batch_is_read_only_on_startup() -> None:
     assert "set \"PYTHON_EXE=python\"" not in source
     assert "rev-parse --git-common-dir" in source
     assert "mklink /J" in source
+    assert "RAG_READER_CONFIG is validated by web_platform_launcher.py" in source
 
     for legacy_name in ("run_web_backend.bat", "run_web_frontend.bat"):
         legacy_source = (ROOT / legacy_name).read_text(encoding="utf-8")
@@ -40,15 +41,16 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status' in source
     assert "deploy\\rag-r1\\preproduction-profile.env" in source
     assert "rag_r1_qdrant_runtime_probe.py\" --mode health" in source
-    assert '--rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%"' in source
-    assert '--rag-model-config "%RAG_MODEL_CONFIG%"' in source
+    assert '--rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%"' not in source
+    assert '--rag-model-config "%RAG_MODEL_CONFIG%"' not in source
     assert "rag_r1_runtime_profile_check.py" in source
 
     web_source = (ROOT / "run_web_platform.bat").read_text(encoding="utf-8")
     assert 'runtime-config "%RAG_PREPRODUCTION_CONFIG%"' in web_source
     assert "deploy\\rag-r1\\preproduction-profile.env" in web_source
-    assert '--rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%"' in web_source
-    assert '--rag-model-config "%RAG_MODEL_CONFIG%"' in web_source
+    assert '--rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%"' not in web_source
+    assert '--rag-model-config "%RAG_MODEL_CONFIG%"' not in web_source
+    assert "RAG_READER_CONFIG is validated by web_platform_launcher.py" in web_source
 
 
 def test_rag_preproduction_profile_is_secret_free_and_frozen() -> None:
@@ -108,6 +110,37 @@ def test_missing_frontend_dependencies_fail_without_install(
     assert launcher.ensure_frontend_deps() is False
     output = capsys.readouterr().out
     assert "automatic network installation is disabled" in output
+
+
+def test_web_ports_are_configurable_without_changing_defaults() -> None:
+    source = (ROOT / "scripts" / "web_platform_launcher.py").read_text(
+        encoding="utf-8"
+    )
+    project_batch = (ROOT / "run_project.bat").read_text(encoding="utf-8")
+
+    assert '_configured_port("WEB_BACKEND_PORT", 8000)' in source
+    assert '_configured_port("WEB_FRONTEND_PORT", 5173)' in source
+    assert 'f"http://127.0.0.1:{BACKEND_PORT}"' in source
+    assert 'if not defined WEB_BACKEND_PORT set "WEB_BACKEND_PORT=8000"' in project_batch
+    assert 'if not defined WEB_FRONTEND_PORT set "WEB_FRONTEND_PORT=5173"' in project_batch
+    assert "timeout=60" in source
+    assert 'WEB_BACKEND_STARTUP_TIMEOUT", "720"' in source
+    assert 'WEB_FRONTEND_STARTUP_TIMEOUT", "180"' in source
+    assert "def backend_http_ok" in source
+    assert 'warmup.get("status") == "ready"' in source
+    assert "wait_backend_ready(BACKEND_STARTUP_TIMEOUT)" in source
+
+
+def test_rag_reader_config_is_discovered_once_and_fail_closed() -> None:
+    source = (ROOT / "scripts" / "web_platform_launcher.py").read_text(
+        encoding="utf-8"
+    )
+    project_batch = (ROOT / "run_project.bat").read_text(encoding="utf-8")
+
+    assert "resolve_rag_reader_config(args.rag_reader_config)" in source
+    assert 'shared_root.parent.glob(f"{shared_root.name}_*")' in source
+    assert "discovery must resolve exactly one file" in source
+    assert '--rag-reader-config "%RAG_READER_CONFIG%"' not in project_batch
 
 
 def test_runtime_config_layers_keep_least_privilege_identity_first(

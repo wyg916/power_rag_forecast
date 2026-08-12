@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from backend.app.ai_assistant.llm_providers import ProviderRequestError
 from backend.app.ai_assistant.llm_router import LLMRouter, sanitize_error
 from backend.app.ai_assistant import service
 
@@ -13,6 +14,14 @@ class FakeDeepSeekProvider:
     def chat(self, messages, **kwargs):
         return "deepseek answer"
 
+    def complete(self, messages, **kwargs):
+        return type("Result", (), {
+            "content": "deepseek answer",
+            "finish_reason": "stop",
+            "reasoning_content": "",
+            "tool_calls": (),
+        })()
+
     def health(self):
         return {"available": True, "provider": "deepseek", "model": self.default_model}
 
@@ -21,6 +30,15 @@ class BrokenDeepSeekProvider(FakeDeepSeekProvider):
     def chat(self, messages, **kwargs):
         fake_key = "sk" + "-" + "abcdefghijklmnopqrstuvwxyz"
         raise RuntimeError(f"bad key {fake_key}")
+
+    def complete(self, messages, **kwargs):
+        fake_key = "sk" + "-" + "abcdefghijklmnopqrstuvwxyz"
+        raise RuntimeError(f"bad key {fake_key}")
+
+
+class RetryableDeepSeekProvider(FakeDeepSeekProvider):
+    def complete(self, messages, **kwargs):
+        raise ProviderRequestError("deepseek", "timeout", retryable=True)
 
 
 class FakeOllamaProvider:
@@ -63,10 +81,30 @@ def test_llm_router_prefers_ollama_for_daily_chat_in_auto_mode(monkeypatch):
     assert status["provider"] == "ollama"
 
 
+def test_llm_router_skips_unhealthy_ollama_for_chatbi_plans(monkeypatch):
+    class UnhealthyOllamaProvider(FakeOllamaProvider):
+        def health(self):
+            return {"available": False, "provider": "ollama", "model": None}
+
+    monkeypatch.setenv("LLM_ROUTER_MODE", "auto")
+    monkeypatch.setenv("LLM_PROVIDER", "deepseek")
+    monkeypatch.setattr("backend.app.ai_assistant.llm_router.DeepSeekProvider", FakeDeepSeekProvider)
+    monkeypatch.setattr("backend.app.ai_assistant.llm_router.OllamaProvider", UnhealthyOllamaProvider)
+
+    content, status = LLMRouter().generate_answer(
+        [{"role": "user", "content": "查询数据库最新天气日期"}],
+        task_type="simple_data_answer",
+    )
+
+    assert content == "deepseek answer"
+    assert status["provider"] == "deepseek"
+
+
 def test_llm_router_auto_mode_can_fall_back_to_ollama(monkeypatch):
     monkeypatch.setenv("LLM_ROUTER_MODE", "auto")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
-    monkeypatch.setattr("backend.app.ai_assistant.llm_router.DeepSeekProvider", BrokenDeepSeekProvider)
+    monkeypatch.setenv("LLM_AUTO_PROVIDER_ORDER", "deepseek,ollama")
+    monkeypatch.setattr("backend.app.ai_assistant.llm_router.DeepSeekProvider", RetryableDeepSeekProvider)
     monkeypatch.setattr("backend.app.ai_assistant.llm_router.OllamaProvider", FakeOllamaProvider)
 
     content, status = LLMRouter().generate_answer(

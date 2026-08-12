@@ -171,6 +171,9 @@ def route_intent(question: str) -> IntentDecision:
     if "数据" in q and "支撑预测" in q:
         return IntentDecision("data_sql_query", 0.92, {}, normalized)
 
+    if any(k in q for k in ["对比历史同期", "历史同期对比", "同比历史情况", "同期情况"]):
+        return IntentDecision("knowledge_search", 0.92, {"keyword": normalized, "comparison": "historical_period"}, normalized)
+
     if "天气" in q and any(k in q for k in ["没更新", "未更新", "没有更新", "过期", "更新时间", "新鲜度"]):
         return IntentDecision("weather_data_latest_time", 0.98, {"domain": "weather"}, normalized)
 
@@ -182,7 +185,7 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("knowledge_search", 0.88, {"keyword": normalized}, normalized)
     if any(k in latin_q for k in ["day-ahead", "day ahead", "real-time", "real time", "pjm", "lmp", "dom"]):
         return IntentDecision("knowledge_search", 0.9, {"keyword": normalized}, normalized)
-    if any(k in q for k in ["尖峰概率", "尖峰风险", "峰谷价差", "日前市场", "实时市场", "节点电价"]):
+    if any(k in q for k in ["尖峰概率", "尖峰风险", "峰谷价差", "日前市场", "实时市场", "节点电价", "电力市场规则"]):
         return IntentDecision("knowledge_search", 0.9, {"keyword": normalized}, normalized)
     if any(k in q for k in ["南网", "南方电网", "税率", "代扣代缴", "完税", "回款金额"]):
         return IntentDecision("southern_grid_tax_query", 0.95, {"keyword": normalized}, normalized)
@@ -192,7 +195,7 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("market_power_price_query", 0.93, {"business_month": _business_month(normalized), "keyword": normalized}, normalized)
     if any(k in q for k in ["知识库", "rag", "检索文档", "政策文档", "文件摘要"]):
         return IntentDecision("knowledge_search", 0.9, {"keyword": normalized}, normalized)
-    if any(k in q for k in ["光伏政策", "电价政策", "补贴政策", "发改文件", "政策摘要", "文号"]):
+    if any(k in q for k in ["光伏政策", "电价政策", "补贴政策", "发改文件", "政策摘要", "政策解读", "政策影响", "文号"]):
         return IntentDecision("tariff_policy_search", 0.93, {"keyword": normalized}, normalized)
     if any(k in q for k in ["光伏电价", "上网电价", "补贴电价", "并网电价", "初始化电价", "总价"]) and any(k in q for k in ["查询", "多少", "规则", "并网", "补贴", "电价"]):
         return IntentDecision("tariff_query", 0.94, {"grid_date": _grid_date(normalized), "keyword": normalized}, normalized)
@@ -205,6 +208,12 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("price_data_latest_time", 0.98, {"domain": domain}, normalized)
     if "负荷" in q and any(k in q for k in ["截止", "最新", "数据范围", "更新时间"]):
         return IntentDecision("load_data_latest_time", 0.98, {"domain": "forecast_load" if "预测" in q else "load"}, normalized)
+    if any(k in q for k in ["分时电价预测", "电价预测曲线", "电价预测结果", "查看电价预测"]):
+        return IntentDecision("forecast_overview", 0.97, entities, normalized)
+    if "负荷" in q and "预测" in q:
+        return IntentDecision("load_forecast_analysis", 0.96, entities, normalized)
+    if any(k in q for k in ["新能源", "风电", "光伏", "出力"]) and "预测" in q:
+        return IntentDecision("renewable_forecast_analysis", 0.96, entities, normalized)
     if "数据" in q and any(k in q for k in ["更新", "状态", "新鲜度", "表", "数据库"]):
         return IntentDecision("database_table_freshness", 0.92, {"domain": "master_table"}, normalized)
     if any(k in q for k in ["预测窗口", "本次预测是哪天", "预测是哪天", "预测范围"]):
@@ -244,7 +253,7 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("risk_reason", 0.92, entities, normalized)
     if any(k in q for k in ["温度升高", "气温升高", "高温"]) and any(k in q for k in ["预测字段", "关注哪些", "电价", "风险"]):
         return IntentDecision("weather_impact_on_price", 0.9, entities, normalized)
-    if any(k in q for k in ["交易风险", "风险提示", "交易建议", "交易策略", "怎么做"]):
+    if any(k in q for k in ["交易风险", "风险提示", "交易建议", "交易策略", "购电策略", "购电建议", "怎么做"]):
         return IntentDecision("trading_risk_summary", 0.9, entities, normalized)
     if any(k in q for k in ["储能套利", "低充高放"]) or ("储能" in q and "价差" in q):
         return IntentDecision("storage_spread_analysis", 0.92, entities, normalized)

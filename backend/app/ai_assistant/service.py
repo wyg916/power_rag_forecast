@@ -640,6 +640,17 @@ def _rag_trigger_decision(intent: str, task_type: str, question: str) -> tuple[b
         info["reason"] = "daily_or_deterministic_skipped"
         return False, info
 
+    business_tools = [
+        name for name in tools_for_intent(intent)
+        if name != "search_business_knowledge"
+    ]
+    if business_tools and intent not in {"knowledge_search", "tariff_policy_search"}:
+        info.update({
+            "reason": "business_tool_grounded",
+            "tools": business_tools,
+        })
+        return False, info
+
     professional_terms = _matched_terms(question, PROFESSIONAL_RAG_TERMS)
     system_terms = _matched_terms(question, SYSTEM_USAGE_RAG_TERMS)
     daily_terms = _matched_terms(question, DAILY_CHAT_RAG_SKIP_TERMS)
@@ -895,6 +906,20 @@ def _evidence(results: list[ToolResult]) -> list[dict[str, Any]]:
             evidence.append({"source": "ai_report_status", "report_id": result.output.get("report_id"), "tool": result.name})
         elif result.name == "get_model_error_summary":
             evidence.append({"source": "prediction_tracking", "operation": "model_error_summary", "tool": result.name})
+        elif result.name == "get_load_forecast":
+            evidence.append({
+                "source": "raw_forecast_load_selected",
+                "date": result.output.get("date"),
+                "availability": result.output.get("availability"),
+                "tool": result.name,
+            })
+        elif result.name == "get_renewable_forecast":
+            evidence.append({
+                "source": "renewable_forecast_service",
+                "date": result.output.get("date"),
+                "availability": result.output.get("availability"),
+                "tool": result.name,
+            })
     return evidence
 
 
@@ -921,6 +946,10 @@ def _data_used(results: list[ToolResult]) -> dict[str, bool]:
             used["weather"] = True
         if name == "get_load_summary":
             used["load"] = True
+        if name == "get_load_forecast":
+            used["load"] = True
+        if name == "get_renewable_forecast":
+            used["prediction"] = True
         if name == "get_data_freshness":
             used["data_freshness"] = True
             domain = result.output.get("domain")
@@ -1103,6 +1132,30 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
         return answer_data_freshness(first, DATA_LABELS[intent])
     if intent == "data_sql_query":
         return answer_data_sql_query(first)
+    if intent == "forecast_overview":
+        if not first.get("available"):
+            return f"结论：当前未查询到可用的分时电价预测。\n\n数据依据：{first.get('message') or '预测结果不可用。'}"
+        return (
+            f"结论：当前分时电价预测均价约 {_safe_money(first.get('avg_price'))}，"
+            f"最高价约 {_safe_money(first.get('max_price'))}，最低价约 {_safe_money(first.get('min_price'))}。\n\n"
+            f"数据依据：预测批次 {first.get('run_id') or '-'}；最高价时点 {first.get('max_time') or '-'}；"
+            f"最低价时点 {first.get('min_time') or '-'}；峰谷价差约 {_safe_money(first.get('spread'))}。\n\n"
+            "风险提示：预测结果用于分析与人工复核，不构成自动交易指令。"
+        )
+    if intent == "load_forecast_analysis":
+        items = first.get("records") or first.get("items") or first.get("data") or []
+        return (
+            f"结论：{'已查询到负荷预测数据。' if first.get('available') else '当前未查询到可用负荷预测数据。'}\n\n"
+            f"数据依据：{first.get('message') or ('返回记录数 ' + str(len(items)) if items else '负荷预测接口返回的可用状态。')}\n\n"
+            "业务建议：结合高峰负荷时段、分时电价和天气扰动复核购售电敞口。"
+        )
+    if intent == "renewable_forecast_analysis":
+        items = first.get("records") or first.get("items") or first.get("data") or []
+        return (
+            f"结论：{'已查询到新能源出力预测数据。' if first.get('available') else '当前系统未查询到可用新能源出力预测数据。'}\n\n"
+            f"数据依据：{first.get('message') or ('返回记录数 ' + str(len(items)) if items else '新能源预测接口返回的可用状态。')}\n\n"
+            "风险提示：出力数据不可用时不能编造风光预测数值；应先检查数据接入，再评估供需与价格影响。"
+        )
     if intent in {"forecast_max_price", "forecast_min_price", "forecast_avg_price", "forecast_spread"}:
         return answer_forecast_metric(first, intent)
     if intent == "storage_discharge_advice" or intent == "storage_spread_analysis":
@@ -1427,7 +1480,12 @@ def answer_chat_accurate(
     trace = TraceManager(clean_question)
     trace.step("input_normalizer", normalized_question=clean_question)
     stage_started = time.perf_counter()
-    previous = get_conversation_state(memory_identity) if memory_identity else None
+    memory_degraded_components: list[str] = []
+    try:
+        previous = get_conversation_state(memory_identity) if memory_identity else None
+    except MemoryPersistenceError:
+        previous = None
+        memory_degraded_components.append("conversation_state_read")
     explicit_memory_content = parse_explicit_memory_request(clean_question)
     memory_admission: dict[str, Any] | None = None
     long_term_memories: list[dict[str, Any]] = []
@@ -1448,7 +1506,10 @@ def answer_chat_accurate(
         if memory_identity and persist:
             long_term_memories = retrieve_memories(memory_identity, clean_question, limit=5)
     except MemoryCoreError as exc:
-        raise MemoryPersistenceError("enterprise memory unavailable") from exc
+        if explicit_memory_content or recall_requested:
+            raise MemoryPersistenceError("enterprise memory unavailable") from exc
+        memory_degraded_components.append("enterprise_memory_read")
+        long_term_memories = []
     long_term_context = build_memory_context(
         previous.__dict__ if previous else {},
         long_term_memories,
@@ -1482,7 +1543,12 @@ def answer_chat_accurate(
         timings_ms=timings_ms,
         total_started=total_started,
     )
-    explicit_provider = (model_provider or "auto").strip().lower() in {"deepseek", "ollama"}
+    explicit_provider = (model_provider or "auto").strip().lower() in {
+        "deepseek",
+        "kimi",
+        "mimo",
+        "ollama",
+    }
     if fast_payload is not None and memory_admission is None and not recall_requested and not explicit_provider:
         return fast_payload
     plan = plan_answer(decision.intent)
@@ -1712,25 +1778,30 @@ def answer_chat_accurate(
         {"tool_name": item.name, "input": item.input, "success": item.success, "output": item.output, "error_message": item.error_message}
         for item in tool_results
     ]
+    memory_persisted = False
     if persist:
         if memory_identity is None:
             raise ValueError("authoritative identity is required when persistence is enabled")
-        save_assistant_turn(
-            identity=memory_identity,
-            question=clean_question,
-            answer=answer,
-            intent=decision.intent,
-            evidence=evidence,
-            tool_calls=tool_calls,
-            trace_id=trace.trace_id,
-            trace_payload=trace_payload,
-            guard_result={"result": guard_result},
-            state=_state_from_answer(session_id, decision, answer, tool_results, run_id),
-            memory_usages=usage_items(
-                long_term_memories,
-                used_in_answer=bool(recall_requested or (llm_used and long_term_memories)),
-            ),
-        )
+        try:
+            save_assistant_turn(
+                identity=memory_identity,
+                question=clean_question,
+                answer=answer,
+                intent=decision.intent,
+                evidence=evidence,
+                tool_calls=tool_calls,
+                trace_id=trace.trace_id,
+                trace_payload=trace_payload,
+                guard_result={"result": guard_result},
+                state=_state_from_answer(session_id, decision, answer, tool_results, run_id),
+                memory_usages=usage_items(
+                    long_term_memories,
+                    used_in_answer=bool(recall_requested or (llm_used and long_term_memories)),
+                ),
+            )
+            memory_persisted = True
+        except MemoryPersistenceError:
+            memory_degraded_components.append("conversation_persistence")
     focus_periods = [
         item.get("time") or item.get("hour")
         for item in (
@@ -1823,7 +1894,7 @@ def answer_chat_accurate(
         "trace_id": trace.trace_id,
         "degraded_components": list(
             (rag_result.get("retrieval") or {}).get("degraded_components") or []
-        ),
+        ) + memory_degraded_components,
         "evidence": evidence,
         "answer_style": normalize_answer_style(answer_style),
         "model_provider_used": model_status.get("provider") or "",
@@ -1844,6 +1915,9 @@ def answer_chat_accurate(
             "retrieved_count": len(long_term_memories),
             "used_in_answer": bool(recall_requested or (llm_used and long_term_memories)),
             "admission": memory_admission.get("decision") if memory_admission else None,
+            "persisted": memory_persisted,
+            "available": not memory_degraded_components,
+            "degraded_components": memory_degraded_components,
         },
     }
     if debug:
