@@ -34,7 +34,7 @@ def _configured_port(name: str, default: int) -> int:
 
 BACKEND_PORT = _configured_port("WEB_BACKEND_PORT", 8000)
 FRONTEND_PORT = _configured_port("WEB_FRONTEND_PORT", 5173)
-BACKEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_BACKEND_STARTUP_TIMEOUT", "420"))
+BACKEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_BACKEND_STARTUP_TIMEOUT", "720"))
 FRONTEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_FRONTEND_STARTUP_TIMEOUT", "180"))
 BACKEND_URL = f"http://127.0.0.1:{BACKEND_PORT}/api/health"
 FRONTEND_URL = f"http://127.0.0.1:{FRONTEND_PORT}"

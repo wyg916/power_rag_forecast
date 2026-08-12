@@ -118,7 +118,7 @@ def test_web_ports_are_configurable_without_changing_defaults() -> None:
     assert 'if not defined WEB_BACKEND_PORT set "WEB_BACKEND_PORT=8000"' in project_batch
     assert 'if not defined WEB_FRONTEND_PORT set "WEB_FRONTEND_PORT=5173"' in project_batch
     assert "timeout=60" in source
-    assert 'WEB_BACKEND_STARTUP_TIMEOUT", "420"' in source
+    assert 'WEB_BACKEND_STARTUP_TIMEOUT", "720"' in source
     assert 'WEB_FRONTEND_STARTUP_TIMEOUT", "180"' in source
     assert "def backend_http_ok" in source
     assert 'warmup.get("status") == "ready"' in source
