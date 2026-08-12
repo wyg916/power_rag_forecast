@@ -1,0 +1,13 @@
+{
+  "schema_version": "ai-assistant-provider-completion-final/v1",
+  "status": "PASS",
+  "providers": {"kimi": "PASS", "mimo": "PASS", "deepseek": "PASS", "auto": "PASS"},
+  "capabilities": {"general_chat": "PASS", "chatbi": "PASS", "rag_business_analysis": "PASS", "multi_turn": "PASS", "structured_plan": "PASS", "tool_calling": "PASS"},
+  "browser": {"status": "PASS", "unexpected_4xx_5xx": 0, "console_errors": 0, "analysis_plan_validation": "PASS", "forbidden_messages": 0},
+  "gates": {"golden_50": "50/50 PASS", "memory": "PASS", "rag_regression": "PASS", "security": "PASS", "frontend_build": "PASS", "temporary_user_cleanup": "PASS"},
+  "release_blocking": 0,
+  "unclassified_fail": 0,
+  "unclassified_error": 0,
+  "production_cutover": "NOT_EXECUTED",
+  "remote_push": "NOT_EXECUTED"
+}

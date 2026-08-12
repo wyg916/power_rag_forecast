@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 COMPLEX_INTENTS = {
     "trading_risk_summary",
+    "forecast_overview",
     "forecast_risk_hours",
     "risk_reason",
     "high_price_reason",
@@ -64,6 +65,9 @@ def plan_expert_answer(intent: str, answer_style: str | None = None, model_provi
         task_type = "business_answer"
 
     preferred = forced if forced in {"deepseek", "kimi", "mimo", "ollama"} else "auto"
-    max_tokens = 1800 if task_type == "complex_analysis" else 900
+    # Reasoning-capable providers can spend most of a short budget on private
+    # reasoning before emitting the user-visible answer. Reserve enough room
+    # for both phases on full business-context prompts.
+    max_tokens = 4096 if task_type == "complex_analysis" else 900
     temperature = 0.25 if task_type != "daily_chat" else 0.45
     return ExpertAnswerPlan(task_type=task_type, preferred_provider=preferred, temperature=temperature, max_tokens=max_tokens)

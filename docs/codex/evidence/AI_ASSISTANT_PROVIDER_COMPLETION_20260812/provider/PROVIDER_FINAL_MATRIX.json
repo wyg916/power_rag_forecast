@@ -1,0 +1,202 @@
+﻿{
+    "schema_version":  "provider-final-matrix/v1",
+    "generated_at":  "2026-08-13T00:13:33.8860133+08:00",
+    "authority":  "live_provider_calls",
+    "providers":  [
+                      {
+                          "provider":  "kimi",
+                          "model":  "kimi-k2.6",
+                          "base_url":  "https://api.moonshot.cn/v1",
+                          "key_fingerprint":  "sha256:8de8aeb2b724",
+                          "request_spacing_seconds":  22.0,
+                          "checks":  {
+                                         "authentication_models":  {
+                                                                       "passed":  true,
+                                                                       "model_visible":  true,
+                                                                       "reason":  ""
+                                                                   },
+                                         "general_chat":  {
+                                                              "passed":  true,
+                                                              "latency_ms":  2743.345,
+                                                              "content_present":  true,
+                                                              "actual_model":  "kimi-k2.6"
+                                                          },
+                                         "multi_turn":  {
+                                                            "passed":  true,
+                                                            "latency_ms":  3478.702,
+                                                            "content_present":  true,
+                                                            "context_retained":  true,
+                                                            "actual_model":  "kimi-k2.6"
+                                                        },
+                                         "structured_plan":  {
+                                                                 "passed":  true,
+                                                                 "latency_ms":  3187.47,
+                                                                 "schema_valid":  true
+                                                             },
+                                         "chatbi_analysis_plan":  {
+                                                                      "passed":  true,
+                                                                      "latency_ms":  4534.863,
+                                                                      "schema_valid":  true
+                                                                  },
+                                         "tool_calling":  {
+                                                              "passed":  true,
+                                                              "latency_ms":  3056.54,
+                                                              "call_present":  true,
+                                                              "call_count":  1
+                                                          },
+                                         "rag_business_analysis":  {
+                                                                       "passed":  true,
+                                                                       "latency_ms":  4656.794,
+                                                                       "content_present":  true,
+                                                                       "evidence_bound":  true,
+                                                                       "actual_model":  "kimi-k2.6"
+                                                                   },
+                                         "live_error_mapping":  {
+                                                                    "passed":  true,
+                                                                    "latency_ms":  2082.992,
+                                                                    "mapped_status_code":  404,
+                                                                    "mapped_reason":  "http_404",
+                                                                    "retryable":  false
+                                                                },
+                                         "timeout_mapping":  {
+                                                                 "passed":  true,
+                                                                 "configured_seconds":  120,
+                                                                 "mapping_contract_test":  "tests/test_ai_multi_provider_contract.py::test_timeout_is_retryable"
+                                                             }
+                                     },
+                          "status":  "PASS"
+                      },
+                      {
+                          "provider":  "mimo",
+                          "model":  "mimo-v2.5",
+                          "base_url":  "https://api.xiaomimimo.com/v1",
+                          "key_fingerprint":  "sha256:a3176a0ce95f",
+                          "request_spacing_seconds":  1.0,
+                          "checks":  {
+                                         "authentication_models":  {
+                                                                       "passed":  true,
+                                                                       "model_visible":  true,
+                                                                       "reason":  ""
+                                                                   },
+                                         "general_chat":  {
+                                                              "passed":  true,
+                                                              "latency_ms":  2908.956,
+                                                              "content_present":  true,
+                                                              "actual_model":  "mimo-v2.5"
+                                                          },
+                                         "multi_turn":  {
+                                                            "passed":  true,
+                                                            "latency_ms":  2789.848,
+                                                            "content_present":  true,
+                                                            "context_retained":  true,
+                                                            "actual_model":  "mimo-v2.5"
+                                                        },
+                                         "structured_plan":  {
+                                                                 "passed":  true,
+                                                                 "latency_ms":  2889.416,
+                                                                 "schema_valid":  true
+                                                             },
+                                         "chatbi_analysis_plan":  {
+                                                                      "passed":  true,
+                                                                      "latency_ms":  7857.079,
+                                                                      "schema_valid":  true
+                                                                  },
+                                         "tool_calling":  {
+                                                              "passed":  true,
+                                                              "latency_ms":  3425.481,
+                                                              "call_present":  true,
+                                                              "call_count":  1
+                                                          },
+                                         "rag_business_analysis":  {
+                                                                       "passed":  true,
+                                                                       "latency_ms":  5652.284,
+                                                                       "content_present":  true,
+                                                                       "evidence_bound":  true,
+                                                                       "actual_model":  "mimo-v2.5"
+                                                                   },
+                                         "live_error_mapping":  {
+                                                                    "passed":  true,
+                                                                    "latency_ms":  1126.171,
+                                                                    "mapped_status_code":  400,
+                                                                    "mapped_reason":  "http_400",
+                                                                    "retryable":  false
+                                                                },
+                                         "timeout_mapping":  {
+                                                                 "passed":  true,
+                                                                 "configured_seconds":  120,
+                                                                 "mapping_contract_test":  "tests/test_ai_multi_provider_contract.py::test_timeout_is_retryable"
+                                                             }
+                                     },
+                          "status":  "PASS"
+                      },
+                      {
+                          "provider":  "deepseek",
+                          "model":  "deepseek-v4-flash",
+                          "base_url":  "https://api.deepseek.com",
+                          "key_fingerprint":  "sha256:6e85fe035e06",
+                          "request_spacing_seconds":  1.0,
+                          "checks":  {
+                                         "authentication_models":  {
+                                                                       "passed":  true,
+                                                                       "model_visible":  true,
+                                                                       "reason":  ""
+                                                                   },
+                                         "general_chat":  {
+                                                              "passed":  true,
+                                                              "latency_ms":  3465.716,
+                                                              "content_present":  true,
+                                                              "actual_model":  "deepseek-v4-flash"
+                                                          },
+                                         "multi_turn":  {
+                                                            "passed":  true,
+                                                            "latency_ms":  2879.056,
+                                                            "content_present":  true,
+                                                            "context_retained":  true,
+                                                            "actual_model":  "deepseek-v4-flash"
+                                                        },
+                                         "structured_plan":  {
+                                                                 "passed":  true,
+                                                                 "latency_ms":  2282.728,
+                                                                 "schema_valid":  true
+                                                             },
+                                         "chatbi_analysis_plan":  {
+                                                                      "passed":  true,
+                                                                      "latency_ms":  3002.917,
+                                                                      "schema_valid":  true
+                                                                  },
+                                         "tool_calling":  {
+                                                              "passed":  true,
+                                                              "latency_ms":  2188.258,
+                                                              "call_present":  true,
+                                                              "call_count":  1
+                                                          },
+                                         "rag_business_analysis":  {
+                                                                       "passed":  true,
+                                                                       "latency_ms":  2465.852,
+                                                                       "content_present":  true,
+                                                                       "evidence_bound":  true,
+                                                                       "actual_model":  "deepseek-v4-flash"
+                                                                   },
+                                         "live_error_mapping":  {
+                                                                    "passed":  true,
+                                                                    "latency_ms":  941.57,
+                                                                    "mapped_status_code":  400,
+                                                                    "mapped_reason":  "http_400",
+                                                                    "retryable":  false
+                                                                },
+                                         "timeout_mapping":  {
+                                                                 "passed":  true,
+                                                                 "configured_seconds":  120,
+                                                                 "mapping_contract_test":  "tests/test_ai_multi_provider_contract.py::test_timeout_is_retryable"
+                                                             }
+                                     },
+                          "status":  "PASS"
+                      }
+                  ],
+    "summary":  {
+                    "kimi":  "PASS",
+                    "mimo":  "PASS",
+                    "deepseek":  "PASS",
+                    "all_pass":  true
+                }
+}

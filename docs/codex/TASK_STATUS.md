@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-13 Provider Completion
+
+| 任务 | 状态 | 分支 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| AI Assistant Runtime Hotfix / Provider Completion | PASS | `hotfix/ai-assistant-runtime-providers-20260812` | `docs/codex/evidence/AI_ASSISTANT_PROVIDER_COMPLETION_20260812` | 无；Kimi、MiMo、DeepSeek、AUTO、Browser、Golden 50、Memory、RAG、Security、Frontend 全部 PASS，RELEASE_BLOCKING=0。 |
+
 ## AI Assistant Runtime Hotfix 续表
 
 | 任务 | 状态 | 完成时间 | 分支/提交 | 证据目录 | 阻塞项 |

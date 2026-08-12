@@ -11,6 +11,7 @@ from backend.app.ai_assistant.llm_providers.openai_compatible import (
 )
 from backend.app.ai_assistant.llm_router import LLMRouter
 from backend.app.ai_assistant.llm_providers import DeepSeekProvider, KimiProvider, MiMoProvider
+from backend.app.ai_assistant.expert_answer_planner import plan_expert_answer
 
 
 class _Response:
@@ -126,3 +127,27 @@ def test_product_provider_model_ids_are_not_overridden_by_legacy_env(monkeypatch
     assert KimiProvider().default_model == "kimi-k2.6"
     assert MiMoProvider().default_model == "mimo-v2.5"
     assert DeepSeekProvider().default_model == "deepseek-v4-flash"
+
+
+def test_kimi_k26_normalizes_provider_neutral_temperature(monkeypatch):
+    captured = []
+
+    def request(*args, **kwargs):
+        captured.append(kwargs["json"])
+        if kwargs["json"].get("stream"):
+            return _Response(lines=['data: {"choices":[{"delta":{"content":"甲"}}]}', 'data: [DONE]'])
+        return _Response({"model": "kimi-k2.6", "choices": [{"finish_reason": "stop", "message": {"content": "成功"}}]})
+
+    monkeypatch.setattr(requests, "request", request)
+    monkeypatch.setenv("KIMI_API_KEY", "test-key")
+    active = KimiProvider()
+    assert active.complete([{"role": "user", "content": "你好"}], temperature=0).content == "成功"
+    assert list(active.chat_stream([{"role": "user", "content": "你好"}], temperature=0)) == ["甲"]
+    assert all(item["temperature"] == 0.6 for item in captured)
+    assert all(item["thinking"] == {"type": "disabled"} for item in captured)
+
+
+def test_forecast_overview_reserves_complex_answer_budget():
+    plan = plan_expert_answer("forecast_overview", model_provider="deepseek")
+    assert plan.task_type == "complex_analysis"
+    assert plan.max_tokens == 4096
