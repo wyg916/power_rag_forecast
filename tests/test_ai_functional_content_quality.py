@@ -6,6 +6,7 @@ from backend.app.ai_assistant import service
 from backend.app.ai_assistant.core.intent_router import route_intent
 from backend.app.ai_assistant.core.tool_router import tools_for_intent
 from backend.app.ai_assistant.schemas import IntentDecision
+from backend.app.ai_assistant.tools import execute_tool
 
 
 def _result(name: str, output: dict):
@@ -64,6 +65,27 @@ def test_load_weather_summary_uses_both_database_backed_tool_results():
     assert "957.50 MW" in answer
     assert "10.00 至 21.50 摄氏度" in answer
     assert "时间窗口是否一致" in answer
+
+
+def test_load_summary_tool_keeps_database_statistics(monkeypatch):
+    monkeypatch.setattr(
+        "backend.app.ai_assistant.tools.weather_tools.load_forecast",
+        lambda **_: {
+            "available": True,
+            "avg_load": 957.5,
+            "max_load": 1015.0,
+            "min_load": 900.0,
+            "records": [],
+        },
+    )
+
+    output = execute_tool("get_load_summary", run_id="latest")
+
+    assert output["available"] is True
+    assert output["domain"] == "load_forecast"
+    assert output["avg_load"] == 957.5
+    assert output["max_load"] == 1015.0
+    assert output["min_load"] == 900.0
 
 
 def test_report_summary_has_storage_and_publication_review_boundaries():
