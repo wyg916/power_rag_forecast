@@ -546,8 +546,12 @@ function SystemStatusTab({
   saveConfig: () => void;
   canWriteSettings: boolean;
 }) {
-  const recent = healthRecords.slice(0, 8).map((item) => ({
-    key: item.id || item.key || item.module_key,
+  const recent = healthRecords.slice(0, 8).map((item, index) => ({
+    key: [
+      item.id || item.key || item.module_key || item.module || 'health-check',
+      item.checked_at || item.checkedAt || 'unknown-time',
+      index
+    ].join('-'),
     time: item.checked_at || item.checkedAt,
     module: item.module_name || item.module,
     result: item.status_label || item.status,

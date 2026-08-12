@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.api.v1.endpoints import assistant as assistant_endpoint
 from backend.app.ai.chat_memory import MemoryNotFoundError, MemoryPersistenceError
+from backend.app.ai_assistant.service import ModelProviderUnavailableError
 from backend.app.main import app
 
 
@@ -36,6 +37,24 @@ def test_ai_chat_reuses_answer_chat(monkeypatch):
     identity = captured["kwargs"]["identity"]
     assert identity.user_id == "pytest-admin"
     assert identity.tenant_id == "default"
+
+
+def test_ai_chat_returns_503_when_explicit_provider_is_unavailable(monkeypatch):
+    def unavailable(*_args, **_kwargs):
+        raise ModelProviderUnavailableError("ollama", "local model is unavailable")
+
+    monkeypatch.setattr(assistant_endpoint, "answer_chat", unavailable)
+
+    response = client.post(
+        "/api/ai/chat",
+        json={"question": "请分析跨部门协同约束", "model_provider": "ollama"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == {
+        "code": "model_provider_unavailable",
+        "provider": "ollama",
+    }
 
 
 def test_enterprise_ai_chat_injects_authenticated_rag_runtime(monkeypatch):

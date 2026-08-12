@@ -36,7 +36,7 @@ from ....ai.identity_context import IdentityContext
 from ....ai.assistant_service import answer_chat
 from ....platform_services import generate_ai_insights
 from ....schemas import AgentAnalyzeRequest, AnswerFeedbackRequest, ChatFeedbackRequest, ChatRequest
-from backend.app.ai_assistant.service import answer_chat_accurate
+from backend.app.ai_assistant.service import ModelProviderUnavailableError, answer_chat_accurate
 
 
 router = APIRouter()
@@ -53,6 +53,13 @@ def _raise_memory_http(exc: Exception) -> None:
     if isinstance(exc, (MemoryNotFoundError, MemoryConflictError)):
         raise HTTPException(status_code=404, detail="assistant_memory_not_found") from exc
     raise HTTPException(status_code=503, detail="assistant_memory_unavailable") from exc
+
+
+def _raise_model_provider_http(exc: ModelProviderUnavailableError) -> None:
+    raise HTTPException(
+        status_code=503,
+        detail={"code": "model_provider_unavailable", "provider": exc.provider},
+    ) from exc
 
 
 def _stream_event(event: str, data: dict[str, Any]) -> str:
@@ -185,6 +192,9 @@ def _answer_chat_from_payload(
             identity=_identity(user, payload.session_id or "", payload.run_id),
             **_enterprise_runtime(user),
         ))
+    except ModelProviderUnavailableError as exc:
+        _raise_model_provider_http(exc)
+        raise AssertionError("unreachable")
     except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
         _raise_memory_http(exc)
         raise AssertionError("unreachable")
@@ -398,6 +408,9 @@ def ai_agent_analyze(
             identity=_identity(user, payload.session_id or "", payload.run_id),
             **_enterprise_runtime(user),
         ))
+    except ModelProviderUnavailableError as exc:
+        _raise_model_provider_http(exc)
+        raise AssertionError("unreachable")
     except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
         _raise_memory_http(exc)
         raise AssertionError("unreachable")

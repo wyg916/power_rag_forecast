@@ -56,6 +56,15 @@ DATA_LABELS = {
 }
 
 
+class ModelProviderUnavailableError(RuntimeError):
+    """Raised when a user-selected model provider cannot complete the request."""
+
+    def __init__(self, provider: str, reason: str) -> None:
+        self.provider = provider
+        self.reason = reason
+        super().__init__(f"{provider}: {reason}")
+
+
 def _llm_enabled() -> bool:
     value = os.environ.get("AI_ASSISTANT_LLM_ENABLED", "1").strip().lower()
     return value not in {"0", "false", "no", "off"}
@@ -1473,7 +1482,8 @@ def answer_chat_accurate(
         timings_ms=timings_ms,
         total_started=total_started,
     )
-    if fast_payload is not None and memory_admission is None and not recall_requested:
+    explicit_provider = (model_provider or "auto").strip().lower() in {"deepseek", "ollama"}
+    if fast_payload is not None and memory_admission is None and not recall_requested and not explicit_provider:
         return fast_payload
     plan = plan_answer(decision.intent)
     trace.step("answer_planner", answer_mode=plan.answer_mode, llm_used=plan.use_llm)
@@ -1589,8 +1599,23 @@ def answer_chat_accurate(
     llm_task_type = expert_plan.task_type
     if use_rag and llm_task_type == "daily_chat":
         llm_task_type = "business_answer"
-    skip_daily_llm = _should_skip_llm_for_daily_chat(decision.intent, llm_task_type, clean_question)
-    if memory_admission is not None or recall_requested or rag_required_unavailable or not _should_use_llm(decision.intent) or skip_daily_llm:
+    skip_daily_llm = (
+        not explicit_provider
+        and _should_skip_llm_for_daily_chat(decision.intent, llm_task_type, clean_question)
+    )
+    force_explicit_llm = bool(
+        explicit_provider
+        and memory_admission is None
+        and not recall_requested
+        and not rag_required_unavailable
+    )
+    if (
+        memory_admission is not None
+        or recall_requested
+        or rag_required_unavailable
+        or (not force_explicit_llm and not _should_use_llm(decision.intent))
+        or skip_daily_llm
+    ):
         model_status = {"provider": "deterministic", "model": "tool_answer", "fallback": False}
         trace.step(
             "llm_router",
@@ -1637,9 +1662,19 @@ def answer_chat_accurate(
             elif llm_answer:
                 trace.step("llm_router", success=True, used_for_answer=False, reason="reasoning_leak", **model_status)
         except Exception as exc:
+            if explicit_provider:
+                raise ModelProviderUnavailableError(
+                    (model_provider or "auto").strip().lower(),
+                    sanitize_error(exc),
+                ) from exc
             model_error = f"模型调用失败，已使用工具事实模板兜底：{sanitize_error(exc)}"
             trace.step("llm_router", success=False, error=model_error, requested_provider=model_provider)
     else:
+        if explicit_provider:
+            raise ModelProviderUnavailableError(
+                (model_provider or "auto").strip().lower(),
+                "AI_ASSISTANT_LLM_ENABLED is disabled",
+            )
         model_status = {"provider": "template", "model": "tool_fallback", "fallback": True}
         trace.step("llm_router", success=True, provider="template", reason="disabled_by_env")
         timings_ms["llm_generate_ms"] = 0.0

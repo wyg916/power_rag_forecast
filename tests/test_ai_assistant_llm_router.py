@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from backend.app.ai_assistant.llm_router import LLMRouter, sanitize_error
+from backend.app.ai_assistant import service
 
 
 class FakeDeepSeekProvider:
@@ -106,3 +107,26 @@ def test_sanitize_error_masks_api_key_like_values():
     masked = sanitize_error(f"request failed: {fake_key}")
     assert ("sk" + "-***") in masked
     assert "abcdefghijklmnopqrstuvwxyz" not in masked
+
+
+def test_explicit_provider_failure_is_not_wrapped_as_success(monkeypatch):
+    class BrokenRouter:
+        def generate_answer(self, *_args, **_kwargs):
+            raise RuntimeError("provider offline")
+
+    monkeypatch.setattr(service, "LLMRouter", BrokenRouter)
+    monkeypatch.setenv("AI_ASSISTANT_LLM_ENABLED", "1")
+    monkeypatch.setattr(service, "rag_enabled", lambda: False)
+    monkeypatch.setattr(service, "get_conversation_state", lambda _identity: None)
+    monkeypatch.setattr(service, "_execute_tools", lambda *_args, **_kwargs: [])
+
+    try:
+        service.answer_chat_accurate(
+            "请从组织流程角度分析跨部门协同的三个关键约束",
+            model_provider="ollama",
+        )
+    except service.ModelProviderUnavailableError as exc:
+        assert exc.provider == "ollama"
+        assert "provider offline" in exc.reason
+    else:
+        raise AssertionError("explicit provider failure must not return a success payload")
