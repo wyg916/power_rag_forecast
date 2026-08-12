@@ -35,6 +35,11 @@ def write_audit_log(
     metadata: dict[str, Any] | None = None,
 ) -> bool:
     masked_metadata = mask_secret_fields(metadata or {})
+    if user:
+        masked_metadata = {
+            **masked_metadata,
+            "_workspace_id": user.workspace_id,
+        }
     engine = postgres_engine()
     if engine is None:
         _MEMORY_AUDIT_LOGS.append(
@@ -42,6 +47,8 @@ def write_audit_log(
                 "id": len(_MEMORY_AUDIT_LOGS) + 1,
                 "actor": user.username if user else "",
                 "role_id": user.role if user else "",
+                "tenant_id": user.tenant_id if user else "default",
+                "workspace_id": user.workspace_id if user else "default",
                 "action": action,
                 "resource_type": resource_type,
                 "resource_id": resource_id,
@@ -59,11 +66,12 @@ def write_audit_log(
                     """
                     INSERT INTO audit_logs (
                         actor, role_id, action, resource_type, resource_id,
-                        status, request_id, ip_address, metadata_json
+                        status, request_id, ip_address, metadata_json, tenant_id
                     )
                     VALUES (
                         :actor, :role_id, :action, :resource_type, :resource_id,
-                        :status, :request_id, :ip_address, CAST(:metadata_json AS jsonb)
+                        :status, :request_id, :ip_address, CAST(:metadata_json AS jsonb),
+                        :tenant_id
                     )
                     """
                 ),
@@ -77,6 +85,7 @@ def write_audit_log(
                     "request_id": request_id,
                     "ip_address": ip_address,
                     "metadata_json": dumps_json(masked_metadata),
+                    "tenant_id": user.tenant_id if user else "default",
                 },
             )
         return True
@@ -84,23 +93,43 @@ def write_audit_log(
         return False
 
 
-def list_audit_logs(limit: int = 100, action: str | None = None) -> list[dict[str, Any]]:
+def list_audit_logs(
+    limit: int = 100,
+    action: str | None = None,
+    *,
+    tenant_id: str | None = None,
+    workspace_id: str | None = None,
+) -> list[dict[str, Any]]:
     engine = security_postgres_engine()
     if engine is None:
-        rows = [row for row in _MEMORY_AUDIT_LOGS if not action or row.get("action") == action]
+        rows = [
+            row
+            for row in _MEMORY_AUDIT_LOGS
+            if (not action or row.get("action") == action)
+            and (tenant_id is None or str(row.get("tenant_id") or "default") == str(tenant_id))
+            and (workspace_id is None or str(row.get("workspace_id") or "default") == str(workspace_id))
+        ]
         return list(reversed(rows))[: max(1, min(int(limit or 100), 500))]
     params: dict[str, Any] = {"limit": max(1, min(int(limit or 100), 500))}
-    where = ""
+    clauses: list[str] = []
     if action:
-        where = "WHERE action = :action"
+        clauses.append("action = :action")
         params["action"] = action
+    if tenant_id is not None:
+        clauses.append("tenant_id = :tenant_id")
+        params["tenant_id"] = str(tenant_id)
+    if workspace_id is not None:
+        clauses.append("COALESCE(metadata_json->>'_workspace_id', 'default') = :workspace_id")
+        params["workspace_id"] = str(workspace_id)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     try:
         with engine.connect() as conn:
             rows = conn.execute(
                 text(
                     f"""
                     SELECT id, actor, role_id, action, resource_type, resource_id,
-                           status, request_id, ip_address, metadata_json, created_at
+                           status, request_id, ip_address, metadata_json,
+                           tenant_id, created_at
                     FROM audit_logs
                     {where}
                     ORDER BY created_at DESC, id DESC

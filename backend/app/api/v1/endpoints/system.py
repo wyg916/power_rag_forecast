@@ -92,6 +92,8 @@ def security_me(user: Annotated[CurrentUser, Depends(get_current_user)]) -> dict
         "role": user.role,
         "permissions": user.permissions,
         "auth_mode": user.auth_mode,
+        "tenant_id": user.tenant_id,
+        "workspace_id": user.workspace_id,
     }
 
 
@@ -103,11 +105,18 @@ def security_permissions(_: Annotated[CurrentUser, Depends(require_permission("s
 @router.get("/api/audit/logs")
 def audit_logs(
     request: Request,
-    _: Annotated[CurrentUser, Depends(require_permission("audit:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("audit:read"))],
     limit: int = 100,
     action: str | None = None,
 ) -> dict:
-    return {"logs": list_audit_logs(limit=limit, action=action)}
+    return {
+        "logs": list_audit_logs(
+            limit=limit,
+            action=action,
+            tenant_id=user.tenant_id,
+            workspace_id=user.workspace_id,
+        )
+    }
 
 
 def _ip(request: Request) -> str:
@@ -121,16 +130,20 @@ def _validate_email(email: str | None) -> str:
     return value
 
 
-def _target_or_404(user_id: str) -> dict:
-    user = get_user_by_id(user_id)
-    if not user:
+def _target_or_404(user_id: str, actor: CurrentUser) -> dict:
+    target = get_user_by_id(
+        user_id,
+        tenant_id=actor.tenant_id,
+        workspace_id=actor.workspace_id,
+    )
+    if not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
-    return user
+    return target
 
 
 @router.get("/api/settings/status/overview")
-def settings_status_overview(_: Annotated[CurrentUser, Depends(require_permission("dashboard:read"))]) -> dict:
-    return settings_center.system_status_overview()
+def settings_status_overview(user: Annotated[CurrentUser, Depends(require_permission("dashboard:read"))]) -> dict:
+    return settings_center.system_status_overview(user=user)
 
 
 @router.get("/api/settings/status/summary")
@@ -171,13 +184,13 @@ def settings_task_queue_snapshot(_: Annotated[CurrentUser, Depends(require_permi
 
 
 @router.get("/api/settings/users/overview")
-def settings_users_overview(_: Annotated[CurrentUser, Depends(require_permission("user:read"))]) -> dict:
-    return settings_center.users_overview()
+def settings_users_overview(user: Annotated[CurrentUser, Depends(require_permission("user:read"))]) -> dict:
+    return settings_center.users_overview(user=user)
 
 
 @router.get("/api/settings/users")
 def settings_users(
-    _: Annotated[CurrentUser, Depends(require_permission("user:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("user:read"))],
     keyword: str = Query(default="", max_length=128),
     role: str | None = Query(default=None, max_length=32),
     status_value: str = Query(default="", alias="status"),
@@ -189,7 +202,15 @@ def settings_users(
         is_active = True
     elif status_value in {"disabled", "inactive", "locked"}:
         is_active = False
-    return list_users(keyword=keyword, role=role, is_active=is_active, page=page, page_size=page_size)
+    return list_users(
+        keyword=keyword,
+        role=role,
+        is_active=is_active,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.post("/api/settings/users", status_code=status.HTTP_201_CREATED)
@@ -210,6 +231,8 @@ def settings_user_create(
         role=role,
         is_active=payload.is_active,
         is_superuser=role == "admin",
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
     )
     write_audit_log(
         action="settings.user.create",
@@ -230,11 +253,17 @@ def settings_user_update(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    current = _target_or_404(user_id)
+    current = _target_or_404(user_id, user)
     new_role = normalize_role(payload.role) if payload.role is not None else str(current.get("role") or "viewer")
     new_active = bool(payload.is_active) if payload.is_active is not None else bool(current.get("is_active", True))
     try:
-        ensure_not_last_admin_demoted_or_disabled(user_id, new_role=new_role, new_is_active=new_active)
+        ensure_not_last_admin_demoted_or_disabled(
+            user_id,
+            new_role=new_role,
+            new_is_active=new_active,
+            tenant_id=user.tenant_id,
+            workspace_id=user.workspace_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     updated = update_user(
@@ -243,6 +272,8 @@ def settings_user_update(
         display_name=payload.display_name.strip() if payload.display_name is not None else None,
         role=new_role,
         is_active=new_active,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
     )
     write_audit_log(
         action="settings.user.update",
@@ -262,12 +293,22 @@ def settings_user_disable(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    current = _target_or_404(user_id)
+    current = _target_or_404(user_id, user)
     try:
-        ensure_not_last_admin_demoted_or_disabled(user_id, new_is_active=False)
+        ensure_not_last_admin_demoted_or_disabled(
+            user_id,
+            new_is_active=False,
+            tenant_id=user.tenant_id,
+            workspace_id=user.workspace_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    updated = set_user_active(user_id, False)
+    updated = set_user_active(
+        user_id,
+        False,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+    )
     write_audit_log(
         action="settings.user.disable",
         user=user,
@@ -286,8 +327,13 @@ def settings_user_enable(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    current = _target_or_404(user_id)
-    updated = set_user_active(user_id, True)
+    current = _target_or_404(user_id, user)
+    updated = set_user_active(
+        user_id,
+        True,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+    )
     write_audit_log(
         action="settings.user.enable",
         user=user,
@@ -307,8 +353,13 @@ def settings_user_reset_password(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    current = _target_or_404(user_id)
-    ok = update_password_hash(user_id, hash_password(payload.new_password))
+    current = _target_or_404(user_id, user)
+    ok = update_password_hash(
+        user_id,
+        hash_password(payload.new_password),
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+    )
     write_audit_log(
         action="settings.user.password_reset",
         user=user,
@@ -330,13 +381,23 @@ def settings_user_assign_role(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    current = _target_or_404(user_id)
+    current = _target_or_404(user_id, user)
     role = normalize_role(str(payload.get("role") or payload.get("role_id") or "viewer"))
     try:
-        ensure_not_last_admin_demoted_or_disabled(user_id, new_role=role)
+        ensure_not_last_admin_demoted_or_disabled(
+            user_id,
+            new_role=role,
+            tenant_id=user.tenant_id,
+            workspace_id=user.workspace_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    updated = update_user(user_id, role=role)
+    updated = update_user(
+        user_id,
+        role=role,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+    )
     write_audit_log(
         action="settings.user.assign_role",
         user=user,
@@ -392,11 +453,11 @@ def settings_security_policy_update(
 
 @router.get("/api/settings/audit-logs")
 def settings_audit_logs(
-    _: Annotated[CurrentUser, Depends(require_permission("audit:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("audit:read"))],
     limit: int = Query(default=100, ge=1, le=500),
     action: str | None = None,
 ) -> dict:
-    return settings_center.settings_audit_logs(limit=limit, action=action)
+    return settings_center.settings_audit_logs(limit=limit, action=action, user=user)
 
 
 @router.get("/api/settings/interfaces/overview")

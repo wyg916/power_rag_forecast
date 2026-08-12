@@ -33,8 +33,23 @@ def _auth_env(monkeypatch):
     reset_db_cache()
 
 
-def _create_user(username: str, role: str, password: str = "Password123!"):
-    return create_user(username=username, password_hash=hash_password(password), display_name=username, role=role, is_active=True)
+def _create_user(
+    username: str,
+    role: str,
+    password: str = "Password123!",
+    *,
+    tenant_id: str = "default",
+    workspace_id: str = "default",
+):
+    return create_user(
+        username=username,
+        password_hash=hash_password(password),
+        display_name=username,
+        role=role,
+        is_active=True,
+        tenant_id=tenant_id,
+        workspace_id=workspace_id,
+    )
 
 
 def _token(username: str, role: str) -> str:
@@ -122,3 +137,49 @@ def test_cannot_disable_or_demote_last_admin():
         json={"role": "viewer"},
     )
     assert demote.status_code == 400
+
+
+def test_admin_user_management_is_tenant_and_workspace_scoped():
+    admin_a = _create_user("admin_a", "admin", tenant_id="tenant_a", workspace_id="workspace_a")
+    admin_b = _create_user("admin_b", "admin", tenant_id="tenant_b", workspace_id="workspace_b")
+    target_a = _create_user("analyst_a", "analyst", tenant_id="tenant_a", workspace_id="workspace_a")
+    _create_user("viewer_b", "viewer", tenant_id="tenant_b", workspace_id="workspace_b")
+
+    login_b = client.post(
+        "/api/auth/login",
+        json={"username": "admin_b", "password": "Password123!"},
+    )
+    assert login_b.status_code == 200
+    headers_b = {"Authorization": f"Bearer {login_b.json()['access_token']}"}
+
+    users = client.get("/api/users", headers=headers_b)
+    settings_users = client.get("/api/settings/users", headers=headers_b)
+    assert users.status_code == settings_users.status_code == 200
+    assert {item["username"] for item in users.json()["items"]} == {"admin_b", "viewer_b"}
+    assert {item["username"] for item in settings_users.json()["items"]} == {"admin_b", "viewer_b"}
+    assert all(item["tenant_id"] == "tenant_b" for item in users.json()["items"])
+    assert all(item["workspace_id"] == "workspace_b" for item in users.json()["items"])
+
+    denied_update = client.patch(
+        f"/api/users/{target_a['user_id']}",
+        headers=headers_b,
+        json={"role": "viewer"},
+    )
+    denied_reset = client.post(
+        f"/api/settings/users/{target_a['user_id']}/reset-password",
+        headers=headers_b,
+        json={"new_password": "ChangedPassword123!"},
+    )
+    assert denied_update.status_code == 404
+    assert denied_reset.status_code == 404
+
+    created_b = client.post(
+        "/api/users",
+        headers=headers_b,
+        json={"username": "new_b", "password": "NewTenantUser123!", "role": "viewer"},
+    )
+    assert created_b.status_code == 201
+    assert created_b.json()["user"]["tenant_id"] == "tenant_b"
+    assert created_b.json()["user"]["workspace_id"] == "workspace_b"
+    assert admin_a["tenant_id"] == "tenant_a"
+    assert admin_b["tenant_id"] == "tenant_b"

@@ -211,6 +211,7 @@ def ai_rag_answer_read_only(
         source_types=[str(item).strip() for item in source_types if str(item).strip()],
         include_historical=bool(payload.get("include_historical", False)),
         include_demo=bool(payload.get("include_demo", False)),
+        tenant_id=user.tenant_id,
         **(
             {
                 "context": runtime["rag_context"],

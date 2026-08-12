@@ -12,6 +12,7 @@ def search_business_knowledge(
     domain: str = "",
     _rag_context: Any = None,
     _enterprise_store: Any = None,
+    _identity_context: Any = None,
     **_: Any,
 ) -> dict[str, Any]:
     query = (keyword or question or "").strip()
@@ -24,6 +25,11 @@ def search_business_knowledge(
             domain=domain,
             context=_rag_context,
             enterprise_store=_enterprise_store,
+            tenant_id=(
+                _identity_context.tenant_id
+                if _identity_context is not None
+                else "default"
+            ),
         )
         items = [
             {

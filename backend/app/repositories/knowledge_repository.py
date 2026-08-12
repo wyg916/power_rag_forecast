@@ -245,6 +245,8 @@ def upsert_document(
     content: str,
     metadata: dict[str, Any] | None = None,
     generate_embeddings: bool = False,
+    tenant_id: str = "default",
+    owner_actor_id: str | None = None,
 ) -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
@@ -256,7 +258,17 @@ def upsert_document(
         content=content,
         metadata=metadata,
     )
-    doc_id = document_id(source_path, content, str(document_metadata["document_version"]))
+    tenant_value = str(tenant_id or "default")
+    scoped_source_path = (
+        source_path
+        if tenant_value == "default"
+        else f"tenant://{tenant_value}/{source_path}"
+    )
+    doc_id = document_id(
+        scoped_source_path,
+        content,
+        str(document_metadata["document_version"]),
+    )
     document_metadata["document_id"] = doc_id
     is_official = document_metadata.get("data_origin") == "official"
     if is_official:
@@ -323,22 +335,29 @@ def upsert_document(
                     SET metadata_json = jsonb_set(metadata_json, '{status}', '"superseded"'::jsonb, true),
                         updated_at = CURRENT_TIMESTAMP
                     WHERE source_path = :source_path
+                      AND tenant_id = :tenant_id
                       AND doc_id <> :doc_id
                       AND COALESCE(metadata_json->>'status', 'active') = 'active'
                     """
                 ),
-                {"source_path": source_path, "doc_id": doc_id},
+                {
+                    "source_path": source_path,
+                    "doc_id": doc_id,
+                    "tenant_id": tenant_value,
+                },
             )
             conn.execute(
                 text(
                     """
                     INSERT INTO kb_documents (
                         doc_id, title, source_type, source_path, checksum,
-                        metadata_json, indexed_at, updated_at
+                        metadata_json, indexed_at, updated_at,
+                        tenant_id, domain, owner_actor_id
                     )
                     VALUES (
                         :doc_id, :title, :source_type, :source_path, :checksum,
-                        CAST(:metadata_json AS jsonb), :indexed_at, CURRENT_TIMESTAMP
+                        CAST(:metadata_json AS jsonb), :indexed_at, CURRENT_TIMESTAMP,
+                        :tenant_id, :domain, :owner_actor_id
                     )
                     ON CONFLICT (doc_id) DO UPDATE SET
                         title = EXCLUDED.title,
@@ -346,6 +365,8 @@ def upsert_document(
                         source_path = EXCLUDED.source_path,
                         checksum = EXCLUDED.checksum,
                         metadata_json = EXCLUDED.metadata_json,
+                        domain = EXCLUDED.domain,
+                        owner_actor_id = EXCLUDED.owner_actor_id,
                         indexed_at = EXCLUDED.indexed_at,
                         updated_at = CURRENT_TIMESTAMP
                     """
@@ -358,6 +379,9 @@ def upsert_document(
                     "checksum": checksum(content),
                     "metadata_json": dumps_json(document_metadata),
                     "indexed_at": now,
+                    "tenant_id": tenant_value,
+                    "domain": str(document_metadata.get("domain") or ""),
+                    "owner_actor_id": str(owner_actor_id or "") or None,
                 },
             )
             for index, chunk in enumerate(chunks):
@@ -374,12 +398,13 @@ def upsert_document(
                         """
                         INSERT INTO kb_chunks (
                             chunk_id, doc_id, chunk_index, content,
-                            keywords_json, embedding_json, metadata_json
+                            keywords_json, embedding_json, metadata_json,
+                            tenant_id
                         )
                         VALUES (
                             :chunk_id, :doc_id, :chunk_index, :content,
                             CAST(:keywords_json AS jsonb), CAST(:embedding_json AS jsonb),
-                            CAST(:metadata_json AS jsonb)
+                            CAST(:metadata_json AS jsonb), :tenant_id
                         )
                         ON CONFLICT (chunk_id) DO UPDATE SET
                             content = EXCLUDED.content,
@@ -397,6 +422,7 @@ def upsert_document(
                         "keywords_json": dumps_json(tokenize(f"{title} {chunk}")),
                         "embedding_json": dumps_json(embedding),
                         "metadata_json": dumps_json(metadata_with_embedding),
+                        "tenant_id": tenant_value,
                     },
                 )
         return {"available": True, "doc_id": doc_id, "chunks": len(chunks)}
@@ -410,8 +436,12 @@ def _retrieval_filter_sql(
     source_types: list[str] | None = None,
     include_historical: bool = False,
     include_demo: bool = False,
+    tenant_id: str = "default",
 ) -> tuple[str, dict[str, Any]]:
+    tenant_value = str(tenant_id or "default")
     clauses = [
+        "d.tenant_id = 'default'" if tenant_value == "default" else "d.tenant_id = :tenant_id",
+        "c.tenant_id = d.tenant_id",
         "d.metadata_json->>'data_origin' = 'official'",
         "COALESCE(d.metadata_json->>'status', 'active') = 'active'",
         "COALESCE(c.metadata_json->>'status', '') = 'active'",
@@ -423,7 +453,9 @@ def _retrieval_filter_sql(
         "COALESCE(c.metadata_json->>'domain', '') = COALESCE(d.metadata_json->>'domain', '')",
         "COALESCE(c.metadata_json->>'source_type', '') = COALESCE(d.metadata_json->>'evidence_source_type', 'real')",
     ]
-    params: dict[str, Any] = {}
+    params: dict[str, Any] = (
+        {} if tenant_value == "default" else {"tenant_id": tenant_value}
+    )
     allowed_types = [str(item).strip() for item in source_types or [] if str(item).strip()]
     if allowed_types:
         placeholders = []
@@ -461,6 +493,7 @@ def search_keyword_chunks(
     source_types: list[str] | None = None,
     include_historical: bool = False,
     include_demo: bool = False,
+    tenant_id: str = "default",
 ) -> list[dict[str, Any]]:
     engine = postgres_engine()
     if engine is None:
@@ -475,6 +508,7 @@ def search_keyword_chunks(
         source_types=source_types,
         include_historical=include_historical,
         include_demo=include_demo,
+        tenant_id=tenant_id,
     )
     params.update(filter_params)
     try:
@@ -546,6 +580,7 @@ def list_embedded_chunks(
     source_types: list[str] | None = None,
     include_historical: bool = False,
     include_demo: bool = False,
+    tenant_id: str = "default",
 ) -> list[dict[str, Any]]:
     engine = postgres_engine()
     if engine is None:
@@ -555,6 +590,7 @@ def list_embedded_chunks(
         source_types=source_types,
         include_historical=include_historical,
         include_demo=include_demo,
+        tenant_id=tenant_id,
     )
     try:
         with engine.connect() as conn:
@@ -619,12 +655,16 @@ def list_embedded_chunks(
     return items
 
 
-def get_vector_index_rows(limit: int = 50000) -> list[dict[str, Any]]:
+def get_vector_index_rows(limit: int = 50000, *, tenant_id: str = "default") -> list[dict[str, Any]]:
     """Return only active, retrieval-eligible, ready embeddings for an explicit index build."""
     engine = postgres_engine()
     if engine is None:
         return []
-    filter_sql, filter_params = _retrieval_filter_sql(include_historical=True, include_demo=True)
+    filter_sql, filter_params = _retrieval_filter_sql(
+        include_historical=True,
+        include_demo=True,
+        tenant_id=tenant_id,
+    )
     with engine.connect() as conn:
         rows = conn.execute(
             text(
@@ -662,6 +702,7 @@ def get_chunks_by_ids(
     source_types: list[str] | None = None,
     include_historical: bool = False,
     include_demo: bool = False,
+    tenant_id: str = "default",
 ) -> list[dict[str, Any]]:
     engine = postgres_engine()
     ordered_ids = [str(item) for item in chunk_ids if str(item)]
@@ -672,6 +713,7 @@ def get_chunks_by_ids(
         source_types=source_types,
         include_historical=include_historical,
         include_demo=include_demo,
+        tenant_id=tenant_id,
     )
     id_params = {f"vector_chunk_{index}": value for index, value in enumerate(ordered_ids)}
     placeholders = ", ".join(f":{key}" for key in id_params)
@@ -951,15 +993,25 @@ def _doc_status(chunk_count: int, embedded_count: int) -> str:
     return "indexed"
 
 
-def list_knowledge_documents(page: int = 1, page_size: int = 20, search: str = "") -> dict[str, Any]:
+def list_knowledge_documents(
+    page: int = 1,
+    page_size: int = 20,
+    search: str = "",
+    *,
+    tenant_id: str = "default",
+) -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "items": [], "total": 0, "page": page, "page_size": page_size}
     safe_page = max(1, int(page or 1))
     safe_page_size = max(1, min(int(page_size or 20), 100))
     offset = (safe_page - 1) * safe_page_size
-    params: dict[str, Any] = {"limit": safe_page_size, "offset": offset}
-    where_sql = "WHERE d.metadata_json->>'data_origin' = 'official'"
+    params: dict[str, Any] = {
+        "limit": safe_page_size,
+        "offset": offset,
+        "tenant_id": str(tenant_id or "default"),
+    }
+    where_sql = "WHERE d.metadata_json->>'data_origin' = 'official' AND d.tenant_id = :tenant_id"
     if search.strip():
         params["search"] = f"%{search.strip()}%"
         where_sql += " AND (d.title ILIKE :search OR d.source_path ILIKE :search OR d.source_type ILIKE :search)"
@@ -987,7 +1039,7 @@ def list_knowledge_documents(page: int = 1, page_size: int = 20, search: str = "
                         ) AS embedded_count,
                         COUNT(*) OVER() AS total_count
                     FROM kb_documents d
-                    LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id
+                    LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id AND c.tenant_id = d.tenant_id
                     {where_sql}
                     GROUP BY d.doc_id, d.title, d.source_type, d.source_path, d.metadata_json, d.indexed_at, d.updated_at
                     ORDER BY d.updated_at DESC NULLS LAST, d.indexed_at DESC NULLS LAST, d.title ASC
@@ -1039,7 +1091,7 @@ def list_knowledge_documents(page: int = 1, page_size: int = 20, search: str = "
     return {"available": True, "items": jsonable(items), "total": total, "page": safe_page, "page_size": safe_page_size}
 
 
-def get_knowledge_document(doc_id: str) -> dict[str, Any]:
+def get_knowledge_document(doc_id: str, *, tenant_id: str = "default") -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "document": None}
@@ -1052,13 +1104,13 @@ def get_knowledge_document(doc_id: str) -> dict[str, Any]:
                            d.metadata_json, d.indexed_at, d.created_at, d.updated_at,
                            COUNT(c.chunk_id) AS chunk_count
                     FROM kb_documents d
-                    LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id
-                    WHERE d.doc_id = :doc_id
+                    LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id AND c.tenant_id = d.tenant_id
+                    WHERE d.doc_id = :doc_id AND d.tenant_id = :tenant_id
                     GROUP BY d.doc_id, d.title, d.source_type, d.source_path, d.checksum,
                              d.metadata_json, d.indexed_at, d.created_at, d.updated_at
                     """
                 ),
-                {"doc_id": doc_id},
+                {"doc_id": doc_id, "tenant_id": str(tenant_id or "default")},
             ).mappings().first()
     except Exception as exc:
         return {"available": False, "document": None, "error": str(exc)[:300]}
@@ -1070,7 +1122,13 @@ def get_knowledge_document(doc_id: str) -> dict[str, Any]:
     return {"available": True, "document": jsonable({**value, **(metadata if isinstance(metadata, dict) else {})})}
 
 
-def list_knowledge_chunks(doc_id: str, page: int = 1, page_size: int = 50) -> dict[str, Any]:
+def list_knowledge_chunks(
+    doc_id: str,
+    page: int = 1,
+    page_size: int = 50,
+    *,
+    tenant_id: str = "default",
+) -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "items": [], "total": 0}
@@ -1085,13 +1143,14 @@ def list_knowledge_chunks(doc_id: str, page: int = 1, page_size: int = 50) -> di
                            c.metadata_json, c.created_at, c.updated_at,
                            COUNT(*) OVER() AS total_count
                     FROM kb_chunks c
-                    WHERE c.doc_id = :doc_id
+                    WHERE c.doc_id = :doc_id AND c.tenant_id = :tenant_id
                     ORDER BY c.chunk_index
                     LIMIT :limit OFFSET :offset
                     """
                 ),
                 {
                     "doc_id": doc_id,
+                    "tenant_id": str(tenant_id or "default"),
                     "limit": safe_page_size,
                     "offset": (safe_page - 1) * safe_page_size,
                 },
@@ -1126,7 +1185,7 @@ def list_knowledge_chunks(doc_id: str, page: int = 1, page_size: int = 50) -> di
     return {"available": True, "items": items, "total": total, "page": safe_page, "page_size": safe_page_size}
 
 
-def get_knowledge_citation(chunk_id: str) -> dict[str, Any]:
+def get_knowledge_citation(chunk_id: str, *, tenant_id: str = "default") -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "citation": None}
@@ -1138,11 +1197,11 @@ def get_knowledge_citation(chunk_id: str) -> dict[str, Any]:
                     SELECT c.chunk_id, c.doc_id, c.chunk_index, c.content, c.metadata_json,
                            d.title, d.source_path, d.metadata_json AS document_metadata
                     FROM kb_chunks c
-                    JOIN kb_documents d ON d.doc_id = c.doc_id
-                    WHERE c.chunk_id = :chunk_id
+                    JOIN kb_documents d ON d.doc_id = c.doc_id AND d.tenant_id = c.tenant_id
+                    WHERE c.chunk_id = :chunk_id AND c.tenant_id = :tenant_id
                     """
                 ),
-                {"chunk_id": chunk_id},
+                {"chunk_id": chunk_id, "tenant_id": str(tenant_id or "default")},
             ).mappings().first()
     except Exception as exc:
         return {"available": False, "citation": None, "error": str(exc)[:300]}
@@ -1170,14 +1229,20 @@ def get_knowledge_citation(chunk_id: str) -> dict[str, Any]:
     }
 
 
-def knowledge_stats() -> dict[str, Any]:
+def knowledge_stats(*, tenant_id: str = "default") -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "documents": 0, "chunks": 0, "embedded_chunks": 0, "pending_documents": 0, "qa_pass_rate": 0.0}
     try:
         with engine.connect() as conn:
             documents = int(
-                conn.execute(text("SELECT COUNT(*) FROM kb_documents WHERE metadata_json->>'data_origin' = 'official'")).scalar()
+                conn.execute(
+                    text(
+                        "SELECT COUNT(*) FROM kb_documents "
+                        "WHERE metadata_json->>'data_origin' = 'official' AND tenant_id = :tenant_id"
+                    ),
+                    {"tenant_id": str(tenant_id or "default")},
+                ).scalar()
                 or 0
             )
             chunks = int(
@@ -1187,8 +1252,11 @@ def knowledge_stats() -> dict[str, Any]:
                         SELECT COUNT(*) FROM kb_chunks c
                         JOIN kb_documents d ON d.doc_id = c.doc_id
                         WHERE d.metadata_json->>'data_origin' = 'official'
+                          AND d.tenant_id = :tenant_id
+                          AND c.tenant_id = d.tenant_id
                         """
-                    )
+                    ),
+                    {"tenant_id": str(tenant_id or "default")},
                 ).scalar()
                 or 0
             )
@@ -1203,8 +1271,11 @@ def knowledge_stats() -> dict[str, Any]:
                           AND jsonb_typeof(embedding_json) = 'array'
                           AND jsonb_array_length(embedding_json) > 0
                           AND d.metadata_json->>'data_origin' = 'official'
+                          AND d.tenant_id = :tenant_id
+                          AND c.tenant_id = d.tenant_id
                         """
-                    )
+                    ),
+                    {"tenant_id": str(tenant_id or "default")},
                 ).scalar()
                 or 0
             )
@@ -1225,18 +1296,24 @@ def knowledge_stats() -> dict[str, Any]:
                                        END
                                    ) AS embedded_count
                             FROM kb_documents d
-                            LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id
+                            LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id AND c.tenant_id = d.tenant_id
                             WHERE d.metadata_json->>'data_origin' = 'official'
+                              AND d.tenant_id = :tenant_id
                             GROUP BY d.doc_id
                         ) s
                         WHERE s.chunk_count = 0 OR COALESCE(s.embedded_count, 0) < s.chunk_count
                         """
-                    )
+                    ),
+                    {"tenant_id": str(tenant_id or "default")},
                 ).scalar()
                 or 0
             )
             last_updated = conn.execute(
-                text("SELECT MAX(updated_at) FROM kb_documents WHERE metadata_json->>'data_origin' = 'official'")
+                text(
+                    "SELECT MAX(updated_at) FROM kb_documents "
+                    "WHERE metadata_json->>'data_origin' = 'official' AND tenant_id = :tenant_id"
+                ),
+                {"tenant_id": str(tenant_id or "default")},
             ).scalar()
             try:
                 qa_row = conn.execute(
@@ -1247,11 +1324,13 @@ def knowledge_stats() -> dict[str, Any]:
                         FROM (
                             SELECT passed
                             FROM kb_qa_tests
+                            WHERE tenant_id = :tenant_id
                             ORDER BY created_at DESC
                             LIMIT 50
                         ) t
                         """
-                    )
+                    ),
+                    {"tenant_id": str(tenant_id or "default")},
                 ).mappings().first()
                 qa_total = int((qa_row or {}).get("total") or 0)
                 qa_passed = int((qa_row or {}).get("passed") or 0)

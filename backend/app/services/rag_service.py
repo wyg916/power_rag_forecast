@@ -686,6 +686,7 @@ def _vector_search(
     source_types: list[str] | None = None,
     include_historical: bool = False,
     include_demo: bool = False,
+    tenant_id: str = "default",
 ) -> tuple[list[dict[str, Any]], bool, dict[str, Any]]:
     query_embedding_result = embed_text_with_metadata(query)
     query_embedding = query_embedding_result.get("embedding") or []
@@ -709,6 +710,7 @@ def _vector_search(
             source_types=source_types,
             include_historical=include_historical,
             include_demo=include_demo,
+            tenant_id=tenant_id,
         )
         scored = [
             dict(item, vector_score=round(scores.get(str(item.get("chunk_id") or ""), 0.0), 6), score=round(scores.get(str(item.get("chunk_id") or ""), 0.0), 6))
@@ -725,9 +727,13 @@ def _vector_search(
             source_types=source_types,
             include_historical=include_historical,
             include_demo=include_demo,
+            tenant_id=tenant_id,
         )
     else:
-        chunks = list_embedded_chunks(limit=_env_int("RAG_VECTOR_SCAN_LIMIT", 3000))
+        chunks = list_embedded_chunks(
+            limit=_env_int("RAG_VECTOR_SCAN_LIMIT", 3000),
+            tenant_id=tenant_id,
+        )
     scored: list[dict[str, Any]] = []
     dimension_mismatches = 0
     for item in chunks:
@@ -996,7 +1002,9 @@ def _rag_search_impl(
     source_types: list[str] | None = None,
     include_historical: bool = False,
     include_demo: bool = False,
+    tenant_id: str = "default",
 ) -> dict[str, Any]:
+    tenant_kwargs = {} if tenant_id == "default" else {"tenant_id": tenant_id}
     total_started = time.perf_counter()
     timings: dict[str, float] = {}
     final_top_k = max(1, min(int(top_k or _env_int("RAG_TOP_K", 5)), 20))
@@ -1021,7 +1029,7 @@ def _rag_search_impl(
             "evidence": [],
             "retrieval": {"enabled": rag_enabled(), "mode": "evidence_guard", "reason": "explicit_missing_evidence"},
             "timings_ms": timings,
-            "stats": knowledge_stats(),
+            "stats": knowledge_stats(**tenant_kwargs),
         }
     if not rag_enabled():
         started = time.perf_counter()
@@ -1033,9 +1041,10 @@ def _rag_search_impl(
                 source_types=source_types,
                 include_historical=include_historical,
                 include_demo=include_demo,
+                **tenant_kwargs,
             )
         else:
-            items = search_keyword_chunks(query, top_k=final_top_k)
+            items = search_keyword_chunks(query, top_k=final_top_k, **tenant_kwargs)
         _normalize_scores(items, "keyword_score", "keyword_score")
         score_threshold = max(0.0, min(_env_float("RAG_SCORE_THRESHOLD", 0.25), 1.0))
         items = [
@@ -1075,7 +1084,7 @@ def _rag_search_impl(
                 },
             },
             "timings_ms": timings,
-            "stats": knowledge_stats(),
+            "stats": knowledge_stats(**tenant_kwargs),
         }
 
     started = time.perf_counter()
@@ -1087,9 +1096,14 @@ def _rag_search_impl(
             source_types=source_types,
             include_historical=include_historical,
             include_demo=include_demo,
+            **tenant_kwargs,
         )
     else:
-        keyword_items = search_keyword_chunks(search_query, top_k=keyword_top_k)
+        keyword_items = search_keyword_chunks(
+            search_query,
+            top_k=keyword_top_k,
+            **tenant_kwargs,
+        )
     timings["keyword_search_ms"] = _timing_ms(started)
     started = time.perf_counter()
     vector_items, vector_available, query_embedding_meta = _vector_search(
@@ -1099,6 +1113,7 @@ def _rag_search_impl(
         source_types=source_types,
         include_historical=include_historical,
         include_demo=include_demo,
+        **tenant_kwargs,
     )
     if query_embedding_meta.get("vector_index_available"):
         keyword_min_score = max(0.0, _env_float("RAG_KEYWORD_MIN_SCORE", 2.0))
@@ -1220,7 +1235,7 @@ def _rag_search_impl(
             "boost_events": boost_events,
         },
         "timings_ms": timings,
-        "stats": knowledge_stats(),
+        "stats": knowledge_stats(**tenant_kwargs),
     }
 
 
@@ -1232,6 +1247,7 @@ def _rag_search_cached(
     source_types: tuple[str, ...],
     include_historical: bool,
     include_demo: bool,
+    tenant_id: str,
     signature: tuple[str, ...],
 ) -> dict[str, Any]:
     _ = signature
@@ -1242,6 +1258,7 @@ def _rag_search_cached(
         source_types=list(source_types),
         include_historical=include_historical,
         include_demo=include_demo,
+        tenant_id=tenant_id,
     )
 
 
@@ -1255,6 +1272,7 @@ def rag_search(
     include_demo: bool = False,
     context: RetrievalContext | None = None,
     enterprise_store: QdrantReadOnlyStore | None = None,
+    tenant_id: str | None = None,
 ) -> dict[str, Any]:
     if enterprise_mode():
         return _enterprise_rag_search(
@@ -1267,6 +1285,7 @@ def rag_search(
             include_historical=include_historical,
             include_demo=include_demo,
         )
+    tenant_value = str(tenant_id or (context.tenant_id if context is not None else "default"))
     cache_enabled = (_env("RAG_CACHE_ENABLED", "1") or "1").lower() not in {"0", "false", "no", "off"}
     if not cache_enabled or _contains_sensitive_text(query):
         result = _rag_search_impl(
@@ -1276,6 +1295,7 @@ def rag_search(
             source_types=source_types,
             include_historical=include_historical,
             include_demo=include_demo,
+            tenant_id=tenant_value,
         )
         retrieval = result.setdefault("retrieval", {})
         retrieval["cache_enabled"] = bool(cache_enabled)
@@ -1292,6 +1312,7 @@ def rag_search(
             tuple(source_types or []),
             include_historical,
             include_demo,
+            tenant_value,
             _rag_cache_signature(),
         )
     )

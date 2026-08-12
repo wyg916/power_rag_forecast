@@ -52,10 +52,16 @@ DEFAULT_BATCH_QUESTIONS = [
 ]
 
 
+def _tenant_scope(user: CurrentUser | None) -> dict[str, str]:
+    if user is None or user.tenant_id == "default":
+        return {}
+    return {"tenant_id": user.tenant_id}
+
+
 def _release_context(request: Request, user: CurrentUser) -> EnterpriseRequestContext:
     trace_id = str(request.headers.get("X-Trace-Id") or f"trace_{uuid.uuid4().hex}")[:128]
     run_id = str(request.headers.get("X-Run-Id") or f"run_{uuid.uuid4().hex}")[:128]
-    return EnterpriseRequestContext("default", user.user_id, run_id, trace_id)
+    return EnterpriseRequestContext(user.tenant_id, user.user_id, run_id, trace_id)
 
 
 def _release_error(exc: Exception) -> HTTPException:
@@ -69,20 +75,20 @@ def _release_error(exc: Exception) -> HTTPException:
 @router.get("/api/knowledge/ingestions/{ingestion_id}")
 def get_knowledge_ingestion(
     ingestion_id: str,
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:write"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:write"))],
 ) -> dict:
     try:
-        return release_control.get_ingestion(tenant_id="default", ingestion_id=ingestion_id)
+        return release_control.get_ingestion(tenant_id=user.tenant_id, ingestion_id=ingestion_id)
     except (EnterpriseKnowledgeNotFound, EnterpriseKnowledgeUnavailable) as exc:
         raise _release_error(exc) from exc
 
 
 @router.get("/api/knowledge/releases")
 def get_knowledge_releases(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> dict:
     try:
-        items = release_control.list_releases(tenant_id="default")
+        items = release_control.list_releases(tenant_id=user.tenant_id)
     except EnterpriseKnowledgeUnavailable as exc:
         raise _release_error(exc) from exc
     return {"items": items, "total": len(items)}
@@ -196,51 +202,72 @@ def _run_search(
             normalized.get("include_demo"),
         )
     ):
-        return rag_search(query, top_k=top_k, **runtime)
-    return rag_search(query, top_k=top_k, **normalized, **runtime)
+        return rag_search(
+            query,
+            top_k=top_k,
+            **_tenant_scope(user),
+            **runtime,
+        )
+    return rag_search(
+        query,
+        top_k=top_k,
+        **_tenant_scope(user),
+        **normalized,
+        **runtime,
+    )
 
 
 @router.get("/api/knowledge/stats")
 def get_knowledge_stats(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> dict:
-    return knowledge_stats()
+    return knowledge_stats(**_tenant_scope(user))
 
 
 @router.get("/api/knowledge/documents")
 def get_knowledge_documents(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     search: str = Query(default="", max_length=200),
 ) -> dict:
-    return list_knowledge_documents(page=page, page_size=page_size, search=search)
+    return list_knowledge_documents(
+        page=page,
+        page_size=page_size,
+        search=search,
+        **_tenant_scope(user),
+    )
 
 
 @router.get("/api/knowledge/documents/{doc_id}")
 def get_knowledge_document_detail(
     doc_id: str,
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> dict:
-    return get_knowledge_document(doc_id)
+    return get_knowledge_document(doc_id, **_tenant_scope(user))
 
 
 @router.get("/api/knowledge/documents/{doc_id}/chunks")
 def get_knowledge_document_chunks(
     doc_id: str,
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=100),
 ) -> dict:
-    return list_knowledge_chunks(doc_id, page=page, page_size=page_size)
+    return list_knowledge_chunks(
+        doc_id,
+        page=page,
+        page_size=page_size,
+        **_tenant_scope(user),
+    )
 
 
 @router.get("/api/knowledge/citations/{chunk_id}")
 def get_knowledge_citation_detail(
     chunk_id: str,
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> dict:
-    return get_knowledge_citation(chunk_id)
+    return get_knowledge_citation(chunk_id, **_tenant_scope(user))
 
 
 @router.get("/api/knowledge/health")
@@ -364,6 +391,8 @@ async def upload_knowledge_document(
             "evidence_level": "uploaded_document",
         },
         generate_embeddings=True,
+        tenant_id=user.tenant_id,
+        owner_actor_id=user.user_id,
     )
     write_audit_log(
         action="knowledge.upload",
@@ -380,9 +409,9 @@ async def upload_knowledge_document(
 
 @router.get("/api/knowledge/export")
 def export_knowledge(
-    _: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> Response:
-    payload = list_knowledge_documents(page=1, page_size=100)
+    payload = list_knowledge_documents(page=1, page_size=100, **_tenant_scope(user))
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(["doc_id", "title", "source_type", "category", "chunk_count", "embedded_count", "status", "updated_at"])

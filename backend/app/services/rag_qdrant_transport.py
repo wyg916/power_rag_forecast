@@ -286,7 +286,12 @@ class QdrantHttpsReadOnlyTransport:
         raise QdrantReadError("query_mode_invalid")
 
 
-def _postgres_release_is_current(release_id: str, collection: str) -> bool:
+def _postgres_release_is_current(
+    release_id: str,
+    collection: str,
+    *,
+    tenant_id: str = "default",
+) -> bool:
     engine = postgres_engine()
     if engine is None:
         raise QdrantReadError("published_release_fact_unavailable")
@@ -297,9 +302,10 @@ def _postgres_release_is_current(release_id: str, collection: str) -> bool:
                     """
                     SELECT release_id, collection_name, status, is_current
                     FROM kb_releases
-                    WHERE tenant_id = 'default' AND is_current
+                    WHERE tenant_id = :tenant_id AND is_current
                     """
-                )
+                ),
+                {"tenant_id": tenant_id},
             ).mappings().one_or_none()
     except Exception as exc:
         raise QdrantReadError("published_release_fact_unavailable") from exc
@@ -318,18 +324,20 @@ def enterprise_runtime_for_user(
     contract = runtime_contract_status()
     contract.require_available()
     if not _postgres_release_is_current(
-        contract.release.release_id, contract.release.collection
+        contract.release.release_id,
+        contract.release.collection,
+        tenant_id=user.tenant_id,
     ):
         raise QdrantReadError("published_release_fact_mismatch")
     roles = (user.role,) if user.role else ()
     acl_value = {
-        "tenant_id": "default",
+        "tenant_id": user.tenant_id,
         "user_id": user.user_id,
         "roles": sorted(roles),
         "permissions": sorted(user.permissions),
     }
     context = RetrievalContext(
-        tenant_id="default",
+        tenant_id=user.tenant_id,
         user_id=user.user_id,
         roles=roles,
         acl_fingerprint=hashlib.sha256(_canonical(acl_value)).hexdigest(),

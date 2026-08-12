@@ -348,13 +348,18 @@ def collect_runtime_health_rows() -> list[dict[str, Any]]:
     return rows
 
 
-def system_status_overview() -> dict[str, Any]:
+def system_status_overview(*, user: CurrentUser | None = None) -> dict[str, Any]:
     rows = collect_runtime_health_rows()
     healthy = sum(1 for row in rows if row["status"] in {"normal", "partial"})
     warnings = sum(1 for row in rows if row["status"] in {"warning", "fallback", "not_configured", "unavailable"})
     errors = sum(1 for row in rows if row["status"] == "error")
-    users = list_users(page=1, page_size=1)
-    active_users = list_users(is_active=True, page=1, page_size=1)
+    scope = (
+        {"tenant_id": user.tenant_id, "workspace_id": user.workspace_id}
+        if user is not None
+        else {}
+    )
+    users = list_users(page=1, page_size=1, **scope)
+    active_users = list_users(is_active=True, page=1, page_size=1, **scope)
     health_score = round((healthy / len(rows)) * 100, 2) if rows else 0
     return {
         "online_users": active_users.get("total", 0),
@@ -481,12 +486,17 @@ def task_queue_snapshot() -> dict[str, Any]:
     }
 
 
-def users_overview() -> dict[str, Any]:
-    total = list_users(page=1, page_size=1).get("total", 0)
-    active = list_users(is_active=True, page=1, page_size=1).get("total", 0)
+def users_overview(*, user: CurrentUser | None = None) -> dict[str, Any]:
+    scope = (
+        {"tenant_id": user.tenant_id, "workspace_id": user.workspace_id}
+        if user is not None
+        else {}
+    )
+    total = list_users(page=1, page_size=1, **scope).get("total", 0)
+    active = list_users(is_active=True, page=1, page_size=1, **scope).get("total", 0)
     disabled = max(0, int(total or 0) - int(active or 0))
     roles = role_permissions_payload()["roles"]
-    audit = list_audit_logs(limit=200)
+    audit = list_audit_logs(limit=200, **scope)
     abnormal = sum(1 for row in audit if row.get("status") == "failed" or row.get("action") in {"auth.login_failed", "auth.login.failed"})
     return {
         "user_total": total,
@@ -585,8 +595,18 @@ def update_security_policy_payload(payload: dict[str, Any], *, user: CurrentUser
     return security_policy_payload()
 
 
-def settings_audit_logs(limit: int = 100, action: str | None = None) -> dict[str, Any]:
-    logs = list_audit_logs(limit=limit, action=action)
+def settings_audit_logs(
+    limit: int = 100,
+    action: str | None = None,
+    *,
+    user: CurrentUser | None = None,
+) -> dict[str, Any]:
+    scope = (
+        {"tenant_id": user.tenant_id, "workspace_id": user.workspace_id}
+        if user is not None
+        else {}
+    )
+    logs = list_audit_logs(limit=limit, action=action, **scope)
     return {"items": logs, "total": len(logs), "source": "audit_logs"}
 
 

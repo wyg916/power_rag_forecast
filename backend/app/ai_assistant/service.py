@@ -1501,6 +1501,7 @@ def answer_chat_accurate(
                 domain=_rag_domain_hint(clean_question),
                 context=rag_context,
                 enterprise_store=enterprise_store,
+                tenant_id=memory_identity.tenant_id if memory_identity is not None else "default",
             )
             timings_ms["rag_total_ms"] = _timing_ms(stage_started)
             trace.step(

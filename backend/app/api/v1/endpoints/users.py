@@ -50,11 +50,15 @@ def _validate_email(email: str | None) -> str:
     return value
 
 
-def _target_or_404(user_id: str) -> dict:
-    user = get_user_by_id(user_id)
-    if not user:
+def _target_or_404(user_id: str, actor: CurrentUser) -> dict:
+    target = get_user_by_id(
+        user_id,
+        tenant_id=actor.tenant_id,
+        workspace_id=actor.workspace_id,
+    )
+    if not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
-    return user
+    return target
 
 
 @router.get("/api/users/roles")
@@ -82,7 +86,15 @@ def user_list(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ) -> dict:
-    result = list_users(keyword=keyword, role=role, is_active=is_active, page=page, page_size=page_size)
+    result = list_users(
+        keyword=keyword,
+        role=role,
+        is_active=is_active,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+        page=page,
+        page_size=page_size,
+    )
     write_audit_log(
         action="user.list",
         user=user,
@@ -113,6 +125,8 @@ def user_create(
         role=role,
         is_active=payload.is_active,
         is_superuser=role == "admin",
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
     )
     write_audit_log(
         action="user.create",
@@ -133,11 +147,17 @@ def user_update(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    current = _target_or_404(user_id)
+    current = _target_or_404(user_id, user)
     new_role = normalize_role(payload.role) if payload.role is not None else str(current.get("role") or "viewer")
     new_active = bool(payload.is_active) if payload.is_active is not None else bool(current.get("is_active", True))
     try:
-        ensure_not_last_admin_demoted_or_disabled(user_id, new_role=new_role, new_is_active=new_active)
+        ensure_not_last_admin_demoted_or_disabled(
+            user_id,
+            new_role=new_role,
+            new_is_active=new_active,
+            tenant_id=user.tenant_id,
+            workspace_id=user.workspace_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     email = _validate_email(payload.email) if payload.email is not None else None
@@ -147,6 +167,8 @@ def user_update(
         display_name=payload.display_name.strip() if payload.display_name is not None else None,
         role=new_role,
         is_active=new_active,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
     )
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
@@ -181,8 +203,13 @@ def user_reset_password(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    target = _target_or_404(user_id)
-    ok = update_password_hash(user_id, hash_password(payload.new_password))
+    target = _target_or_404(user_id, user)
+    ok = update_password_hash(
+        user_id,
+        hash_password(payload.new_password),
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+    )
     write_audit_log(
         action="user.password_reset",
         user=user,
@@ -203,12 +230,22 @@ def user_disable(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
-    current = _target_or_404(user_id)
+    current = _target_or_404(user_id, user)
     try:
-        ensure_not_last_admin_demoted_or_disabled(user_id, new_is_active=False)
+        ensure_not_last_admin_demoted_or_disabled(
+            user_id,
+            new_is_active=False,
+            tenant_id=user.tenant_id,
+            workspace_id=user.workspace_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    updated = set_user_active(user_id, False)
+    updated = set_user_active(
+        user_id,
+        False,
+        tenant_id=user.tenant_id,
+        workspace_id=user.workspace_id,
+    )
     write_audit_log(
         action="user.disable",
         user=user,

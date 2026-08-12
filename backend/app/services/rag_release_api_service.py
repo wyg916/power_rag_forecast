@@ -135,7 +135,7 @@ class RagReleaseApiService:
         return engine
 
     def list_releases(self, *, tenant_id: str) -> list[dict[str, Any]]:
-        if tenant_id != "default":
+        if not str(tenant_id or "").strip():
             raise EnterpriseKnowledgeUnavailable("tenant_invalid")
         statement = text(
             """
@@ -179,7 +179,7 @@ class RagReleaseApiService:
         return [_public_release(row) for row in rows]
 
     def get_ingestion(self, *, tenant_id: str, ingestion_id: str) -> dict[str, Any]:
-        if tenant_id != "default" or not ingestion_id:
+        if not str(tenant_id or "").strip() or not ingestion_id:
             raise EnterpriseKnowledgeUnavailable("ingestion_identity_invalid")
         statement = text(
             """

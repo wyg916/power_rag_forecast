@@ -92,3 +92,52 @@ def test_knowledge_upload_requires_write_permission(monkeypatch):
     assert analyst_denied.status_code == 403
     assert allowed.status_code == 200
     assert allowed.json()["doc_id"] == "kb_uploaded"
+
+
+def test_knowledge_document_reads_receive_authenticated_tenant_scope(monkeypatch):
+    captured: dict[str, str] = {}
+
+    def scoped_documents(*, page=1, page_size=20, search="", tenant_id="default"):
+        captured["tenant_id"] = tenant_id
+        return {
+            "available": True,
+            "items": [],
+            "total": 0,
+            "page": page,
+            "page_size": page_size,
+        }
+
+    monkeypatch.setattr(knowledge_endpoint, "list_knowledge_documents", scoped_documents)
+    user = knowledge_endpoint.CurrentUser(
+        user_id="tenant-b-user",
+        username="tenant-b-user",
+        role="viewer",
+        permissions=["knowledge:read"],
+        auth_mode="test",
+        tenant_id="tenant_b",
+        workspace_id="workspace_b",
+        role_ids=("viewer",),
+    )
+
+    result = knowledge_endpoint.get_knowledge_documents(user)
+
+    assert result["total"] == 0
+    assert captured["tenant_id"] == "tenant_b"
+
+
+def test_release_context_uses_authenticated_tenant():
+    user = knowledge_endpoint.CurrentUser(
+        user_id="tenant-b-user",
+        username="tenant-b-user",
+        role="reviewer",
+        permissions=["knowledge:read", "knowledge:publish"],
+        auth_mode="test",
+        tenant_id="tenant_b",
+        workspace_id="workspace_b",
+        role_ids=("reviewer",),
+    )
+
+    context = knowledge_endpoint._release_context(type("Request", (), {"headers": {}})(), user)
+
+    assert context.tenant_id == "tenant_b"
+    assert context.actor_id == "tenant-b-user"
