@@ -55,9 +55,4 @@ def route_assistant_request(
 
 
 def route_requires_rag(route: AssistantRoute) -> bool:
-    return route in {
-        AssistantRoute.RAG_QA,
-        AssistantRoute.BUSINESS_ANALYSIS,
-        AssistantRoute.BUSINESS_ADVICE,
-        AssistantRoute.REPORT_GENERATION,
-    }
+    return route == AssistantRoute.RAG_QA

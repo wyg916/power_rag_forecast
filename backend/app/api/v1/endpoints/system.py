@@ -26,6 +26,7 @@ from ....services import settings_center_service as settings_center
 from ....services.ui_platform_service import response, save_system_config, system_config_snapshot, system_health_snapshot
 from ....data_access import database_runtime_status
 from backend.app.ai_assistant.core.llm_client import get_local_llm_status
+from ....services.rag_runtime_warmup import runtime_warmup_status
 
 
 router = APIRouter()
@@ -33,7 +34,12 @@ router = APIRouter()
 
 @router.get("/api/health")
 def health() -> dict:
-    return {"ok": True, "platform": PLATFORM_NAME, "version": APP_VERSION}
+    return {
+        "ok": True,
+        "platform": PLATFORM_NAME,
+        "version": APP_VERSION,
+        "rag_runtime_warmup": runtime_warmup_status(),
+    }
 
 
 @router.get("/health")

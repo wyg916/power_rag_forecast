@@ -614,6 +614,17 @@ def _rag_trigger_decision(intent: str, task_type: str, question: str) -> tuple[b
         info["reason"] = "daily_or_deterministic_skipped"
         return False, info
 
+    business_tools = [
+        name for name in tools_for_intent(intent)
+        if name != "search_business_knowledge"
+    ]
+    if business_tools and intent not in {"knowledge_search", "tariff_policy_search"}:
+        info.update({
+            "reason": "business_tool_grounded",
+            "tools": business_tools,
+        })
+        return False, info
+
     professional_terms = _matched_terms(question, PROFESSIONAL_RAG_TERMS)
     system_terms = _matched_terms(question, SYSTEM_USAGE_RAG_TERMS)
     daily_terms = _matched_terms(question, DAILY_CHAT_RAG_SKIP_TERMS)

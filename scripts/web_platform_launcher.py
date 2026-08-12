@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import socket
@@ -33,6 +34,8 @@ def _configured_port(name: str, default: int) -> int:
 
 BACKEND_PORT = _configured_port("WEB_BACKEND_PORT", 8000)
 FRONTEND_PORT = _configured_port("WEB_FRONTEND_PORT", 5173)
+BACKEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_BACKEND_STARTUP_TIMEOUT", "420"))
+FRONTEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_FRONTEND_STARTUP_TIMEOUT", "180"))
 BACKEND_URL = f"http://127.0.0.1:{BACKEND_PORT}/api/health"
 FRONTEND_URL = f"http://127.0.0.1:{FRONTEND_PORT}"
 
@@ -288,6 +291,25 @@ def http_ok(url: str, timeout: float = 2.0) -> bool:
         return False
 
 
+def backend_http_ok(timeout: float = 2.0) -> bool:
+    try:
+        with urllib.request.urlopen(BACKEND_URL, timeout=timeout) as response:
+            if not 200 <= int(response.status) < 500:
+                return False
+            payload = json.loads(response.read().decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError, urllib.error.URLError, TimeoutError, OSError):
+        return False
+    if not bool(payload.get("ok")):
+        return False
+    prewarm_required = os.environ.get("RAG_PREWARM_ON_STARTUP", "0").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
+    if not prewarm_required:
+        return True
+    warmup = payload.get("rag_runtime_warmup") or {}
+    return bool(warmup.get("required")) and warmup.get("status") == "ready"
+
+
 def wait_http(url: str, name: str, seconds: int) -> bool:
     deadline = time.time() + seconds
     while time.time() < deadline:
@@ -296,6 +318,17 @@ def wait_http(url: str, name: str, seconds: int) -> bool:
             return True
         time.sleep(2)
     log(f"[WARN] {name} is not ready after {seconds}s: {url}")
+    return False
+
+
+def wait_backend_ready(seconds: int) -> bool:
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if backend_http_ok():
+            log(f"[OK] Backend is ready with required RAG warmup: {BACKEND_URL}")
+            return True
+        time.sleep(2)
+    log(f"[WARN] Backend is not ready after {seconds}s: {BACKEND_URL}")
     return False
 
 
@@ -327,7 +360,7 @@ def sync_core_data(py: str) -> bool:
 
 
 def start_backend(py: str, sync: bool) -> bool:
-    if http_ok(BACKEND_URL):
+    if backend_http_ok():
         log(f"[INFO] Backend is already healthy on port {BACKEND_PORT}.")
         return True
     if port_open(BACKEND_PORT):
@@ -354,7 +387,7 @@ def start_backend(py: str, sync: bool) -> bool:
         ROOT,
         "web_backend.log",
     )
-    return wait_http(BACKEND_URL, "Backend", 90)
+    return wait_backend_ready(BACKEND_STARTUP_TIMEOUT)
 
 
 def ensure_frontend_deps() -> bool:
@@ -427,7 +460,7 @@ def start_frontend(py: str) -> bool:
         FRONTEND_DIR,
         "web_frontend.log",
     )
-    return wait_http(FRONTEND_URL, "Frontend", 90)
+    return wait_http(FRONTEND_URL, "Frontend", FRONTEND_STARTUP_TIMEOUT)
 
 
 def maybe_check_ollama() -> None:

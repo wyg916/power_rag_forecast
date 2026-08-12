@@ -18,6 +18,7 @@ from .data_registry import validate_dataset_registry
 from .db.session import get_engine, get_security_engine, validate_runtime_database_roles
 from .observability import configure_app_logging
 from .services.dataset_query_service import validate_registry_against_database
+from .services.rag_runtime_warmup import prewarm_enterprise_rag_runtime
 
 
 def _cors_allowed_origins() -> list[str]:
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
             runtime_engine = get_engine()
             validate_runtime_database_roles(runtime_engine, get_security_engine())
             validate_registry_against_database(runtime_engine)
+        prewarm_enterprise_rag_runtime()
 
     return app
 

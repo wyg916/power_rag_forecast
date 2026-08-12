@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 
-from backend.app.ai_assistant.runtime_router import AssistantRoute, route_assistant_request
+from backend.app.ai_assistant.runtime_router import AssistantRoute, route_assistant_request, route_requires_rag
+from backend.app.ai_assistant.core.intent_router import route_intent
+from backend.app.ai_assistant.service import _should_use_rag
 from backend.app.ai_assistant.templates.fallback_answers import answer_high_price_reason
 from backend.app.chatbi.planner import generate_analysis_plan, parse_analysis_plan, repair_analysis_plan
 from backend.app.services.rag_qdrant_transport import _preproduction_candidate_is_accepted
@@ -13,6 +15,25 @@ def test_required_questions_are_routed_before_enterprise_runtime() -> None:
     assert route_assistant_request("数据库最新的天气数据是哪天？") == AssistantRoute.CHATBI
     assert route_assistant_request("对比历史同期情况") == AssistantRoute.RAG_QA
     assert route_assistant_request("解释高价风险原因") == AssistantRoute.BUSINESS_ANALYSIS
+
+
+def test_business_tool_routes_do_not_open_rag_as_a_hard_prerequisite() -> None:
+    assert route_requires_rag(AssistantRoute.BUSINESS_ANALYSIS) is False
+    assert route_requires_rag(AssistantRoute.BUSINESS_ADVICE) is False
+    assert route_requires_rag(AssistantRoute.REPORT_GENERATION) is False
+    assert route_requires_rag(AssistantRoute.RAG_QA) is True
+    assert _should_use_rag("high_price_reason", "complex_analysis", "解释高价风险原因") is False
+    assert _should_use_rag("report_summary", "complex_analysis", "生成完整分析报告") is False
+    assert _should_use_rag("knowledge_search", "complex_analysis", "对比历史同期情况") is True
+
+
+def test_purchase_advice_and_policy_questions_use_business_routes() -> None:
+    assert route_intent("建议购电策略").intent == "trading_risk_summary"
+    assert route_assistant_request(
+        "建议购电策略", answer_style="business_advice"
+    ) == AssistantRoute.BUSINESS_ADVICE
+    assert route_intent("政策解读与影响").intent == "tariff_policy_search"
+    assert route_assistant_request("政策解读与影响") == AssistantRoute.RAG_QA
 
 
 def test_plan_parser_normalizes_provider_wrappers_and_camel_case() -> None:

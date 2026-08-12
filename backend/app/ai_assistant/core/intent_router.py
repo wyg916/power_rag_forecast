@@ -183,7 +183,7 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("market_power_price_query", 0.93, {"business_month": _business_month(normalized), "keyword": normalized}, normalized)
     if any(k in q for k in ["知识库", "rag", "检索文档", "政策文档", "文件摘要"]):
         return IntentDecision("knowledge_search", 0.9, {"keyword": normalized}, normalized)
-    if any(k in q for k in ["光伏政策", "电价政策", "补贴政策", "发改文件", "政策摘要", "文号"]):
+    if any(k in q for k in ["光伏政策", "电价政策", "补贴政策", "发改文件", "政策摘要", "政策解读", "政策影响", "文号"]):
         return IntentDecision("tariff_policy_search", 0.93, {"keyword": normalized}, normalized)
     if any(k in q for k in ["光伏电价", "上网电价", "补贴电价", "并网电价", "初始化电价", "总价"]) and any(k in q for k in ["查询", "多少", "规则", "并网", "补贴", "电价"]):
         return IntentDecision("tariff_query", 0.94, {"grid_date": _grid_date(normalized), "keyword": normalized}, normalized)
@@ -222,7 +222,7 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("risk_reason", 0.92, entities, normalized)
     if any(k in q for k in ["温度升高", "气温升高", "高温"]) and any(k in q for k in ["预测字段", "关注哪些", "电价", "风险"]):
         return IntentDecision("weather_impact_on_price", 0.9, entities, normalized)
-    if any(k in q for k in ["交易风险", "风险提示", "交易建议", "交易策略", "怎么做"]):
+    if any(k in q for k in ["交易风险", "风险提示", "交易建议", "交易策略", "购电策略", "购电建议", "怎么做"]):
         return IntentDecision("trading_risk_summary", 0.9, entities, normalized)
     if any(k in q for k in ["储能套利", "低充高放"]) or ("储能" in q and "价差" in q):
         return IntentDecision("storage_spread_analysis", 0.92, entities, normalized)
