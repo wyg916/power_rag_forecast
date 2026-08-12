@@ -4,6 +4,8 @@
 
 | 任务 | 状态 | 完成时间 | 分支/提交 | 证据目录 | 阻塞项 |
 |---|---|---|---|---|---|
+| AI ASSISTANT RUNTIME & MULTI-PROVIDER V1 / Overall | PARTIAL；LOCAL_PREPRODUCTION_RC=PARTIAL | 2026-08-12 22:33 | hotfix/ai-assistant-runtime-providers-20260812 / 本行所在提交；实现 `85f93fa` | `docs/codex/evidence/AI_ASSISTANT_RUNTIME_HOTFIX_20260812_152601`；`docs/codex/hotfix/AI_ASSISTANT_RUNTIME_PROVIDER_HOTFIX_REPORT.md` | RELEASE_BLOCKING=2：KIMI_API_KEY、MIMO_API_KEY 未提供；其余 11/11 场景、DeepSeek、Golden 50、Memory、RAG、Security、Frontend、Browser、严格 RAG ready、一键启动均 PASS；UNCLASSIFIED_FAIL=0、UNCLASSIFIED_ERROR=0；未建 tag、未推送、未切生产。 |
+| AI ASSISTANT RUNTIME & MULTI-PROVIDER V1 / Package 4 | PARTIAL（除两家缺 Key 外全部 PASS） | 2026-08-12 22:33 | hotfix/ai-assistant-runtime-providers-20260812 / `1c083c2`、`b567c22`、`84910a2`、`85f93fa` | `docs/codex/evidence/AI_ASSISTANT_RUNTIME_HOTFIX_20260812_152601/package4` | AUTO 11/11、AI 隔离 20、定向 33、DeepSeek live、Golden/Memory/RAG/Security、Frontend/Browser、严格 RAG 预热与启动均 PASS；Kimi/MiMo live 因缺 Key 阻塞；临时 E2E 数据残留 0。 |
 | AI ASSISTANT RUNTIME & MULTI-PROVIDER V1 / Package 3 | PASS | 2026-08-12 16:58 | hotfix/ai-assistant-runtime-providers-20260812 / 本行所在提交 | `docs/codex/evidence/AI_ASSISTANT_RUNTIME_HOTFIX_20260812_152601/package3` | 无；四 provider 选择器、会话级状态、实际 provider 标签、前端构建、23 项专项测试与四视口浏览器验收通过；未切生产、未推送。 |
 
 | 任务 | 状态 | 开始时间 | 完成时间 | 分支/提交 | 证据目录 | 阻塞项 |

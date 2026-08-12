@@ -1,0 +1,95 @@
+{
+  "schema_version": "ai-provider-live-probe/v1",
+  "providers": [
+    {
+      "provider": "kimi",
+      "display_name": "Kimi K2.6",
+      "configured": false,
+      "key_fingerprint": "",
+      "model": "kimi-k2.6",
+      "base_url": "https://api.moonshot.cn/v1",
+      "capabilities": {
+        "chat": true,
+        "chat_stream": true,
+        "structured_completion": true,
+        "tool_calls": true,
+        "openai_compatible": true
+      },
+      "timeout_seconds": 120,
+      "checks": {},
+      "status": "BLOCKED_MISSING_KEY"
+    },
+    {
+      "provider": "mimo",
+      "display_name": "MiMo V2.5",
+      "configured": false,
+      "key_fingerprint": "",
+      "model": "mimo-v2.5",
+      "base_url": "https://api.xiaomimimo.com/v1",
+      "capabilities": {
+        "chat": true,
+        "chat_stream": true,
+        "structured_completion": true,
+        "tool_calls": true,
+        "openai_compatible": true
+      },
+      "timeout_seconds": 120,
+      "checks": {},
+      "status": "BLOCKED_MISSING_KEY"
+    },
+    {
+      "provider": "deepseek",
+      "display_name": "DeepSeek V4-Flash",
+      "configured": true,
+      "key_fingerprint": "sha256:6e85fe035e06",
+      "model": "deepseek-v4-flash",
+      "base_url": "https://api.deepseek.com",
+      "capabilities": {
+        "chat": true,
+        "chat_stream": true,
+        "structured_completion": true,
+        "tool_calls": true,
+        "openai_compatible": true
+      },
+      "timeout_seconds": 120,
+      "checks": {
+        "auth_models": {
+          "passed": true,
+          "reason": "",
+          "model_visible": true
+        },
+        "chinese_chat": {
+          "passed": true,
+          "finish_reason": "stop",
+          "content_length": 4
+        },
+        "multi_turn": {
+          "passed": true,
+          "finish_reason": "stop",
+          "content_length": 3
+        },
+        "stream": {
+          "passed": true,
+          "chunk_count": 2
+        },
+        "structured": {
+          "passed": true
+        },
+        "tool_calls": {
+          "passed": true,
+          "call_count": 1
+        },
+        "concurrency": {
+          "passed": true,
+          "request_count": 2
+        },
+        "timeout_policy": {
+          "passed": true,
+          "configured_seconds": 120
+        }
+      },
+      "latency_ms": 13754.787,
+      "status": "PASS"
+    }
+  ]
+}
