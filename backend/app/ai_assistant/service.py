@@ -871,6 +871,20 @@ def _evidence(results: list[ToolResult]) -> list[dict[str, Any]]:
             evidence.append({"source": "ai_report_status", "report_id": result.output.get("report_id"), "tool": result.name})
         elif result.name == "get_model_error_summary":
             evidence.append({"source": "prediction_tracking", "operation": "model_error_summary", "tool": result.name})
+        elif result.name == "get_load_forecast":
+            evidence.append({
+                "source": "raw_forecast_load_selected",
+                "date": result.output.get("date"),
+                "availability": result.output.get("availability"),
+                "tool": result.name,
+            })
+        elif result.name == "get_renewable_forecast":
+            evidence.append({
+                "source": "renewable_forecast_service",
+                "date": result.output.get("date"),
+                "availability": result.output.get("availability"),
+                "tool": result.name,
+            })
     return evidence
 
 
@@ -895,6 +909,10 @@ def _data_used(results: list[ToolResult]) -> dict[str, bool]:
             used["prediction"] = True
         if name == "get_weather_summary":
             used["weather"] = True
+        if name == "get_load_forecast":
+            used["load"] = True
+        if name == "get_renewable_forecast":
+            used["prediction"] = True
         if name == "get_data_freshness":
             used["data_freshness"] = True
             domain = result.output.get("domain")
@@ -1077,6 +1095,30 @@ def _build_answer(decision: IntentDecision, results: list[ToolResult]) -> str:
         return answer_data_freshness(first, DATA_LABELS[intent])
     if intent == "data_sql_query":
         return answer_data_sql_query(first)
+    if intent == "forecast_overview":
+        if not first.get("available"):
+            return f"结论：当前未查询到可用的分时电价预测。\n\n数据依据：{first.get('message') or '预测结果不可用。'}"
+        return (
+            f"结论：当前分时电价预测均价约 {_safe_money(first.get('avg_price'))}，"
+            f"最高价约 {_safe_money(first.get('max_price'))}，最低价约 {_safe_money(first.get('min_price'))}。\n\n"
+            f"数据依据：预测批次 {first.get('run_id') or '-'}；最高价时点 {first.get('max_time') or '-'}；"
+            f"最低价时点 {first.get('min_time') or '-'}；峰谷价差约 {_safe_money(first.get('spread'))}。\n\n"
+            "风险提示：预测结果用于分析与人工复核，不构成自动交易指令。"
+        )
+    if intent == "load_forecast_analysis":
+        items = first.get("records") or first.get("items") or first.get("data") or []
+        return (
+            f"结论：{'已查询到负荷预测数据。' if first.get('available') else '当前未查询到可用负荷预测数据。'}\n\n"
+            f"数据依据：{first.get('message') or ('返回记录数 ' + str(len(items)) if items else '负荷预测接口返回的可用状态。')}\n\n"
+            "业务建议：结合高峰负荷时段、分时电价和天气扰动复核购售电敞口。"
+        )
+    if intent == "renewable_forecast_analysis":
+        items = first.get("records") or first.get("items") or first.get("data") or []
+        return (
+            f"结论：{'已查询到新能源出力预测数据。' if first.get('available') else '当前系统未查询到可用新能源出力预测数据。'}\n\n"
+            f"数据依据：{first.get('message') or ('返回记录数 ' + str(len(items)) if items else '新能源预测接口返回的可用状态。')}\n\n"
+            "风险提示：出力数据不可用时不能编造风光预测数值；应先检查数据接入，再评估供需与价格影响。"
+        )
     if intent in {"forecast_max_price", "forecast_min_price", "forecast_avg_price", "forecast_spread"}:
         return answer_forecast_metric(first, intent)
     if intent == "storage_discharge_advice" or intent == "storage_spread_analysis":

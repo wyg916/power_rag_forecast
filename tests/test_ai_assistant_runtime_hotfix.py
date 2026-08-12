@@ -4,7 +4,9 @@ import json
 
 from backend.app.ai_assistant.runtime_router import AssistantRoute, route_assistant_request, route_requires_rag
 from backend.app.ai_assistant.core.intent_router import route_intent
-from backend.app.ai_assistant.service import _should_use_rag
+from backend.app.ai_assistant.schemas import IntentDecision, ToolResult
+from backend.app.ai_assistant.service import _build_answer, _evidence, _should_use_rag
+from backend.app.ai_assistant.core.tool_router import tools_for_intent
 from backend.app.ai_assistant.templates.fallback_answers import answer_high_price_reason
 from backend.app.chatbi.planner import generate_analysis_plan, parse_analysis_plan, repair_analysis_plan
 from backend.app.services.rag_qdrant_transport import _preproduction_candidate_is_accepted
@@ -34,6 +36,32 @@ def test_purchase_advice_and_policy_questions_use_business_routes() -> None:
     ) == AssistantRoute.BUSINESS_ADVICE
     assert route_intent("政策解读与影响").intent == "tariff_policy_search"
     assert route_assistant_request("政策解读与影响") == AssistantRoute.RAG_QA
+
+
+def test_full_matrix_prediction_questions_use_specific_business_tools() -> None:
+    assert route_intent("查看明日分时电价预测").intent == "forecast_overview"
+    assert route_intent("新能源出力预测").intent == "renewable_forecast_analysis"
+    assert route_intent("高峰时段负荷预测").intent == "load_forecast_analysis"
+    for question in ("查看明日分时电价预测", "新能源出力预测", "高峰时段负荷预测"):
+        assert route_assistant_request(question) == AssistantRoute.BUSINESS_ANALYSIS
+    assert tools_for_intent("forecast_overview") == ["get_forecast_metrics"]
+    assert tools_for_intent("load_forecast_analysis") == ["get_load_forecast"]
+    assert tools_for_intent("renewable_forecast_analysis") == ["get_renewable_forecast"]
+
+
+def test_prediction_tool_answers_keep_unavailable_boundaries_and_evidence() -> None:
+    renewable = ToolResult(
+        "get_renewable_forecast",
+        {},
+        {"available": False, "availability": "unavailable", "message": "当前系统未接入新能源出力预测数据。"},
+    )
+    answer = _build_answer(
+        IntentDecision("renewable_forecast_analysis", 0.96, {}, "新能源出力预测"),
+        [renewable],
+    )
+    assert "未查询到可用新能源出力预测数据" in answer
+    assert "不能编造" in answer
+    assert _evidence([renewable])[0]["availability"] == "unavailable"
 
 
 def test_plan_parser_normalizes_provider_wrappers_and_camel_case() -> None:

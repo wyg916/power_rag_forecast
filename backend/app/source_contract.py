@@ -33,6 +33,7 @@ SUPPORTED_DOMAINS = {
     "electricity_day_ahead_price",
     "electricity_real_time_price",
     "load_forecast",
+    "renewable_forecast",
     "weather",
     "report",
     "strategy",
@@ -433,6 +434,8 @@ _TOOL_DOMAINS = {
     "get_data_freshness": "data_quality",
     "query_business_data": "data_quality",
     "get_current_date_context": "system",
+    "get_load_forecast": "load_forecast",
+    "get_renewable_forecast": "renewable_forecast",
 }
 
 

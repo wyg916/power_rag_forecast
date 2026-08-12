@@ -196,6 +196,12 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("price_data_latest_time", 0.98, {"domain": domain}, normalized)
     if "负荷" in q and any(k in q for k in ["截止", "最新", "数据范围", "更新时间"]):
         return IntentDecision("load_data_latest_time", 0.98, {"domain": "forecast_load" if "预测" in q else "load"}, normalized)
+    if any(k in q for k in ["分时电价预测", "电价预测曲线", "电价预测结果", "查看电价预测"]):
+        return IntentDecision("forecast_overview", 0.97, entities, normalized)
+    if "负荷" in q and "预测" in q:
+        return IntentDecision("load_forecast_analysis", 0.96, entities, normalized)
+    if any(k in q for k in ["新能源", "风电", "光伏", "出力"]) and "预测" in q:
+        return IntentDecision("renewable_forecast_analysis", 0.96, entities, normalized)
     if "数据" in q and any(k in q for k in ["更新", "状态", "新鲜度", "表", "数据库"]):
         return IntentDecision("database_table_freshness", 0.92, {"domain": "master_table"}, normalized)
     if any(k in q for k in ["预测窗口", "本次预测是哪天", "预测是哪天", "预测范围"]):

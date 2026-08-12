@@ -3,7 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from ...source_contract import normalize_tool_result
-from ...ai.tool_registry import get_high_risk_hours, get_model_error_summary
+from ...ai.tool_registry import (
+    get_high_risk_hours,
+    get_load_forecast,
+    get_model_error_summary,
+    get_renewable_forecast,
+)
 from ...services.controlled_business_query_service import get_data_freshness, query_business_data
 from .forecast_tools import explain_high_price_hour, explain_low_price_hour, get_forecast_metrics
 from .knowledge_tools import search_business_knowledge
@@ -26,6 +31,8 @@ TOOLS = {
     "get_data_freshness": get_data_freshness,
     "query_business_data": query_business_data,
     "get_forecast_metrics": get_forecast_metrics,
+    "get_load_forecast": get_load_forecast,
+    "get_renewable_forecast": get_renewable_forecast,
     "get_high_risk_hours": get_high_risk_hours,
     "explain_low_price_hour": explain_low_price_hour,
     "explain_high_price_hour": explain_high_price_hour,
