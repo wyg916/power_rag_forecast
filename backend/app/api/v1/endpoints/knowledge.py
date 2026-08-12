@@ -244,7 +244,10 @@ def get_knowledge_document_detail(
     doc_id: str,
     user: Annotated[CurrentUser, Depends(require_permission("knowledge:read"))],
 ) -> dict:
-    return get_knowledge_document(doc_id, **_tenant_scope(user))
+    result = get_knowledge_document(doc_id, **_tenant_scope(user))
+    if not result.get("available") and result.get("reason") == "not_found":
+        raise HTTPException(status_code=404, detail="knowledge_document_not_found")
+    return result
 
 
 @router.get("/api/knowledge/documents/{doc_id}/chunks")
@@ -254,6 +257,9 @@ def get_knowledge_document_chunks(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=100),
 ) -> dict:
+    document = get_knowledge_document(doc_id, **_tenant_scope(user))
+    if not document.get("available") and document.get("reason") == "not_found":
+        raise HTTPException(status_code=404, detail="knowledge_document_not_found")
     return list_knowledge_chunks(
         doc_id,
         page=page,

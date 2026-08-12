@@ -141,3 +141,48 @@ def test_release_context_uses_authenticated_tenant():
 
     assert context.tenant_id == "tenant_b"
     assert context.actor_id == "tenant-b-user"
+
+
+def test_knowledge_document_detail_returns_not_found_without_leaking_scope(monkeypatch):
+    monkeypatch.setattr(
+        knowledge_endpoint,
+        "get_knowledge_document",
+        lambda doc_id, tenant_id="default": {
+            "available": False,
+            "document": None,
+            "reason": "not_found",
+        },
+    )
+
+    response = client.get(
+        "/api/knowledge/documents/tenant-a-document",
+        headers={"X-User": "tenant-b-user", "X-Role": "viewer", "X-Tenant-Id": "tenant_b"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "knowledge_document_not_found"
+
+
+def test_knowledge_document_chunks_return_not_found_before_listing(monkeypatch):
+    monkeypatch.setattr(
+        knowledge_endpoint,
+        "get_knowledge_document",
+        lambda doc_id, tenant_id="default": {
+            "available": False,
+            "document": None,
+            "reason": "not_found",
+        },
+    )
+    monkeypatch.setattr(
+        knowledge_endpoint,
+        "list_knowledge_chunks",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("chunk query must not run")),
+    )
+
+    response = client.get(
+        "/api/knowledge/documents/tenant-a-document/chunks",
+        headers={"X-User": "tenant-b-user", "X-Role": "viewer", "X-Tenant-Id": "tenant_b"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "knowledge_document_not_found"
