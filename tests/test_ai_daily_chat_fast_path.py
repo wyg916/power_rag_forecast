@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
 import uuid
+from zoneinfo import ZoneInfo
 
 from backend.app.ai_assistant.service import answer_chat_accurate
 
@@ -62,3 +64,17 @@ def test_time_question_is_lightweight_and_hides_debug_by_default() -> None:
     assert "知识依据" not in payload["answer"]
     for hidden_key in ["intent", "tools", "tool_calls", "trace", "workflow", "agent_trace", "trace_id"]:
         assert hidden_key not in payload
+
+
+def test_month_and_day_question_uses_current_project_timezone_without_llm() -> None:
+    payload = answer_chat_accurate(
+        "今天是几月几日？请只回答日期。",
+        session_id=f"test_date_{uuid.uuid4().hex}",
+        debug=True,
+    )
+
+    today = datetime.now(ZoneInfo("Asia/Shanghai"))
+    assert payload["intent"] == "current_date_query"
+    assert payload["model_provider_used"] == "deterministic"
+    assert payload["llm_used"] is False
+    assert f"{today:%Y-%m-%d}" in payload["answer"]

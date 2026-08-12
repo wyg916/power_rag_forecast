@@ -367,6 +367,7 @@ function ChatBIArtifacts({ payload }: { payload: any }) {
     key: item.field,
     ellipsis: true
   }));
+  const rowKey = (row: any) => JSON.stringify(schema.map((item: any) => row?.[item.field] ?? null));
   const chartOption = buildChatBIChartOption(payload);
   return (
     <section className="assistant-chatbi-artifacts">
@@ -383,7 +384,7 @@ function ChatBIArtifacts({ payload }: { payload: any }) {
         className="assistant-chatbi-table"
         size="small"
         pagination={dataset.row_count > 12 ? { pageSize: 12, size: 'small' } : false}
-        rowKey={(_: any, index?: number) => String(index ?? 0)}
+        rowKey={rowKey}
         dataSource={dataset.rows || []}
         columns={columns}
         scroll={{ x: true }}

@@ -118,7 +118,19 @@ def route_intent(question: str) -> IntentDecision:
         "可以做什么",
     ]
     time_terms = ["现在几点", "几点了", "当前时间", "现在时间"]
-    weekday_terms = ["今天星期几", "今天周几", "星期几", "周几", "当前日期", "今天几号", "今天是几号", "今天日期", "现在日期"]
+    weekday_terms = [
+        "今天星期几",
+        "今天周几",
+        "星期几",
+        "周几",
+        "当前日期",
+        "今天几号",
+        "今天是几号",
+        "今天几月几日",
+        "今天是几月几日",
+        "今天日期",
+        "现在日期",
+    ]
     plain_terms = ["通俗话", "通俗地", "简单说", "简单解释", "解释一下你是什么助手"]
     daily_flags = {
         "brief": _has_any(q, brief_terms),
@@ -184,7 +196,7 @@ def route_intent(question: str) -> IntentDecision:
         return IntentDecision("tariff_policy_search", 0.93, {"keyword": normalized}, normalized)
     if any(k in q for k in ["光伏电价", "上网电价", "补贴电价", "并网电价", "初始化电价", "总价"]) and any(k in q for k in ["查询", "多少", "规则", "并网", "补贴", "电价"]):
         return IntentDecision("tariff_query", 0.94, {"grid_date": _grid_date(normalized), "keyword": normalized}, normalized)
-    if any(k in q for k in ["今天几号", "今天是几号", "当前日期", "现在日期", "今天日期", "现在几点", "当前时间", "几点了"]):
+    if any(k in q for k in ["今天几号", "今天是几号", "今天几月几日", "今天是几月几日", "当前日期", "现在日期", "今天日期", "现在几点", "当前时间", "几点了"]):
         return IntentDecision("current_date_query", 0.99, {}, normalized)
     if "天气" in q and any(k in q for k in ["截止", "最新", "到哪天", "日期", "数据范围", "更新时间"]):
         return IntentDecision("weather_data_latest_time", 0.99, {"domain": "weather"}, normalized)
