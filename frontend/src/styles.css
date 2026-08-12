@@ -2893,6 +2893,23 @@ a {
   font-size: 13px;
 }
 
+.assistant-model-selector .ant-select-selector {
+  border-color: rgba(0, 184, 148, 0.34) !important;
+  background: var(--color-primary-light) !important;
+}
+
+.assistant-model-selector .ant-select-selection-item {
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.assistant-model-label {
+  color: var(--color-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .assistant-chat-body {
   display: flex;
   min-width: 0;

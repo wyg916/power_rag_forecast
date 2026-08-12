@@ -1531,7 +1531,8 @@ def answer_chat_accurate(
                 else "自动模型路由当前不可用，已保留可核验的工具事实回答。"
             )
             model_status = {
-                "provider": requested if explicit_provider else "unavailable",
+                "provider": "unavailable",
+                "requested_provider": requested,
                 "model": "",
                 "available": False,
                 "fallback": False,

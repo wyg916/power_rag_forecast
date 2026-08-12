@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## AI Assistant Runtime Hotfix 续表
+
+| 任务 | 状态 | 完成时间 | 分支/提交 | 证据目录 | 阻塞项 |
+|---|---|---|---|---|---|
+| AI ASSISTANT RUNTIME & MULTI-PROVIDER V1 / Package 3 | PASS | 2026-08-12 16:58 | hotfix/ai-assistant-runtime-providers-20260812 / 本行所在提交 | `docs/codex/evidence/AI_ASSISTANT_RUNTIME_HOTFIX_20260812_152601/package3` | 无；四 provider 选择器、会话级状态、实际 provider 标签、前端构建、23 项专项测试与四视口浏览器验收通过；未切生产、未推送。 |
+
 | 任务 | 状态 | 开始时间 | 完成时间 | 分支/提交 | 证据目录 | 阻塞项 |
 |---|---|---|---|---|---|---|
 | AI ASSISTANT RUNTIME & MULTI-PROVIDER V1 / Package 1 | PASS | 2026-08-12 15:26 | 2026-08-12 15:52 | hotfix/ai-assistant-runtime-providers-20260812 / 本行所在提交 | `docs/codex/evidence/AI_ASSISTANT_RUNTIME_HOTFIX_20260812_152601/package1` | 无；路由、AnalysisPlan 单次定向修复、记忆降级、预生产候选 RAG 只读直连均闭环；71 passed/4 isolated-only skipped；未切 production alias、未生产发布、未远程推送。 |
