@@ -45,6 +45,37 @@ def load_dotenv(runtime_configs: Sequence[Path] | None = None) -> None:
     load_env_file(ROOT / ".env")
 
 
+def load_rag_reader_env(env_path: Path | None) -> None:
+    if env_path is None:
+        return
+    if not env_path.exists():
+        raise RuntimeError(f"RAG reader config does not exist: {env_path}")
+    values: dict[str, str] = {}
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    if any(key in values for key in ("QDRANT_ADMIN_API_KEY", "QDRANT_ADMIN_KEY")):
+        raise RuntimeError("RAG reader config contains an admin credential")
+    required = {"QDRANT_API_KEY", "QDRANT_CA_CERT", "QDRANT_URL", "QDRANT_READ_ONLY_API_KEY"}
+    if set(values) != required | {
+        "RAG_EMBEDDING_DIM", "RAG_EMBEDDING_MODEL", "RAG_QDRANT_COLLECTION",
+        "RAG_RELEASE_ID", "RAG_RERANKER_MODEL",
+    }:
+        raise RuntimeError("RAG reader config key set is invalid")
+    if values["QDRANT_API_KEY"] != values["QDRANT_READ_ONLY_API_KEY"]:
+        raise RuntimeError("RAG reader key identity mismatch")
+    mappings = {
+        "RAG_QDRANT_API_KEY": values["QDRANT_API_KEY"],
+        "RAG_QDRANT_TLS_CA_PATH": values["QDRANT_CA_CERT"],
+        "RAG_QDRANT_URL": values["QDRANT_URL"],
+    }
+    for key, value in mappings.items():
+        os.environ.setdefault(key, value)
+
+
 def ensure_database_url() -> None:
     os.environ.setdefault("DATABASE_PRIMARY", "postgresql")
     os.environ.setdefault("DATABASE_ALLOW_LEGACY_FALLBACK", "0")
@@ -346,6 +377,7 @@ def main() -> int:
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--skip-sync", action="store_true")
     parser.add_argument("--runtime-config", type=Path, action="append")
+    parser.add_argument("--rag-reader-config", type=Path)
     parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
 
@@ -355,6 +387,7 @@ def main() -> int:
             if args.runtime_config
             else None
         )
+        load_rag_reader_env(args.rag_reader_config.resolve() if args.rag_reader_config else None)
     except (OSError, RuntimeError) as exc:
         log(f"[ERROR] Runtime configuration failed: {exc}")
         return 2

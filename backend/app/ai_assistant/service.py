@@ -1297,7 +1297,12 @@ def answer_chat_accurate(
     trace = TraceManager(clean_question)
     trace.step("input_normalizer", normalized_question=clean_question)
     stage_started = time.perf_counter()
-    previous = get_conversation_state(memory_identity) if memory_identity else None
+    memory_degraded_components: list[str] = []
+    try:
+        previous = get_conversation_state(memory_identity) if memory_identity else None
+    except MemoryPersistenceError:
+        previous = None
+        memory_degraded_components.append("conversation_state_read")
     explicit_memory_content = parse_explicit_memory_request(clean_question)
     memory_admission: dict[str, Any] | None = None
     long_term_memories: list[dict[str, Any]] = []
@@ -1318,7 +1323,10 @@ def answer_chat_accurate(
         if memory_identity and persist:
             long_term_memories = retrieve_memories(memory_identity, clean_question, limit=5)
     except MemoryCoreError as exc:
-        raise MemoryPersistenceError("enterprise memory unavailable") from exc
+        if explicit_memory_content or recall_requested:
+            raise MemoryPersistenceError("enterprise memory unavailable") from exc
+        memory_degraded_components.append("enterprise_memory_read")
+        long_term_memories = []
     long_term_context = build_memory_context(
         previous.__dict__ if previous else {},
         long_term_memories,
@@ -1544,25 +1552,30 @@ def answer_chat_accurate(
         {"tool_name": item.name, "input": item.input, "success": item.success, "output": item.output, "error_message": item.error_message}
         for item in tool_results
     ]
+    memory_persisted = False
     if persist:
         if memory_identity is None:
             raise ValueError("authoritative identity is required when persistence is enabled")
-        save_assistant_turn(
-            identity=memory_identity,
-            question=clean_question,
-            answer=answer,
-            intent=decision.intent,
-            evidence=evidence,
-            tool_calls=tool_calls,
-            trace_id=trace.trace_id,
-            trace_payload=trace_payload,
-            guard_result={"result": guard_result},
-            state=_state_from_answer(session_id, decision, answer, tool_results, run_id),
-            memory_usages=usage_items(
-                long_term_memories,
-                used_in_answer=bool(recall_requested or (llm_used and long_term_memories)),
-            ),
-        )
+        try:
+            save_assistant_turn(
+                identity=memory_identity,
+                question=clean_question,
+                answer=answer,
+                intent=decision.intent,
+                evidence=evidence,
+                tool_calls=tool_calls,
+                trace_id=trace.trace_id,
+                trace_payload=trace_payload,
+                guard_result={"result": guard_result},
+                state=_state_from_answer(session_id, decision, answer, tool_results, run_id),
+                memory_usages=usage_items(
+                    long_term_memories,
+                    used_in_answer=bool(recall_requested or (llm_used and long_term_memories)),
+                ),
+            )
+            memory_persisted = True
+        except MemoryPersistenceError:
+            memory_degraded_components.append("conversation_persistence")
     focus_periods = [
         item.get("time") or item.get("hour")
         for item in (
@@ -1655,7 +1668,7 @@ def answer_chat_accurate(
         "trace_id": trace.trace_id,
         "degraded_components": list(
             (rag_result.get("retrieval") or {}).get("degraded_components") or []
-        ),
+        ) + memory_degraded_components,
         "evidence": evidence,
         "answer_style": normalize_answer_style(answer_style),
         "model_provider_used": model_status.get("provider") or "",
@@ -1676,6 +1689,9 @@ def answer_chat_accurate(
             "retrieved_count": len(long_term_memories),
             "used_in_answer": bool(recall_requested or (llm_used and long_term_memories)),
             "admission": memory_admission.get("decision") if memory_admission else None,
+            "persisted": memory_persisted,
+            "available": not memory_degraded_components,
+            "degraded_components": memory_degraded_components,
         },
     }
     if debug:

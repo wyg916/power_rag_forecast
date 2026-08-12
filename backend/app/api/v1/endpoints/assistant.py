@@ -37,6 +37,11 @@ from ....ai.assistant_service import answer_chat
 from ....platform_services import generate_ai_insights
 from ....schemas import AgentAnalyzeRequest, AnswerFeedbackRequest, ChatFeedbackRequest, ChatRequest
 from backend.app.ai_assistant.service import answer_chat_accurate
+from backend.app.ai_assistant.runtime_router import (
+    AssistantRoute,
+    route_assistant_request,
+    route_requires_rag,
+)
 
 
 router = APIRouter()
@@ -123,6 +128,12 @@ def _enterprise_runtime(user: CurrentUser) -> dict[str, Any]:
     return {"rag_context": context, "enterprise_store": store}
 
 
+def _assistant_runtime(payload: ChatRequest, user: CurrentUser) -> tuple[AssistantRoute, dict[str, Any]]:
+    route = route_assistant_request(payload.question, answer_style=payload.answer_style)
+    runtime = _enterprise_runtime(user) if route_requires_rag(route) else {}
+    return route, runtime
+
+
 def _answer_contract(
     payload: dict[str, Any], *, release_id: str | None = None,
     retrieval: dict[str, Any] | None = None,
@@ -169,8 +180,9 @@ def _answer_contract(
 def _answer_chat_from_payload(
     payload: ChatRequest, debug_allowed: bool, user: CurrentUser
 ) -> dict:
+    route, runtime = _assistant_runtime(payload, user)
     try:
-        return _answer_contract(answer_chat(
+        response = _answer_contract(answer_chat(
             payload.question,
             session_id=payload.session_id,
             run_id=payload.run_id,
@@ -183,8 +195,10 @@ def _answer_chat_from_payload(
             model_provider=payload.model_provider,
             debug=debug_allowed,
             identity=_identity(user, payload.session_id or "", payload.run_id),
-            **_enterprise_runtime(user),
+            **runtime,
         ))
+        response["assistant_route"] = route.value
+        return response
     except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
         _raise_memory_http(exc)
         raise AssertionError("unreachable")
@@ -381,7 +395,8 @@ def ai_agent_analyze(
             metadata={"requested_debug": True, "allowed": debug_allowed, "question_length": len(payload.question or "")},
         )
     try:
-        return _answer_contract(answer_chat_accurate(
+        route = route_assistant_request(payload.question, answer_style=payload.answer_style)
+        response = _answer_contract(answer_chat_accurate(
             payload.question,
             session_id=payload.session_id,
             run_id=payload.run_id,
@@ -395,8 +410,10 @@ def ai_agent_analyze(
             debug=debug_allowed,
             persist=True,
             identity=_identity(user, payload.session_id or "", payload.run_id),
-            **_enterprise_runtime(user),
+            **(_enterprise_runtime(user) if route_requires_rag(route) else {}),
         ))
+        response["assistant_route"] = route.value
+        return response
     except (MemoryPersistenceError, MemoryNotFoundError, MemoryConflictError) as exc:
         _raise_memory_http(exc)
         raise AssertionError("unreachable")

@@ -159,6 +159,9 @@ def route_intent(question: str) -> IntentDecision:
     if "数据" in q and "支撑预测" in q:
         return IntentDecision("data_sql_query", 0.92, {}, normalized)
 
+    if any(k in q for k in ["对比历史同期", "历史同期对比", "同比历史情况", "同期情况"]):
+        return IntentDecision("knowledge_search", 0.92, {"keyword": normalized, "comparison": "historical_period"}, normalized)
+
     if "天气" in q and any(k in q for k in ["没更新", "未更新", "没有更新", "过期", "更新时间", "新鲜度"]):
         return IntentDecision("weather_data_latest_time", 0.98, {"domain": "weather"}, normalized)
 

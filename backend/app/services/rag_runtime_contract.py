@@ -19,6 +19,8 @@ ENTERPRISE_RERANK_PROVIDERS = {"bge", "bge_reranker", "transformers", "local_bge
 ENTERPRISE_RERANK_MODELS = {"bge-reranker-v2-m3", "baai/bge-reranker-v2-m3"}
 DISABLED_VALUES = {"", "0", "false", "no", "none", "off", "disabled"}
 ENABLED_VALUES = {"1", "true", "yes", "on"}
+PRODUCTION_ALIAS_MODE = "production_alias"
+PREPRODUCTION_CANDIDATE_MODE = "preproduction_candidate"
 RELEASE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
@@ -120,6 +122,7 @@ class ReleaseIdentity:
     release_id: str
     collection: str
     alias: str
+    target_mode: str = PRODUCTION_ALIAS_MODE
 
     def issues(self) -> tuple[str, ...]:
         issues: list[str] = []
@@ -128,8 +131,14 @@ class ReleaseIdentity:
         expected_collection = f"rag_chunks_{self.release_id}" if self.release_id else ""
         if not self.collection or self.collection != expected_collection:
             issues.append("release_collection_mismatch")
-        if self.alias != "rag_chunks_current":
-            issues.append("release_alias_invalid")
+        if self.target_mode == PRODUCTION_ALIAS_MODE:
+            if self.alias != "rag_chunks_current":
+                issues.append("release_alias_invalid")
+        elif self.target_mode == PREPRODUCTION_CANDIDATE_MODE:
+            if self.alias:
+                issues.append("preproduction_alias_must_be_empty")
+        else:
+            issues.append("runtime_target_mode_invalid")
         return tuple(issues)
 
 
@@ -258,6 +267,7 @@ def runtime_contract_status(env: Mapping[str, str] | None = None) -> RuntimeCont
         release_id=str(values.get("RAG_RELEASE_ID", "")).strip(),
         collection=str(values.get("RAG_QDRANT_COLLECTION", "")).strip(),
         alias=str(values.get("RAG_QDRANT_ALIAS", "")).strip(),
+        target_mode=str(values.get("RAG_RUNTIME_TARGET_MODE", PRODUCTION_ALIAS_MODE)).strip().lower(),
     )
     qdrant = qdrant_security_status(values)
 

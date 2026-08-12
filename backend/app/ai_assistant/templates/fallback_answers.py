@@ -52,6 +52,18 @@ def answer_low_price_reason(result: dict[str, Any]) -> str:
 
 
 def answer_high_price_reason(result: dict[str, Any]) -> str:
+    if not result.get("available"):
+        reason = str(
+            result.get("message")
+            or result.get("unavailable_reason")
+            or "当前未查询到可用预测数据。"
+        ).rstrip("。")
+        return (
+            "结论：当前缺少可核验的高价时段预测事实，暂不能判断高价风险原因。\n\n"
+            f"数据状态：{reason}。\n\n"
+            "建议：先确认预测批次、负荷、天气和新能源出力数据均可用，再结合知识依据复核风险驱动；"
+            "系统不会用空值拼接业务结论。"
+        )
     reasons = result.get("possible_reasons") or []
     return (
         f"结论：{result.get('time')} 预测电价约 {_money(result.get('predicted_price'))}，在未来24小时中排名第 {result.get('rank')}，属于高价/风险复核窗口。\n\n"

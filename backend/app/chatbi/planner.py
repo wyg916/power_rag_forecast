@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from pydantic import ValidationError
@@ -14,6 +15,16 @@ from .contracts import AnalysisPlan
 
 class AnalysisPlanGenerationError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class PlannerOutput:
+    raw_text: str
+    provider: str = ""
+    model: str = ""
+    finish_reason: str = ""
+    reasoning_content: str = ""
+    tool_calls: tuple[dict[str, Any], ...] = ()
 
 
 class PlanLLM(Protocol):
@@ -93,8 +104,48 @@ def build_plan_messages(question: str, remembered: dict[str, Any] | None) -> lis
     ]
 
 
-def parse_analysis_plan(raw: str) -> AnalysisPlan:
-    value = str(raw or "").strip()
+def _planner_output(raw: Any, metadata: dict[str, Any] | None = None) -> PlannerOutput:
+    meta = metadata or {}
+    if isinstance(raw, dict):
+        payload = raw
+        message = payload.get("message") if isinstance(payload.get("message"), dict) else payload
+        tool_calls = tuple(message.get("tool_calls") or payload.get("tool_calls") or ())
+        content = message.get("content") or payload.get("content") or ""
+        if not content and tool_calls:
+            function = tool_calls[0].get("function") or {}
+            content = function.get("arguments") or ""
+        reasoning = str(message.get("reasoning_content") or payload.get("reasoning_content") or "")
+        raw = content
+    else:
+        tool_calls = tuple(meta.get("tool_calls") or ())
+        reasoning = str(meta.get("reasoning_content") or "")
+    return PlannerOutput(
+        raw_text=str(raw or "").strip(),
+        provider=str(meta.get("provider") or ""),
+        model=str(meta.get("model") or ""),
+        finish_reason=str(meta.get("finish_reason") or ""),
+        reasoning_content=reasoning,
+        tool_calls=tool_calls,
+    )
+
+
+def _normalize_plan_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    for wrapper in ("plan", "analysis_plan", "analysisPlan", "output", "result"):
+        if isinstance(payload.get(wrapper), dict):
+            payload = payload[wrapper]
+            break
+    aliases = {
+        "dataSets": "datasets", "timeRange": "time_range", "timeGrain": "time_grain",
+        "groupBy": "group_by", "orderBy": "order_by", "chartIntent": "chart_intent",
+        "analysisMode": "analysis_mode", "clarificationRequired": "clarification_required",
+        "clarificationQuestion": "clarification_question", "drillLevel": "drill_level",
+    }
+    return {aliases.get(key, key): value for key, value in payload.items()}
+
+
+def parse_analysis_plan(raw: Any) -> AnalysisPlan:
+    output = _planner_output(raw)
+    value = output.raw_text
     value = re.sub(r"^```(?:json)?\s*", "", value, flags=re.IGNORECASE)
     value = re.sub(r"\s*```$", "", value)
     start, end = value.find("{"), value.rfind("}")
@@ -102,11 +153,9 @@ def parse_analysis_plan(raw: str) -> AnalysisPlan:
         raise AnalysisPlanGenerationError("LLM 未返回 AnalysisPlan JSON。")
     try:
         payload = json.loads(value[start : end + 1])
-        if isinstance(payload, dict) and set(payload) == {"plan"}:
-            payload = payload["plan"]
         if not isinstance(payload, dict):
             raise TypeError("plan must be object")
-        return AnalysisPlan.model_validate(payload)
+        return AnalysisPlan.model_validate(_normalize_plan_payload(payload))
     except (json.JSONDecodeError, TypeError, ValidationError) as exc:
         raise AnalysisPlanGenerationError("LLM 返回的 AnalysisPlan 不符合受控契约。") from exc
 
@@ -127,11 +176,39 @@ def generate_analysis_plan(
             temperature=0.0,
             max_tokens=900,
         )
-        return parse_analysis_plan(raw), {
+        output = _planner_output(raw, metadata)
+        try:
+            plan = parse_analysis_plan(output.raw_text)
+            repaired = False
+        except AnalysisPlanGenerationError as first_error:
+            repair_messages = build_plan_messages(question, remembered)
+            repair_messages.append({
+                "role": "user",
+                "content": json.dumps({
+                    "repair": True,
+                    "validation_errors": [str(first_error)],
+                    "invalid_output": output.raw_text[:6000],
+                    "legal_schema": AnalysisPlan.model_json_schema(),
+                }, ensure_ascii=False, separators=(",", ":")),
+            })
+            repaired_raw, repaired_metadata = active_router.generate_answer(
+                repair_messages,
+                task_type="simple_data_answer",
+                requested_provider=requested_provider,
+                temperature=0.0,
+                max_tokens=900,
+            )
+            output = _planner_output(repaired_raw, repaired_metadata)
+            plan = parse_analysis_plan(output.raw_text)
+            metadata = repaired_metadata
+            repaired = True
+        return plan, {
             "source": "llm_analysis_plan",
-            "provider": metadata.get("provider"),
-            "model": metadata.get("model"),
+            "provider": output.provider or metadata.get("provider"),
+            "model": output.model or metadata.get("model"),
             "fallback": bool(metadata.get("fallback")),
+            "finish_reason": output.finish_reason,
+            "repair_attempted": repaired,
         }
     except AnalysisPlanGenerationError:
         raise
