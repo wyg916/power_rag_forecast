@@ -249,7 +249,7 @@ export async function getStrategyCenterData(): Promise<any> {
     runtimeGeneratedAt: runtime?.generated_at || '',
     runtimeIsStale: Boolean(runtime?.is_stale),
     runtimeStaleReason: runtime?.stale_reason || '',
-    runtimeSourceLabel: runtime?.is_simulated ? '模拟设备与执行事实' : runtime?.available ? '设备运行事实' : '运行事实暂不可用',
+    runtimeSourceLabel: runtime?.available ? '运行批次可用' : '运行批次暂不可用',
     region: devices[0]?.region || governedItems[0]?.region || forecast?.region || today?.region || latest?.region || null,
     strategyItems,
     storageItems,

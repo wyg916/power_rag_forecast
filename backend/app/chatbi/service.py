@@ -249,21 +249,54 @@ def execute_chatbi_turn(
     except Exception as exc:
         raise ChatBIServiceError("analysis_memory_unavailable", "分析上下文当前不可用。", status_code=503) from exc
     planner_meta: dict[str, Any]
-    if plan is None:
-        try:
-            draft, planner_meta = generate_analysis_plan(
-                question,
-                remembered,
-                requested_provider=requested_provider,
-                router=planner_router,
-            )
-        except AnalysisPlanGenerationError as exc:
-            raise ChatBIServiceError("analysis_plan_generation_unavailable", str(exc), status_code=503) from exc
+    generated_plan = plan is None
+    if generated_plan:
+        attempts = 2 if (requested_provider or "auto").strip().lower() == "auto" else 1
+        last_error: AnalysisPlanGenerationError | None = None
+        for attempt in range(1, attempts + 1):
+            try:
+                draft, planner_meta = generate_analysis_plan(
+                    question,
+                    remembered,
+                    requested_provider=requested_provider,
+                    router=planner_router,
+                )
+                planner_meta["attempts"] = attempt
+                break
+            except AnalysisPlanGenerationError as exc:
+                last_error = exc
+        else:
+            assert last_error is not None
+            raise ChatBIServiceError(
+                "analysis_plan_generation_unavailable",
+                str(last_error),
+                status_code=503,
+            ) from last_error
     else:
         draft = plan
         planner_meta = {"source": "provided_analysis_plan", "provider": None, "model": None, "fallback": False}
 
     resolved, memory_meta = apply_remembered_context(draft, remembered)
+    if generated_plan:
+        generated_validation = validate_analysis_plan(resolved, permissions=permissions)
+        if not generated_validation.valid and generated_validation.status != "clarification_required":
+            permission_limited = any(
+                issue.code.endswith("_forbidden") or issue.code == "dataset_not_ai_accessible"
+                for issue in generated_validation.issues
+            )
+            clarification_question = (
+                "当前访问范围无法执行这项分析，请改用可访问的业务指标或维度。"
+                if permission_limited
+                else "请明确要分析的业务指标、时间范围和分组维度，以便生成可执行的分析。"
+            )
+            resolved = AnalysisPlan.model_validate(
+                {
+                    "clarification_required": True,
+                    "clarification_question": clarification_question,
+                }
+            )
+            planner_meta["generated_plan_state"] = "clarification_required"
+            planner_meta["validation_issue_codes"] = [issue.code for issue in generated_validation.issues]
     response = execute_chatbi_analysis(
         question=question,
         plan=resolved,

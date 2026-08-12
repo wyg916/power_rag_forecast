@@ -249,7 +249,7 @@ export function StorageWorkspace({
         )}
       </section>
       <section className="storage-center-column">
-        <StorageChart plan={plan} simulated={Boolean(data?.isSimulated)} />
+        <StorageChart plan={plan} />
         <StorageExecutionTable rows={executions} onSelect={onSelect} />
       </section>
       <StorageDetail data={data} device={device} selected={selected} />
@@ -257,7 +257,7 @@ export function StorageWorkspace({
   );
 }
 
-function StorageChart({ plan, simulated }: { plan: any[]; simulated: boolean }) {
+function StorageChart({ plan }: { plan: any[] }) {
   const option = {
     animation: false,
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#dbe5ed', textStyle: { color: '#17223b' } },
@@ -273,7 +273,7 @@ function StorageChart({ plan, simulated }: { plan: any[]; simulated: boolean }) 
   };
   return (
     <section className="strategy-card storage-chart-card">
-      <div className="strategy-card-head"><h2>设备 SOC 与充放电功率</h2><Tooltip title="按当前业务批次展示"><Tag color={simulated ? 'processing' : 'success'}>批次状态记录</Tag></Tooltip></div>
+      <div className="strategy-card-head"><h2>设备 SOC 与充放电功率</h2><Tooltip title="按当前业务批次展示"><Tag color="success">批次状态记录</Tag></Tooltip></div>
       {plan.length ? <AppChart option={option} height={286} /> : <Empty description="当前设备暂无 SOC 事实" />}
     </section>
   );
@@ -300,7 +300,7 @@ function StorageExecutionTable({ rows, onSelect }: { rows: any[]; onSelect: (row
 function StorageDetail({ data, device, selected }: { data: any; device: any; selected: any }) {
   return (
     <section className="strategy-card storage-detail-panel">
-      <div className="strategy-card-head"><h2>计划与收益详情</h2><Tag color={data?.isSimulated ? 'processing' : 'success'}>业务批次记录</Tag></div>
+      <div className="strategy-card-head"><h2>计划与收益详情</h2><Tag color="success">业务批次记录</Tag></div>
       {selected ? (
         <>
           <h3>{selected.time} <Tag color={selected.actionLabel === '充电' ? 'success' : selected.actionLabel === '放电' ? 'blue' : 'default'}>{selected.actionLabel}</Tag></h3>

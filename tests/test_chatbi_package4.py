@@ -57,6 +57,18 @@ class FakePlanLLM:
         return json.dumps(self.payload, ensure_ascii=False), {"provider": "test_llm", "model": "frozen", "fallback": False}
 
 
+class FlakyPlanLLM(FakePlanLLM):
+    def __init__(self, payload: dict) -> None:
+        super().__init__(payload)
+        self.calls = 0
+
+    def generate_answer(self, messages, **kwargs):
+        self.calls += 1
+        if self.calls == 1:
+            return "not-json", {"provider": "test_llm", "model": "frozen", "fallback": False}
+        return super().generate_answer(messages, **kwargs)
+
+
 def test_memory_snapshot_contains_only_approved_chatbi_context() -> None:
     payload = analysis_context(full_plan(comparison="yoy", drill_level=None))
     assert tuple(payload) == CHATBI_CONTEXT_KEYS
@@ -129,6 +141,72 @@ def test_recall_filters_wrong_session_and_non_chatbi_memory(monkeypatch) -> None
     monkeypatch.setattr("backend.app.chatbi.memory.retrieve_memories", fake_retrieve)
     assert recall_analysis_context(identity()) == expected
     assert observed["session_id"] == "session_a" and observed["memory_types"] == ("episodic",)
+
+
+def test_generated_invalid_plan_becomes_audited_business_clarification(monkeypatch) -> None:
+    observed: dict[str, AnalysisPlan] = {}
+    router = FakePlanLLM(
+        {
+            "datasets": ["market_price_history"],
+            "metrics": ["invented_metric"],
+            "chart_intent": "table",
+        }
+    )
+
+    monkeypatch.setattr("backend.app.chatbi.service.recall_analysis_context", lambda *_args, **_kwargs: None)
+
+    def fake_execute(**kwargs):
+        observed["plan"] = kwargs["plan"]
+        return {
+            "state": "clarification_required",
+            "analysis_plan": kwargs["plan"].model_dump(mode="json"),
+        }
+
+    monkeypatch.setattr("backend.app.chatbi.service.execute_chatbi_analysis", fake_execute)
+    response = execute_chatbi_turn(
+        question="分析一下经营情况",
+        plan=None,
+        identity=identity(),
+        permissions=("assistant:use", "data:read", "model:read"),
+        engine=object(),
+        planner_router=router,
+    )
+
+    assert response["state"] == "clarification_required"
+    assert observed["plan"].clarification_required
+    assert "业务指标" in observed["plan"].clarification_question
+    assert response["planner"]["generated_plan_state"] == "clarification_required"
+    assert "unregistered_metric" in response["planner"]["validation_issue_codes"]
+
+
+def test_auto_plan_generation_retries_one_contract_failure(monkeypatch) -> None:
+    router = FlakyPlanLLM(
+        {
+            "clarification_required": True,
+            "clarification_question": "请说明要分析的指标和时间范围。",
+        }
+    )
+    monkeypatch.setattr("backend.app.chatbi.service.recall_analysis_context", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        "backend.app.chatbi.service.execute_chatbi_analysis",
+        lambda **kwargs: {
+            "state": "clarification_required",
+            "analysis_plan": kwargs["plan"].model_dump(mode="json"),
+        },
+    )
+
+    response = execute_chatbi_turn(
+        question="分析一下经营情况",
+        plan=None,
+        identity=identity(),
+        permissions=("assistant:use", "data:read", "model:read"),
+        engine=object(),
+        planner_router=router,
+    )
+
+    assert router.calls == 2
+    assert response["state"] == "clarification_required"
+    assert response["planner"]["attempts"] == 2
 
 
 @pytest.mark.skipif(
