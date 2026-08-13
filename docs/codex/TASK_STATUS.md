@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-13 Final V1 Unified RC Governance
+
+| 任务 | 状态 | 分支 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| Final V1 Unified RC 版本治理收口 | PASS；`FINAL_V1_UNIFIED_RC=PASS`；`PROJECT_ENGINEERING_COMPLETE=PASS`；`FULL_UI_FUNCTIONAL_ACCEPTANCE=PASS`；`LOCAL_PREPRODUCTION_RC=PASS` | `release/beta10d-agent-rc-20260807` | `docs/codex/final/FINAL_V1_UNIFIED_RC_STATUS.md`；`docs/codex/evidence/FINAL_V1_UNIFIED_RC_20260813/` | 无；Release 以 ff-only 收敛到 Functional Acceptance SHA，最小最终门禁全通过。未修改业务代码、UI、Golden 或既有 Tag；未推送、未进入生产、未切 production alias、未激活模型。 |
+
 ## 2026-08-13 Final Functional Acceptance
 
 | 任务 | 状态 | 分支 | 证据 | 阻塞项 |
