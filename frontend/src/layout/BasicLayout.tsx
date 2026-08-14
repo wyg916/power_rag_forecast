@@ -15,7 +15,7 @@ interface BasicLayoutProps {
 
 export function BasicLayout({ route, activeSubKey, collapsed, onCollapse, onNavigate, children }: BasicLayoutProps) {
   return (
-    <Layout className="app-shell">
+    <Layout className={`app-shell ${route === 'report' ? 'app-shell--report' : ''}`}>
       <HeaderBar />
       <Layout className="app-body">
         <Sidebar collapsed={collapsed} route={route} activeSubKey={activeSubKey} onCollapse={onCollapse} onNavigate={onNavigate} />

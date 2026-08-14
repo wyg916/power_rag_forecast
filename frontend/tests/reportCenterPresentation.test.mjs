@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const source = await readFile(new URL('../src/pages/report/ReportCenterPage.tsx', import.meta.url), 'utf8');
+const layoutSource = await readFile(new URL('../src/layout/BasicLayout.tsx', import.meta.url), 'utf8');
 
 test('报告中心业务内容不展示指定的过期追溯详情', () => {
   const forbiddenPresentation = [
@@ -24,6 +25,15 @@ test('报告中心业务内容不展示指定的过期追溯详情', () => {
   }
 });
 
+test('报告路由使用独立内容工作台并完整保留左侧目录', () => {
+  assert.equal(layoutSource.includes("route === 'report' ? 'app-shell--report' : ''"), true);
+  assert.equal(layoutSource.includes('<Sidebar collapsed={collapsed} route={route}'), true);
+  assert.equal(layoutSource.includes("route !== 'report' && <Sidebar"), false);
+  for (const marker of ['report-page-toolbar', 'report-workspace-grid', 'report-workspace-left', 'report-workspace-right', '<ReportMetricPair']) {
+    assert.equal(source.includes(marker), true, `应保留报告工作台结构：${marker}`);
+  }
+});
+
 test('报告中心继续保留阻塞状态和真实功能入口', () => {
   for (const marker of [
     '<PageDataState',
@@ -40,4 +50,9 @@ test('报告中心继续保留阻塞状态和真实功能入口', () => {
   ]) {
     assert.equal(source.includes(marker), true, `应保留状态或真实功能标记：${marker}`);
   }
+});
+
+test('审核页重置使用空搜索词重新请求而不是沿用旧闭包值', () => {
+  assert.equal(source.includes("changeFilters('', '', '')"), true);
+  assert.equal(source.includes('loadData(nextKeyword, 1, nextType, nextStatus)'), true);
 });

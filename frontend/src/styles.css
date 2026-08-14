@@ -9988,3 +9988,229 @@ a {
     font-size: 19px;
   }
 }
+
+/* Report workspace V2: route-scoped full-width structure from Figma 2:2 / 9:28. */
+.app-shell--report { height: 100vh; overflow: hidden; }
+.app-shell--report .header-bar {
+  position: relative;
+  top: auto;
+  height: 58px;
+  margin: 10px 16px 0;
+  padding: 0 13px;
+  gap: 12px;
+  border: 1px solid #e4ebf2;
+  border-radius: 10px;
+  box-shadow: 0 3px 9px rgba(15, 31, 51, 0.06);
+}
+.app-shell--report .header-brand { display: none; }
+.app-shell--report .header-context { gap: 12px; }
+.app-shell--report .project-select { width: 214px; }
+.app-shell--report .header-meta-card { min-height: 32px; padding: 0 13px; border-radius: 7px; }
+.app-shell--report .header-meta,
+.app-shell--report .project-select,
+.app-shell--report .header-actions .ant-btn { font-size: 11px; }
+.app-shell--report .header-actions { margin-left: auto; }
+.app-shell--report .app-body,
+.app-shell--report .main-shell { min-height: 0; }
+.app-shell--report .content-shell {
+  height: calc(100vh - 68px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 9px 16px 16px;
+}
+.app-shell--report .page-container { height: 100%; padding: 0; }
+
+.report-workbench.page-stack {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: 58px minmax(0, 1fr);
+  gap: 10px;
+}
+.report-page-toolbar {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+.report-page-toolbar h1 {
+  margin: 0 0 0 6px;
+  color: #16233b;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+.report-page-toolbar .report-filter-bar {
+  display: flex;
+  height: 58px;
+  min-height: 58px;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 10px 15px;
+  gap: 10px;
+  border-color: #e4ebf2;
+  border-radius: 10px;
+  box-shadow: none;
+}
+.report-page-toolbar .report-filter-controls { flex: 1 1 auto; flex-wrap: nowrap; }
+.report-page-toolbar .report-filter-lower { flex: 0 0 auto; width: auto; flex-wrap: nowrap; }
+.report-page-toolbar .report-filter-bar label { font-size: 11px; white-space: nowrap; }
+.report-page-toolbar .report-filter-bar .ant-select { width: 132px; }
+.report-page-toolbar .report-filter-bar.is-review .ant-select { width: 150px; }
+.report-page-toolbar .report-filter-bar .report-filter-search { width: 330px; }
+.report-page-toolbar .report-filter-bar.is-review .report-filter-search { width: 290px; }
+.report-page-toolbar .report-filter-bar .ant-select-selector,
+.report-page-toolbar .report-filter-bar .ant-input-affix-wrapper,
+.report-page-toolbar .report-filter-bar .ant-btn { min-height: 36px; }
+
+.report-workspace-grid { height: 100%; min-height: 0; gap: 16px; }
+.report-main-grid { grid-template-columns: 360px minmax(0, 1fr) 402px; }
+.report-review-grid { grid-template-columns: 360px minmax(0, 1fr) 532px; }
+.report-workspace-left,
+.report-workspace-right { display: grid; min-width: 0; min-height: 0; }
+.report-workspace-left { grid-template-rows: 112px minmax(0, 1fr); gap: 16px; }
+.report-main-grid > .report-workspace-right {
+  height: 100%;
+  margin-top: 0;
+  grid-template-rows: 112px 250px minmax(0, 1fr);
+  gap: 14px;
+}
+.report-review-grid > .report-workspace-right {
+  height: 100%;
+  grid-template-rows: 112px 300px 122px minmax(0, 1fr);
+  gap: 10px;
+}
+.report-metric-pair,
+.report-metric-pair .metric-grid { height: 100%; min-height: 0; }
+.report-metric-pair .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.report-metric-pair .metric-card { min-height: 0; height: 112px; padding: 14px; }
+.report-metric-pair .metric-value-text { font-size: 27px; }
+.report-list-card,
+.report-preview-card,
+.report-review-preview,
+.report-quick-card,
+.report-timeline-card,
+.report-review-action-card,
+.report-process-card,
+.report-review-info-grid { height: 100%; min-height: 0; }
+.report-list-card .ant-card-body,
+.report-preview-card .ant-card-body,
+.report-review-preview .ant-card-body { height: calc(100% - 39px); min-height: 0; }
+.report-list-scroll { flex: 1; overflow-y: auto; }
+.report-preview-card .section-card-body,
+.report-review-preview .section-card-body { height: 100%; }
+.report-review-info-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: 1fr; gap: 10px; }
+.report-small-info .ant-card-head { min-height: 36px; padding-inline: 10px; }
+.report-small-info .ant-card-head-title { font-size: 12px !important; }
+.report-small-info .ant-card-body { padding: 9px 10px !important; }
+.report-review-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.report-review-action-card textarea.ant-input { min-height: 126px; }
+.report-preview-split { grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr); }
+
+@media (max-width: 1450px) {
+  .app-shell--report .header-context { gap: 7px; }
+  .app-shell--report .project-select { width: 190px; }
+  .app-shell--report .header-meta-card { padding-inline: 9px; }
+  .report-main-grid { grid-template-columns: 300px minmax(0, 1fr) 330px; }
+  .report-review-grid { grid-template-columns: 300px minmax(0, 1fr) 420px; }
+  .report-page-toolbar .report-filter-bar .report-filter-search { width: 250px; }
+  .report-page-toolbar .report-filter-bar.is-review .report-filter-search { width: 230px; }
+}
+
+/* Report workspace V2 card-density convergence. */
+.app-shell--report .header-context > .header-meta-card { display: none; }
+.app-shell--report .header-context { flex: 0 1 auto; }
+
+.report-metric-pair .metric-title-row { gap: 4px; }
+.report-metric-pair .metric-status { display: none; }
+.report-metric-pair .metric-title {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.report-preview-body {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+.report-list-body { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+.report-review-body { height: 100%; min-height: 0; }
+.report-preview-card .report-mini-metrics { margin: 10px 0 12px; }
+.report-preview-card .report-mini-metrics > div { min-height: 88px; }
+.report-preview-card .report-preview-split {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.report-preview-card .report-preview-split > section {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.report-preview-card .report-preview-split .app-chart {
+  width: 100%;
+  height: 100% !important;
+  min-height: 265px;
+  max-height: none !important;
+}
+.report-preview-card .report-preview-split .ant-table-wrapper,
+.report-preview-card .report-preview-split .ant-spin-nested-loading,
+.report-preview-card .report-preview-split .ant-spin-container,
+.report-preview-card .report-preview-split .ant-table,
+.report-preview-card .report-preview-split .ant-table-container {
+  width: 100%;
+  min-width: 0;
+}
+.report-preview-card .report-preview-split table { width: 100% !important; table-layout: fixed !important; }
+.report-preview-card .report-preview-split .ant-table-thead > tr > th {
+  padding: 9px 6px;
+  white-space: nowrap;
+}
+.report-preview-card .report-preview-split .ant-table-tbody > tr > td {
+  height: 118px;
+  padding: 9px 6px;
+  vertical-align: top;
+}
+.report-risk-cell {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+.report-preview-card .report-summary-block { margin-top: 12px; }
+
+/* The global header and left catalog stay on their existing shell; only the report content uses the V2 workspace. */
+.app-shell--report .header-bar {
+  position: sticky;
+  top: 0;
+  height: var(--header-height);
+  margin: 0;
+  padding: 0 24px;
+  gap: 18px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: var(--shadow-header);
+}
+.app-shell--report .header-brand { display: flex; }
+.app-shell--report .header-context { flex: 1 1 auto; gap: 18px; }
+.app-shell--report .project-select { width: 248px; }
+.app-shell--report .header-meta,
+.app-shell--report .project-select,
+.app-shell--report .header-actions .ant-btn { font-size: 13px; }
+.app-shell--report .content-shell { height: calc(100vh - var(--header-height)); }
+.report-main-grid { grid-template-columns: 300px minmax(0, 1fr) 340px; }
+.report-review-grid { grid-template-columns: 300px minmax(0, 1fr) 430px; }
+
+@media (max-width: 1450px) {
+  .report-main-grid { grid-template-columns: 250px minmax(0, 1fr) 300px; }
+  .report-review-grid { grid-template-columns: 250px minmax(0, 1fr) 350px; }
+}

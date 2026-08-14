@@ -23,8 +23,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../api';
 import { AppChart } from '../../components/charts/AppChart';
 import { SectionCard } from '../../components/cards/SectionCard';
-import { PageHeader } from '../../components/common/PageHeader';
-import { PageTabs } from '../../components/common/PageTabs';
 import { PageDataState } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
 import { useAuth } from '../../context/AuthContext';
@@ -50,6 +48,26 @@ function fmtTime(value: unknown, fallback = '--') {
 function shortTime(value: unknown) {
   const text = fmtTime(value);
   return text === '--' ? '--' : text.slice(5, 16);
+}
+
+function compactRiskPeriod(value: unknown) {
+  const text = String(value || '--');
+  return text.includes('T') ? text.slice(11, 16) : text;
+}
+
+function compactRiskLevel(value: unknown) {
+  const text = String(value || '--');
+  const normalized = text.toLowerCase();
+  if (text.includes('高') || normalized === 'high') return '高';
+  if (text.includes('中') || normalized === 'medium') return '中';
+  if (text.includes('低') || normalized === 'low') return '低';
+  if (normalized === 'guardrail') return '边界';
+  return text;
+}
+
+function RiskCell({ value }: { value: unknown }) {
+  const text = String(value || '--');
+  return <Tooltip title={text}><span className="report-risk-cell">{text}</span></Tooltip>;
 }
 
 function mainMetrics(summary: any) {
@@ -87,16 +105,10 @@ function buildPriceOption(rows: any[], review = false) {
   };
 }
 
-const reportTabs = [
-  { key: 'report-daily', label: '报告列表与预览' },
-  { key: 'report-review', label: '报告审核与发布' }
-];
-
 export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { message } = App.useApp();
   const { hasPermission, user } = useAuth();
   const isReviewPage = activeSubKey === 'report-review' || activeSubKey === 'report-publish';
-  const activeTabKey = isReviewPage ? 'report-review' : 'report-daily';
   const [data, setData] = useState<any>({ reports: [], summary: {} });
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -247,11 +259,11 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     URL.revokeObjectURL(url);
   }
 
-  function changeFilters(nextType: string, nextStatus: string) {
+  function changeFilters(nextType: string, nextStatus: string, nextKeyword = keyword) {
     setReportType(nextType);
     setReportStatus(nextStatus);
     setReportPage(1);
-    loadData(keyword, 1, nextType, nextStatus);
+    loadData(nextKeyword, 1, nextType, nextStatus);
   }
 
   function changePage(page: number) {
@@ -279,14 +291,9 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   return (
     <div className="report-workbench page-stack">
-      <PageHeader
-        className="report-unified-header"
-        title={isReviewPage ? '报告审核与发布' : '报告中心'}
-        subtitle={isReviewPage
-          ? '从待审核到发布归档的全流程管理，确保报告质量与合规发布。'
-          : '集中管理各类分析报告，支持查看、审核、发布与归档，保障数据合规与决策高效。'}
-        navigation={<PageTabs items={reportTabs} activeKey={activeTabKey} onChange={onSubNavigate} />}
-        filters={<ReportFilterBar
+      <header className="report-page-toolbar">
+        <h1>{isReviewPage ? '报告审核与发布' : '报告中心'}</h1>
+        <ReportFilterBar
           review={isReviewPage}
           keyword={keyword}
           setKeyword={setKeyword}
@@ -306,10 +313,10 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           onReset={() => {
             setKeyword('');
             setReviewer('');
-            changeFilters('', '');
+            changeFilters('', '', '');
           }}
-        />}
-      />
+        />
+      </header>
       {showBlockingState ? <PageDataState meta={viewMeta} onRetry={() => loadData(keyword)} /> : null}
       {showEmptyState ? (
         <SectionCard title={reportType === 'weekly' ? '周报列表与预览' : '报告列表与预览'} className="report-empty-card">
@@ -323,11 +330,10 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           <Button size="small" onClick={() => loadData(keyword)}>重试</Button>
         </div>
       ) : null}
-      {showContent ? <div className="report-metric-band">
-        <MetricGrid items={metrics} icons={metricIcons} loading={loading} minColumnWidth={160} />
-      </div> : null}
       {showContent && isReviewPage ? (
         <ReviewPublishView
+          metrics={metrics}
+          loading={loading}
           reports={visibleReports}
           total={data.total || reports.length}
           page={reportPage}
@@ -351,6 +357,8 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         />
       ) : showContent ? (
         <ReportPreviewView
+          metrics={metrics}
+          loading={loading}
           reports={visibleReports}
           total={data.total || reports.length}
           page={reportPage}
@@ -450,7 +458,7 @@ function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, on
 
 function ReportListCard({ title, reports, selectedId, setSelectedId, total, page, onPageChange, onReload }: any) {
   return (
-    <SectionCard title={title} extra={<Button type="text" size="small" aria-label="刷新报告列表" title="刷新报告列表" icon={<ReloadOutlined />} onClick={onReload} />} className="report-list-card">
+    <SectionCard title={title} extra={<Button type="text" size="small" aria-label="刷新报告列表" title="刷新报告列表" icon={<ReloadOutlined />} onClick={onReload} />} className="report-list-card" bodyClassName="report-list-body">
       <div className="report-list-head">
         <span>报告名称 / 报告 ID</span>
         <span>报告类型</span>
@@ -481,12 +489,19 @@ function ReportListCard({ title, reports, selectedId, setSelectedId, total, page
   );
 }
 
-function ReportPreviewView({ reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink, onReview, permissions }: any) {
+function ReportMetricPair({ items, start, loading }: { items: any[]; start: number; loading: boolean }) {
+  return <div className="report-metric-pair"><MetricGrid items={items.slice(start, start + 2)} icons={metricIcons.slice(start, start + 2)} loading={loading} minColumnWidth={120} /></div>;
+}
+
+function ReportPreviewView({ metrics, loading, reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink, onReview, permissions }: any) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   return (
-    <div className="report-main-grid">
-      <ReportListCard title={`报告列表（共 ${total} 份）`} reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
-      <SectionCard title="报告预览" className="report-preview-card">
+    <div className="report-main-grid report-workspace-grid">
+      <div className="report-workspace-left">
+        <ReportMetricPair items={metrics} start={0} loading={loading} />
+        <ReportListCard title={`报告列表（共 ${total} 份）`} reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
+      </div>
+      <SectionCard title="报告预览" className="report-preview-card" bodyClassName="report-preview-body">
         <ReportBaseInfo report={activeReport} />
         <div className="report-mini-metrics">{previewMetrics.map((item: any) => <MiniMetric key={item.label} {...item} />)}</div>
         <div className="report-preview-split">
@@ -500,22 +515,15 @@ function ReportPreviewView({ reports, total, page, onPageChange, onReload, activ
               size="small"
               rowKey="key"
               pagination={false}
+              tableLayout="fixed"
               dataSource={risks}
               locale={{ emptyText: '接口未返回结构化风险时段' }}
               columns={[
-                { title: '时段', dataIndex: 'period', width: 104 },
-                { title: '等级', dataIndex: 'level', width: 82, render: (value) => <Tag color={String(value).includes('高') ? 'error' : String(value).includes('中') ? 'warning' : 'success'}>{value}</Tag> },
-                {
-                  title: '风险与建议',
-                  key: 'detail',
-                  render: (_value, row: any) => (
-                    <div className="report-risk-detail">
-                      <strong>{row.type}</strong>
-                      <span>影响：{row.impact}</span>
-                      <p>{row.action}</p>
-                    </div>
-                  )
-                }
+                { title: '时段', dataIndex: 'period', width: 58, render: (value) => <RiskCell value={compactRiskPeriod(value)} /> },
+                { title: '等级', dataIndex: 'level', width: 62, render: (value) => <Tooltip title={String(value || '--')}><Tag color={String(value).includes('高') || String(value).toLowerCase() === 'high' ? 'error' : String(value).includes('中') || String(value).toLowerCase() === 'medium' ? 'warning' : 'success'}>{compactRiskLevel(value)}</Tag></Tooltip> },
+                { title: '风险类型', dataIndex: 'type', width: 92, render: (value) => <RiskCell value={value} /> },
+                { title: '影响', dataIndex: 'impact', width: 58, render: (value) => <RiskCell value={compactRiskLevel(value)} /> },
+                { title: '建议动作', dataIndex: 'action', render: (value) => <RiskCell value={value} /> }
               ]}
             />
           </section>
@@ -526,7 +534,8 @@ function ReportPreviewView({ reports, total, page, onPageChange, onReload, activ
           <Button type="link" onClick={() => setSummaryExpanded((value) => !value)}>{summaryExpanded ? '收起摘要' : '展开全部'}</Button>
         </div>
       </SectionCard>
-      <div className="report-side-stack">
+      <div className="report-workspace-right report-side-stack">
+        <ReportMetricPair items={metrics} start={2} loading={loading} />
         <QuickActions onDownload={onDownload} onRegenerate={onRegenerate} onCopyLink={onCopyLink} onReview={onReview} permissions={permissions} />
         <PublishTimeline report={activeReport} />
       </div>
@@ -534,13 +543,16 @@ function ReportPreviewView({ reports, total, page, onPageChange, onReload, activ
   );
 }
 
-function ReviewPublishView({ reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviews, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions, onFullscreenError }: any) {
+function ReviewPublishView({ metrics, loading, reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviews, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions, onFullscreenError }: any) {
   const previewRef = useRef<HTMLElement | null>(null);
   return (
-    <div className="report-review-grid">
-      <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
+    <div className="report-review-grid report-workspace-grid">
+      <div className="report-workspace-left">
+        <ReportMetricPair items={metrics} start={0} loading={loading} />
+        <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
+      </div>
       <section ref={previewRef}>
-      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />} onClick={() => previewRef.current?.requestFullscreen?.().catch(onFullscreenError)}>全屏预览</Button><Button icon={<DownloadOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview">
+      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />} onClick={() => previewRef.current?.requestFullscreen?.().catch(onFullscreenError)}>全屏预览</Button><Button icon={<DownloadOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview" bodyClassName="report-review-body">
         <div className="report-review-title">
           <h3>{activeReport?.title || '--'}</h3>
           <Tag color="blue">{activeReport?.reportSchemaVersion || '报告版本未提供'}</Tag>
@@ -567,7 +579,8 @@ function ReviewPublishView({ reports, total, page, onPageChange, onReload, activ
         </div>
       </SectionCard>
       </section>
-      <div className="report-review-side">
+      <div className="report-review-side report-workspace-right">
+        <ReportMetricPair items={metrics} start={2} loading={loading} />
         <SectionCard title="审核操作区" className="report-review-action-card">
           <div className="report-review-tabs"><b>待审核</b><span>待发布</span></div>
           <label className="report-comment-label">审核意见 <i>*</i></label>
