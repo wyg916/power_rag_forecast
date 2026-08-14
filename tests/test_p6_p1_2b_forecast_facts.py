@@ -40,7 +40,7 @@ def test_previous_batch_is_not_replaced_by_history_mean():
     assert "当前只有一个成功预测批次" in service
     assert "previous = historyMean" not in service
     assert "上一批次/历史参考" not in design
-    assert "历史小时均值（接口范围）" in design
+    assert "历史均值（近${rangeDays}天）" in design
 
 
 def test_missing_confidence_interval_is_explicit_and_not_synthesized():

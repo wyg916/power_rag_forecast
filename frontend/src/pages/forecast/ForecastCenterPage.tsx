@@ -60,6 +60,8 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [runningForecast, setRunningForecast] = useState(false);
   const [requestError, setRequestError] = useState<unknown>(null);
   const [selectedHour, setSelectedHour] = useState<any>(null);
+  const [historyGranularity, setHistoryGranularity] = useState<'hour' | 'day' | 'week'>('hour');
+  const [historyRangeDays, setHistoryRangeDays] = useState<7 | 30>(30);
   const { hasPermission } = useAuth();
   const canRunForecast = hasPermission('forecast:run');
   const canGenerateStrategy = hasPermission('strategy:generate');
@@ -232,7 +234,14 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         subtitle={subtitle}
         className="forecast-page-header"
         navigation={<PageTabs items={forecastTabs} activeKey={activeSubKey} onChange={onSubNavigate} />}
-        metadata={<ForecastContextBar data={data} view={view} />}
+        metadata={(
+          <ForecastContextBar
+            data={data}
+            view={view}
+            granularity={historyGranularity}
+            onGranularityChange={setHistoryGranularity}
+          />
+        )}
         actions={actions}
       />
       {!showContent ? <PageDataState meta={viewMeta} onRetry={loadData} /> : null}
@@ -258,13 +267,24 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       {showContent && view === 'history' ? (
         <>
           <div className="forecast-primary-grid">
-            <ComparisonChartCard data={data} />
+            <ComparisonChartCard
+              data={data}
+              granularity={historyGranularity}
+              rangeDays={historyRangeDays}
+              onRangeChange={setHistoryRangeDays}
+            />
             <ComparisonInsightPanel data={data} />
           </div>
           <div className="forecast-history-bottom">
             <div className="forecast-card forecast-table-card">
               <div className="forecast-card-head"><h2>对比明细表</h2></div>
-              <ComparisonDetailTable rows={comparisonRows} comparison={data?.comparison} />
+              <ComparisonDetailTable
+                rows={comparisonRows}
+                comparison={data?.comparison}
+                granularity={historyGranularity}
+                rangeDays={historyRangeDays}
+                historyRecords={data?.historyApi?.records || []}
+              />
             </div>
             <HistorySideCards data={data} />
           </div>

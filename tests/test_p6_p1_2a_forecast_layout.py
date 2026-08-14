@@ -44,7 +44,7 @@ def test_forecast_chart_and_detail_table_avoid_internal_scroll_workarounds():
     assert 'className="forecast-chart-body"' in design
     assert 'height="100%"' in design
     assert 'tableLayout="fixed"' in design
-    assert "pageSize: compact ? 4 : 8" in design
+    assert "pageSize: 8" in design
     assert "scroll={{" not in design
     assert ".forecast-chart-body" in styles
     assert "min-height: 0;" in styles
@@ -80,6 +80,7 @@ def test_forecast_keeps_unified_header_and_no_static_success_fallback():
     page = _read("frontend/src/pages/forecast/ForecastCenterPage.tsx")
     service = _read("frontend/src/services/forecastApi.ts")
     assert "PageHeader" in page and "PageTabs" in page
+    assert "ForecastContextBar" in page
     assert "PageDataState" in page
     assert "FactStatusBar" not in page
     assert "mockFallback: false" in service
@@ -94,6 +95,24 @@ def test_forecast_frontend_does_not_render_audit_or_expiry_metadata():
     rendered = page + design
     for forbidden in [
         "数据已过期", "预测适用窗口已结束", "生成时间", "更新时间", "run_id",
-        "模型版本", "特征版本", "预测日期", "区域", "推理模型", "适用窗口", "批次状态", "异常原因"
+        "模型版本", "特征版本", "预测日期", "区域", "数据源", "推理模型", "适用窗口", "批次状态", "异常原因"
     ]:
         assert forbidden not in rendered
+
+
+def test_forecast_right_cards_keep_dense_target_controls_and_content():
+    page = _read("frontend/src/pages/forecast/ForecastCenterPage.tsx")
+    design = _read("frontend/src/components/forecast/ForecastDesign.tsx")
+    styles = _read("frontend/src/styles.css")
+    for marker in ["historyGranularity", "historyRangeDays", "onGranularityChange", "onRangeChange"]:
+        assert marker in page + design
+    for label in ["近7天", "近30天", "小时", "天", "周"]:
+        assert label in design
+    assert "pageSize: 7" in design
+    assert "function PeakGauge" in design
+    assert "Progress type=\"circle\"" not in design
+    assert "forecast-strategy-icon" in design
+    assert ".forecast-page-header" in styles
+    assert ".forecast-workspace-toolbar" not in styles
+    assert ".forecast-strategy-block.success," in styles
+    assert "background: transparent;" in styles
