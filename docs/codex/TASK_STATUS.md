@@ -1,10 +1,10 @@
 # TASK_STATUS.md
 
-## 2026-08-14 报告中心右侧内容区 UI 候选
+## 2026-08-14 报告中心右侧内容区 UI 最终集成
 
 | 任务 | 状态 | 分支 | 证据 | 阻塞项 |
 |---|---|---|---|---|
-| 报告中心、报告审核与发布右侧内容区精细化重构 | `READY_FOR_USER_VISUAL_CONFIRMATION`；左侧目录保持原样；未集成、未推送 | `codex/ui-report-center-cards-20260814` | `docs/codex/evidence/UI_report_center_20260814_round2/` | 等待用户针对候选 SHA 与本轮 1672×941 截图进行视觉确认；PostgreSQL 当前仅有 2 条日报、0 条周报，页面如实呈现，未补造 Figma 示例数据。 |
+| 报告中心、报告审核与发布右侧内容区精细化重构 | `PASS`；用户已确认候选 `db0d9e1f8ba8cf299b1a2cdc76949420ed4c5bcb` 视觉通过，Release 已 ff-only 集成并完成最终复验；左侧目录保持原样；未推送 | `release/beta10d-agent-rc-20260807` | `docs/codex/evidence/UI_report_center_20260814_final_integration/` | 无；PostgreSQL 当前仅有 2 条日报、0 条周报，页面如实呈现，未补造 Figma 示例数据。 |
 
 ## 2026-08-13 Final V1 Unified RC Governance
 
