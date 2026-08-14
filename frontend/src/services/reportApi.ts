@@ -116,9 +116,9 @@ function buildPreviewMetrics(report: any) {
   const metrics = report?.metrics || {};
   return [
     { label: '预测时点数', value: metricValue(metrics, ['record_count'], '--'), unit: '个' },
-    { label: '最高预测价', value: metricValue(metrics, ['max_price', 'highest_price', 'maximum_price'], '--'), unit: '元/kWh' },
-    { label: '最低预测价', value: metricValue(metrics, ['min_price', 'lowest_price', 'minimum_price'], '--'), unit: '元/kWh' },
-    { label: '平均预测价', value: metricValue(metrics, ['avg_price', 'average_price'], '--'), unit: '元/kWh' },
+    { label: '最高预测价', value: metricValue(metrics, ['max_price', 'highest_price', 'maximum_price'], '--'), unit: '元/MWh' },
+    { label: '最低预测价', value: metricValue(metrics, ['min_price', 'lowest_price', 'minimum_price'], '--'), unit: '元/MWh' },
+    { label: '平均预测价', value: metricValue(metrics, ['avg_price', 'average_price'], '--'), unit: '元/MWh' },
     { label: '尖峰风险时点', value: metricValue(metrics, ['spike_risk_hour_count', 'high_risk_count'], '--'), unit: '个' }
   ];
 }
@@ -159,7 +159,8 @@ export async function getReportCenterData(params: Record<string, any> = {}): Pro
 
   const reports = (list.items || []).map(normalizeReport);
   const latestReport = latest?.report_id || latest?.run_id ? normalizeReport(latest) : null;
-  const activeReport = reports[0] || latestReport;
+  const hasActiveFilter = Boolean(params.keyword || params.report_type || params.status);
+  const activeReport = reports[0] || (!hasActiveFilter ? latestReport : null);
   let facts = { report: activeReport, previewCurve: [] as any[], previewMetrics: buildPreviewMetrics(activeReport), risks: activeReport?.risks || [], reviews: [] as any[] };
   if (activeReport) {
     try {

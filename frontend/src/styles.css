@@ -8518,6 +8518,408 @@ a {
   }
 }
 
+/* Report center card-content precision pass (Figma nodes 2:2 and 9:28).
+   External module geometry is intentionally unchanged. */
+.report-workbench {
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: #26384f;
+}
+
+.report-refresh-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  color: #8a5a16;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #fff8e8;
+  border: 1px solid #f2d49a;
+  border-radius: 8px;
+}
+
+.report-workbench .section-card .ant-card-head-title {
+  color: #16233b;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.report-workbench .section-card .ant-card-extra .ant-btn {
+  font-size: 13px;
+}
+
+.report-workbench .section-card .ant-card-body,
+.report-workbench .ant-btn,
+.report-workbench .ant-input,
+.report-workbench .ant-select,
+.report-workbench .ant-tag,
+.report-workbench .ant-pagination {
+  font-size: 13px;
+}
+
+.report-metric-band .metric-card-accent,
+.report-metric-band .metric-status {
+  display: none;
+}
+
+.report-metric-band .metric-card {
+  align-items: center;
+}
+
+.report-metric-band .metric-icon {
+  font-size: 20px;
+  border-radius: 50%;
+}
+
+.report-metric-band .metric-title {
+  color: #5a687b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.report-metric-band .metric-value-text {
+  color: #16233b;
+  font-size: 26px;
+  font-weight: 750;
+}
+
+.report-metric-band .metric-unit,
+.report-metric-band .metric-note {
+  font-size: 12px;
+}
+
+.report-metric-band .metric-note {
+  color: #66758a;
+}
+
+.report-list-head,
+.report-list-item {
+  line-height: 1.35;
+}
+
+.report-list-head {
+  color: #56667c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.report-list-item {
+  min-height: 58px;
+}
+
+.report-list-item > span:first-child > .anticon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #0ba88f;
+  font-size: 14px;
+  background: #e7f7f3;
+  border-radius: 7px;
+}
+
+.report-list-item strong {
+  color: #31445e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.report-list-item small,
+.report-list-item em,
+.report-list-item .ant-tag,
+.report-pagination {
+  font-size: 12px;
+}
+
+.report-list-item small,
+.report-list-item em {
+  color: #66758a;
+}
+
+.report-base-info {
+  row-gap: 10px;
+}
+
+.report-base-info p {
+  min-width: 0;
+}
+
+.report-base-info span {
+  margin-bottom: 3px;
+  color: #748298;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.report-base-info strong {
+  display: block;
+  overflow: hidden;
+  color: #33465f;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-mini-metrics > div {
+  display: flex;
+  min-height: 96px;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: baseline;
+  gap: 0 4px;
+}
+
+.report-mini-metrics span {
+  width: 100%;
+  color: #5a687b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.report-mini-metrics strong {
+  color: #16233b;
+  font-size: 22px;
+  font-weight: 750;
+}
+
+.report-mini-metrics em {
+  color: #66758a;
+  font-size: 12px;
+}
+
+.report-mini-metrics small {
+  width: 100%;
+  margin-top: 4px;
+  color: #0b9a82;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.report-preview-split > section {
+  min-width: 0;
+}
+
+.report-preview-split h3,
+.report-review-preview h3,
+.report-version-grid h3 {
+  color: #33465f;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.report-preview-split .ant-table {
+  font-size: 12px;
+}
+
+.report-preview-split .ant-table-thead > tr > th {
+  padding: 9px 8px;
+  color: #56667c;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f7f9fc;
+}
+
+.report-preview-split .ant-table-tbody > tr > td {
+  padding: 10px 8px;
+  color: #405169;
+  font-size: 12px;
+}
+
+.report-summary-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 16px;
+}
+
+.report-summary-block strong,
+.report-summary-block p {
+  grid-column: 1;
+}
+
+.report-summary-block strong {
+  color: #33465f;
+  font-size: 14px;
+}
+
+.report-summary-block p,
+.report-review-summary {
+  color: #5d6d82;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.report-summary-block .ant-btn {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  padding-inline: 4px;
+  font-size: 12px;
+}
+
+.report-action-grid .ant-btn {
+  gap: 8px;
+  height: 38px;
+  padding-inline: 12px;
+  color: #405169;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.report-action-grid .ant-btn .anticon {
+  color: #0ba88f;
+  font-size: 15px;
+}
+
+.report-action-grid .ant-btn-dangerous .anticon {
+  color: currentColor;
+}
+
+.report-timeline-card .ant-timeline-item-content strong {
+  color: #33465f;
+  font-size: 13px;
+}
+
+.report-timeline-card .ant-timeline-item-content p {
+  margin: 3px 0;
+  color: #748298;
+  font-size: 12px;
+}
+
+.report-timeline-card .ant-timeline-item-content span {
+  color: #5d6d82;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.report-review-title {
+  flex-wrap: wrap;
+}
+
+.report-review-title h3 {
+  color: #24374f;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.report-review-title .ant-tag,
+.report-review-tabs,
+.report-comment-label {
+  font-size: 13px;
+}
+
+.report-review-action-card textarea.ant-input {
+  color: #33465f;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.report-review-actions .ant-btn {
+  min-height: 36px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.report-process-steps > div {
+  position: relative;
+}
+
+.report-process-steps > div:not(:last-child)::after {
+  position: absolute;
+  top: 11px;
+  left: calc(50% + 16px);
+  width: calc(100% - 32px);
+  height: 2px;
+  background: #d9e2ec;
+  content: "";
+}
+
+.report-process-steps > div.done:not(:last-child)::after {
+  background: #48c4ad;
+}
+
+.report-process-steps i {
+  position: relative;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.report-process-steps span {
+  color: #536278;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.report-process-steps small {
+  margin-top: 3px;
+  color: #748298;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.report-version-grid p {
+  gap: 16px;
+  color: #66758a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.report-version-grid p strong {
+  overflow: hidden;
+  max-width: 58%;
+  color: #33465f;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-small-info .section-card-body {
+  gap: 8px;
+  color: #5d6d82;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.report-small-info p {
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #e4ebf2;
+}
+
+.report-small-info p:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+@media (max-width: 1500px) {
+  .report-workbench .section-card .ant-card-head-title {
+    font-size: 15px;
+  }
+
+  .report-mini-metrics span,
+  .report-base-info strong {
+    font-size: 12px;
+  }
+
+  .report-mini-metrics strong {
+    font-size: 19px;
+  }
+
+  .report-list-item strong,
+  .report-workbench .section-card .ant-card-body,
+  .report-workbench .ant-btn {
+    font-size: 12px;
+  }
+}
+
 @media (max-width: 1280px) {
   .report-main-grid,
   .report-review-grid,
@@ -9322,5 +9724,267 @@ a {
   .report-preview-split,
   .report-version-grid {
     grid-template-columns: minmax(0, 1fr) minmax(240px, 0.9fr);
+  }
+}
+
+/* Report center final computed-style gate. Keep this block at EOF. */
+.report-filter-bar {
+  display: flex;
+  min-height: 96px;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 8px 10px;
+  gap: 10px;
+}
+
+.report-filter-controls {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.report-filter-lower {
+  flex: 0 0 auto;
+}
+
+.report-filter-controls,
+.report-filter-lower,
+.report-filter-actions {
+  gap: 8px;
+}
+
+.report-filter-bar label {
+  color: #5a687b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.report-filter-bar .ant-select-selector,
+.report-filter-bar .ant-input-affix-wrapper,
+.report-filter-bar .ant-input,
+.report-filter-bar .ant-btn {
+  min-height: 36px;
+}
+
+.report-empty-card .ant-card-body {
+  display: flex;
+  min-height: 300px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.report-list-head,
+.report-list-item {
+  grid-template-columns: minmax(0, 1fr) 88px 64px;
+  column-gap: 8px;
+}
+
+.report-list-head > span,
+.report-list-item > * {
+  min-width: 0;
+}
+
+.report-list-scroll {
+  max-height: none;
+  overflow: visible;
+}
+
+.report-list-item {
+  overflow: hidden;
+}
+
+.report-list-item > span:first-child {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+}
+
+.report-list-item > span:first-child small {
+  grid-column: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-list-item > .ant-tag {
+  overflow: hidden;
+  margin-inline-end: 0;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-base-info {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.15fr) minmax(0, 0.82fr) minmax(0, 0.72fr);
+}
+
+.report-preview-card .section-card-body,
+.report-review-preview .section-card-body {
+  max-height: none;
+  overflow: hidden;
+}
+
+.report-preview-split .ant-table-body,
+.report-list-card .section-card-body {
+  overflow: visible !important;
+}
+
+.report-risk-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 8px;
+  min-width: 0;
+}
+
+.report-risk-detail strong {
+  overflow: hidden;
+  color: #33465f;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-risk-detail span {
+  color: #748298;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.report-risk-detail p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #5d6d82;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.report-workbench .section-card .ant-card-head-title {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.report-metric-band .metric-icon {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+  font-size: 20px;
+}
+
+.report-metric-band .metric-title {
+  font-size: 13px;
+}
+
+.report-metric-band .metric-value-text {
+  font-size: 26px;
+}
+
+.report-metric-band .metric-unit,
+.report-metric-band .metric-note,
+.report-list-head,
+.report-list-item small,
+.report-list-item em,
+.report-list-item .ant-tag,
+.report-pagination,
+.report-base-info span,
+.report-mini-metrics em,
+.report-mini-metrics small,
+.report-process-steps span,
+.report-small-info .section-card-body {
+  font-size: 12px;
+}
+
+.report-list-item strong,
+.report-mini-metrics span,
+.report-summary-block p,
+.report-review-summary,
+.report-version-grid p,
+.report-review-tabs,
+.report-comment-label,
+.report-review-actions .ant-btn,
+.report-action-grid .ant-btn,
+.report-review-action-card textarea.ant-input {
+  font-size: 13px;
+}
+
+.report-base-info {
+  gap: 10px 14px;
+}
+
+.report-base-info strong {
+  font-size: 14px;
+}
+
+.report-mini-metrics > div {
+  min-height: 96px;
+  padding: 10px;
+}
+
+.report-mini-metrics strong {
+  font-size: 22px;
+}
+
+.report-preview-split h3,
+.report-review-preview h3,
+.report-version-grid h3 {
+  font-size: 15px;
+}
+
+.report-action-grid .ant-btn {
+  height: 38px;
+}
+
+.report-review-title h3 {
+  font-size: 19px;
+}
+
+.report-review-action-card textarea.ant-input {
+  min-height: 138px;
+}
+
+.report-process-steps i {
+  width: 24px;
+  height: 24px;
+}
+
+.report-process-steps small {
+  font-size: 11px;
+}
+
+.report-small-info .section-card-body {
+  gap: 8px;
+  max-height: none;
+  line-height: 1.55;
+}
+
+@media (max-width: 1500px) {
+  .report-filter-bar {
+    flex-wrap: wrap;
+  }
+
+  .report-filter-controls,
+  .report-filter-lower {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .report-workbench .section-card .ant-card-head-title {
+    font-size: 15px;
+  }
+
+  .report-metric-band .metric-value-text {
+    font-size: 22px;
+  }
+
+  .report-base-info strong,
+  .report-mini-metrics span,
+  .report-list-item strong,
+  .report-action-grid .ant-btn {
+    font-size: 12px;
+  }
+
+  .report-mini-metrics strong {
+    font-size: 19px;
   }
 }
