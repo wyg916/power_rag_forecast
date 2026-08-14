@@ -8154,7 +8154,7 @@ a {
 }
 
 .forecast-view-history .forecast-filter-items {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
 }
 
 .forecast-filter-field {
@@ -8372,6 +8372,29 @@ a {
   padding-block: 3px !important;
   font-size: 10px;
   line-height: 15px;
+}
+
+.forecast-view-model .forecast-baseline-table-card .ant-table-thead > tr > th {
+  padding-block: 7px !important;
+}
+
+.forecast-view-model .forecast-baseline-table-card .ant-table-tbody > tr > td {
+  padding-block: 11px !important;
+}
+
+.forecast-training-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.forecast-training-card .kv-list.large {
+  flex: 1 1 auto;
+  align-content: space-around;
+  row-gap: 8px;
+}
+
+.forecast-training-card > .ant-space {
+  margin-top: auto;
 }
 
 @media (max-width: 1500px) {

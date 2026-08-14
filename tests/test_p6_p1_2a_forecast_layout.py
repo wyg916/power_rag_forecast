@@ -95,7 +95,8 @@ def test_forecast_frontend_does_not_render_audit_or_expiry_metadata():
     rendered = page + design
     for forbidden in [
         "数据已过期", "预测适用窗口已结束", "生成时间", "更新时间", "run_id",
-        "模型版本", "特征版本", "预测日期", "区域", "数据源", "推理模型", "适用窗口", "批次状态", "异常原因"
+        "模型版本", "特征版本", "预测日期", "区域", "数据源", "推理模型", "适用窗口", "批次状态", "异常原因",
+        "数据状态", "已过期"
     ]:
         assert forbidden not in rendered
 

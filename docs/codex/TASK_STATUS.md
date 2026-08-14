@@ -4,7 +4,7 @@
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
 |---|---|---|---|---|
-| 预测中心 / 24 小时预测、历史对比、峰谷分析与模型评估右侧工作区精细化返工 | `BLOCKED`（候选，不是最终 PASS） | `codex/ui-forecast-center-fidelity-20260814` / 本行所在候选提交 | `docs/codex/evidence/FORECAST_CENTER_RIGHT_ONLY_20260814/` | 左侧 Sidebar、全局 Header 与 BasicLayout 保持不变；右侧代码、真实 API/PostgreSQL、权限、TypeScript、正式 build 已通过。Codex 应用的 Browser URL policy 阻止访问候选 localhost，无法生成本轮 1672×941 实现图、差分图并执行 Console/可见控件浏览器门禁，因此不得标记 `READY_FOR_USER_VISUAL_CONFIRMATION`，不得合入最终项目。旧 `FORECAST_CENTER_FIDELITY_20260814` 忽略证据属于上一候选，禁止复用。 |
+| 预测中心 / 24 小时预测、历史对比、峰谷分析与模型评估右侧工作区精细化返工 | `READY_FOR_USER_VISUAL_CONFIRMATION`（候选，不是最终 PASS） | `codex/ui-forecast-center-fidelity-20260814` / 本行所在候选提交 | `docs/codex/evidence/FORECAST_CENTER_RIGHT_ONLY_20260814/` | 左侧 Sidebar、全局 Header 与 BasicLayout 保持不变；三页 1672×941 实现/并排/叠加/差分图、逐 Card 矩阵、真实 API/PostgreSQL、全部适用可见控件、状态、Console/Network、四档响应式、TypeScript/build 与双次一键启动均完成。等待用户针对候选 SHA 与截图明确视觉确认；确认前禁止合入最终项目。 |
 
 ## 2026-08-13 Final V1 Unified RC Governance
 

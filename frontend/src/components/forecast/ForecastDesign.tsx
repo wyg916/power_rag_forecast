@@ -145,8 +145,7 @@ export function ForecastContextBar({
     ? [
         ['对比时点', `${data?.comparison?.rows?.length || 0} 个`],
         ['上一成功结果', data?.comparison?.previousAvailable ? '可对比' : '未形成'],
-        ['历史参考', `${data?.comparison?.historyRecordCount || 0} 条`],
-        ['数据状态', data?.dataHealth?.status || '待核验']
+        ['历史参考', `${data?.comparison?.historyRecordCount || 0} 条`]
       ]
     : view === 'model'
       ? [
@@ -405,7 +404,7 @@ function PeakSummaryCard({ data }: { data: any }) {
 }
 
 export function DataHealthCard({ health }: { health: any }) {
-  const healthStatus = health?.status === '已过期' ? '需复核' : health?.status || '待接入';
+  const healthStatus = health?.status === '正常' ? '正常' : health ? '需复核' : '待接入';
   const healthy = healthStatus === '正常';
   return (
     <div className="forecast-card compact-card">
@@ -679,7 +678,7 @@ export function BaselineAndTraining({ data }: { data: any }) {
         <div className="forecast-card-head"><h2>Baseline 对比表（与 persistence_24h 对比）</h2></div>
         <Table size="small" columns={columns} dataSource={rows} tableLayout="fixed" pagination={false} locale={{ emptyText: <Empty description="暂无 Baseline 对比结果" /> }} />
       </div>
-      <div className="forecast-card">
+      <div className="forecast-card forecast-training-card">
         <div className="forecast-card-head"><h2>训练与回测状态</h2></div>
         <dl className="kv-list large">
           <dt>训练任务 ID</dt><dd>{data?.retrainSuggestion?.task_id || '待接入'}</dd>
