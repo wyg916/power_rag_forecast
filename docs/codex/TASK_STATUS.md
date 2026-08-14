@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-14 预测中心三页面视觉返工候选
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 预测中心 / 24 小时预测、历史对比、峰谷分析与模型评估 Card 内部精细化返工 | `READY_FOR_USER_VISUAL_CONFIRMATION`（候选，不是最终 PASS） | `codex/ui-forecast-center-fidelity-20260814` / 本行所在候选提交 | `docs/codex/evidence/FORECAST_CENTER_FIDELITY_20260814/` | 等待用户针对候选 SHA、三张实现图与差分图明确视觉确认；未经确认禁止合入冻结 Release。候选已完成 Figma 三节点读取、1672×941 三页视觉/溢出检查、真实 API/PostgreSQL 一致性、可见控件、权限状态、TypeScript、正式 build 与候选启动复验；未推送、未合入、未修改后端或数据库结构。 |
+
 ## 2026-08-13 Final V1 Unified RC Governance
 
 | 任务 | 状态 | 分支 | 证据 | 阻塞项 |

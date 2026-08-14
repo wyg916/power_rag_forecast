@@ -7591,16 +7591,17 @@ a {
 .forecast-metric-card {
   min-width: 0;
   border: 1px solid var(--color-border-soft);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #fff;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055);
 }
 
 .forecast-context-bar {
-  display: block;
-  min-height: 40px;
+  display: flex;
+  min-height: 36px;
   flex: 1 1 auto;
-  padding: 7px 9px;
+  align-items: center;
+  padding: 5px 10px;
   overflow: hidden;
 }
 
@@ -7623,7 +7624,7 @@ a {
   display: grid;
   width: 100%;
   min-width: 0;
-  grid-template-columns: minmax(92px, .55fr) minmax(72px, .4fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   gap: 6px 12px;
   color: var(--color-secondary);
@@ -7648,18 +7649,6 @@ a {
   white-space: nowrap;
 }
 
-.forecast-meta-window {
-  grid-column: 1 / 3;
-}
-
-.forecast-meta-status {
-  grid-column: 3;
-}
-
-.forecast-meta-boundary {
-  grid-column: 4;
-}
-
 .forecast-metric-grid {
   display: grid;
   flex: 0 0 auto;
@@ -7675,8 +7664,9 @@ a {
   display: flex;
   min-height: 80px;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 12px;
+  gap: 7px;
+  justify-content: center;
+  padding: 9px 12px;
 }
 
 .forecast-metric-top {
@@ -7704,7 +7694,7 @@ a {
 .tone-purple .forecast-metric-icon { background: rgba(124, 58, 237, 0.12); color: var(--color-purple); }
 
 .forecast-metric-card h3 {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   color: var(--color-secondary);
   font-size: 13px;
   font-weight: 800;
@@ -7735,12 +7725,6 @@ a {
   margin-left: 6px;
 }
 
-.forecast-metric-source {
-  color: var(--color-muted);
-  font-size: 11px;
-  line-height: 1.2;
-}
-
 .trend-up { color: var(--color-danger); }
 .trend-down { color: var(--color-primary-dark); }
 .forecast-mini-empty { height: 30px; color: var(--color-muted); font-size: 12px; line-height: 30px; }
@@ -7760,7 +7744,7 @@ a {
 .forecast-card-head {
   display: flex;
   min-width: 0;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 6px;
@@ -7771,7 +7755,7 @@ a {
 }
 
 .forecast-card-head h2 {
-  margin: 0 0 4px;
+  margin: 0;
   color: var(--color-title);
   font-size: 16px;
   font-weight: 850;
@@ -7783,6 +7767,17 @@ a {
 .forecast-card {
   color: var(--color-secondary);
   font-size: 12px;
+}
+
+.forecast-card-head p {
+  margin: 3px 0 0;
+  line-height: 1.35;
+}
+
+.forecast-card-kicker {
+  margin-right: auto;
+  color: var(--color-muted);
+  font-size: 11px;
 }
 
 .forecast-chart-card,
@@ -7804,22 +7799,63 @@ a {
   height: 304px;
   max-height: none;
   flex-direction: column;
-  gap: 6px;
-  overflow: auto;
+  gap: 2px;
+  padding: 8px 10px;
+  overflow: hidden;
+}
+
+.forecast-insight-panel > .forecast-card-head {
+  margin-bottom: 0;
 }
 
 .forecast-strategy-block {
-  padding: 8px 9px;
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 4px 7px;
   border: 1px solid var(--color-border-soft);
   border-radius: 10px;
   background: var(--color-bg-soft);
 }
 
 .forecast-strategy-block h3 {
-  margin: 0 0 6px;
+  margin: 0 0 3px;
   color: var(--color-title);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 850;
+}
+
+.forecast-strategy-block p {
+  margin: 1px 0;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.forecast-strategy-block > div {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.forecast-insight-panel .forecast-strategy-block > div {
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+.forecast-insight-panel .forecast-strategy-block p {
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+.forecast-insight-panel .forecast-strategy-block h3 {
+  margin-bottom: 1px;
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.forecast-insight-panel .forecast-strategy-block .ant-tag {
+  margin-inline-end: 2px;
+  padding-inline: 5px;
+  font-size: 10px;
+  line-height: 17px;
 }
 
 .forecast-strategy-block.success { background: rgba(0, 184, 148, 0.06); }
@@ -7841,8 +7877,8 @@ a {
 .tag-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 4px;
+  margin-bottom: 2px;
 }
 
 .forecast-detail-grid,
@@ -7878,18 +7914,18 @@ a {
   min-height: 0;
   height: 178px;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .kv-list {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 6px 10px;
+  gap: 5px 10px;
   margin: 0;
 }
 
 .kv-list.large {
-  gap: 10px 14px;
+  gap: 7px 14px;
 }
 
 .kv-list dt {
@@ -7907,8 +7943,8 @@ a {
 
 .forecast-health-inline {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 9px;
   align-items: center;
   margin-bottom: 6px;
 }
@@ -7939,7 +7975,7 @@ a {
 }
 
 .forecast-view-24h .forecast-bottom-summary .compact-card {
-  overflow: auto;
+  overflow: hidden;
 }
 
 .forecast-view-history .forecast-primary-grid {
@@ -7962,41 +7998,51 @@ a {
 }
 
 .decision-pill {
-  padding: 10px;
+  margin: 2px 0 8px;
+  padding: 8px;
   border-radius: 9px;
   background: var(--color-primary-tint);
   color: var(--color-primary-dark);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 850;
   text-align: center;
+}
+
+.history-conclusion-list {
+  margin-top: auto;
 }
 
 .forecast-peak-model-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
-  gap: 14px;
+  gap: 8px;
 }
 
 .peak-gauge-layout {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(170px, .8fr) minmax(0, 1.2fr);
+  gap: 12px;
   align-items: center;
 }
 
+.peak-gauge-layout .kv-list.large {
+  gap: 5px 12px;
+  font-size: 11px;
+}
+
 .model-eval-section {
-  padding-bottom: 16px;
+  padding-bottom: 10px;
 }
 
 .model-metric-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .model-metric-card {
   min-width: 0;
-  padding: 12px;
+  padding: 7px 8px;
   border: 1px solid var(--color-border-soft);
   border-radius: 10px;
   background: #fff;
@@ -8006,9 +8052,9 @@ a {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: 0 0 10px;
+  margin: 0 0 4px;
   color: var(--color-title);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 850;
 }
 
@@ -8020,9 +8066,9 @@ a {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin: 7px 0;
+  margin: 3px 0;
   color: var(--color-secondary);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .model-metric-card strong {
@@ -8032,6 +8078,74 @@ a {
 
 .forecast-table-card .ant-table-cell {
   white-space: nowrap;
+}
+
+.forecast-table-card .ant-table-wrapper,
+.forecast-baseline-table-card .ant-table-wrapper {
+  min-height: 0;
+}
+
+.forecast-table-card .ant-table-thead > tr > th,
+.forecast-table-card .ant-table-tbody > tr > td,
+.forecast-baseline-table-card .ant-table-thead > tr > th,
+.forecast-baseline-table-card .ant-table-tbody > tr > td {
+  padding-block: 2px !important;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.forecast-table-card .ant-table .ant-btn-sm {
+  height: 20px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 20px;
+}
+
+.forecast-table-card .ant-table .ant-tag {
+  padding-inline: 5px;
+  font-size: 10px;
+  line-height: 17px;
+}
+
+.forecast-table-card .ant-pagination {
+  margin: 5px 0 0 !important;
+}
+
+.forecast-view-model .forecast-metric-card {
+  min-height: 74px;
+}
+
+.forecast-view-model .forecast-peak-model-grid {
+  flex: 0 0 234px;
+  min-height: 0;
+}
+
+.forecast-view-model .peak-gauge-card,
+.forecast-view-model .peak-explain-card {
+  overflow: hidden;
+}
+
+.forecast-view-model .peak-explain-card .forecast-strategy-block {
+  padding-block: 5px;
+}
+
+.forecast-view-model .peak-explain-card .forecast-strategy-block > div {
+  line-height: 1.35;
+}
+
+.forecast-view-model .model-eval-section {
+  flex: 0 0 173px;
+  overflow: hidden;
+}
+
+.forecast-view-model .forecast-baseline-grid {
+  flex: 1 1 0;
+  min-height: 180px;
+  overflow: hidden;
+}
+
+.forecast-view-model .forecast-baseline-grid > .forecast-card {
+  overflow: hidden;
 }
 
 @media (max-width: 1500px) {

@@ -35,15 +35,17 @@ def test_metric_cards_do_not_reuse_one_series_as_fake_per_metric_trend():
     assert "MiniSparkline" not in design
     assert "ForecastMetricCards({ metrics }" in design
     assert "<ForecastMetricCards metrics={metricItems} />" in page
-    assert "forecast-metric-source" in design
+    assert "forecast-metric-source" not in design
 
 
-def test_forecast_chart_and_detail_table_have_internal_scroll_contracts():
+def test_forecast_chart_and_detail_table_avoid_internal_scroll_workarounds():
     design = _read("frontend/src/components/forecast/ForecastDesign.tsx")
     styles = _read("frontend/src/styles.css")
     assert 'className="forecast-chart-body"' in design
     assert 'height="100%"' in design
-    assert "scroll={{ y: compact ? 142 : 210, x: 1080 }}" in design
+    assert 'tableLayout="fixed"' in design
+    assert "pageSize: compact ? 4 : 8" in design
+    assert "scroll={{" not in design
     assert ".forecast-chart-body" in styles
     assert "min-height: 0;" in styles
     assert "overflow: hidden;" in styles
@@ -56,11 +58,10 @@ def test_hour_explanation_is_a_real_local_detail_action():
     assert "<DetailDrawer" in page
     assert "onExplain={setSelectedHour}" in page
     assert "onClick={() => onExplain?.(row)}" in design
-    for field in ["预测批次", "模型版本", "特征版本", "业务来源"]:
-        assert field in page
     detail = page.split('<DetailDrawer', 1)[1].split('onClose=', 1)[0]
-    for technical_field in ["model_version", "feature_version", "data_source"]:
+    for technical_field in ["预测批次", "模型版本", "特征版本", "model_version", "feature_version", "data_source"]:
         assert technical_field not in detail
+    assert "建议来源" in detail
 
 
 def test_forecast_secondary_actions_have_real_urls_or_explicit_disable_reason():
@@ -71,7 +72,7 @@ def test_forecast_secondary_actions_have_real_urls_or_explicit_disable_reason():
     assert 'href="#/task/log"' in design
     assert 'href="#/report/list"' in design
     assert "disabledReason" in page
-    assert "缺少报告上下文" in page
+    assert "window.location.hash = '#/strategy/strategy-high'" in page
     assert '<Button type="link">' not in design
 
 
@@ -82,5 +83,17 @@ def test_forecast_keeps_unified_header_and_no_static_success_fallback():
     assert "PageDataState" in page
     assert "FactStatusBar" not in page
     assert "mockFallback: false" in service
+    assert "!showContent ? <PageDataState" in page
     for forbidden in ["Math.random", "forecastMock", "staticForecastData"]:
         assert forbidden not in page + service
+
+
+def test_forecast_frontend_does_not_render_audit_or_expiry_metadata():
+    page = _read("frontend/src/pages/forecast/ForecastCenterPage.tsx")
+    design = _read("frontend/src/components/forecast/ForecastDesign.tsx")
+    rendered = page + design
+    for forbidden in [
+        "数据已过期", "预测适用窗口已结束", "生成时间", "更新时间", "run_id",
+        "模型版本", "特征版本", "预测日期", "区域", "推理模型", "适用窗口", "批次状态", "异常原因"
+    ]:
+        assert forbidden not in rendered

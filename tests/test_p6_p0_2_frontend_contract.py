@@ -67,8 +67,12 @@ def test_refresh_and_permission_actions_are_real_or_explicitly_disabled():
     assert "api.runForecast()" in forecast
     assert "forecast:run" in forecast
     assert "strategy:generate" in forecast
-    assert "disabled: true" in forecast
-    assert "缺少报告上下文" in forecast
+    assert "const canRunForecast = hasPermission('forecast:run')" in forecast
+    assert "const canGenerateStrategy = hasPermission('strategy:generate')" in forecast
+    assert "!authRequired || hasPermission" not in forecast
+    assert "disabled: !canGenerateStrategy" in forecast
+    assert "#/strategy/strategy-high" in forecast
+    assert "在完整业务上下文中生成策略" in forecast
 
 
 def test_forecast_static_success_fallbacks_are_removed():
