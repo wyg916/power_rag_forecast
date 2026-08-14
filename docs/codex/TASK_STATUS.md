@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-15 预测中心底部空间与字号视觉返工候选
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 24 小时预测、历史对比底部空间利用与三页字号放大 | `READY_FOR_USER_VISUAL_CONFIRMATION`（候选，不是最终 PASS） | `codex/ui-forecast-center-fidelity-20260814` / 源代码 `91644ca`，最终候选 SHA 见交付报告 | `docs/codex/evidence/FORECAST_CENTER_BOTTOM_SPACE_FONT_REWORK_20260815/` | 1672×941 三页 Card 无裁切/溢出，24 小时底部 353px、历史底部 320px，字体主尺度 12–26px；真实 API/PostgreSQL、可见控件、七态、Console/Network、响应式、TypeScript/build 已完成。等待用户针对最终候选 SHA 与截图明确视觉确认；确认前禁止合入冻结 Release。 |
+
 ## 2026-08-14 预测中心三页面右侧视觉返工候选
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
