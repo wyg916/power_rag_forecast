@@ -234,12 +234,13 @@ export function ForecastChartCard({ data }: { data: any }) {
     ...(highTimes.length ? [[{ name: '高价风险', xAxis: highTimes[0], itemStyle: { color: 'rgba(255, 77, 79, 0.09)' }, label: { color: chartColors.red } }, { xAxis: highTimes.at(-1) }]] : [])
   ];
   const option = {
+    textStyle: { fontSize: 12, fontFamily: 'Inter, PingFang SC, Microsoft YaHei, sans-serif' },
     color: [chartColors.green, '#BDEADF', chartColors.red],
-    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A' } },
-    legend: { top: 0, left: 0, itemWidth: 24, itemHeight: 8, data: ['预测电价', ...(intervalAvailable ? ['置信区间（95%）'] : []), '峰值点'] },
+    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A', fontSize: 12 } },
+    legend: { top: 0, left: 0, itemWidth: 24, itemHeight: 8, textStyle: { fontSize: 12 }, data: ['预测电价', ...(intervalAvailable ? ['置信区间（95%）'] : []), '峰值点'] },
     grid: { left: 48, right: 26, top: 48, bottom: 44 },
-    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', interval: 1 } },
-    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085' } },
+    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', fontSize: 11, interval: 1 } },
+    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085', fontSize: 11 } },
     series: [
       ...(intervalAvailable ? [
         {
@@ -281,7 +282,7 @@ export function ForecastChartCard({ data }: { data: any }) {
         symbolSize: 14,
         data: [[peak.time, peak.value]],
         itemStyle: { color: chartColors.red },
-        label: { show: true, formatter: `${hour(peak.raw_time || peak.time)} ${fmt(peak.value, 2)} 元/kWh`, position: 'top', color: '#1f2a44' }
+        label: { show: true, formatter: `${hour(peak.raw_time || peak.time)} ${fmt(peak.value, 2)} 元/kWh`, position: 'top', color: '#1f2a44', fontSize: 12, fontWeight: 700 }
       }] : [])
     ]
   };
@@ -452,7 +453,7 @@ export function ComparisonChartCard({
           formatter: `${String(row.time).slice(0, 5)} ${row.remark}\n${row.rate}`,
           position: String(row.time).startsWith('17') ? 'top' : 'bottom',
           color: chartColors.green,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
           lineHeight: 14,
           padding: [5, 7],
@@ -479,11 +480,12 @@ export function ComparisonChartCard({
     { name: historyLabel, type: 'line', smooth: true, showSymbol: false, data: historyValues, lineStyle: { width: 2.5, color: chartColors.orange }, itemStyle: { color: chartColors.orange } }
   ];
   const option = {
-    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A' } },
-    legend: { top: 0, left: 0, itemWidth: 24, itemHeight: 8, data: legend },
+    textStyle: { fontSize: 12, fontFamily: 'Inter, PingFang SC, Microsoft YaHei, sans-serif' },
+    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A', fontSize: 12 } },
+    legend: { top: 0, left: 0, itemWidth: 24, itemHeight: 8, textStyle: { fontSize: 12 }, data: legend },
     grid: { left: 48, right: 26, top: 52, bottom: 44 },
-    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', interval: granularity === 'hour' ? 1 : 0 } },
-    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085' } },
+    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', fontSize: 11, interval: granularity === 'hour' ? 1 : 0 } },
+    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085', fontSize: 11 } },
     series: chartSeries
   };
   return (
@@ -542,13 +544,13 @@ export function ComparisonDetailTable({
 }) {
   const displayRows = aggregateComparisonRows(comparisonRowsForRange(rows, historyRecords, rangeDays), granularity);
   const columns: ColumnsType<any> = [
-    { title: '时间', dataIndex: 'time', width: '11%' },
-    { title: '最新预测', dataIndex: 'latest', width: '15%', align: 'right' },
-    { title: comparison?.previousAvailable ? '上一批次' : '上一批次（无）', dataIndex: 'previous', width: '17%', align: 'right' },
+    { title: '时间', dataIndex: 'time', width: '10%' },
+    { title: '最新预测', dataIndex: 'latest', width: '14%', align: 'right' },
+    { title: comparison?.previousAvailable ? '上一批次' : '上一批次（无）', dataIndex: 'previous', width: '15%', align: 'right' },
     { title: `历史均值（近${rangeDays}天）`, dataIndex: 'historyMean', width: '18%', align: 'right' },
-    { title: comparison?.previousAvailable ? '差值（较上一批次）' : '差值（较历史均值）', dataIndex: 'diff', width: '15%', align: 'right' },
+    { title: comparison?.previousAvailable ? '差值（较上一批次）' : '差值（较历史均值）', dataIndex: 'diff', width: '18%', align: 'right' },
     { title: '变化率', dataIndex: 'rate', width: '12%', align: 'right' },
-    { title: '备注', dataIndex: 'remark', width: '12%', align: 'center' }
+    { title: '备注', dataIndex: 'remark', width: '13%', align: 'center' }
   ];
   return <Table size="small" rowKey="key" columns={columns} dataSource={displayRows} tableLayout="fixed" pagination={granularity === 'hour' ? { pageSize: 7, showSizeChanger: false, size: 'small', showLessItems: true } : false} />;
 }
@@ -615,14 +617,14 @@ function PeakGauge({ value }: { value: number }) {
         valueAnimation: true,
         formatter: '{value}%',
         color: '#152238',
-        fontSize: 28,
+        fontSize: 32,
         fontWeight: 850,
         offsetCenter: [0, '8%']
       },
       title: {
         offsetCenter: [0, '47%'],
         color: '#667085',
-        fontSize: 12
+        fontSize: 13
       },
       data: [{ value: Number(value.toFixed(1)), name: value >= 60 ? '波动性较强' : '波动性平稳' }]
     }]

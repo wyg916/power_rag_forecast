@@ -7965,7 +7965,7 @@ a {
 }
 
 .forecast-view-24h .forecast-detail-grid {
-  flex: 0 0 clamp(190px, 24vh, 224px);
+  flex: 0 0 clamp(330px, 37.5vh, 354px);
 }
 
 .forecast-view-24h .forecast-detail-grid > .forecast-table-card,
@@ -7988,7 +7988,7 @@ a {
 }
 
 .forecast-view-history .forecast-history-bottom {
-  flex: 0 0 clamp(190px, 24vh, 236px);
+  flex: 0 0 clamp(300px, 34vh, 322px);
 }
 
 .forecast-view-history .forecast-history-bottom > .forecast-table-card,
@@ -8125,6 +8125,17 @@ a {
   overflow: hidden;
 }
 
+.forecast-view-model .peak-gauge-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.forecast-view-model .peak-gauge-card .peak-gauge-layout {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
 .forecast-view-model .peak-explain-card .forecast-strategy-block {
   padding-block: 5px;
 }
@@ -8134,7 +8145,7 @@ a {
 }
 
 .forecast-view-model .model-eval-section {
-  flex: 0 0 173px;
+  flex: 0 0 185px;
   overflow: hidden;
 }
 
@@ -8172,13 +8183,13 @@ a {
 .forecast-filter-field small,
 .forecast-granularity > small {
   color: var(--color-secondary);
-  font-size: 10px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
 .forecast-filter-items .forecast-filter-field strong {
   margin-left: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 750;
 }
 
@@ -8196,7 +8207,7 @@ a {
   height: 27px;
   padding-inline: 7px;
   border-radius: 7px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .forecast-metric-card {
@@ -8213,16 +8224,26 @@ a {
 
 .forecast-metric-card h3 {
   margin-bottom: 7px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .forecast-metric-card strong {
-  font-size: 23px;
+  font-size: 26px;
+}
+
+.forecast-metric-grid.metric-count-6 .forecast-metric-card strong {
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.forecast-metric-grid.metric-count-6 .forecast-metric-card em {
+  font-size: 11px;
 }
 
 .forecast-metric-card p {
   padding-left: 50px;
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .forecast-card {
@@ -8231,6 +8252,25 @@ a {
 
 .forecast-card-head {
   margin-bottom: 7px;
+}
+
+.forecast-design-page .forecast-card-head h2 {
+  font-size: 17px;
+}
+
+.forecast-design-page .forecast-card-kicker,
+.forecast-design-page .card-unit {
+  font-size: 12px;
+}
+
+.forecast-page-header .page-subtitle,
+.forecast-page-header .page-heading p {
+  font-size: 13px;
+}
+
+.forecast-page-header .page-tabs .ant-tabs-tab-btn,
+.forecast-page-header .page-heading-actions .ant-btn {
+  font-size: 14px;
 }
 
 .forecast-insight-panel {
@@ -8266,13 +8306,13 @@ a {
 
 .forecast-strategy-icon {
   display: grid;
-  width: 19px;
-  height: 19px;
+  width: 21px;
+  height: 21px;
   place-items: center;
   margin-top: 1px;
   border-radius: 999px;
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .forecast-strategy-block.success .forecast-strategy-icon { background: var(--color-primary); }
@@ -8287,16 +8327,29 @@ a {
 .forecast-insight-panel .forecast-strategy-block h3,
 .forecast-view-model .peak-explain-card .forecast-strategy-block h3 {
   margin: 0 0 3px;
-  font-size: 11px;
-  line-height: 1.25;
+  font-size: 13px;
+  line-height: 1.3;
 }
 
 .forecast-insight-panel .forecast-strategy-content > div,
 .forecast-insight-panel .forecast-strategy-block p,
 .forecast-view-model .peak-explain-card .forecast-strategy-content > div {
   color: var(--color-secondary);
-  font-size: 10px;
-  line-height: 1.3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.forecast-view-history .forecast-insight-panel .forecast-strategy-block {
+  flex: 1 1 auto;
+}
+
+.forecast-design-page .kv-list {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.forecast-design-page .kv-list.large {
+  font-size: 13px;
 }
 
 .forecast-health-list {
@@ -8318,7 +8371,7 @@ a {
   padding: 4px;
   border-radius: 7px;
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -8348,7 +8401,7 @@ a {
 
 .model-metric-card h3 {
   margin-bottom: 7px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .model-metric-card h3 span {
@@ -8362,16 +8415,25 @@ a {
 
 .model-metric-card p {
   margin: 3px 0;
-  font-size: 9px;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .forecast-table-card .ant-table-thead > tr > th,
 .forecast-table-card .ant-table-tbody > tr > td,
 .forecast-baseline-table-card .ant-table-thead > tr > th,
 .forecast-baseline-table-card .ant-table-tbody > tr > td {
-  padding-block: 3px !important;
-  font-size: 10px;
-  line-height: 15px;
+  padding-block: 4px !important;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.forecast-design-page .forecast-table-card .ant-table .ant-btn-sm {
+  font-size: 12px;
+}
+
+.forecast-design-page .forecast-table-card .ant-table .ant-tag {
+  font-size: 11px;
 }
 
 .forecast-view-model .forecast-baseline-table-card .ant-table-thead > tr > th {
@@ -8403,10 +8465,6 @@ a {
     font-size: 12px;
   }
 
-  .model-metric-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   .forecast-metric-card {
     padding-inline: 9px;
   }
@@ -8416,7 +8474,7 @@ a {
   }
 
   .forecast-metric-card strong {
-    font-size: 19px;
+    font-size: 22px;
   }
 
   .forecast-metric-card em {
@@ -8433,7 +8491,55 @@ a {
 
   .forecast-view-24h .forecast-primary-grid,
   .forecast-view-history .forecast-primary-grid {
-    flex: 0 0 250px;
+    flex: 1 1 0;
+  }
+
+  .forecast-view-24h,
+  .forecast-view-history {
+    height: calc(100vh - var(--header-height) - 16px);
+    overflow-y: hidden;
+  }
+}
+
+@media (max-height: 920px) {
+  .forecast-view-24h,
+  .forecast-view-history {
+    overflow-y: auto;
+  }
+
+  .forecast-view-24h .forecast-primary-grid,
+  .forecast-view-history .forecast-primary-grid {
+    flex: 0 0 280px;
+  }
+
+  .forecast-view-24h .forecast-detail-grid {
+    flex: 0 0 350px;
+  }
+
+  .forecast-view-history .forecast-history-bottom {
+    flex: 0 0 322px;
+  }
+}
+
+@media (max-height: 819px) {
+  .forecast-view-model .forecast-baseline-grid {
+    flex: 0 0 220px;
+  }
+}
+
+@media (max-width: 1500px) {
+  .forecast-view-model .model-eval-section {
+    flex-basis: 204px;
+  }
+
+  .forecast-view-model .forecast-baseline-grid {
+    flex: 0 0 228px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .forecast-view-model .forecast-baseline-grid {
+    flex-basis: 264px;
   }
 }
 
