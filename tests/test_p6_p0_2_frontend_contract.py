@@ -125,13 +125,12 @@ def test_page_header_layout_prevents_horizontal_page_overflow():
     assert "grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.6fr);" in styles
 
 
-def test_all_ten_main_pages_use_the_shared_page_header_path():
+def test_main_pages_use_the_approved_header_paths():
     direct_pages = [
         "frontend/src/pages/dashboard/DashboardPage.tsx",
         "frontend/src/pages/data/DataCenterPage.tsx",
         "frontend/src/pages/forecast/ForecastCenterPage.tsx",
         "frontend/src/pages/strategy/StrategyCenterPage.tsx",
-        "frontend/src/pages/report/ReportCenterPage.tsx",
         "frontend/src/pages/model/ModelCenterPage.tsx",
         "frontend/src/pages/knowledge/KnowledgeBasePage.tsx",
         "frontend/src/pages/task/TaskCenterPage.tsx",
@@ -139,12 +138,17 @@ def test_all_ten_main_pages_use_the_shared_page_header_path():
     for target in direct_pages:
         assert "PageHeader" in _read(target), target
 
+    report = _read("frontend/src/pages/report/ReportCenterPage.tsx")
+    assert '<header className="report-page-toolbar">' in report
+    assert "report-workspace-grid" in report
+
     app = _read("frontend/src/app/App.tsx")
     page_container = _read("frontend/src/layout/PageContainer.tsx")
     assert "<PageHeader" in page_container
     hide_expression = app.split("hideHeader=", 1)[1].split(">", 1)[0]
     assert "'assistant'" not in hide_expression
     assert "'settings'" not in hide_expression
+    assert "routeState.route === 'report'" in hide_expression
     assert "DataPageHeader" not in _read("frontend/src/components/data/DataCenterDesign.tsx")
     assert "ForecastPageHeader" not in _read("frontend/src/components/forecast/ForecastDesign.tsx")
     assert "StrategyPageHeader" not in _read("frontend/src/components/strategy/StrategyDesign.tsx")
