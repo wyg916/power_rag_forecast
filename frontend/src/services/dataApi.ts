@@ -21,11 +21,12 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
     }
   };
 
-  const [status, quality, datasets, importExport, catalog, freshness] = await Promise.all([
+  const [status, quality, datasets, importExport, importExportHistory, catalog, freshness] = await Promise.all([
     safe('dataStatus', api.dataStatus),
     safe('dataQuality', api.dataQuality),
     safe('dataDatasets', api.dataDatasets),
     safe('importExportRecords', () => api.importExportRecords(syncPage, syncPageSize)),
+    safe('importExportHistory', () => api.importExportRecords(1, 50)),
     safe('dataCatalog', () => api.dataCatalog(true)),
     safe('dataFreshness', api.dataFreshness)
   ]);
@@ -36,6 +37,7 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
   const alerts = Array.isArray(quality?.alerts) ? quality.alerts : [];
   const datasetRows = Array.isArray(datasets?.datasets) ? datasets.datasets : [];
   const records = Array.isArray(importExport?.records) ? importExport.records : [];
+  const historyRecords = Array.isArray(importExportHistory?.records) ? importExportHistory.records : records;
   const catalogRows = Array.isArray(catalog?.datasets) ? catalog.datasets : [];
   const freshnessItems = Array.isArray(freshness?.items) ? freshness.items : [];
   const freshnessProblems = freshnessItems.filter((item: any) => item.status !== 'ok');
@@ -47,7 +49,7 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
   const consistencyScore = quality?.summary?.avg_consistency_score ?? average(qualityItems.map((item: any) => item.consistency_score));
   const exceptionCount = Number(quality?.summary?.exception_count ?? exceptions.length);
 
-  const imports = records.map((row: any, index: number) => ({
+  const mapImport = (row: any, index: number) => ({
     key: row.record_id || row.task_id || String(index),
     type: row.type || row.task_kind || '--',
     name: row.name || row.task_name || row.record_id || '--',
@@ -64,7 +66,9 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
     error: row.error_message || '',
     statusReason: row.status_reason || '',
     dataSource: row.data_source || 'postgresql.task_runs'
-  }));
+  });
+  const imports = records.map(mapImport);
+  const healthImports = historyRecords.map(mapImport);
 
   return withServiceState({
     available: Boolean(sources.length || catalogRows.length || datasetRows.length),
@@ -78,6 +82,7 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
     freshnessProblems,
     alerts,
     imports,
+    healthImports,
     syncPagination: importExport?.pagination || { page: syncPage, page_size: syncPageSize, total: imports.length },
     syncSummary: importExport?.summary || {},
     catalogVersion: catalog?.catalog_version || freshness?.catalog_version || '',
@@ -90,6 +95,7 @@ export async function getDataCenterData(options: { syncPage?: number; syncPageSi
       checkedSourceCount: Number(quality?.summary?.checked_source_count ?? qualityItems.length),
       catalogCount: catalogRows.length,
       datasetCount: datasetRows.length,
+      tableCount: catalogRows.filter((row: any) => row.runtime?.exists !== false).length,
       syncCount: Number(importExport?.summary?.total ?? importExport?.pagination?.total ?? imports.length),
       latestSyncAt: importExport?.summary?.latest_sync_at || '',
       latestSyncRunId: importExport?.summary?.latest_sync_run_id || '',

@@ -10,21 +10,25 @@ import {
   DataHealthOverview,
   DataOverviewMetrics,
   ExceptionTable,
+  OverviewQuickActions,
   OverviewSideRail,
   QualityMetrics,
   QualityMonitor,
   SourceStatusBar,
-  SyncRecordsTable,
-  dataTabs
+  SyncRecordsTable
 } from '../../components/data/DataCenterDesign';
 import { PageHeader } from '../../components/common/PageHeader';
 import type { PageHeaderAction } from '../../components/common/PageHeader';
-import { PageTabs } from '../../components/common/PageTabs';
 import { PageDataState } from '../../components/common/States';
 import { useAuth } from '../../context/AuthContext';
 import { getDataCenterData } from '../../services/dataApi';
 import { resolvePageDataMeta } from '../../services/viewState';
 import type { PageProps } from '../../types/ui';
+import './data-center-workspace.css';
+
+const developmentRole = String(import.meta.env.VITE_DEV_ROLE || 'developer').toLowerCase();
+const developmentCanSync = ['admin', 'analyst', 'operator'].includes(developmentRole);
+const developmentCanExport = ['admin', 'analyst', 'operator', 'developer'].includes(developmentRole);
 
 function exportCsv(filename: string, rows: any[]) {
   if (!rows.length) {
@@ -54,8 +58,8 @@ function downloadBlob(filename: string, blob: Blob) {
 
 export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { message } = App.useApp();
-  const syncPageSize = 8;
-  const tablePageSize = 20;
+  const syncPageSize = 7;
+  const tablePageSize = 10;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [requestError, setRequestError] = useState<unknown>(null);
@@ -63,6 +67,10 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [syncing, setSyncing] = useState(false);
   const [syncPage, setSyncPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [domainFilter, setDomainFilter] = useState('all');
+  const [objectTypeFilter, setObjectTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [taskTypeFilter, setTaskTypeFilter] = useState('all');
   const [selectedCatalog, setSelectedCatalog] = useState<any>(null);
   const [tablePreview, setTablePreview] = useState<any>(null);
   const [tablePreviewLoading, setTablePreviewLoading] = useState(false);
@@ -73,8 +81,8 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [tableExporting, setTableExporting] = useState(false);
   const [detail, setDetail] = useState<any>(null);
   const { authRequired, hasPermission } = useAuth();
-  const canSync = !authRequired || hasPermission('data:sync');
-  const canExport = !authRequired || hasPermission('data:export');
+  const canSync = authRequired ? hasPermission('data:sync') : developmentCanSync;
+  const canExport = authRequired ? hasPermission('data:export') : developmentCanExport;
   const qualityMode = activeSubKey === 'data-quality';
 
   const loadData = useCallback(async () => {
@@ -96,9 +104,24 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    setSearch('');
+    setDomainFilter('all');
+    setObjectTypeFilter('all');
+    setStatusFilter('all');
+    setTaskTypeFilter('all');
+  }, [qualityMode]);
+
   const loadTablePreview = useCallback(async () => {
     const datasetId = selectedCatalog?.dataset_id;
-    if (!qualityMode || !datasetId) return;
+    if (!qualityMode || !datasetId) {
+      if (qualityMode && !datasetId) {
+        setTablePreview(null);
+        setTablePreviewError(null);
+        setTablePreviewLoading(false);
+      }
+      return;
+    }
     if (selectedCatalog?.runtime?.exists === false) {
       setTablePreview({
         available: false,
@@ -153,19 +176,70 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     }
   }
 
+  const enrichedCatalog = useMemo(() => {
+    const qualityById = new Map((data?.qualityItems || []).map((row: any) => [row.dataset_id, row]));
+    const freshnessById = new Map((data?.freshnessItems || []).map((row: any) => [row.dataset_id, row]));
+    return (data?.catalog || []).map((row: any) => {
+      const quality = qualityById.get(row.dataset_id) as any;
+      const freshness = freshnessById.get(row.dataset_id) as any;
+      return {
+        ...row,
+        quality,
+        freshness,
+        recordCount: freshness?.row_count ?? quality?.row_count ?? null,
+        businessTime: freshness?.latest_time ?? quality?.latest_time ?? null
+      };
+    });
+  }, [data]);
+
   const filteredCatalog = useMemo(() => {
-    const rows = data?.catalog || [];
+    const rows = enrichedCatalog;
     const keyword = search.trim().toLowerCase();
-    if (!keyword) return rows;
-    return rows.filter((row: any) => [row.dataset_id, row.display_name, row.business_domain, row.description].some((value) => String(value || '').toLowerCase().includes(keyword)));
-  }, [data, search]);
+    return rows.filter((row: any) => {
+      const keywordMatched = !keyword || [row.dataset_id, row.display_name, row.business_domain, row.description]
+        .some((value) => String(value || '').toLowerCase().includes(keyword));
+      const domainMatched = domainFilter === 'all' || String(row.business_domain || '') === domainFilter;
+      const typeMatched = objectTypeFilter === 'all' || String(row.object_type || '') === objectTypeFilter;
+      const rowStatus = row.runtime?.exists === false ? 'unavailable' : 'available';
+      const statusMatched = statusFilter === 'all' || rowStatus === statusFilter;
+      return keywordMatched && domainMatched && typeMatched && statusMatched;
+    });
+  }, [domainFilter, enrichedCatalog, objectTypeFilter, search, statusFilter]);
+
+  useEffect(() => {
+    if (!qualityMode) return;
+    setSelectedCatalog((current: any) => {
+      if (!filteredCatalog.length) return null;
+      if (current) {
+        const refreshed = filteredCatalog.find((row: any) => row.dataset_id === current.dataset_id);
+        if (refreshed) return refreshed;
+      }
+      return filteredCatalog[0];
+    });
+  }, [filteredCatalog, qualityMode]);
 
   const filteredImports = useMemo(() => {
     const rows = data?.imports || [];
     const keyword = search.trim().toLowerCase();
-    if (!keyword) return rows;
-    return rows.filter((row: any) => [row.name, row.type, row.status].some((value) => String(value || '').toLowerCase().includes(keyword)));
-  }, [data, search]);
+    return rows.filter((row: any) => {
+      const keywordMatched = !keyword || [row.name, row.type, row.status, row.runId]
+        .some((value) => String(value || '').toLowerCase().includes(keyword));
+      const typeMatched = taskTypeFilter === 'all' || String(row.type || '') === taskTypeFilter;
+      const statusMatched = statusFilter === 'all' || String(row.status || '') === statusFilter;
+      return keywordMatched && typeMatched && statusMatched;
+    });
+  }, [data, search, statusFilter, taskTypeFilter]);
+
+  const filterOptions = useMemo(() => {
+    const unique = (values: unknown[]) => Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean))).sort();
+    return {
+      domains: unique(enrichedCatalog.map((row: any) => row.business_domain)),
+      objectTypes: unique(enrichedCatalog.map((row: any) => row.object_type)),
+      catalogStatuses: enrichedCatalog.length ? ['available', 'unavailable'] : [],
+      taskTypes: unique((data?.imports || []).map((row: any) => row.type)),
+      taskStatuses: unique((data?.imports || []).map((row: any) => row.status))
+    };
+  }, [data, enrichedCatalog]);
 
   async function syncData() {
     setSyncing(true);
@@ -181,6 +255,18 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   }
 
   const exportRows = qualityMode ? data?.qualityItems || [] : data?.freshnessItems || [];
+  const exportCurrentView = useCallback(() => {
+    if (!canExport) {
+      message.warning('需要 data:export 权限');
+      return;
+    }
+    if (!exportCsv(qualityMode ? 'data_quality' : 'data_overview', exportRows)) {
+      message.info('当前没有可导出的记录');
+      return;
+    }
+    message.success(qualityMode ? '质量报告已导出' : '数据概览已导出');
+  }, [canExport, exportRows, message, qualityMode]);
+
   const actions = useMemo<PageHeaderAction[]>(() => [
     {
       key: 'refresh',
@@ -191,7 +277,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     },
     {
       key: 'sync',
-      label: '手动刷新数据',
+      label: '手动同步',
       icon: <SyncOutlined />,
       type: 'primary',
       loading: syncing,
@@ -204,15 +290,11 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       label: qualityMode ? '导出质量报告' : '导出概览',
       icon: <DownloadOutlined />,
       collapseAtNarrow: true,
-      disabled: !exportRows.length,
-      disabledReason: '当前没有可导出的接口记录',
-      onClick: () => {
-        if (!exportCsv(qualityMode ? 'data_quality' : 'data_overview', exportRows)) {
-          message.info('当前没有可导出的记录');
-        }
-      }
+      disabled: !canExport || !exportRows.length,
+      disabledReason: !canExport ? '需要 data:export 权限' : '当前没有可导出的接口记录',
+      onClick: exportCurrentView
     }
-  ], [canSync, exportRows, loading, loadData, message, qualityMode, syncing]);
+  ], [canExport, canSync, exportCurrentView, exportRows, loading, loadData, qualityMode, syncing]);
 
   const viewMeta = useMemo(() => resolvePageDataMeta({
     loading,
@@ -230,22 +312,74 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   }), [data, lastUpdatedAt, loading, qualityMode, requestError, search]);
   const showContent = viewMeta.state === 'success' || viewMeta.state === 'stale';
   const exceptions = data?.exceptions || [];
+  const detailForDisplay = useMemo(() => {
+    if (!detail) return null;
+    const hiddenTraceKeys = new Set([
+      'alertId', 'source', 'dataSource', 'data_source', 'sourceType', 'source_type',
+      'isSimulated', 'is_simulated', 'generationMode', 'generation_mode',
+      'runId', 'run_id', 'modelVersion', 'model_version', 'featureVersion', 'feature_version',
+      'generatedAt', 'generated_at', 'updatedAt', 'updated_at', 'predictionDate', 'prediction_date',
+      'region', 'inferenceModel', 'inference_model', 'applicableWindow', 'applicable_window',
+      'batchStatus', 'batch_status', 'staleReason', 'stale_reason', 'statusReason', 'status_reason'
+    ]);
+    return Object.fromEntries(Object.entries(detail).filter(([key]) => !hiddenTraceKeys.has(key)));
+  }, [detail]);
 
   return (
     <div className={`data-design-page ${qualityMode ? 'quality-catalog-page' : 'data-overview-page'}`}>
       <PageHeader
-        title="数据中心"
+        className="data-page-header"
+        title={qualityMode ? '数据质量与数据目录' : '数据中心'}
         subtitle={qualityMode ? '缺失率、重复率、新鲜度、校验通过率与数据目录可追溯管理。' : '数据接入、质量监控、目录管理、同步记录的一体化入口。'}
-        navigation={<PageTabs items={dataTabs} activeKey={activeSubKey} onChange={onSubNavigate} />}
-        filters={<DataContextBar qualityMode={qualityMode} search={search} onSearch={setSearch} />}
+        filters={(
+          <DataContextBar
+            qualityMode={qualityMode}
+            search={search}
+            onSearch={setSearch}
+            domains={filterOptions.domains}
+            domain={domainFilter}
+            onDomainChange={setDomainFilter}
+            objectTypes={filterOptions.objectTypes}
+            objectType={objectTypeFilter}
+            onObjectTypeChange={setObjectTypeFilter}
+            statuses={qualityMode ? filterOptions.catalogStatuses : filterOptions.taskStatuses}
+            status={statusFilter}
+            onStatusChange={setStatusFilter}
+            taskTypes={filterOptions.taskTypes}
+            taskType={taskTypeFilter}
+            onTaskTypeChange={setTaskTypeFilter}
+            onReset={() => {
+              setSearch('');
+              setDomainFilter('all');
+              setObjectTypeFilter('all');
+              setStatusFilter('all');
+              setTaskTypeFilter('all');
+            }}
+          />
+        )}
         actions={actions}
       />
       <PageDataState meta={viewMeta} onRetry={loadData} />
 
       {showContent && !qualityMode ? (
         <>
-          <DataOverviewMetrics data={data} loading={loading} />
-          <div className="data-overview-main">
+          <div className="data-overview-top">
+            <DataOverviewMetrics data={data} loading={loading} />
+            <OverviewQuickActions
+              onDataAccess={syncData}
+              onCatalog={() => onSubNavigate('data-quality')}
+              onQuality={() => onSubNavigate('data-quality')}
+              onExport={exportCurrentView}
+              onAlerts={() => onSubNavigate('data-quality')}
+              onSyncRecords={() => document.querySelector('.data-sync-table')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+              onPermissions={() => { window.location.hash = '/settings/settings-user'; }}
+              onSettings={() => { window.location.hash = '/settings/settings-api'; }}
+              syncing={syncing}
+              canSync={canSync}
+              canExport={canExport && Boolean(exportRows.length)}
+            />
+          </div>
+          <div className="data-overview-workspace">
             <div className="data-overview-left">
               <DataFlowPanel data={data} onCatalog={() => onSubNavigate('data-quality')} />
               <SyncRecordsTable
@@ -273,7 +407,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               <QualityMonitor data={data} />
               <div className="data-exception-card">
                 <div className="data-card-heading"><h2>异常明细表</h2><span>{exceptions.length} 条</span></div>
-                <ExceptionTable rows={exceptions} />
+                <ExceptionTable rows={exceptions} loading={loading} onRefresh={loadData} onDetail={setDetail} />
               </div>
             </div>
             <CatalogPanel
@@ -288,6 +422,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               previewSearch={tableSearchDraft}
               exporting={tableExporting}
               canExport={canExport}
+              onManage={() => { window.location.hash = '/settings/settings-api'; }}
               onPreviewPageChange={setTablePage}
               onPreviewSearchDraft={setTableSearchDraft}
               onPreviewSearch={(value) => {
@@ -298,14 +433,22 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               onExport={exportSelectedTable}
             />
           </div>
-          <SourceStatusBar rows={data?.qualityItems || []} />
+          <SourceStatusBar
+            rows={data?.qualityItems || []}
+            onAllSources={() => {
+              setSearch('');
+              setDomainFilter('all');
+              setObjectTypeFilter('all');
+              setStatusFilter('all');
+            }}
+          />
         </>
       ) : null}
 
       <DetailDrawer
         title={detail?.alertId ? '数据质量告警详情' : '同步任务详情'}
         open={Boolean(detail)}
-        data={detail}
+        data={detailForDisplay}
         onClose={() => setDetail(null)}
       />
     </div>
