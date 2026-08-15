@@ -1231,6 +1231,28 @@
   .data-workspace-main .data-overview-top { grid-template-columns: minmax(0, 1.78fr) minmax(390px, .92fr); }
   .data-workspace-main .data-overview-workspace { grid-template-columns: minmax(0, 1.82fr) minmax(380px, 1fr); }
   .data-workspace-main .data-quality-main { grid-template-columns: minmax(0, 1.08fr) minmax(540px, .92fr); }
+  .data-workspace-main .data-metric-grid .metric-card { gap: 6px; padding-inline: 8px; }
+  .data-workspace-main .data-metric-grid .metric-icon { width: 32px; height: 32px; flex-basis: 32px; }
+  .data-workspace-main .data-metric-grid .metric-value-text { font-size: 21px; }
+  .data-workspace-main .data-metric-grid .metric-status { padding-inline: 4px; }
+  .data-workspace-main .data-metric-grid .metric-note {
+    overflow: visible;
+    font-size: 8px;
+    line-height: 1.2;
+    white-space: normal;
+    text-overflow: clip;
+  }
+  .data-workspace-main .data-exception-card col:nth-child(1) { width: 118px !important; }
+  .data-workspace-main .data-exception-card col:nth-child(2) { width: 76px !important; }
+  .data-workspace-main .data-exception-card col:nth-child(3),
+  .data-workspace-main .data-exception-card col:nth-child(4),
+  .data-workspace-main .data-exception-card col:nth-child(5),
+  .data-workspace-main .data-exception-card col:nth-child(6) { width: 58px !important; }
+  .data-workspace-main .data-exception-card col:nth-child(7) { width: 72px !important; }
+  .data-workspace-main .data-exception-card col:nth-child(8) { width: 44px !important; }
+  .data-workspace-main .data-exception-card .ant-table-thead > tr > th,
+  .data-workspace-main .data-exception-card .ant-table-tbody > tr > td { padding-inline: 3px !important; }
+  .data-workspace-main .data-exception-card .ant-tag { padding-inline: 3px; font-size: 8px; }
 }
 
 @media (max-width: 1180px) {
