@@ -46,8 +46,10 @@ function csvExport(filename: string, rows: any[]) {
   const a = document.createElement('a');
   a.href = url;
   a.download = `${filename}_${Date.now()}.csv`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
   return true;
 }
 
@@ -57,18 +59,18 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [runningForecast, setRunningForecast] = useState(false);
   const [requestError, setRequestError] = useState<unknown>(null);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState('');
   const [selectedHour, setSelectedHour] = useState<any>(null);
-  const { authRequired, hasPermission } = useAuth();
-  const canRunForecast = !authRequired || hasPermission('forecast:run');
-  const canGenerateStrategy = !authRequired || hasPermission('strategy:generate');
+  const [historyGranularity, setHistoryGranularity] = useState<'hour' | 'day' | 'week'>('hour');
+  const [historyRangeDays, setHistoryRangeDays] = useState<7 | 30>(30);
+  const { hasPermission } = useAuth();
+  const canRunForecast = hasPermission('forecast:run');
+  const canGenerateStrategy = hasPermission('strategy:generate');
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setRequestError(null);
     try {
       setData(await getForecastCenterData());
-      setLastUpdatedAt(new Date().toISOString());
     } catch (error) {
       setRequestError(error);
     } finally {
@@ -92,16 +94,16 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       ? '预测中心 / 峰谷分析与模型评估'
       : '预测中心 / 24小时预测';
   const subtitle = view === 'history'
-    ? '比较当前预测与历史 / 上一批次预测结果，辅助业务判断与策略制定。'
+    ? '对照最新预测、上一成功结果与历史小时均值，定位关键变化。'
     : view === 'model'
-      ? '预测不是黑盒：强化峰谷时段解释、模型评估摘要、Baseline 对比、Schema、Leakage、Backtest 等 P2 工程化能力。'
-      : '查看未来 24 小时电价预测、风险窗口与交易建议，辅助制定最优采购策略。';
+      ? '集中呈现峰谷特征、评估指标、工程门禁与回测表现。'
+      : '查看 24 小时电价曲线、峰谷窗口与可执行建议。';
 
   async function runForecast() {
     setRunningForecast(true);
     try {
       const result = await api.runForecast();
-      message.success(`预测任务已启动：${result.task_id || result.run_id || 'refresh_fast_forecast'}`);
+      message.success(`预测任务已启动：${result.task_id || 'refresh_fast_forecast'}`);
       await loadData();
     } catch (error) {
       message.error(error instanceof Error ? error.message : '预测任务启动失败');
@@ -115,15 +117,15 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     : view === 'history'
       ? data?.comparison?.rows || []
       : data?.backtestSummary?.baseline_comparisons || [];
-  const actions = useMemo<PageHeaderAction[]>(() => [
-    {
+  const actions = useMemo<PageHeaderAction[]>(() => {
+    const refreshAction: PageHeaderAction = {
       key: 'refresh',
       label: '刷新',
       icon: <ReloadOutlined />,
       loading,
       onClick: loadData
-    },
-    {
+    };
+    const runAction: PageHeaderAction = {
       key: 'run',
       label: '更新预测',
       icon: <SyncOutlined />,
@@ -132,8 +134,8 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       disabled: !canRunForecast,
       disabledReason: '需要 forecast:run 权限',
       onClick: runForecast
-    },
-    {
+    };
+    const exportAction: PageHeaderAction = {
       key: 'export',
       label: view === '24h' ? '导出结果' : view === 'history' ? '导出对比' : '导出评估',
       icon: <DownloadOutlined />,
@@ -141,25 +143,33 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       disabled: !exportRows.length,
       disabledReason: '当前没有可导出的接口记录',
       onClick: () => {
-        if (!csvExport(
+        const exported = csvExport(
           view === '24h' ? 'forecast_details' : view === 'history' ? 'forecast_comparison' : 'baseline_comparison',
           exportRows
-        )) {
+        );
+        if (!exported) {
           message.warning('当前没有可导出的接口记录');
+        } else {
+          message.success(`已导出 ${exportRows.length} 条记录`);
         }
       }
-    },
-    {
+    };
+    const strategyAction: PageHeaderAction = {
       key: 'strategy',
       label: '生成策略',
       icon: <ThunderboltOutlined />,
       collapseAtNarrow: true,
-      disabled: true,
-      disabledReason: canGenerateStrategy
-        ? '当前预测页缺少报告上下文；请前往策略中心基于有效 run_id 与 report_id 发起'
-        : '需要 strategy:generate 权限'
-    }
-  ], [canGenerateStrategy, canRunForecast, data, exportRows, loading, loadData, message, runningForecast, view]);
+      disabled: !canGenerateStrategy,
+      disabledReason: '需要 strategy:generate 权限',
+      onClick: () => {
+        message.info('已进入策略中心，请在完整业务上下文中生成策略。');
+        window.location.hash = '#/strategy/strategy-high';
+      }
+    };
+    if (view === '24h') return [refreshAction, exportAction, strategyAction];
+    if (view === 'history') return [refreshAction, runAction, exportAction];
+    return [refreshAction, exportAction, runAction];
+  }, [canGenerateStrategy, canRunForecast, exportRows, loading, loadData, message, runningForecast, view]);
 
   const metricItems = useMemo(() => {
     const base = data?.metrics || [];
@@ -182,8 +192,8 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     if (view === 'model') {
       const checks = [
         data?.backtestSummary?.available,
-        data?.featureSchema?.schema_version || data?.featureSchema?.version,
-        String(data?.leakageCheck?.status || '').toLowerCase() === 'passed'
+        data?.featureSchema?.schema_gate?.ok,
+        String(data?.leakageCheck?.gate_status || data?.leakageCheck?.status || '').toLowerCase() === 'passed'
       ];
       const passed = checks.filter(Boolean).length;
       const score = checks.length ? Number((passed / checks.length * 100).toFixed(1)) : null;
@@ -194,7 +204,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           title: '评估结论',
           value: score == null ? '--' : score.toFixed(1),
           unit: '/100',
-          note: String(data?.leakageCheck?.status || '待接入'),
+          note: String(data?.leakageCheck?.gate_status || data?.leakageCheck?.status || '待接入'),
           trend: score == null ? 0 : score - 90,
           tone: 'purple'
         }
@@ -211,30 +221,30 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     empty: Boolean(data?.empty),
     error: requestError || data?.error,
     partialErrors: data?.partialErrors,
-    source: data?.dataSource,
-    generatedAt: data?.generatedAt,
-    updatedAt: lastUpdatedAt,
-    runId: data?.runId,
-    modelVersion: data?.modelVersion,
-    featureVersion: data?.featureVersion,
     isStale: Boolean(data?.isStale),
-    staleReason: data?.staleReason,
     emptyReason: '所选预测子页面的接口已成功返回，但当前没有有效预测记录。',
     queryScope: title
-  }), [data, lastUpdatedAt, loading, requestError, title]);
+  }), [data, loading, requestError, title]);
   const showContent = viewMeta.state === 'success' || viewMeta.state === 'stale';
 
   return (
     <div className={`forecast-design-page forecast-view-${view}`}>
       <PageHeader
-        title="预测中心"
+        title={title}
         subtitle={subtitle}
         className="forecast-page-header"
         navigation={<PageTabs items={forecastTabs} activeKey={activeSubKey} onChange={onSubNavigate} />}
-        metadata={<ForecastContextBar data={data} />}
+        metadata={(
+          <ForecastContextBar
+            data={data}
+            view={view}
+            granularity={historyGranularity}
+            onGranularityChange={setHistoryGranularity}
+          />
+        )}
         actions={actions}
       />
-      <PageDataState meta={viewMeta} onRetry={loadData} />
+      {!showContent ? <PageDataState meta={viewMeta} onRetry={loadData} /> : null}
 
       {showContent ? <ForecastMetricCards metrics={metricItems} /> : null}
 
@@ -257,13 +267,24 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       {showContent && view === 'history' ? (
         <>
           <div className="forecast-primary-grid">
-            <ComparisonChartCard data={data} />
+            <ComparisonChartCard
+              data={data}
+              granularity={historyGranularity}
+              rangeDays={historyRangeDays}
+              onRangeChange={setHistoryRangeDays}
+            />
             <ComparisonInsightPanel data={data} />
           </div>
           <div className="forecast-history-bottom">
             <div className="forecast-card forecast-table-card">
               <div className="forecast-card-head"><h2>对比明细表</h2></div>
-              <ComparisonDetailTable rows={comparisonRows} comparison={data?.comparison} />
+              <ComparisonDetailTable
+                rows={comparisonRows}
+                comparison={data?.comparison}
+                granularity={historyGranularity}
+                rangeDays={historyRangeDays}
+                historyRecords={data?.historyApi?.records || []}
+              />
             </div>
             <HistorySideCards data={data} />
           </div>
@@ -286,11 +307,9 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           风险等级: selectedHour.risk,
           风险概率: selectedHour.riskProbability == null ? '接口未返回' : selectedHour.riskProbability,
           建议动作: selectedHour.action || '接口未返回',
+          建议来源: selectedHour.action === '待接入' ? '接口未返回' : '策略建议',
           置信度: selectedHour.confidence === '--' ? '接口未返回' : `${selectedHour.confidence}%`,
-          正式置信区间: selectedHour.interval,
-          预测批次: data?.runId || '--',
-          模型版本: data?.modelVersion || '--',
-          特征版本: data?.featureVersion || '--'
+          正式置信区间: selectedHour.interval
         } : null}
         onClose={() => setSelectedHour(null)}
       />
@@ -299,18 +318,27 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 }
 
 function HistorySideCards({ data }: { data: any }) {
-  const topFactors = data?.modelExplain?.feature_importance || [];
+  const topFactors = (data?.modelExplain?.feature_importance || []).length
+    ? data.modelExplain.feature_importance
+    : data?.modelExplain?.main_factors || [];
   const previousAvailable = Boolean(data?.comparison?.previousAvailable);
+  const comparisonRows = data?.comparison?.rows || [];
+  const avgChange = Number(data?.comparison?.avgChange);
+  const notableCount = comparisonRows.filter((row: any) => Math.abs(Number(String(row.rate).replace('%', ''))) >= 6).length;
   return (
     <div className="history-side-cards">
       <div className="forecast-card compact-card">
         <div className="forecast-card-head"><h2>变化结论</h2></div>
         <p className="decision-pill">
-          结论：{previousAvailable
-            ? Number(data?.comparison?.avgChange) >= 0 ? '较上一成功批次上行' : '较上一成功批次下行'
+          {previousAvailable
+            ? avgChange >= 0 ? '结论：上行 ↗' : '结论：下行 ↘'
             : '上一成功批次不可用'}
         </p>
-        <p>可信度：{data?.confidence?.value == null ? '待接入' : data.confidence.value >= 80 ? '高' : '中'}</p>
+        <dl className="kv-list history-conclusion-list">
+          <dt>均价变化</dt><dd>{Number.isFinite(avgChange) ? `${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%` : '--'}</dd>
+          <dt>显著变化点</dt><dd>{notableCount} 个</dd>
+          <dt>可信度</dt><dd>{data?.confidence?.value == null ? '待接入' : data.confidence.value >= 80 ? '高' : '中'}</dd>
+        </dl>
       </div>
       <div className="forecast-card compact-card">
         <div className="forecast-card-head"><h2>可解释性说明</h2></div>

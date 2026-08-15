@@ -323,11 +323,11 @@ export async function getForecastCenterData() {
     ? null
     : Number((seriesStd / Math.abs(seriesMean) * 100).toFixed(1));
   const metrics = [
-    { key: 'max', title: '最高预测价', value: fmt(summary.maxPrice), unit: '元/kWh', note: `预测时点 ${hourText(summary.maxHour)}`, tone: 'orange', sourceLabel: forecastBatchLabel },
-    { key: 'min', title: '最低预测价', value: fmt(summary.minPrice), unit: '元/kWh', note: `预测时点 ${hourText(summary.minHour)}`, tone: 'green', sourceLabel: forecastBatchLabel },
-    { key: 'avg', title: '预测均价', value: fmt(summary.avgPrice), unit: '元/kWh', note: '绑定 24 小时预测均值', tone: 'blue', sourceLabel: forecastBatchLabel },
-    { key: 'spread', title: '预测峰谷价差', value: fmt(summary.peakValleySpread), unit: '元/kWh', note: '由绑定预测曲线计算', tone: 'red', sourceLabel: forecastBatchLabel },
-    { key: 'confidence', title: '模型可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: confidence.source === 'api_prediction_latest' ? '模型接口返回' : '模型接口未返回可信度', tone: 'green', sourceLabel: forecastBatchLabel },
+    { key: 'max', title: '最高价', value: fmt(summary.maxPrice), unit: '元/kWh', note: `预测时点 ${hourText(summary.maxHour)}`, tone: 'orange', sourceLabel: forecastBatchLabel },
+    { key: 'min', title: '最低价', value: fmt(summary.minPrice), unit: '元/kWh', note: `预测时点 ${hourText(summary.minHour)}`, tone: 'green', sourceLabel: forecastBatchLabel },
+    { key: 'avg', title: '均价', value: fmt(summary.avgPrice), unit: '元/kWh', note: '绑定 24 小时预测均值', tone: 'blue', sourceLabel: forecastBatchLabel },
+    { key: 'spread', title: '峰谷价差', value: fmt(summary.peakValleySpread), unit: '元/kWh', note: '由绑定预测曲线计算', tone: 'red', sourceLabel: forecastBatchLabel },
+    { key: 'confidence', title: '预测可信度', value: confidence.value == null ? '--' : confidence.value.toFixed(1), unit: '%', note: confidence.source === 'api_prediction_latest' ? '模型接口返回' : '模型接口未返回可信度', tone: 'green', sourceLabel: forecastBatchLabel },
   ];
 
   return withServiceState({

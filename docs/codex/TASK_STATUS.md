@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-15 预测中心三页面 UI 用户确认与集成准备
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 24 小时预测、历史对比、峰谷分析与模型评估右侧工作区精细化返工 | `APPROVED_FOR_INTEGRATION`；用户已确认候选 SHA 与三页截图，正在基于当前 Release 做隔离集成和最终复验 | `codex/ui-forecast-center-fidelity-20260814` / `7090de4f76a4df228f7b98e9203b205c5aeba0fd` | `docs/codex/evidence/FORECAST_CENTER_BOTTOM_SPACE_FONT_REWORK_20260815/` | 用户最初指定的冻结路径当前被首页候选分支占用；最终路径切换前必须保留该分支并获得明确授权。 |
+
 ## 2026-08-14 报告中心右侧内容区 UI 最终集成
 
 | 任务 | 状态 | 分支 | 证据 | 阻塞项 |

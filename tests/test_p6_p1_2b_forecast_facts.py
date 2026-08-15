@@ -40,7 +40,7 @@ def test_previous_batch_is_not_replaced_by_history_mean():
     assert "当前只有一个成功预测批次" in service
     assert "previous = historyMean" not in service
     assert "上一批次/历史参考" not in design
-    assert "历史小时均值（接口范围）" in design
+    assert "历史均值（近${rangeDays}天）" in design
 
 
 def test_missing_confidence_interval_is_explicit_and_not_synthesized():
@@ -73,7 +73,9 @@ def test_data_health_uses_quality_timestamp_score_and_stale_reason():
     assert "dataQuality?.generated_at" in service
     assert "dataQuality?.stale_reason" in service
     assert "10:30:00" not in service
-    assert "异常原因" in design
+    assert "异常原因" not in design
+    assert "更新时间" not in design
+    assert "延迟数据" in design
 
 
 def test_hour_advice_comes_from_strategy_api_and_has_source():
@@ -91,7 +93,7 @@ def test_model_and_history_empty_semantics_do_not_use_success_defaults():
     page = _read("frontend/src/pages/forecast/ForecastCenterPage.tsx")
     design = _read("frontend/src/components/forecast/ForecastDesign.tsx")
     assert "上一成功批次不可用" in page
-    assert "本次推理模型" in design
-    assert "inferenceVersion || '--'" in design
+    assert "模型状态摘要" in design
+    assert "评估状态" in design
     assert "模型解释接口未返回主要因素" in design
     assert "['负荷预期抬升', '新能源出力变化', '气温因素']" not in design
