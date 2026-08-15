@@ -2,9 +2,9 @@ import {
   BellOutlined,
   ClockCircleOutlined,
   DownOutlined,
-  GlobalOutlined,
   LoginOutlined,
   LogoutOutlined,
+  ProjectOutlined,
   QuestionCircleOutlined,
   ThunderboltFilled,
   SyncOutlined,
@@ -15,16 +15,25 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 
-export function HeaderBar() {
+function formatBusinessTime(value: unknown) {
+  if (!value) return '--';
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value).replace('T', ' ').slice(0, 16);
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).format(date).replace(/\//g, '-');
+}
+
+export function HeaderBar({ workspaceMode = 'default' }: { workspaceMode?: 'default' | 'data' }) {
   const { openLogin, user, logout } = useAuth();
   const [context, setContext] = useState<any>(null);
   const displayName = user?.display_name || user?.username || '当前用户';
   const role = user?.role || '未登录';
   const projectName = context?.project?.name || '--';
-  const region = context?.region || '--';
-  const dataTime = context?.data_time || context?.generated_at || '--';
-  const modelVersion = context?.model?.version || '--';
+  const dataTime = formatBusinessTime(context?.data_time);
   const notificationCount = Number(context?.notification_count ?? 0);
+  const dataWorkspace = workspaceMode === 'data';
 
   useEffect(() => {
     let active = true;
@@ -57,35 +66,32 @@ export function HeaderBar() {
   ];
 
   return (
-    <div className="header-bar">
+    <div className={`header-bar ${dataWorkspace ? 'data-workspace-header' : ''}`}>
       <div className="header-brand">
         <div className="header-brand-mark">
           <ThunderboltFilled />
         </div>
         <strong>AI 售电交易决策平台</strong>
       </div>
-      <div className="header-context">
-        <Select
-          className="project-select"
-          value={projectName}
-          disabled
-          title="当前会话项目"
-          options={[{ value: projectName, label: `项目：${projectName}` }]}
-        />
-        <span className="header-meta header-meta-card">
-          <ClockCircleOutlined />
-          数据时间：{dataTime}
-        </span>
-        <span className="header-meta header-meta-card">
-          <GlobalOutlined />
-          当前地区：
-          <strong>{region}</strong>
-        </span>
-        <span className="header-meta header-meta-card header-model-meta">
-          模型版本：
-          <strong>{modelVersion}</strong>
-          <Tag color="success">最新</Tag>
-        </span>
+      <div className={`header-context ${dataWorkspace ? 'data-workspace-context' : ''}`}>
+        {dataWorkspace ? (
+          <>
+            <div className="data-context-item data-context-project" title={projectName}>
+              <ProjectOutlined /><span>项目：</span><strong>{projectName}</strong>
+            </div>
+            <div className="data-context-item data-context-time" title={dataTime}>
+              <ClockCircleOutlined /><span>数据时间：</span><strong>{dataTime}</strong>
+            </div>
+          </>
+        ) : (
+          <Select
+            className="project-select"
+            value={projectName}
+            disabled
+            title="当前会话项目"
+            options={[{ value: projectName, label: `项目：${projectName}` }]}
+          />
+        )}
       </div>
       <Space size={10} className="header-actions">
         <Tooltip title="通知中心">

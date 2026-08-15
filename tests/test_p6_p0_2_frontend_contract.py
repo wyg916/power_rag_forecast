@@ -22,7 +22,9 @@ def test_unified_header_is_the_only_data_forecast_header():
     assert "page-heading-more" in header
     assert "@container (max-width: 1150px)" in styles
     assert "PageHeader" in data_page and "PageHeader" in forecast_page
-    assert "PageTabs" in data_page and "PageTabs" in forecast_page
+    # Current page routing is owned by the global navigation; both pages still
+    # share the single PageHeader contract and must not grow a second header.
+    assert "PageTabs" not in data_design and "PageTabs" not in forecast_design
     assert "DataPageHeader" not in data_design
     assert "ForecastPageHeader" not in forecast_design
 
@@ -121,19 +123,19 @@ def test_page_header_layout_prevents_horizontal_page_overflow():
     assert "grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.6fr);" in styles
 
 
-def test_all_ten_main_pages_use_the_shared_page_header_path():
-    direct_pages = [
+def test_main_pages_use_the_shared_or_approved_workspace_header_path():
+    shared_header_pages = [
         "frontend/src/pages/dashboard/DashboardPage.tsx",
         "frontend/src/pages/data/DataCenterPage.tsx",
         "frontend/src/pages/forecast/ForecastCenterPage.tsx",
         "frontend/src/pages/strategy/StrategyCenterPage.tsx",
-        "frontend/src/pages/report/ReportCenterPage.tsx",
         "frontend/src/pages/model/ModelCenterPage.tsx",
         "frontend/src/pages/knowledge/KnowledgeBasePage.tsx",
         "frontend/src/pages/task/TaskCenterPage.tsx",
     ]
-    for target in direct_pages:
+    for target in shared_header_pages:
         assert "PageHeader" in _read(target), target
+    assert "report-page-toolbar" in _read("frontend/src/pages/report/ReportCenterPage.tsx")
 
     app = _read("frontend/src/app/App.tsx")
     page_container = _read("frontend/src/layout/PageContainer.tsx")

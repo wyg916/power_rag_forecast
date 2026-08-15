@@ -133,11 +133,12 @@ def test_data_center_actions_and_alert_details_are_real():
     assert "alertId: item.alert_id" in design
 
 
-def test_data_center_internal_scroll_and_no_fact_status_bar_regression():
+def test_data_center_pagination_and_no_fact_status_bar_regression():
     page = _read("frontend/src/pages/data/DataCenterPage.tsx")
     design = _read("frontend/src/components/data/DataCenterDesign.tsx")
     styles = _read("frontend/src/styles.css")
     assert "FactStatusBar" not in page
-    assert "scroll={{ y: 205, x: 1120 }}" in design
+    assert "showTotal: (total) => `共 ${total} 条`" in design
+    assert "scroll={{ y: 205" not in design
     assert ".data-design-page" in styles
     assert "@media (max-height: 850px) and (min-width: 1181px)" in styles
