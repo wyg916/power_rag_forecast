@@ -1,33 +1,20 @@
-# 最终路径门禁与回滚
+# 最终路径门禁、重定位与回滚
 
-## 当前冲突
+## 已执行结果
 
-用户最初指定的最终路径：
+- 用户指定最终路径：`E:\智能运营分析项目_worktrees\release_beta10d_agent_rc_20260807`。
+- 最终分支：`release/beta10d-agent-rc-20260807`。
+- 集成内容提交：`a3135a67ac3555af5c1979168d8bb210cab7d34b`。
+- 数据中心提交 `a6c3bfdca8a181c7f5051b8d0933579eb5d58f2f` 与用户批准预测候选 `7090de4f76a4df228f7b98e9203b205c5aeba0fd` 均为该提交祖先。
+- REJECTED 候选 `bc8c4c568fe838cc6927890d0d6c20bb760fa730` 和首页候选 `e98010f…` 均不是该提交祖先。
+- 首页候选继续保留在 `codex/p6-home-dashboard-readability-20260813` / `e98010f664921b033eb91cb53d9b8dcd236e7f19`。
+- 原 Release worktree 停放于 `codex/hold-release-before-forecast-20260815` / `a6c3bfdca8a181c7f5051b8d0933579eb5d58f2f`。
 
-`E:\智能运营分析项目_worktrees\release_beta10d_agent_rc_20260807`
-
-该路径当前不是 Release，而是：
-
-- 分支：`codex/p6-home-dashboard-readability-20260813`
-- SHA：`e98010f664921b033eb91cb53d9b8dcd236e7f19`
-- 状态：clean
-
-真正 Release 分支当前位于：
-
-`E:\智能运营分析项目_worktrees\release_beta10d_agent_rc_20260807_report_integration`
-
-因此，在没有明确授权时把原路径切回 Release 会批量覆盖该路径中的首页候选文件，触发 AGENTS.md 停止条件。本次没有执行该动作，也没有更新 Release 分支指针。
-
-## 获授权后的最小动作
-
-1. 再次保存两个工作树的 status、HEAD、diff、未跟踪文件和关键哈希。
-2. 保留首页候选分支 `codex/p6-home-dashboard-readability-20260813` 与 SHA `e98010f…`，不删除任何文件或分支。
-3. 将当前 Release worktree 临时停放到明确的保留分支，使 `release/beta10d-agent-rc-20260807` 可被最终路径检出。
-4. 将 Release 仅快进到本隔离集成最终提交；不 rebase、不推送。
-5. 在用户最初指定的最终路径检出 Release，运行 `run_project.bat`，重新核对三页视觉、全部适用控件、Console、Network、API/数据库、build、双启动与 Git clean。
+检查点：`E:\智能运营分析项目_worktrees\_checkpoints\forecast_center_final_relocation_post_data_20260815`。
 
 ## 回滚
 
-- Release 回滚点：`b4cfdd06dc9fb63ebbc66565531f9a5c40f4b589`。
-- 首页候选回滚点：`e98010f664921b033eb91cb53d9b8dcd236e7f19`。
-- 隔离集成失败时只需放弃 `codex/integrate-forecast-center-20260815`；当前 Release 和首页候选均未被修改。
+1. 停止最终路径启动的 5190/8030 服务。
+2. 将 `release/beta10d-agent-rc-20260807` 快进前指针恢复到 `a6c3bfdca8a181c7f5051b8d0933579eb5d58f2f`；该动作会改写分支指针，执行前须再次获得用户确认。
+3. 首页候选无需恢复，仍由 `codex/p6-home-dashboard-readability-20260813` / `e98010f…` 独立保留。
+4. 需要审计时使用上述检查点复核 Git 状态、关键哈希和数据库零迁移说明。

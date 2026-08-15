@@ -9,6 +9,13 @@
   - `screenshots/implementation_24h_1672x941.png`
   - `screenshots/implementation_history_1672x941.png`
   - `screenshots/implementation_peak_model_1672x941.png`
+- 真正最终路径重新登录后的实现截图：
+  - `screenshots/final_path_24h_1672x941.png`
+  - `screenshots/final_path_history_1672x941.png`
+  - `screenshots/final_path_peak_model_1672x941.png`
+- 最终路径并排图：`screenshots/final_path_compare_24h.png`、`final_path_compare_history.png`、`final_path_compare_peak_model.png`。
+- 最终路径差分图：`screenshots/final_path_diff_24h.png`、`final_path_diff_history.png`、`final_path_diff_peak_model.png`。
+- 全图辅助指标（不是独立 PASS 依据）：RGB MAE 依次为 14.810 / 14.443 / 14.891；阈值 12 以上像素占比为 23.552% / 19.901% / 19.451%。差异包含用户要求保持不变的左侧既有导航与真实数据差异。
 
 ## 逐页/逐 Card 矩阵
 
@@ -24,3 +31,4 @@
 - 1440×900、1366×768 候选复验无水平溢出；小视口使用页面级纵向滚动，不用 Card 内滚动条掩盖布局问题。
 - 无遮挡、错位、不可点击区域、文字截断或 Card 裁切。
 - 用户于 2026-08-15 明确确认候选 SHA 与三页视觉通过。
+- 最终路径重新截图后逐 Card 复核与获批候选一致，三页均无横向或意外纵向溢出、无大块无意义空白。

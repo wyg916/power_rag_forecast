@@ -1,10 +1,10 @@
 # TASK_STATUS.md
 
-## 2026-08-15 预测中心三页面 UI 用户确认与集成准备
+## 2026-08-15 预测中心三页面 UI 最终集成
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
 |---|---|---|---|---|
-| 24 小时预测、历史对比、峰谷分析与模型评估右侧工作区精细化返工 | `APPROVED_FOR_INTEGRATION`；用户已确认候选 SHA 与三页截图；已基于当前 Release `b4cfdd0…` 完成隔离集成、视觉/功能/API/数据库/build/双启动复验，尚未改动真正 Release | `codex/ui-forecast-center-fidelity-20260814` / `7090de4f76a4df228f7b98e9203b205c5aeba0fd`；隔离集成 `codex/integrate-forecast-center-20260815` / 本行所在提交 | `docs/codex/evidence/FORECAST_CENTER_BOTTOM_SPACE_FONT_REWORK_20260815/`；`docs/codex/evidence/UI_FORECAST_CENTER_20260815_INTEGRATION/` | 用户最初指定的冻结路径当前被首页候选分支占用；最终路径切换前必须保留该分支并获得明确授权。 |
+| 24 小时预测、历史对比、峰谷分析与模型评估右侧工作区精细化返工 | `PASS`；用户确认候选 `7090de4f76a4df228f7b98e9203b205c5aeba0fd` 三页视觉通过；在保留首页候选 `e98010f…` 后，Release 已从数据中心最终提交 `a6c3bfd…` 快进合入预测中心，并在原最终路径完成同视口视觉、真实浏览器/API/PostgreSQL、TypeScript/build 和一键启动复验；未推送 | `release/beta10d-agent-rc-20260807` / 本行所在提交；集成内容提交 `a3135a67ac3555af5c1979168d8bb210cab7d34b` | `docs/codex/evidence/FORECAST_CENTER_BOTTOM_SPACE_FONT_REWORK_20260815/`；`docs/codex/evidence/UI_FORECAST_CENTER_20260815_INTEGRATION/` | 无集成阻塞；“更新预测”真实 POST 已受理，但任务中心未返回该次后台完成记录，因此只判定任务受理链路通过，不把后台完成态伪报为已完成。 |
 
 ## 2026-08-15 数据中心两页 UI 最终集成
 
