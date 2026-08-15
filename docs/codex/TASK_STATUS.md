@@ -6,6 +6,12 @@
 |---|---|---|---|---|
 | 24 小时预测、历史对比、峰谷分析与模型评估右侧工作区精细化返工 | `APPROVED_FOR_INTEGRATION`；用户已确认候选 SHA 与三页截图；已基于当前 Release `b4cfdd0…` 完成隔离集成、视觉/功能/API/数据库/build/双启动复验，尚未改动真正 Release | `codex/ui-forecast-center-fidelity-20260814` / `7090de4f76a4df228f7b98e9203b205c5aeba0fd`；隔离集成 `codex/integrate-forecast-center-20260815` / 本行所在提交 | `docs/codex/evidence/FORECAST_CENTER_BOTTOM_SPACE_FONT_REWORK_20260815/`；`docs/codex/evidence/UI_FORECAST_CENTER_20260815_INTEGRATION/` | 用户最初指定的冻结路径当前被首页候选分支占用；最终路径切换前必须保留该分支并获得明确授权。 |
 
+## 2026-08-15 数据中心两页 UI 最终集成
+
+| 任务 | 状态 | 分支 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 数据中心“数据总览”与“数据质量 / 数据目录”右侧内容区高保真集成 | `PASS`；用户已确认候选 `a35ee265e295e7a0a88e0e839e3011bc524670d8` 视觉通过，Release 从 `005c897621148cc855970b1eab01b766a44bc8b8` 定向集成；保留报告中心，不含首页候选；左侧目录未改；1672×941 与 1920/1440/1366 响应式、真实 API/PostgreSQL、全可见控件、TypeScript/Vite、状态/RBAC 门禁通过；未推送 | `release/beta10d-agent-rc-20260807` / 本行所在提交 | `docs/codex/evidence/DATA_CENTER_INTEGRATION_20260815/` | 无数据中心范围阻塞；跨页“配置管理”成功进入系统设置，但目的页既有 `system_health_snapshots` 运行角色 SELECT 权限不足导致两个系统状态接口 500，按本轮权限体系禁改边界保留并单独记录。 |
+
 ## 2026-08-14 报告中心右侧内容区 UI 最终集成
 
 | 任务 | 状态 | 分支 | 证据 | 阻塞项 |

@@ -359,7 +359,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         )}
         actions={actions}
       />
-      <PageDataState meta={viewMeta} onRetry={loadData} />
+      {!showContent ? <PageDataState meta={viewMeta} onRetry={loadData} /> : null}
 
       {showContent && !qualityMode ? (
         <>
@@ -446,7 +446,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       ) : null}
 
       <DetailDrawer
-        title={detail?.alertId ? '数据质量告警详情' : '同步任务详情'}
+        title={qualityMode ? '数据质量异常详情' : '同步任务详情'}
         open={Boolean(detail)}
         data={detailForDisplay}
         onClose={() => setDetail(null)}
