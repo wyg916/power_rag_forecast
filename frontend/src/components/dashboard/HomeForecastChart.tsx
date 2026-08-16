@@ -1,4 +1,4 @@
-import { Empty, Tag } from 'antd';
+import { Button, Empty, Tag } from 'antd';
 import { AppChart } from '../charts/AppChart';
 import { baseGrid, chartColors } from '../charts/chartTheme';
 import { formatNumber } from './utils';
@@ -12,14 +12,15 @@ function rangeFromItems(series: any[], items: any[]) {
   return [Math.min(...indexes), Math.max(...indexes)];
 }
 
-export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: any }) {
+export function HomeForecastChart({ forecast, risk, isStale = false }: { forecast?: any; risk?: any; isStale?: boolean }) {
+  const chartTitle = isStale ? '历史供需风险总览（24小时）' : '供需风险总览（24小时）';
   const series = forecast?.series || [];
   if (!series.length) {
     return (
       <div className="home-card home-chart-card">
         <div className="home-card-head">
           <div>
-            <h2>今日供需风险总览（24小时）</h2>
+            <h2>{chartTitle}</h2>
             <p>接口未返回可绘制的 24 小时预测数据。</p>
           </div>
         </div>
@@ -31,18 +32,18 @@ export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: a
   const lowRange = rangeFromItems(series, forecast?.windows?.low_price || []);
   const riskRange = rangeFromItems(series, forecast?.windows?.high_risk || forecast?.windows?.high_price || []);
   const markAreaData = [
-    lowRange ? [{ name: '低价窗口', xAxis: times[lowRange[0]] }, { xAxis: times[lowRange[1]] }] : null,
-    riskRange ? [{ name: '高风险时段', xAxis: times[riskRange[0]] }, { xAxis: times[riskRange[1]] }] : null
+    lowRange ? [{ name: '低价窗口', xAxis: times[lowRange[0]], itemStyle: { color: 'rgba(11, 168, 143, 0.12)' } }, { xAxis: times[lowRange[1]] }] : null,
+    riskRange ? [{ name: '高风险时段', xAxis: times[riskRange[0]], itemStyle: { color: 'rgba(240, 68, 68, 0.10)' } }, { xAxis: times[riskRange[1]] }] : null
   ].filter(Boolean);
   const option = {
     ...baseGrid(),
     legend: {
-      top: 2,
-      left: '56%',
+      top: 0,
+      left: 8,
       itemWidth: 18,
       data: ['预测电价', '预测负荷', '尖峰风险概率', '置信区间']
     },
-    grid: { left: 48, right: 58, top: 58, bottom: 34 },
+    grid: { left: 48, right: 54, top: 46, bottom: 24 },
     xAxis: { ...(baseGrid().xAxis as object), data: times },
     yAxis: [
       { ...(baseGrid().yAxis as object), name: '电价（元/kWh）' },
@@ -78,7 +79,6 @@ export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: a
         data: series.map((item: any) => item.price),
         markArea: {
           label: { color: '#0F766E', fontWeight: 700 },
-          itemStyle: { color: 'rgba(0, 184, 148, 0.10)' },
           data: markAreaData
         }
       },
@@ -109,13 +109,15 @@ export function HomeForecastChart({ forecast, risk }: { forecast?: any; risk?: a
     <div className="home-card home-chart-card">
       <div className="home-card-head">
         <div>
-          <h2>今日供需风险总览（24小时）</h2>
+          <h2>{chartTitle}</h2>
           <p>
             高风险 {risk?.high_risk_count || 0} 个窗口，峰谷价差 {formatNumber(summary.peak_valley_spread, 3)} 元/kWh。
           </p>
         </div>
         <div className="home-chart-meta">
-          <Tag color="success">单位：元/kWh</Tag>
+          {isStale ? <Tag color="warning">仅供历史复盘</Tag> : null}
+          <Tag>单位：元/kWh</Tag>
+          <Button size="small" onClick={() => { window.location.hash = '/forecast/forecast-24h'; }}>查看详情</Button>
         </div>
       </div>
       <AppChart option={option} height="100%" />

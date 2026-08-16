@@ -348,7 +348,7 @@ export const api = {
   reportSummary: () => request<any>('/api/reports/summary'),
   reportDetail: (reportId: string) => request<any>(`/api/reports/${encodeURIComponent(reportId)}`),
   reportDownload: (reportId: string) => requestDownload(`/api/reports/${encodeURIComponent(reportId)}/download`),
-  generateReport: () => request<any>('/api/reports/generate', { method: 'POST', body: JSON.stringify({ run_id: 'latest' }) }),
+  generateReport: (runId = 'latest') => request<any>('/api/reports/generate', { method: 'POST', body: JSON.stringify({ run_id: runId }) }),
   regenerateReport: (reportId: string) =>
     request<any>(`/api/reports/${encodeURIComponent(reportId)}/regenerate`, { method: 'POST', body: JSON.stringify({}) }),
   approveReport: (reportId: string, payload: any) =>

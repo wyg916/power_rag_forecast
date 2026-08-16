@@ -51,8 +51,9 @@ function normalizeForecast(payload: any) {
 }
 
 function normalizeKpi(payload: any) {
-  const items = (payload?.kpis || payload?.kpi?.items || []).map((item: any) => item?.key === 'strategy_revenue'
-    ? {
+  const items = (payload?.kpis || payload?.kpi?.items || []).map((item: any) => {
+    const normalized = item?.key === 'strategy_revenue'
+      ? {
         ...item,
         key: 'strategy_spread',
         title: '预测峰谷价差',
@@ -60,7 +61,11 @@ function normalizeKpi(payload: any) {
         status: payload?.meta?.is_stale ? 'warning' : item.status,
         trend_label: '由绑定预测曲线计算，不代表收益或结算结果'
       }
-    : item);
+      : item;
+    return normalized?.key === 'supply_demand_risk'
+      ? { ...normalized, trend_label: '依据24小时风险概率统计' }
+      : normalized;
+  });
   return {
     ...(payload?.kpi || {}),
     items,

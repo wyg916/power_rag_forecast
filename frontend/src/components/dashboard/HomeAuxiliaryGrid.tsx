@@ -9,7 +9,7 @@ function predictionRows(forecast?: any) {
     { key: 'max', metric: '最高价', value: summary.max_price, compare: summary.max_hour, trend: '高风险复核窗口' },
     { key: 'min', metric: '最低价', value: summary.min_price, compare: summary.min_hour, trend: '低价采购/充电窗口' },
     { key: 'avg', metric: '均价', value: summary.avg_price, compare: `${summary.record_count || 0} 条`, trend: '24小时预测均值' },
-    { key: 'spread', metric: '峰谷价差', value: summary.peak_valley_spread, compare: `${summary.high_risk_hours || 0} 高风险`, trend: '策略收益候选空间' }
+    { key: 'spread', metric: '峰谷价差', value: summary.peak_valley_spread, compare: `${summary.high_risk_hours || 0} 高风险`, trend: '策略测算参考空间' }
   ];
 }
 
@@ -20,10 +20,10 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
   const dataHealth = context.data_health || {};
   const dataScore = Number(dataHealth.score || 0);
   const columns: ColumnsType<any> = [
-    { title: '指标', dataIndex: 'metric', width: 110 },
-    { title: '当前值', dataIndex: 'value', align: 'right', render: (value) => `${formatNumber(value, 3)} 元/kWh` },
-    { title: '时段/样本', dataIndex: 'compare', render: (value) => String(value || '').includes('-') ? dateTimeText(value) : timeText(value) },
-    { title: '趋势含义', dataIndex: 'trend' }
+    { title: '指标', dataIndex: 'metric', width: '19%' },
+    { title: '当前值', dataIndex: 'value', width: '22%', align: 'right', render: (value) => formatNumber(value, 3) },
+    { title: '时段/样本', dataIndex: 'compare', width: '24%', render: (value) => timeText(value) },
+    { title: '趋势含义', dataIndex: 'trend', width: '35%' }
   ];
   const sources = dataHealth.sources || [];
   return (
@@ -32,12 +32,13 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
         <div className="home-card-head compact home-head-with-note">
           <div>
             <h2>关键预测指标趋势（24小时）</h2>
-            <p className="home-header-note">最高、最低、均价与峰谷价差概览</p>
           </div>
+          <Tag>单位：元/kWh</Tag>
         </div>
         <Table
           size="small"
           pagination={false}
+          tableLayout="fixed"
           rowKey="key"
           columns={columns}
           dataSource={predictionRows(forecast)}
@@ -48,13 +49,12 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
         <div className="home-card-head compact home-head-with-note">
           <div>
             <h2><ThunderboltOutlined /> 模型状态</h2>
-            <p className="home-header-note">Active 模型与评估指标</p>
           </div>
           <Tag color={model?.model_version ? 'success' : 'warning'}>{model?.model_version ? 'Active' : '待接入'}</Tag>
         </div>
         {model?.model_version ? (
           <div className="home-model-list">
-            <div><span>模型版本</span><strong>{model.model_version}</strong></div>
+            <div><span>模型版本</span><strong title={model.model_version}>{model.model_version}</strong></div>
             <div><span>MAE</span><strong>{formatNumber(confidence.mae, 4)}</strong></div>
             <div><span>RMSE</span><strong>{formatNumber(confidence.rmse, 4)}</strong></div>
             <div><span>最近激活</span><strong>{dateTimeText(model.activated_at || model.created_at)}</strong></div>
@@ -68,7 +68,6 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
         <div className="home-card-head compact home-head-with-note">
           <div>
             <h2><DatabaseOutlined /> 数据健康</h2>
-            <p className="home-header-note">覆盖、异常与健康得分概览</p>
           </div>
         </div>
         {dataHealth.score == null ? (
