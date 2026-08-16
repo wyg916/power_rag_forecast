@@ -1,6 +1,6 @@
 # 项目一本地最终收口报告
 
-当前结论：本地门禁 `PASS`，远端发布 `PENDING_FINAL_COMMIT`。
+当前结论：`PROJECT1_LOCAL_FINAL_CLOSEOUT=PASS`。
 
 | 项目 | 结果 |
 |---|---|
@@ -16,7 +16,7 @@
 | 浏览器 | 32/32；最终 5xx/Console/Page/Request failed 均 0 |
 | 启动 | 冷启动 PASS；运行态幂等 PASS |
 | 敏感扫描 | PASS；65 文件，高置信真实凭据 0，大文件 0 |
-| GitHub | 待最终提交、标签与推送核验后更新 |
+| GitHub | 分支 PASS；annotated tag PASS；ahead/behind `0 0` |
 | 最终运行态 | STOPPED_CLEANLY |
 
 ## 关键变更
