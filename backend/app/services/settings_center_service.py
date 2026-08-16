@@ -18,8 +18,6 @@ from backend.app.repositories.base import postgres_engine
 from backend.app.repositories.settings_repository import (
     health_check_records,
     insert_api_test_log,
-    insert_health_snapshot,
-    latest_health_snapshots,
     list_api_configs,
     list_api_test_logs,
     list_role_permissions,
@@ -340,11 +338,6 @@ def collect_runtime_health_rows() -> list[dict[str, Any]]:
             "source": "runtime",
         },
     ]
-    for row in rows:
-        try:
-            insert_health_snapshot(**{key: row[key] for key in ["module_key", "module_name", "module_type", "status", "summary", "latency_ms", "qps", "error_rate", "extra_json", "source"]})
-        except Exception:
-            pass
     return rows
 
 
@@ -379,9 +372,7 @@ def system_status_summary() -> list[dict[str, Any]]:
 
 
 def system_health_details() -> list[dict[str, Any]]:
-    collect_runtime_health_rows()
-    rows = latest_health_snapshots(limit=100)
-    return [_public_health_row(row) for row in rows]
+    return [_public_health_row(row) for row in collect_runtime_health_rows()]
 
 
 def _public_health_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -463,7 +454,6 @@ def _infer_value_type(value: Any) -> str:
 
 
 def health_records(limit: int = 100) -> list[dict[str, Any]]:
-    collect_runtime_health_rows()
     return [_public_health_row(row) for row in health_check_records(limit=limit)]
 
 

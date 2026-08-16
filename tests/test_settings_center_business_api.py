@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.app.auth.password import hash_password
 from backend.app.core.config import reset_settings_cache
@@ -11,6 +12,7 @@ from backend.app.repositories import audit_repository, settings_repository, user
 from backend.app.repositories.audit_repository import clear_memory_audit_logs
 from backend.app.repositories.settings_repository import clear_memory_settings
 from backend.app.repositories.user_repository import clear_memory_users, create_user
+from backend.app.services import settings_center_service
 
 
 client = TestClient(app)
@@ -49,6 +51,14 @@ def test_settings_status_and_runtime_config_endpoints():
     assert overview.status_code == 200
     assert "healthy_services" in overview.json()
 
+    summary = client.get("/api/settings/status/summary")
+    assert summary.status_code == 200
+    assert isinstance(summary.json()["items"], list)
+
+    details = client.get("/api/settings/status/health-details")
+    assert details.status_code == 200
+    assert isinstance(details.json()["items"], list)
+
     runtime = client.get("/api/settings/runtime-config")
     assert runtime.status_code == 200
     assert "data_refresh_interval_minutes" in runtime.json()["values"]
@@ -60,6 +70,57 @@ def test_settings_status_and_runtime_config_endpoints():
     records = client.get("/api/settings/status/check-records?limit=5")
     assert records.status_code == 200
     assert isinstance(records.json()["items"], list)
+    assert records.json()["items"][0]["status"] == "unavailable"
+
+
+def test_health_snapshot_store_uses_application_runtime_identity(monkeypatch):
+    application_engine = object()
+    monkeypatch.setattr(settings_repository, "_application_postgres_engine", lambda: application_engine)
+    monkeypatch.setattr(
+        settings_repository,
+        "postgres_engine",
+        lambda: (_ for _ in ()).throw(AssertionError("security identity must not serve health snapshots")),
+    )
+
+    assert settings_repository.health_postgres_engine() is application_engine
+
+
+def test_health_snapshot_queries_fail_closed_without_database_or_permission(monkeypatch):
+    clear_memory_settings()
+    monkeypatch.setattr(settings_repository, "health_postgres_engine", lambda: None)
+    missing_dsn = settings_repository.health_check_records(limit=5)
+    assert missing_dsn[0]["status"] == "unavailable"
+    assert missing_dsn[0]["extra_json"]["reason"] == "database_not_configured_or_unreachable"
+
+    class PermissionDeniedEngine:
+        def connect(self):
+            raise SQLAlchemyError("permission denied")
+
+    monkeypatch.setattr(settings_repository, "health_postgres_engine", lambda: PermissionDeniedEngine())
+    denied = settings_repository.latest_health_snapshots(limit=5)
+    assert denied[0]["status"] == "unavailable"
+    assert denied[0]["extra_json"]["reason"] == "query_unavailable"
+
+
+def test_runtime_health_get_path_does_not_persist_snapshots(monkeypatch):
+    clear_memory_settings()
+    monkeypatch.setattr(
+        settings_center_service,
+        "database_runtime_status",
+        lambda: {"active": "postgresql", "available": True, "message": "available"},
+    )
+    monkeypatch.setattr(
+        settings_center_service,
+        "task_runtime_health",
+        lambda: {"redis": {"ok": True, "status": "ok"}, "celery": {"ok": True, "worker_count": 1}},
+    )
+    monkeypatch.setattr(settings_center_service, "rag_health", lambda: {"ok": True, "status": "normal"})
+    monkeypatch.setattr(settings_center_service, "get_local_llm_status", lambda: {"available": False})
+
+    rows = settings_center_service.collect_runtime_health_rows()
+
+    assert rows
+    assert settings_repository._HEALTH_MEMORY == []
 
 
 def test_settings_user_role_security_and_audit_endpoints():

@@ -4,10 +4,19 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from backend.app.core.redaction import mask_secret_fields
+from backend.app.observability import log_suppressed_exception
 
-from .base import dumps_json, loads_json, mapping_dict, mapping_list, security_postgres_engine as _security_postgres_engine
+from .base import (
+    dumps_json,
+    loads_json,
+    mapping_dict,
+    mapping_list,
+    postgres_engine as _application_postgres_engine,
+    security_postgres_engine as _security_postgres_engine,
+)
 
 # Compatibility seam; callers still receive the dedicated security engine.
 postgres_engine = _security_postgres_engine
@@ -15,6 +24,11 @@ postgres_engine = _security_postgres_engine
 
 def security_postgres_engine():
     return postgres_engine()
+
+
+def health_postgres_engine():
+    """Health snapshots belong to the application runtime ACL, not the security store."""
+    return _application_postgres_engine()
 
 
 _RUNTIME_MEMORY: dict[str, dict[str, Any]] = {}
@@ -32,6 +46,23 @@ def clear_memory_settings() -> None:
 
 def _now() -> str:
     return datetime.utcnow().isoformat(sep=" ", timespec="seconds")
+
+
+def _health_storage_unavailable_row(reason: str) -> dict[str, Any]:
+    return {
+        "id": None,
+        "module_key": "health_snapshot_store",
+        "module_name": "健康检查历史存储",
+        "module_type": "database",
+        "status": "unavailable",
+        "summary": "历史健康检查记录当前不可访问；请以实时运行状态摘要为准。",
+        "latency_ms": None,
+        "qps": None,
+        "error_rate": None,
+        "extra_json": {"reason": reason},
+        "checked_at": _now(),
+        "source": "runtime",
+    }
 
 
 def _parse_value(value: Any, value_type: str = "string") -> Any:
@@ -217,68 +248,85 @@ def insert_health_snapshot(
         "checked_at": _now(),
         "source": source,
     }
-    engine = security_postgres_engine()
+    engine = health_postgres_engine()
     if engine is None:
         row["id"] = len(_HEALTH_MEMORY) + 1
         _HEALTH_MEMORY.append(row)
         return row
-    with engine.begin() as conn:
-        inserted = conn.execute(
-            text(
-                """
-                INSERT INTO system_health_snapshots (
-                    module_key, module_name, module_type, status, summary,
-                    latency_ms, qps, error_rate, extra_json, source
-                )
-                VALUES (
-                    :module_key, :module_name, :module_type, :status, :summary,
-                    :latency_ms, :qps, :error_rate, CAST(:extra_json AS jsonb), :source
-                )
-                RETURNING *
-                """
-            ),
-            {**row, "extra_json": dumps_json(row["extra_json"])},
-        ).mappings().first()
-    return mapping_dict(inserted)
+    try:
+        with engine.begin() as conn:
+            inserted = conn.execute(
+                text(
+                    """
+                    INSERT INTO system_health_snapshots (
+                        module_key, module_name, module_type, status, summary,
+                        latency_ms, qps, error_rate, extra_json, source
+                    )
+                    VALUES (
+                        :module_key, :module_name, :module_type, :status, :summary,
+                        :latency_ms, :qps, :error_rate, CAST(:extra_json AS jsonb), :source
+                    )
+                    RETURNING *
+                    """
+                ),
+                {**row, "extra_json": dumps_json(row["extra_json"])},
+            ).mappings().first()
+        return mapping_dict(inserted)
+    except (SQLAlchemyError, OSError) as exc:
+        log_suppressed_exception("settings_repository.insert_health_snapshot", exc)
+        row["id"] = len(_HEALTH_MEMORY) + 1
+        row["persistence_status"] = "unavailable"
+        _HEALTH_MEMORY.append(row)
+        return row
 
 
 def latest_health_snapshots(limit: int = 50) -> list[dict[str, Any]]:
-    engine = security_postgres_engine()
+    engine = health_postgres_engine()
     if engine is None:
-        return list(reversed(_HEALTH_MEMORY))[: max(1, min(int(limit or 50), 500))]
-    with engine.connect() as conn:
-        rows = conn.execute(
-            text(
-                """
-                SELECT DISTINCT ON (module_key) *
-                FROM system_health_snapshots
-                ORDER BY module_key, checked_at DESC, id DESC
-                """
-            )
-        ).mappings().all()
+        values = list(reversed(_HEALTH_MEMORY))[: max(1, min(int(limit or 50), 500))]
+        return values or [_health_storage_unavailable_row("database_not_configured_or_unreachable")]
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT DISTINCT ON (module_key) *
+                    FROM system_health_snapshots
+                    ORDER BY module_key, checked_at DESC, id DESC
+                    """
+                )
+            ).mappings().all()
+    except (SQLAlchemyError, OSError) as exc:
+        log_suppressed_exception("settings_repository.latest_health_snapshots", exc)
+        return [_health_storage_unavailable_row("query_unavailable")]
     values = mapping_list(rows)
     values.sort(key=lambda item: str(item.get("module_key") or ""))
     return values[: max(1, min(int(limit or 50), 500))]
 
 
 def health_check_records(limit: int = 100) -> list[dict[str, Any]]:
-    engine = security_postgres_engine()
+    engine = health_postgres_engine()
     limit_value = max(1, min(int(limit or 100), 500))
     if engine is None:
-        return list(reversed(_HEALTH_MEMORY))[:limit_value]
-    with engine.connect() as conn:
-        rows = conn.execute(
-            text(
-                """
-                SELECT *
-                FROM system_health_snapshots
-                ORDER BY checked_at DESC, id DESC
-                LIMIT :limit
-                """
-            ),
-            {"limit": limit_value},
-        ).mappings().all()
-    return mapping_list(rows)
+        values = list(reversed(_HEALTH_MEMORY))[:limit_value]
+        return values or [_health_storage_unavailable_row("database_not_configured_or_unreachable")]
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT *
+                    FROM system_health_snapshots
+                    ORDER BY checked_at DESC, id DESC
+                    LIMIT :limit
+                    """
+                ),
+                {"limit": limit_value},
+            ).mappings().all()
+        return mapping_list(rows)
+    except (SQLAlchemyError, OSError) as exc:
+        log_suppressed_exception("settings_repository.health_check_records", exc)
+        return [_health_storage_unavailable_row("query_unavailable")]
 
 
 def _api_config_row(row: dict[str, Any]) -> dict[str, Any]:
