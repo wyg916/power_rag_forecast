@@ -1,5 +1,7 @@
 # 智能运营分析项目
 
+> 最终本地预发布 RC 唯一入口：`E:\智能运营分析项目_worktrees\release_beta10d_agent_rc_20260807`，分支 `release/beta10d-agent-rc-20260807`。请在该目录执行 `run_project.bat`；不要从含用户未提交改动的普通仓库 `E:\智能运营分析项目` 启动。本版本是本地预发布 RC，不是正式生产上线。
+
 当前产品版本：`v2.11.2`。这是基于 FastAPI、React/Vite、PostgreSQL、Redis/Celery 和 Alembic 的智能电力运营分析与决策支持平台。
 
 ## 可复现运行基线
@@ -9,7 +11,7 @@
 - npm：`>=9 <12`
 - PostgreSQL：应用目标为 PostgreSQL；当前本地工程约束使用 `localhost:5432/postgres`
 - 前端容器构建基线：Node 18
-- 最新 Alembic 版本：`0016_strategy_runtime`
+- 最新 Alembic 版本：`0022_chatbi_semantic_v1`
 
 依赖安装、配置生成、迁移、启动、健康检查和回滚步骤统一见 [README_DEPLOY.md](README_DEPLOY.md)。生产模式必须启用认证、使用随机 JWT/数据库密钥并完成受控管理员初始化；示例占位值不能直接用于部署。
 

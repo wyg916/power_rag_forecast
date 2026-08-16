@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-16 项目一本地最终收口
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 首页、系统状态、预测任务、全站回归、双轮启动、安全、事实基线与 Git 发布收口 | 本地 `PASS`；远端状态待最终文档提交、标签和推送核验后更新 | `release/beta10d-agent-rc-20260807` / 最终 tag 解析值 | `docs/codex/final_local_closeout/`；`docs/codex/evidence/PROJECT1_LOCAL_FINAL_CLOSEOUT_20260816/` | 无本地发布阻断；生产外部门禁未执行；真实预测任务终态回传 PASS，但本次任务因遗留流水线缺少 PostgreSQL 模型事实进入 FAILED。 |
+
 ## 2026-08-15 预测中心三页面 UI 最终集成
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
