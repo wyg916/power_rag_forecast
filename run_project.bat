@@ -141,6 +141,9 @@ goto qdrant_probe_retry
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" celery start
 if errorlevel 1 goto rc_failed
 
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --worker-role forecast celery start
+if errorlevel 1 goto rc_failed
+
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" start
 if errorlevel 1 goto rc_failed
 
@@ -152,6 +155,9 @@ if errorlevel 1 goto rc_failed
 if errorlevel 1 goto rc_failed
 
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status
+if errorlevel 1 goto rc_failed
+
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --worker-role forecast celery status
 if errorlevel 1 goto rc_failed
 
 echo.
@@ -167,7 +173,7 @@ goto end
 if not defined RC_EXIT_CODE set "RC_EXIT_CODE=%ERRORLEVEL%"
 echo.
 echo [ERROR] Unified RC startup failed, exit code: %RC_EXIT_CODE%.
-echo [TIP] Inspect output\runtime_logs and output\runtime_logs\phase4.
+echo [TIP] Inspect output\runtime_logs, output\runtime_logs\phase4 and output\runtime_logs\forecast_worker.
 if "%RC_NO_PAUSE%"=="0" pause
 popd
 exit /b %RC_EXIT_CODE%

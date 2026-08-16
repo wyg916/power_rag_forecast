@@ -25,6 +25,14 @@ def test_task_runtime_policies_cover_required_task_types():
     assert queue_for_kind("knowledge_import") == "rag"
 
 
+def test_forecast_queue_can_be_isolated_from_historical_backlog(monkeypatch):
+    monkeypatch.setenv("FORECAST_CELERY_QUEUE", "forecast_final_rc")
+
+    assert queue_for_kind("forecast_run") == "forecast_final_rc"
+    assert queue_for_kind("today_analysis") == "forecast_final_rc"
+    assert queue_for_kind("report_generate") == "report"
+
+
 def test_create_specialized_task_records_lifecycle_defaults(monkeypatch):
     monkeypatch.setenv("TASK_EXECUTION_MODE", "local_thread")
     config.reset_settings_cache()

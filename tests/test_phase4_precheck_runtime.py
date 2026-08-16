@@ -21,6 +21,7 @@ def test_masked_url_never_exposes_credentials():
 
 
 def test_health_worker_is_isolated_to_safe_queue(monkeypatch):
+    monkeypatch.setenv("PHASE4_WORKER_ROLE", "health")
     monkeypatch.setenv("PHASE4_CELERY_QUEUE", "phase4_health")
     command = runtime._celery_worker_command()
     joined = " ".join(command)
@@ -31,9 +32,25 @@ def test_health_worker_is_isolated_to_safe_queue(monkeypatch):
     assert "report" not in joined
     assert "data_sync" not in joined
     assert "embedding" not in joined
+    assert runtime.WORKER_START_TIMEOUT_SECONDS >= 180
+
+
+def test_forecast_worker_uses_dedicated_queue_and_runtime_paths(monkeypatch):
+    monkeypatch.setenv("PHASE4_WORKER_ROLE", "forecast")
+    monkeypatch.setenv("FORECAST_CELERY_QUEUE", "forecast_final_rc")
+
+    command = runtime._celery_worker_command()
+    paths = runtime.runtime_paths()
+
+    assert "--queues=forecast_final_rc" in command
+    assert "--hostname=forecast-worker@%h" in command
+    assert paths["pid_file"].name == "celery_forecast_worker.json"
+    assert paths["worker_log"].name == "celery_forecast_worker.log"
+    assert all(path.is_relative_to(ROOT) for path in paths.values())
 
 
 def test_runtime_paths_stay_inside_project(monkeypatch):
+    monkeypatch.setenv("PHASE4_WORKER_ROLE", "health")
     monkeypatch.delenv("PHASE4_RUNTIME_DIR", raising=False)
     monkeypatch.delenv("PHASE4_RUNTIME_LOG_DIR", raising=False)
     paths = runtime.runtime_paths()

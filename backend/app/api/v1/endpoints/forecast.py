@@ -76,7 +76,13 @@ def run_forecast(
         "refresh_fast_forecast": "today_analysis",
         "retrain_model": "retrain_model",
     }
-    result = enqueue_task(mapping[payload.mode])
+    try:
+        result = enqueue_task(mapping[payload.mode])
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="预测任务执行队列当前不可用，请确认本地预测 worker 已启动后重试。",
+        ) from exc
     write_audit_log(
         action="forecast.run",
         user=user,

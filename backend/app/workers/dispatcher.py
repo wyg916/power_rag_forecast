@@ -48,16 +48,41 @@ def celery_available() -> bool:
     return redis_available()
 
 
+def celery_queue_available(queue_name: str) -> bool:
+    target = str(queue_name or "").strip()
+    if not target or not celery_available():
+        return False
+    try:
+        from backend.app.workers.celery_app import celery_app
+
+        if celery_app is None:
+            return False
+        active_queues = celery_app.control.inspect(timeout=0.7).active_queues() or {}
+        return any(
+            target == str(queue.get("name") or "").strip()
+            for queues in active_queues.values()
+            for queue in (queues or [])
+        )
+    except Exception as exc:
+        log_suppressed_exception(
+            "worker.celery_queue_available", exc, queue_name=target
+        )
+        return False
+
+
 def enqueue_task(kind: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
     kind = normalize_task_kind(kind)
     payload = dict(payload or {})
     mode = task_execution_mode()
     if kind in PYTHON_TASK_KINDS:
         return _enqueue_specialized_task(kind, payload, mode=mode)
-    is_celery_available = celery_available()
-    if mode == "celery" and not is_celery_available:
-        raise RuntimeError("TASK_EXECUTION_MODE=celery requires available Redis/Celery worker.")
-    if mode == "local_thread" or (mode == "auto" and not is_celery_available):
+    queue_name = queue_for_kind(kind)
+    is_queue_available = mode != "local_thread" and celery_queue_available(queue_name)
+    if mode == "celery" and not is_queue_available:
+        raise RuntimeError(
+            f"TASK_EXECUTION_MODE=celery requires an active consumer for queue '{queue_name}'."
+        )
+    if mode == "local_thread" or (mode == "auto" and not is_queue_available):
         return task_manager.start(kind)
 
     from backend.app.workers.tasks import run_command_task, sync_core_data_task
@@ -72,7 +97,6 @@ def enqueue_task(kind: str, payload: dict[str, Any] | None = None) -> dict[str, 
         if duplicate:
             return duplicate
     now = datetime.now().isoformat(sep=" ", timespec="seconds")
-    queue_name = queue_for_kind(kind)
     command = ["celery", "sync_core_data_task"] if kind == "sync_core_data" else command_for_kind(kind)
     record = {
         "task_id": task_id,
@@ -114,6 +138,12 @@ def _enqueue_specialized_task(kind: str, payload: dict[str, Any], *, mode: str) 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     task_id = "task_" + uuid.uuid4().hex[:12]
     policy = task_policy(kind)
+    queue_name = queue_for_kind(kind)
+    is_queue_available = mode != "local_thread" and celery_queue_available(queue_name)
+    if mode == "celery" and not is_queue_available:
+        raise RuntimeError(
+            f"TASK_EXECUTION_MODE=celery requires an active consumer for queue '{queue_name}'."
+        )
     dedupe_window = int(payload.get("dedupe_window_seconds") or policy.dedupe_window_seconds)
     idempotency_key, payload_hash = idempotency_key_for(kind, payload)
     if not payload.get("force_new"):
@@ -125,7 +155,6 @@ def _enqueue_specialized_task(kind: str, payload: dict[str, Any], *, mode: str) 
         metadata["parent_task_id"] = payload.get("retry_of")
         metadata["original_task_id"] = payload.get("original_task_id") or payload.get("retry_of")
     now = datetime.now().isoformat(sep=" ", timespec="seconds")
-    queue_name = queue_for_kind(kind)
     record = {
         "task_id": task_id,
         "run_id": run_id,
@@ -152,10 +181,7 @@ def _enqueue_specialized_task(kind: str, payload: dict[str, Any], *, mode: str) 
         "queue_name": queue_name,
         "metadata": metadata,
     }
-    is_celery_available = celery_available()
-    if mode == "celery" and not is_celery_available:
-        raise RuntimeError("TASK_EXECUTION_MODE=celery requires available Redis/Celery worker.")
-    if mode == "auto" and not is_celery_available and kind in BUSINESS_TASK_KINDS:
+    if mode == "auto" and not is_queue_available and kind in BUSINESS_TASK_KINDS:
         record["execution_mode"] = "db_pending"
         save_task_record(record, status="pending", log_text="Celery/Redis unavailable; task kept in PostgreSQL pending queue")
         append_task_log(
@@ -172,7 +198,7 @@ def _enqueue_specialized_task(kind: str, payload: dict[str, Any], *, mode: str) 
         record["execution_backend"] = "db_pending"
         record["dispatch_fallback_reason"] = "Celery/Redis unavailable"
         return jsonable(record)
-    execution_mode = "celery" if mode == "celery" or (mode == "auto" and is_celery_available) else "local_thread"
+    execution_mode = "celery" if mode == "celery" or (mode == "auto" and is_queue_available) else "local_thread"
     record["execution_mode"] = execution_mode
     save_task_record(record, status="pending", log_text=f"task queued via {execution_mode}")
     append_task_log(task_id, level="info", step="prepare", message=f"task queued via {execution_mode}", status="pending", run_id=run_id, task_name=kind, task_kind=kind, metadata={"queue_name": queue_name})
@@ -231,9 +257,10 @@ def _enqueue_specialized_task(kind: str, payload: dict[str, Any], *, mode: str) 
 def task_runtime_health() -> dict[str, Any]:
     mode = task_execution_mode()
     redis_ok = redis_available()
-    celery_ok = celery_available()
+    broker_ok = celery_available()
     summary = task_runtime_summary()
-    celery_runtime = _celery_runtime_snapshot() if celery_ok else {"available": False, "source": "runtime_check_failed"}
+    celery_runtime = _celery_runtime_snapshot() if broker_ok else {"available": False, "source": "runtime_check_failed"}
+    celery_ok = bool(celery_runtime.get("available"))
     runtime_workers = celery_runtime.get("active_workers") or []
     db_workers = summary.get("active_workers") or []
     worker_names = runtime_workers if celery_ok else db_workers
@@ -250,6 +277,7 @@ def task_runtime_health() -> dict[str, Any]:
             "active_count": celery_runtime.get("active_count", 0),
             "reserved_count": celery_runtime.get("reserved_count", 0),
             "scheduled_count": celery_runtime.get("scheduled_count", 0),
+            "active_queues": celery_runtime.get("active_queues") or [],
             "db_snapshot_workers": db_workers,
         },
         "celery_available": celery_ok,
@@ -276,12 +304,28 @@ def _celery_runtime_snapshot() -> dict[str, Any]:
         reserved = inspector.reserved() or {}
         scheduled = inspector.scheduled() or {}
         registered = inspector.registered() or {}
-        workers = sorted(set(ping_rows.keys()) | set(active.keys()) | set(reserved.keys()) | set(scheduled.keys()))
+        active_queues = inspector.active_queues() or {}
+        workers = sorted(
+            set(ping_rows.keys())
+            | set(active.keys())
+            | set(reserved.keys())
+            | set(scheduled.keys())
+            | set(active_queues.keys())
+        )
         registered_tasks = sorted({task for tasks in registered.values() for task in (tasks or [])})
+        queue_names = sorted(
+            {
+                str(queue.get("name") or "").strip()
+                for queues in active_queues.values()
+                for queue in (queues or [])
+                if str(queue.get("name") or "").strip()
+            }
+        )
         return {
-            "available": True,
+            "available": bool(workers),
             "source": "celery_inspect",
             "active_workers": workers,
+            "active_queues": queue_names,
             "active_count": sum(len(items or []) for items in active.values()),
             "reserved_count": sum(len(items or []) for items in reserved.values()),
             "scheduled_count": sum(len(items or []) for items in scheduled.values()),

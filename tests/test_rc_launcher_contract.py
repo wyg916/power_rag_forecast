@@ -31,13 +31,15 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert 'if /I "%~1"=="menu" goto menu' in source
     assert "goto rcstart" in source
     assert "--preflight-only" in source
-    assert source.count('phase4_precheck_runtime.py" --runtime-config') == 3
+    assert source.count('phase4_precheck_runtime.py" --runtime-config') == 5
     assert 'redis start' in source
     assert 'celery start' in source
+    assert '--worker-role forecast celery start' in source
+    assert '--worker-role forecast celery status' in source
     assert 'combined health' in source
     assert "mklink /J" in source
     assert "automatic network install is disabled" in source
-    assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 6
+    assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 8
     assert source.count('day5_memory_worker_runtime.py" --runtime-config') == 2
     assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" start' in source
     assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status' in source
@@ -68,6 +70,7 @@ def test_rag_preproduction_profile_is_secret_free_and_frozen() -> None:
     assert "RAG_RERANK_MAX_LENGTH=32" in profile
     assert "RAG_RERANK_CANDIDATE_LIMIT=3" in profile
     assert "RAG_TOP_K=5" in profile
+    assert "FORECAST_CELERY_QUEUE=forecast_final_rc" in profile
     assert "OMP_NUM_THREADS=6" in profile
     assert "MKL_NUM_THREADS=6" in profile
     assert not any(

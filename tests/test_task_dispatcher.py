@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
+import pytest
+from fastapi import HTTPException
+from starlette.requests import Request
+
+from backend.app.api.v1.endpoints import forecast as forecast_endpoint
 from backend.app.core import config
+from backend.app.core.security import CurrentUser
+from backend.app.schemas import ForecastRunRequest
 from backend.app.workers import dispatcher
 
 
@@ -43,3 +52,93 @@ def test_local_thread_mode_uses_specialized_thread(monkeypatch):
     finally:
         monkeypatch.delenv("TASK_EXECUTION_MODE", raising=False)
         config.reset_settings_cache()
+
+
+def test_celery_mode_rejects_missing_target_queue_before_record_creation(monkeypatch):
+    monkeypatch.setenv("TASK_EXECUTION_MODE", "celery")
+    monkeypatch.setenv("FORECAST_CELERY_QUEUE", "forecast_final_rc")
+    config.reset_settings_cache()
+    saved: list[dict] = []
+    monkeypatch.setattr(dispatcher, "celery_queue_available", lambda queue: False)
+    monkeypatch.setattr(
+        dispatcher, "save_task_record", lambda *args, **kwargs: saved.append(kwargs) or True
+    )
+    try:
+        with pytest.raises(RuntimeError, match="forecast_final_rc"):
+            dispatcher.enqueue_task("today_analysis", {})
+    finally:
+        monkeypatch.delenv("TASK_EXECUTION_MODE", raising=False)
+        monkeypatch.delenv("FORECAST_CELERY_QUEUE", raising=False)
+        config.reset_settings_cache()
+
+    assert saved == []
+
+
+def test_celery_mode_dispatches_to_verified_forecast_queue(monkeypatch):
+    from backend.app.workers import tasks
+
+    monkeypatch.setenv("TASK_EXECUTION_MODE", "celery")
+    monkeypatch.setenv("FORECAST_CELERY_QUEUE", "forecast_final_rc")
+    config.reset_settings_cache()
+    submitted: list[dict] = []
+    monkeypatch.setattr(
+        dispatcher,
+        "celery_queue_available",
+        lambda queue: queue == "forecast_final_rc",
+    )
+    monkeypatch.setattr(
+        dispatcher, "find_active_idempotent_task", lambda *args, **kwargs: None
+    )
+    monkeypatch.setattr(dispatcher, "save_task_record", lambda *args, **kwargs: True)
+    monkeypatch.setattr(dispatcher, "append_task_log", lambda *args, **kwargs: True)
+    monkeypatch.setattr(
+        tasks.run_command_task,
+        "apply_async",
+        lambda *args, **kwargs: submitted.append(kwargs)
+        or SimpleNamespace(id="celery-test-id"),
+    )
+    try:
+        result = dispatcher.enqueue_task("today_analysis", {})
+    finally:
+        monkeypatch.delenv("TASK_EXECUTION_MODE", raising=False)
+        monkeypatch.delenv("FORECAST_CELERY_QUEUE", raising=False)
+        config.reset_settings_cache()
+
+    assert result["queue_name"] == "forecast_final_rc"
+    assert result["celery_task_id"] == "celery-test-id"
+    assert submitted[0]["queue"] == "forecast_final_rc"
+
+
+def test_forecast_endpoint_returns_503_when_worker_queue_is_unavailable(monkeypatch):
+    monkeypatch.setattr(
+        forecast_endpoint,
+        "enqueue_task",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("queue unavailable")),
+    )
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/forecast/run",
+            "headers": [],
+            "query_string": b"",
+            "client": ("127.0.0.1", 12345),
+            "server": ("127.0.0.1", 8000),
+            "scheme": "http",
+        }
+    )
+    user = CurrentUser(
+        user_id="analyst-id",
+        username="analyst",
+        role="analyst",
+        permissions=["forecast:run"],
+        auth_mode="unit_test",
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        forecast_endpoint.run_forecast(
+            ForecastRunRequest(mode="refresh_fast_forecast"), request, user
+        )
+
+    assert exc_info.value.status_code == 503
+    assert "队列当前不可用" in str(exc_info.value.detail)

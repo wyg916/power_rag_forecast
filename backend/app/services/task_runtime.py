@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
@@ -51,6 +52,13 @@ TASK_KIND_ALIASES = {
     "forecast_run": "fast_forecast",
 }
 
+FORECAST_TASK_KINDS = {
+    "today_analysis",
+    "fast_forecast",
+    "retrain_model",
+    "model_auto_optimize",
+}
+
 
 def normalize_task_kind(kind: str) -> str:
     value = str(kind or "").strip()
@@ -75,7 +83,11 @@ def task_policy(kind: str) -> TaskRuntimePolicy:
 
 
 def queue_for_kind(kind: str) -> str:
-    return task_policy(kind).queue_name
+    normalized = normalize_task_kind(kind)
+    default_queue = task_policy(normalized).queue_name
+    if normalized in FORECAST_TASK_KINDS:
+        return os.getenv("FORECAST_CELERY_QUEUE", default_queue).strip() or default_queue
+    return default_queue
 
 
 def _json_default(value: Any) -> str:

@@ -22,8 +22,10 @@ if str(PROJECT_ROOT) not in sys.path:
 
 DEFAULT_REDIS_URL = "redis://127.0.0.1:6379/0"
 DEFAULT_QUEUE = "phase4_health"
+DEFAULT_FORECAST_QUEUE = "forecast_final_rc"
+WORKER_ROLES = {"health", "forecast"}
 DOCKER_TIMEOUT_SECONDS = 20
-WORKER_START_TIMEOUT_SECONDS = 60
+WORKER_START_TIMEOUT_SECONDS = 180
 HEALTH_TASK_TIMEOUT_SECONDS = 30
 _RUNTIME_CONFIGS: tuple[Path, ...] = ()
 
@@ -36,19 +38,45 @@ def _resolve_project_path(env_name: str, default: str) -> Path:
     return path.resolve()
 
 
+def celery_worker_role() -> str:
+    role = os.environ.get("PHASE4_WORKER_ROLE", "health").strip().lower() or "health"
+    return role if role in WORKER_ROLES else "health"
+
+
+def _worker_name_prefix() -> str:
+    return "forecast-worker" if celery_worker_role() == "forecast" else "phase4-health"
+
+
 def runtime_paths() -> dict[str, Path]:
-    runtime_dir = _resolve_project_path("PHASE4_RUNTIME_DIR", ".codex_tmp/phase4_runtime")
-    log_dir = _resolve_project_path("PHASE4_RUNTIME_LOG_DIR", "output/runtime_logs/phase4")
+    if celery_worker_role() == "forecast":
+        runtime_dir = _resolve_project_path(
+            "FORECAST_WORKER_RUNTIME_DIR", ".codex_tmp/forecast_worker_runtime"
+        )
+        log_dir = _resolve_project_path(
+            "FORECAST_WORKER_LOG_DIR", "output/runtime_logs/forecast_worker"
+        )
+        pid_name = "celery_forecast_worker.json"
+        log_name = "celery_forecast_worker.log"
+    else:
+        runtime_dir = _resolve_project_path("PHASE4_RUNTIME_DIR", ".codex_tmp/phase4_runtime")
+        log_dir = _resolve_project_path("PHASE4_RUNTIME_LOG_DIR", "output/runtime_logs/phase4")
+        pid_name = "celery_health_worker.json"
+        log_name = "celery_health_worker.log"
     return {
         "runtime_dir": runtime_dir,
         "log_dir": log_dir,
-        "pid_file": runtime_dir / "celery_health_worker.json",
-        "worker_log": log_dir / "celery_health_worker.log",
+        "pid_file": runtime_dir / pid_name,
+        "worker_log": log_dir / log_name,
     }
 
 
 def runtime_temp_dir() -> Path:
-    path = _resolve_project_path("PHASE4_TEMP_DIR", ".codex_tmp/phase4_runtime_tmp")
+    if celery_worker_role() == "forecast":
+        path = _resolve_project_path(
+            "FORECAST_WORKER_TEMP_DIR", ".codex_tmp/forecast_worker_runtime_tmp"
+        )
+    else:
+        path = _resolve_project_path("PHASE4_TEMP_DIR", ".codex_tmp/phase4_runtime_tmp")
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -98,6 +126,11 @@ def redis_url() -> str:
 
 
 def celery_queue() -> str:
+    if celery_worker_role() == "forecast":
+        return (
+            os.environ.get("FORECAST_CELERY_QUEUE", DEFAULT_FORECAST_QUEUE).strip()
+            or DEFAULT_FORECAST_QUEUE
+        )
     return os.environ.get("PHASE4_CELERY_QUEUE", DEFAULT_QUEUE).strip() or DEFAULT_QUEUE
 
 
@@ -376,7 +409,7 @@ def _celery_worker_command() -> list[str]:
         "--concurrency=1",
         "--loglevel=INFO",
         f"--queues={celery_queue()}",
-        "--hostname=phase4-health@%h",
+        f"--hostname={_worker_name_prefix()}@%h",
         "--without-gossip",
         "--without-mingle",
     ]
@@ -432,19 +465,20 @@ def _pid_active(pid: int) -> bool:
         kernel32.CloseHandle(process)
 
 
-def _inspect_health_workers(timeout: float = 5.0) -> list[str]:
+def _inspect_workers(timeout: float = 5.0) -> list[str]:
     try:
         from backend.app.workers.celery_app import celery_app
 
         if celery_app is None:
             return []
-        expected = f"phase4-health@{socket.gethostname()}"
+        prefix = _worker_name_prefix()
+        expected = f"{prefix}@{socket.gethostname()}"
         responses = celery_app.control.ping(destination=[expected], timeout=timeout) or []
         names = {
             name
             for response in responses
             for name in response
-            if name.startswith("phase4-health@")
+            if name.startswith(f"{prefix}@")
         }
         return sorted(names)
     except Exception:
@@ -454,7 +488,7 @@ def _inspect_health_workers(timeout: float = 5.0) -> list[str]:
 def celery_status() -> dict[str, Any]:
     record = _read_pid_record()
     pid = int(record.get("pid") or 0)
-    workers = _inspect_health_workers()
+    workers = _inspect_workers()
     redis_result = redis_ping()
     ok = bool(pid and _pid_active(pid) and workers and redis_result["ok"])
     return _json_result(
@@ -463,6 +497,7 @@ def celery_status() -> dict[str, Any]:
         pid=pid or None,
         pid_active=_pid_active(pid),
         workers=workers,
+        worker_role=celery_worker_role(),
         queue=celery_queue(),
         redis=redis_result,
         log_path=str(runtime_paths()["worker_log"]),
@@ -513,7 +548,7 @@ def celery_start() -> dict[str, Any]:
     deadline = time.monotonic() + WORKER_START_TIMEOUT_SECONDS
     workers: list[str] = []
     while time.monotonic() < deadline and _pid_active(process.pid):
-        workers = _inspect_health_workers()
+        workers = _inspect_workers()
         if workers:
             break
         time.sleep(1)
@@ -524,11 +559,12 @@ def celery_start() -> dict[str, Any]:
         pid=process.pid,
         pid_active=_pid_active(process.pid),
         workers=workers,
+        worker_role=celery_worker_role(),
         queue=celery_queue(),
         pool="solo",
         concurrency=1,
         log_path=str(paths["worker_log"]),
-        consumes_business_queues=False,
+        consumes_business_queues=celery_worker_role() == "forecast",
     )
 
 
@@ -596,7 +632,7 @@ def celery_stop() -> dict[str, Any]:
     paths = runtime_paths()
     record = _read_pid_record()
     pid = int(record.get("pid") or 0)
-    workers = _inspect_health_workers()
+    workers = _inspect_workers()
     if workers:
         try:
             from backend.app.workers.celery_app import celery_app
@@ -608,13 +644,14 @@ def celery_stop() -> dict[str, Any]:
     while pid and _pid_active(pid) and time.monotonic() < deadline:
         time.sleep(0.25)
     stopped = True if not pid else _terminate_pid(pid)
-    remaining = _inspect_health_workers()
+    remaining = _inspect_workers()
     return _json_result(
         bool(stopped and not remaining),
         "celery_stop",
         pid=pid or None,
         pid_active=_pid_active(pid),
         remaining_workers=remaining,
+        worker_role=celery_worker_role(),
         orphan_process=False if stopped and not remaining else "unknown",
         pid_file_preserved=str(paths["pid_file"]),
     )
@@ -636,10 +673,13 @@ def combined_health() -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="PHASE4-PRECHECK Redis/Celery local runtime helper")
     parser.add_argument("--runtime-config", type=Path, action="append")
+    parser.add_argument("--worker-role", choices=sorted(WORKER_ROLES), default="health")
     parser.add_argument("component", choices=["redis", "celery", "combined"])
     parser.add_argument("action", choices=["start", "stop", "status", "ping", "health"])
     parser.add_argument("--url", default="", help="Optional Redis URL for ping/fail-closed verification.")
     args = parser.parse_args()
+
+    os.environ["PHASE4_WORKER_ROLE"] = args.worker_role
 
     try:
         configure_runtime(args.runtime_config)

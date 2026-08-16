@@ -187,6 +187,7 @@ export function TaskCenterPage(_props: PageProps) {
   const [loading, setLoading] = useState(true);
   const { authRequired, hasPermission } = useAuth();
   const canRunTask = !authRequired || hasPermission('task:run');
+  const canManageSchedules = !authRequired || hasPermission('task:manage');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
@@ -315,8 +316,8 @@ export function TaskCenterPage(_props: PageProps) {
   }
 
   async function createSchedule() {
-    if (!canRunTask) {
-      message.warning('当前账号没有任务运行权限');
+    if (!canManageSchedules) {
+      message.warning('当前账号没有定时任务管理权限');
       return;
     }
     await api.createScheduledTask(scheduleDraft);
@@ -522,7 +523,7 @@ export function TaskCenterPage(_props: PageProps) {
             <div className="task-card-head">
               <div>
                 <h2>任务列表</h2>
-                <Button type="primary" icon={<PlusOutlined />} disabled={!canRunTask} title={!canRunTask ? '需要 task:run 权限' : undefined} onClick={() => setCreateOpen(true)}>新建定时任务</Button>
+                <Button type="primary" icon={<PlusOutlined />} disabled={!canManageSchedules} title={!canManageSchedules ? '需要 task:manage 权限' : undefined} onClick={() => setCreateOpen(true)}>新建定时任务</Button>
               </div>
               <Space size={8}>
                 <Button icon={<ColumnHeightOutlined />} onClick={() => setColumnSettingsOpen(true)}>列设置</Button>
