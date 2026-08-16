@@ -48,7 +48,7 @@ def test_rag_search_merges_keyword_vector_and_reranks(monkeypatch):
     monkeypatch.setattr(
         rag_service,
         "list_embedded_chunks",
-        lambda limit=3000: [
+        lambda limit=3000, **kwargs: [
             {
                 "chunk_id": "chunk_vector",
                 "doc_id": "doc_vector",

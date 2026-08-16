@@ -137,8 +137,9 @@ def test_forecast_frontend_binds_identity_to_current_run() -> None:
     assert "const featureVersion = currentRun?.feature_version" in service
     assert "developmentMode: Boolean(currentRun?.development_mode)" in service
     assert "inputBatchId: currentRun?.input_batch_id" in service
-    assert "开发/演示闭环（非生产）" in component
-    assert "Candidate · 开发演示" in component
+    assert "预测可信度" in component
+    assert "开发/演示闭环（非生产）" not in component
+    assert "Candidate · 开发演示" not in component
 
 
 def test_frontend_development_identity_is_read_only_and_build_gated() -> None:

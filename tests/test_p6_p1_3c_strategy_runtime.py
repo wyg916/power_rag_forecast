@@ -67,7 +67,7 @@ def test_unique_database_target_and_migration_head() -> None:
     assert (url.username or "") == "postgres"
     with create_app_engine().connect() as conn:
         assert conn.execute(text("SELECT current_database()")).scalar_one() == "postgres"
-        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0018_rag_enterprise_r1"
+        assert conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0022_chatbi_semantic_v1"
 
 
 def test_controlled_seed_is_idempotent_and_traceable() -> None:
@@ -190,4 +190,5 @@ def test_old_stale_information_box_is_removed_but_stale_reason_remains() -> None
     assert "page-state-stale-inline" in states_source
     assert "meta.staleReason" in states_source
     assert "模拟入库" not in states_source
-    assert "规则测算" in states_source
+    assert "业务界面不展示来源分类" in states_source
+    assert "return null" in states_source

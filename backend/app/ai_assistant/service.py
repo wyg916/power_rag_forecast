@@ -640,20 +640,36 @@ def _rag_trigger_decision(intent: str, task_type: str, question: str) -> tuple[b
         info["reason"] = "daily_or_deterministic_skipped"
         return False, info
 
+    professional_terms = _matched_terms(question, PROFESSIONAL_RAG_TERMS)
+    system_terms = _matched_terms(question, SYSTEM_USAGE_RAG_TERMS)
+    daily_terms = _matched_terms(question, DAILY_CHAT_RAG_SKIP_TERMS)
+    grounding_terms = _matched_terms(
+        question,
+        ["供需", "依据", "边界", "规则", "口径", "原因", "解释", "为什么", "说明"],
+    )
+
     business_tools = [
         name for name in tools_for_intent(intent)
         if name != "search_business_knowledge"
     ]
     if business_tools and intent not in {"knowledge_search", "tariff_policy_search"}:
+        if (
+            intent in {"trading_risk_summary", "forecast_risk_hours"}
+            and task_type in {"complex_analysis", "business_answer"}
+            and professional_terms
+            and grounding_terms
+        ):
+            info.update({
+                "reason": "business_tool_and_knowledge_grounded",
+                "matched_terms": list(dict.fromkeys(professional_terms + grounding_terms))[:12],
+                "tools": business_tools,
+            })
+            return True, info
         info.update({
             "reason": "business_tool_grounded",
             "tools": business_tools,
         })
         return False, info
-
-    professional_terms = _matched_terms(question, PROFESSIONAL_RAG_TERMS)
-    system_terms = _matched_terms(question, SYSTEM_USAGE_RAG_TERMS)
-    daily_terms = _matched_terms(question, DAILY_CHAT_RAG_SKIP_TERMS)
 
     if daily_terms and not professional_terms and not system_terms:
         info.update({"reason": "daily_chat_skipped", "matched_terms": daily_terms})

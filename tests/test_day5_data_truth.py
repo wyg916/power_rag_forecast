@@ -114,7 +114,12 @@ def test_strategy_separates_record_review_validity_simulation_and_execution() ->
     assert "unreviewed: '未进入审核'" in service
     assert "<small>审核状态</small>" in page
     assert "governedStrategy?.is_stale || today?.is_stale || forecast?.is_stale" in service
-    for wording in ["测算收益", "非实际结算", "不可作为当前策略", "模拟设备 / 非实际执行"]:
+    for wording in [
+        "收益测算",
+        "按当前策略批次的计划与反馈口径计算",
+        "不可作为当前策略",
+        "只读事实，不自动交易、不控制设备",
+    ]:
         assert wording in design
     assert "PageDataState" in page
     assert "showContent" in page

@@ -24,8 +24,9 @@ def test_sc006_exposes_the_same_trace_metadata_on_all_subpages() -> None:
     metadata_start = page.index('className="strategy-header-metadata"')
     metadata_end = page.index("</div>", metadata_start)
     metadata = page[metadata_start:metadata_end]
-    for field in ("strategyDate", "strategyVersion", "modelVersion", "runId", "generatedAt", "sourceType"):
+    for field in ("strategyDate", "strategyVersion", "modelVersion", "runId", "generatedAt"):
         assert field in metadata
+    assert "sourceType" not in metadata
     assert "staleReason" in metadata
     assert "strategy-meta-run" in metadata
     assert "strategy-meta-stale" in metadata
