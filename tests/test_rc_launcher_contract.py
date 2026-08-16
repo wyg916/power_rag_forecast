@@ -45,6 +45,8 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status' in source
     assert "deploy\\rag-r1\\preproduction-profile.env" in source
     assert "rag_r1_qdrant_runtime_probe.py\" --mode health" in source
+    assert 'if not defined QDRANT_STARTUP_MAX_ATTEMPTS set "QDRANT_STARTUP_MAX_ATTEMPTS=48"' in source
+    assert "GEQ %QDRANT_STARTUP_MAX_ATTEMPTS%" in source
     assert '--rag-qdrant-config "%QDRANT_RUNTIME_CONFIG%"' not in source
     assert '--rag-model-config "%RAG_MODEL_CONFIG%"' not in source
     assert "rag_r1_runtime_profile_check.py" in source

@@ -9,6 +9,7 @@ set "RC_NO_PAUSE=0"
 if "%NO_PAUSE%"=="1" set "RC_NO_PAUSE=1"
 if not defined WEB_BACKEND_PORT set "WEB_BACKEND_PORT=8000"
 if not defined WEB_FRONTEND_PORT set "WEB_FRONTEND_PORT=5173"
+if not defined QDRANT_STARTUP_MAX_ATTEMPTS set "QDRANT_STARTUP_MAX_ATTEMPTS=48"
 set "TEMP=%~dp0.codex_tmp\rc_runtime_tmp"
 set "TMP=%TEMP%"
 if not exist "%TEMP%" mkdir "%TEMP%"
@@ -132,8 +133,8 @@ set /a QDRANT_PROBE_ATTEMPT=0
 set /a QDRANT_PROBE_ATTEMPT+=1
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_r1_qdrant_runtime_probe.py" --mode health --env-file "%QDRANT_RUNTIME_CONFIG%" --output "%~dp0output\runtime_logs\qdrant_runtime_probe.json"
 if not errorlevel 1 goto qdrant_ready
-if %QDRANT_PROBE_ATTEMPT% GEQ 12 goto rc_failed
-echo [WAIT] Qdrant is still recovering, retry %QDRANT_PROBE_ATTEMPT%/12...
+if %QDRANT_PROBE_ATTEMPT% GEQ %QDRANT_STARTUP_MAX_ATTEMPTS% goto rc_failed
+echo [WAIT] Qdrant is still recovering, retry %QDRANT_PROBE_ATTEMPT%/%QDRANT_STARTUP_MAX_ATTEMPTS%...
 "%PYTHON_EXE%" -c "import time; time.sleep(5)"
 goto qdrant_probe_retry
 :qdrant_ready
