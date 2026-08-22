@@ -308,7 +308,8 @@ export function OverviewQuickActions({
   onSettings,
   syncing,
   canSync,
-  canExport
+  canExport,
+  canManageSettings
 }: {
   onDataAccess: () => void;
   onCatalog: () => void;
@@ -321,18 +322,19 @@ export function OverviewQuickActions({
   syncing: boolean;
   canSync: boolean;
   canExport: boolean;
+  canManageSettings?: boolean;
 }) {
   return (
     <SectionCard title="快捷操作" compact className="data-quick-actions-panel">
       <div className="data-quick-actions">
-        <Button icon={<DatabaseOutlined />} loading={syncing} disabled={!canSync} onClick={onDataAccess}>数据接入</Button>
+        {canSync ? <Button icon={<DatabaseOutlined />} loading={syncing} onClick={onDataAccess}>数据接入</Button> : null}
         <Button icon={<EyeOutlined />} onClick={onCatalog}>查看目录</Button>
         <Button icon={<SafetyCertificateOutlined />} onClick={onQuality}>质量巡检</Button>
-        <Button icon={<DownloadOutlined />} disabled={!canExport} onClick={onExport}>导出概览</Button>
+        {canExport ? <Button icon={<DownloadOutlined />} onClick={onExport}>导出概览</Button> : null}
         <Button icon={<WarningOutlined />} onClick={onAlerts}>查看异常</Button>
-        <Button icon={<UserSwitchOutlined />} onClick={onPermissions}>数据权限</Button>
+        {canManageSettings ? <Button icon={<UserSwitchOutlined />} onClick={onPermissions}>数据权限</Button> : null}
         <Button icon={<SyncOutlined />} onClick={onSyncRecords}>同步记录</Button>
-        <Button icon={<SettingOutlined />} onClick={onSettings}>配置管理</Button>
+        {canManageSettings ? <Button icon={<SettingOutlined />} onClick={onSettings}>配置管理</Button> : null}
       </div>
     </SectionCard>
   );
@@ -645,7 +647,7 @@ export function CatalogPanel({
             </dl>
             <div className="catalog-meta-actions">
               <Button type="primary" size="small" onClick={() => setPreviewOpen(true)}>查看数据明细</Button>
-              <Button size="small" loading={exporting} disabled={!canExport || !selected.export_allowed || !preview?.available || previewTotal === 0} onClick={onExport}>导出当前范围</Button>
+              {canExport ? <Button size="small" loading={exporting} disabled={!selected.export_allowed || !preview?.available || previewTotal === 0} onClick={onExport}>导出当前范围</Button> : null}
             </div>
           </div>
           <Table
@@ -689,14 +691,14 @@ export function CatalogPanel({
                   }}
                   onSearch={onPreviewSearch}
                 />
-                <Button
+                {canExport ? <Button
                   icon={<DownloadOutlined />}
                   loading={exporting}
-                  disabled={!canExport || !selected.export_allowed || !preview?.available || previewTotal === 0}
+                  disabled={!selected.export_allowed || !preview?.available || previewTotal === 0}
                   onClick={onExport}
                 >
                   导出当前范围
-                </Button>
+                </Button> : null}
               </div>
             </div>
             {previewLoading ? <LoadingBlock rows={3} /> : null}

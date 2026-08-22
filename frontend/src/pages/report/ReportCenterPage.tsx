@@ -144,7 +144,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         page_size: 20,
         report_type: nextType,
         status: nextStatus
-      });
+      }, { canReview: permissions.canReview });
       setData(payload);
       const first = payload.reports?.[0] || payload.activeReport;
       setSelectedId(first?.report_id || '');
@@ -176,7 +176,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     const selected = visibleReports.find((item: any) => item.report_id === selectedId);
     if (!selected) return;
     let cancelled = false;
-    getReportFacts(selected).then((facts) => {
+    getReportFacts(selected, { canReview: permissions.canReview }).then((facts) => {
       if (cancelled) return;
       setData((current: any) => ({
         ...current,
@@ -448,8 +448,8 @@ function ReportFilterBar({ review, keyword, setKeyword, onSearch, onGenerate, on
           />
         )}
         <div className="report-filter-actions">
-          {review ? <Button onClick={onReset}>重置</Button> : <Button type="primary" icon={<PlusCircleOutlined />} disabled={!canGenerate} onClick={onGenerate}>生成报告</Button>}
-          {!review && <Button icon={<DownloadOutlined />} disabled={!canDownload || !hasReport} onClick={onDownload}>导出</Button>}
+          {review ? <Button onClick={onReset}>重置</Button> : canGenerate ? <Button type="primary" icon={<PlusCircleOutlined />} onClick={onGenerate}>生成报告</Button> : null}
+          {!review && canDownload ? <Button icon={<DownloadOutlined />} disabled={!hasReport} onClick={onDownload}>导出</Button> : null}
         </div>
       </div>
     </section>
@@ -552,7 +552,7 @@ function ReviewPublishView({ metrics, loading, reports, total, page, onPageChang
         <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
       </div>
       <section ref={previewRef}>
-      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />} onClick={() => previewRef.current?.requestFullscreen?.().catch(onFullscreenError)}>全屏预览</Button><Button icon={<DownloadOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载预览</Button></Space>} className="report-review-preview" bodyClassName="report-review-body">
+      <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />} onClick={() => previewRef.current?.requestFullscreen?.().catch(onFullscreenError)}>全屏预览</Button>{permissions.canDownload ? <Button icon={<DownloadOutlined />} onClick={onDownload}>下载预览</Button> : null}</Space>} className="report-review-preview" bodyClassName="report-review-body">
         <div className="report-review-title">
           <h3>{activeReport?.title || '--'}</h3>
           <Tag color="blue">{activeReport?.reportSchemaVersion || '报告版本未提供'}</Tag>
@@ -586,10 +586,10 @@ function ReviewPublishView({ metrics, loading, reports, total, page, onPageChang
           <label className="report-comment-label">审核意见 <i>*</i></label>
           <Input.TextArea rows={5} maxLength={500} showCount value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} placeholder="请输入审核意见（选填）..." />
           <div className="report-review-actions">
-            <Button type="primary" disabled={!permissions.canReview} onClick={onApprove}>通过</Button>
-            <Button danger disabled={!permissions.canReview} onClick={onReject}>驳回</Button>
-            <Button disabled={!permissions.canGenerate} onClick={onRegenerate}>重新生成</Button>
-            <Button disabled={!permissions.canReview} onClick={onPublish}>发布报告</Button>
+            {permissions.canReview ? <Button type="primary" onClick={onApprove}>通过</Button> : null}
+            {permissions.canReview ? <Button danger onClick={onReject}>驳回</Button> : null}
+            {permissions.canGenerate ? <Button onClick={onRegenerate}>重新生成</Button> : null}
+            {permissions.canReview ? <Button onClick={onPublish}>发布报告</Button> : null}
           </div>
         </SectionCard>
         <SectionCard title="发布归档流程" className="report-process-card"><ProcessSteps report={activeReport} reviews={reviews} /></SectionCard>
@@ -631,11 +631,11 @@ function QuickActions({ onDownload, onRegenerate, onCopyLink, onReview, permissi
   return (
     <SectionCard title="快捷操作" className="report-quick-card">
       <div className="report-action-grid">
-        <Button icon={<FilePdfOutlined />} disabled={!permissions.canDownload} onClick={onDownload}>下载报告（PDF）</Button>
+        {permissions.canDownload ? <Button icon={<FilePdfOutlined />} onClick={onDownload}>下载报告（PDF）</Button> : null}
         <Tooltip title={disabledTip}><Button icon={<FileExcelOutlined />} disabled>下载报告（Excel）</Button></Tooltip>
         <Button icon={<EyeOutlined />} onClick={() => document.querySelector('.report-preview-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>查看详情</Button>
-        <Button type="primary" icon={<SendOutlined />} onClick={onReview}>进入审核</Button>
-        <Button icon={<SyncOutlined />} disabled={!permissions.canGenerate} onClick={onRegenerate}>重新生成</Button>
+        {permissions.canReview ? <Button type="primary" icon={<SendOutlined />} onClick={onReview}>进入审核</Button> : null}
+        {permissions.canGenerate ? <Button icon={<SyncOutlined />} onClick={onRegenerate}>重新生成</Button> : null}
         <Button icon={<CopyOutlined />} onClick={onCopyLink}>复制报告链接</Button>
         <Tooltip title={disabledTip}><Button icon={<InboxOutlined />} disabled>归档报告</Button></Tooltip>
         <Tooltip title={disabledTip}><Button danger icon={<DeleteOutlined />} disabled>删除报告</Button></Tooltip>

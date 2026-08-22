@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-22 PROJECT1 v2.12.0 B：UI RBAC GLOBAL AI SHELL
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1 v2.12.0 B / UI RBAC GLOBAL AI SHELL | PASS_WITH_INTEGRATION_DEPENDENCY | codex/project1-v2.12.0-ui-rbac-ai-shell / 本行所在提交 | docs/codex/evidence/B_ui/PROJECT1_V2_12_B_20260822_191034；docs/codex/v2_12_final/B_UI_RBAC_AI_SHELL_REPORT.md | 前端 32/32 路由、四视口 128/128、权限友好化、全局 AI Drawer、跨页状态、Ctrl+V/拖拽/附件 UI、动态回答、lint 6/6、unit 22/22、typecheck/build 全部 PASS；集成依赖为后端缺少冻结契约中的附件 GET/DELETE，上传 POST 已实测成功且前端按失败态处理；未越界修改后端。 |
+
 ## 2026-08-16 项目一本地最终收口
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

@@ -3,6 +3,7 @@ import { Button, Menu } from 'antd';
 import type { ItemType } from 'antd/es/menu/interface';
 import type { RouteKey } from '../types/ui';
 import { menuGroups } from '../app/router';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -13,7 +14,12 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, route, activeSubKey, onCollapse, onNavigate }: SidebarProps) {
-  const groupByKey = new Map(menuGroups.map((group) => [group.key, group]));
+  const { canAccessRoute, canAccessChild } = useAuth();
+  const visibleMenuGroups = menuGroups
+    .filter((group) => canAccessRoute(group.key))
+    .map((group) => ({ ...group, children: group.children.filter((child) => canAccessChild(child.key)) }))
+    .filter((group) => group.children.length > 0);
+  const groupByKey = new Map(visibleMenuGroups.map((group) => [group.key, group]));
   const selectedKeys = [route];
   const activeGroup = groupByKey.get(route);
   const activeChild = activeGroup?.children.find((child) => child.key === activeSubKey);
@@ -31,7 +37,7 @@ export function Sidebar({ collapsed, route, activeSubKey, onCollapse, onNavigate
           mode="inline"
           inlineCollapsed={collapsed}
           selectedKeys={selectedKeys}
-          items={menuGroups.map((group): ItemType => ({
+          items={visibleMenuGroups.map((group): ItemType => ({
             key: group.key,
             icon: group.icon,
             label: group.label
@@ -46,7 +52,7 @@ export function Sidebar({ collapsed, route, activeSubKey, onCollapse, onNavigate
           <small>{activeChild?.label || activeGroup.children[0]?.label}</small>
         </div>
       )}
-      <div className="sidebar-utility">
+      {canAccessRoute('assistant') ? <div className="sidebar-utility">
         <Button type="text" icon={<ThunderboltOutlined />} onClick={() => onNavigate('assistant', 'assistant-chat')}>
           {!collapsed && (
             <>
@@ -55,7 +61,7 @@ export function Sidebar({ collapsed, route, activeSubKey, onCollapse, onNavigate
             </>
           )}
         </Button>
-      </div>
+      </div> : null}
       <div className="collapse-entry">
         <Button type="text" icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={onCollapse}>
           {!collapsed && '收起菜单'}

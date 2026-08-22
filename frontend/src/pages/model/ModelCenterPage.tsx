@@ -74,21 +74,15 @@ function modelTypeLabel(value?: string) {
   return text.replace('模型', '');
 }
 
-function shortModelVersion(row: ModelVersionRow, fallback = '--') {
-  const candidates = [row.model_version, row.model_name, fallback].map((item) => String(item || '')).filter(Boolean);
-  const semver = candidates.find((item) => /^v\d/i.test(item));
-  if (semver) return semver;
-  if (row.is_active && row.model_type) return modelTypeLabel(row.model_type);
-  const raw = candidates[0] || '--';
-  if (!raw || raw === '--') return '--';
-  const match = raw.match(/^model_(\d{8})_(\d{4})/);
-  if (match) return row.model_type ? modelTypeLabel(row.model_type) : `版本_${match[1].slice(4)}`;
-  const parts = raw.split('_').filter(Boolean);
-  if (parts.length >= 2) {
-    const compact = parts.slice(0, 2).join('_');
-    if (compact.length <= 16) return compact;
-  }
-  return raw.length > 16 ? `${raw.slice(0, 13)}...` : raw;
+function businessModelLabel(row: ModelVersionRow, fallback = '预测模型') {
+  const type = modelTypeLabel(row.model_type) || '预测';
+  const state = row.is_active || row.status === 'Active'
+    ? '当前模型'
+    : row.status === 'Candidate'
+      ? '候选模型'
+      : '历史模型';
+  const date = shortDateTime(row.created_at || row.updated_at);
+  return `${type}${state}${date === '--' ? '' : ` · ${date.slice(0, 10)}`}` || fallback;
 }
 
 function statusColor(status?: string, active?: boolean) {
@@ -138,6 +132,8 @@ export function ModelCenterPage(_props: PageProps) {
   const [eventsOpen, setEventsOpen] = useState(false);
   const { authRequired, hasPermission } = useAuth();
   const canRunTraining = !authRequired || hasPermission('model:manage');
+  const canExportModels = !authRequired || hasPermission('model:export');
+  const canDiagnoseTasks = !authRequired || hasPermission('task:diagnostics');
 
   async function loadData(nextFilters = filters) {
     setLoading(true);
@@ -161,14 +157,14 @@ export function ModelCenterPage(_props: PageProps) {
   const candidate: ModelVersionRow = data.candidate || { model_version: '--' };
   const training = data.training || {};
   const renderNumber = (value: unknown) => fmt(value);
-  const activeDisplay = shortModelVersion(active, 'Active');
-  const candidateDisplay = shortModelVersion(candidate, 'Candidate');
+  const activeBusinessLabel = businessModelLabel(active, '当前模型');
+  const candidateBusinessLabel = businessModelLabel(candidate, '候选模型');
 
   const kpis = [
     {
       title: '当前 Active 模型',
-      value: activeDisplay,
-      fullValue: active.model_version || activeDisplay,
+      value: activeBusinessLabel,
+      fullValue: activeBusinessLabel,
       note: `${active.model_type || '负荷预测模型'} / 浙江省`,
       tag: 'Active',
       tone: 'green',
@@ -176,8 +172,8 @@ export function ModelCenterPage(_props: PageProps) {
     },
     {
       title: 'Candidate 模型',
-      value: candidateDisplay,
-      fullValue: candidate.model_version || candidateDisplay,
+      value: candidateBusinessLabel,
+      fullValue: candidateBusinessLabel,
       note: `最近更新：${shortDateTime(candidate.created_at || candidate.updated_at)}`,
       tag: 'Candidate',
       tone: 'orange',
@@ -191,7 +187,7 @@ export function ModelCenterPage(_props: PageProps) {
 
   const effectOption = useMemo(() => ({
     ...baseGrid(),
-    legend: { top: 0, data: ['实际值', `Active(${activeDisplay})`, `Candidate(${candidateDisplay})`, '误差(Candidate-Active)'] },
+    legend: { top: 0, data: ['实际值', '当前模型', '候选模型', '误差对比'] },
     grid: { left: 48, right: 48, top: 44, bottom: 38 },
     xAxis: { ...(baseGrid().xAxis as object), data: data.effect.map((item) => item.time) },
     yAxis: [
@@ -200,11 +196,11 @@ export function ModelCenterPage(_props: PageProps) {
     ],
     series: [
       { name: '实际值', type: 'line', smooth: true, data: data.effect.map((item) => item.actual), lineStyle: { color: chartColors.blue } },
-      { name: `Active(${activeDisplay})`, type: 'line', smooth: true, data: data.effect.map((item) => item.active), lineStyle: { color: chartColors.green } },
-      { name: `Candidate(${candidateDisplay})`, type: 'line', smooth: true, data: data.effect.map((item) => item.candidate), lineStyle: { color: chartColors.orange } },
-      { name: '误差(Candidate-Active)', type: 'bar', yAxisIndex: 1, data: data.effect.map((item) => item.diff), itemStyle: { color: 'rgba(15, 185, 138, 0.22)' } }
+      { name: '当前模型', type: 'line', smooth: true, data: data.effect.map((item) => item.active), lineStyle: { color: chartColors.green } },
+      { name: '候选模型', type: 'line', smooth: true, data: data.effect.map((item) => item.candidate), lineStyle: { color: chartColors.orange } },
+      { name: '误差对比', type: 'bar', yAxisIndex: 1, data: data.effect.map((item) => item.diff), itemStyle: { color: 'rgba(15, 185, 138, 0.22)' } }
     ]
-  }), [data.effect, activeDisplay, candidateDisplay]);
+  }), [data.effect]);
 
   const trendOption = useMemo(() => ({
     ...baseGrid(),
@@ -305,7 +301,7 @@ export function ModelCenterPage(_props: PageProps) {
   }
 
   const columns = [
-    { title: '版本号', dataIndex: 'model_version', width: 130 },
+    { title: '模型', width: 190, render: (_: unknown, row: ModelVersionRow) => businessModelLabel(row) },
     { title: '状态', width: 100, render: (_: unknown, row: ModelVersionRow) => <Tag color={statusColor(row.status, row.is_active)}>{row.is_active ? 'Active' : row.status || 'Archived'}</Tag> },
     { title: '训练时间', dataIndex: 'created_at', width: 170, render: shortDateTime },
     { title: 'MAE (kW)', dataIndex: 'mae', width: 100, render: renderNumber },
@@ -318,8 +314,8 @@ export function ModelCenterPage(_props: PageProps) {
       render: (_: unknown, row: ModelVersionRow) => (
         <Space size={6}>
           <Button size="small" onClick={() => handleViewDetail(row.model_version)}>查看详情</Button>
-          {!row.is_active && row.status === 'Candidate' && <Button size="small" onClick={() => handleActivate(row.model_version)}>设为 Active</Button>}
-          {!row.is_active && <Button size="small" danger onClick={() => handleRollback(row.model_version)}>回滚</Button>}
+          {canRunTraining && !row.is_active && row.status === 'Candidate' ? <Button size="small" onClick={() => handleActivate(row.model_version)}>设为 Active</Button> : null}
+          {canRunTraining && !row.is_active ? <Button size="small" danger onClick={() => handleRollback(row.model_version)}>回滚</Button> : null}
         </Space>
       )
     }
@@ -364,7 +360,7 @@ export function ModelCenterPage(_props: PageProps) {
           />
           <Input.Search
             allowClear
-            placeholder="搜索版本号 / 模型名称 / 训练任务ID"
+            placeholder="搜索模型名称 / 类型 / 状态"
             value={filters.search}
             onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
             onSearch={() => loadData()}
@@ -378,12 +374,11 @@ export function ModelCenterPage(_props: PageProps) {
             label: '启动训练',
             icon: <RocketOutlined />,
             type: 'primary',
-            disabled: !canRunTraining,
-            disabledReason: '需要 task:run 权限',
+            hidden: !canRunTraining,
             onClick: handleTraining
           },
           { key: 'governance', label: '治理记录', icon: <HistoryOutlined />, collapseAtNarrow: true, onClick: () => setEventsOpen(true) },
-          { key: 'export', label: '导出报告', icon: <CloudDownloadOutlined />, collapseAtNarrow: true, onClick: handleExport }
+          { key: 'export', label: '导出报告', icon: <CloudDownloadOutlined />, collapseAtNarrow: true, hidden: !canExportModels, onClick: handleExport }
         ]}
       />
 
@@ -423,7 +418,7 @@ export function ModelCenterPage(_props: PageProps) {
       </div>
 
       <div className="model-bottom-grid">
-        <SectionCard title={<span>版本对比表 <small>共 {data.versions.length} 条</small></span>} loading={loading} scrollable>
+        <SectionCard title={<span>模型对比表 <small>共 {data.versions.length} 条</small></span>} loading={loading} scrollable>
           <Table
             size="small"
             rowKey="model_version"
@@ -452,16 +447,16 @@ export function ModelCenterPage(_props: PageProps) {
 
           <SectionCard title="训练状态" loading={loading} compact>
             <div className="model-status-list">
-              <p><span>训练任务 ID</span><strong>{training.task_id || '--'}</strong></p>
+              <p><span>训练任务</span><strong>{training.status ? '最近一次训练' : '--'}</strong></p>
               <p><span>训练样本数</span><strong>{training.sample_count ? Number(training.sample_count).toLocaleString() : '--'}</strong></p>
               <p><span>训练时长</span><strong>{training.duration_seconds ? `${Math.round(Number(training.duration_seconds) / 60)} 分钟` : '--'}</strong></p>
               <p><span>开始时间</span><strong>{shortDateTime(training.started_at)}</strong></p>
               <p><span>结束时间</span><strong>{shortDateTime(training.ended_at)}</strong></p>
               <p><span>状态</span><Tag color={training.status === 'success' ? 'success' : 'processing'}>{training.status || '--'}</Tag></p>
             </div>
-            <Button className="model-card-link-button" size="small" icon={<FileSearchOutlined />} onClick={handleViewTrainingLogs}>
+            {canDiagnoseTasks ? <Button className="model-card-link-button" size="small" icon={<FileSearchOutlined />} onClick={handleViewTrainingLogs}>
               查看训练日志
-            </Button>
+            </Button> : null}
           </SectionCard>
 
           <SectionCard title="模型评估摘要" loading={loading} compact>

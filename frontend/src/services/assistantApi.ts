@@ -1,17 +1,86 @@
 import { api, clearStoredAccessToken, downloadUrl, getStoredAccessToken } from '../api';
 import { errorMessage, withServiceState } from './serviceState';
 
+const assistantAuthRequired = String(import.meta.env.VITE_AUTH_REQUIRED ?? '1') !== '0';
+const assistantDevelopmentHeaders: Record<string, string> = assistantAuthRequired ? {} : {
+  'X-User': String(import.meta.env.VITE_DEV_USERNAME || 'frontend-development-reader'),
+  'X-Role': String(import.meta.env.VITE_DEV_ROLE || 'developer')
+};
+
 type StreamHandler = (event: string, payload: any) => void;
+
+export type AssistantMode = 'general' | 'chatbi' | 'rag' | 'file' | 'vision';
+export type KnowledgeScope = 'none' | 'authorized_enterprise' | 'attachments' | 'authorized_enterprise_and_attachments';
+export type AttachmentStatus = 'uploading' | 'parsing' | 'ready' | 'failed' | 'cancelled' | 'deleted';
+
+export interface AssistantPageContext {
+  route_key: string;
+  page_title: string;
+  active_filters: Record<string, unknown>;
+  selected_entity: { type: string; id: string } | null;
+  visible_summary: Record<string, unknown>;
+  permission_snapshot_hash: string;
+}
+
+export interface AssistantChatRequest {
+  request_id: string;
+  session_id: string | null;
+  message: string;
+  mode: AssistantMode;
+  stream: boolean;
+  requested_tier: 'standard' | 'premium';
+  attachment_ids: string[];
+  page_context: AssistantPageContext | null;
+  knowledge_scope: KnowledgeScope;
+}
+
+export interface AssistantAttachmentRecord {
+  attachment_id: string;
+  session_id?: string;
+  file_name: string;
+  media_type: string;
+  size_bytes: number;
+  status: AttachmentStatus;
+  created_at?: string;
+  expires_at?: string;
+  error?: { code?: string; message?: string; retryable?: boolean } | string | null;
+}
+
+export function createAssistantRequestId() {
+  const random = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  return `req_${random.replace(/-/g, '')}`;
+}
+
+export function buildAssistantChatRequest(
+  message: string,
+  options: Partial<AssistantChatRequest> = {}
+): AssistantChatRequest {
+  const attachmentIds = (options.attachment_ids || []).filter(Boolean);
+  return {
+    request_id: options.request_id || createAssistantRequestId(),
+    session_id: options.session_id || null,
+    message: message.trim(),
+    mode: options.mode || (attachmentIds.length ? 'file' : 'general'),
+    stream: options.stream ?? true,
+    requested_tier: options.requested_tier || 'standard',
+    attachment_ids: attachmentIds,
+    page_context: options.page_context || null,
+    knowledge_scope: options.knowledge_scope || (attachmentIds.length ? 'attachments' : 'none')
+  };
+}
 
 function authHeaders(json = true) {
   const token = getStoredAccessToken();
   return {
     ...(json ? { 'Content-Type': 'application/json' } : {}),
+    ...assistantDevelopmentHeaders,
     ...(token ? { Authorization: `Bearer ${token}` } : {})
   };
 }
 
 async function readError(response: Response) {
+  if (response.status === 401) return '登录状态已失效，请重新登录。';
+  if (response.status === 403) return '当前账号未开通此项能力。';
   const text = await response.text();
   try {
     const payload = JSON.parse(text);
@@ -79,7 +148,11 @@ export async function getAssistantData() {
 }
 
 export async function askAssistant(question: string, sessionId?: string, options: any = {}) {
-  return api.chat(question, sessionId, options);
+  return api.chat(buildAssistantChatRequest(question, {
+    ...options,
+    session_id: sessionId || options.session_id || null,
+    stream: false
+  }) as unknown as Record<string, unknown>);
 }
 
 export async function askChatBI(question: string, sessionId: string, options: any = {}) {
@@ -102,10 +175,15 @@ export async function askAssistantStream(
   onEvent: StreamHandler,
   signal?: AbortSignal
 ) {
+  const request = buildAssistantChatRequest(question, {
+    ...options,
+    session_id: sessionId || options.session_id || null,
+    stream: true
+  });
   const response = await fetch(downloadUrl('/api/ai/chat/stream'), {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ question, session_id: sessionId, ...options }),
+    body: JSON.stringify(request),
     signal
   });
   if (!response.ok || !response.body) {
@@ -117,12 +195,13 @@ export async function askAssistantStream(
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
   let finalPayload: any;
+  let streamedMarkdown = '';
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-    const frames = buffer.split('\n\n');
+    const frames = buffer.replace(/\r\n/g, '\n').split('\n\n');
     buffer = frames.pop() || '';
     for (const frame of frames) {
       const lines = frame.split('\n');
@@ -133,12 +212,18 @@ export async function askAssistantStream(
         .join('\n');
       const payload = dataText ? JSON.parse(dataText) : {};
       onEvent(event, payload);
-      if (event === 'error') throw new Error(payload?.message || '流式问答返回错误');
-      if (event === 'final') finalPayload = payload;
+      if (event === 'delta') streamedMarkdown += payload?.text || payload?.delta || payload?.markdown || '';
+      if (event === 'error') throw new Error(payload?.error?.message || payload?.message || '流式问答返回错误');
+      if (event === 'done') finalPayload = payload;
     }
   }
 
-  return finalPayload;
+  if (!finalPayload) throw new Error('流式问答未返回完成事件。');
+  return {
+    ...finalPayload,
+    request_id: finalPayload.request_id || request.request_id,
+    answer: finalPayload.answer || { markdown: streamedMarkdown }
+  };
 }
 
 export async function uploadAssistantAttachment(file: File, kind = 'attachment') {
@@ -154,7 +239,54 @@ export async function uploadAssistantAttachment(file: File, kind = 'attachment')
     handleUnauthorized(response);
     throw new Error(await readError(response));
   }
-  return response.json();
+  const payload = await response.json();
+  return normalizeAttachmentRecord(payload, file);
+}
+
+function normalizeAttachmentRecord(payload: any, file?: File): AssistantAttachmentRecord {
+  const record = payload?.attachment || payload?.data || payload || {};
+  return {
+    attachment_id: String(record.attachment_id || record.id || ''),
+    session_id: record.session_id,
+    file_name: String(record.file_name || record.filename || file?.name || '附件'),
+    media_type: String(record.media_type || record.content_type || file?.type || 'application/octet-stream'),
+    size_bytes: Number(record.size_bytes ?? record.size ?? file?.size ?? 0),
+    status: (record.status || (record.attachment_id || record.id ? 'parsing' : 'failed')) as AttachmentStatus,
+    created_at: record.created_at,
+    expires_at: record.expires_at,
+    error: record.error || null
+  };
+}
+
+export async function getAssistantAttachment(attachmentId: string) {
+  const response = await fetch(downloadUrl(`/api/ai/attachments/${encodeURIComponent(attachmentId)}`), {
+    headers: authHeaders(false)
+  });
+  if (!response.ok) {
+    handleUnauthorized(response);
+    throw new Error(await readError(response));
+  }
+  return normalizeAttachmentRecord(await response.json());
+}
+
+export async function deleteAssistantAttachment(attachmentId: string) {
+  const response = await fetch(downloadUrl(`/api/ai/attachments/${encodeURIComponent(attachmentId)}`), {
+    method: 'DELETE',
+    headers: authHeaders(false)
+  });
+  if (!response.ok) {
+    handleUnauthorized(response);
+    throw new Error(await readError(response));
+  }
+  return normalizeAttachmentRecord(await response.json());
+}
+
+export async function sendAssistantFeedback(payload: {
+  request_id?: string;
+  session_id?: string | null;
+  rating: 'up' | 'down';
+}) {
+  return api.chatFeedback(payload);
 }
 
 export async function exportAssistantConversation(format: 'docx' | 'pdf', payload: any) {

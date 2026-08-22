@@ -9,6 +9,9 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
+    "lint": "tsc --noEmit && node --test tests/uiShellContracts.test.mjs",
+    "unit": "node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit",
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },

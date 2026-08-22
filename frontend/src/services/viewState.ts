@@ -110,7 +110,7 @@ export function resolvePageDataMeta(input: ResolvePageDataMetaInput): PageDataMe
       ...common,
       state: 'forbidden',
       errorCode: descriptor.code || 'HTTP_403',
-      errorMessage: descriptor.message || '当前账号无权访问该数据。',
+      errorMessage: '当前账号未开通此项能力。',
       canRetry: false
     };
   }

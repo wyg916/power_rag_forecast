@@ -123,11 +123,7 @@ function timeText(value?: string | null) {
 
 function PageStateMeta({ meta }: { meta: PageDataMeta }) {
   const items = [
-    ['生成时间', timeText(meta.generatedAt)],
-    ['更新时间', timeText(meta.updatedAt)],
-    ['run_id', meta.runId],
-    ['模型版本', meta.modelVersion],
-    ['特征版本', meta.featureVersion]
+    ['业务时间', timeText(meta.updatedAt || meta.generatedAt)]
   ].filter(([, value]) => value && value !== '--');
   if (!items.length) return null;
   return (
@@ -184,12 +180,7 @@ export function PageDataState({
         <Result
           status={unauthorized ? 'warning' : 'error'}
           title={unauthorized ? '登录状态无效' : '无权访问'}
-          subTitle={(
-            <Space direction="vertical" size={4}>
-              <span>{meta.errorMessage || (unauthorized ? '请重新登录后继续。' : '请联系管理员申请相应权限。')}</span>
-              <span>错误码：{meta.errorCode || (unauthorized ? 'HTTP_401' : 'HTTP_403')}</span>
-            </Space>
-          )}
+          subTitle={unauthorized ? '请重新登录后继续。' : '当前账号未开通此项能力，如有业务需要请联系管理员。'}
         />
       </section>
     );
@@ -219,7 +210,6 @@ export function PageDataState({
   return (
     <section className="page-state-success" aria-label="数据状态：有效">
       <span className="page-state-success-label">数据有效</span>
-      <PageStateMeta meta={meta} />
     </section>
   );
 }
@@ -265,12 +255,9 @@ export function SourceContextPanel({
         </Space>
       </div>
       <div className="source-context-panel-grid">
-        <span><small>运行批次</small><b title={meta.run_id || '--'}>{meta.run_id || '--'}</b></span>
-        <span><small>生成时间</small><b>{timeText(meta.generated_at)}</b></span>
-        <span><small>模型版本</small><b title={meta.model_version || '--'}>{meta.model_version || '--'}</b></span>
-        <span><small>特征版本</small><b title={meta.feature_version || '--'}>{meta.feature_version || '--'}</b></span>
+        <span><small>业务时间</small><b>{timeText(meta.updated_at || meta.generated_at)}</b></span>
         <span>
-          <small>批次状态</small>
+          <small>当前状态</small>
           <b>{meta.is_stale ? `已过期：${freshnessReasonText(meta.stale_reason)}` : '可用'}</b>
         </span>
         <span><small>最后刷新</small><b>{timeText(lastRefreshedAt)}</b></span>

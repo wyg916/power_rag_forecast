@@ -11,6 +11,7 @@ import {
   FileTextOutlined,
   InfoCircleOutlined,
   PaperClipOutlined,
+  PauseCircleOutlined,
   PictureOutlined,
   PlusOutlined,
   RobotOutlined,
@@ -27,14 +28,16 @@ import { AppChart } from '../../components/charts/AppChart';
 import { TracePanel } from '../../components/common/TracePanel';
 import { useAuth } from '../../context/AuthContext';
 import {
-  askAssistant,
   askAssistantStream,
-  askChatBI,
+  createAssistantRequestId,
   exportAssistantConversation,
+  getAssistantAttachment,
   getAssistantData,
   getAssistantReferenceOptions,
   uploadAssistantAttachment
 } from '../../services/assistantApi';
+import { DynamicAnswer } from '../../features/globalAssistant/DynamicAnswer';
+import { attachmentAccept, isSupportedAttachment } from '../../features/globalAssistant/AttachmentComposer';
 import type { PageProps } from '../../types/ui';
 
 const answerModeTabs = [
@@ -46,10 +49,8 @@ const answerModeTabs = [
 ];
 
 const modelProviderOptions = [
-  { value: 'auto', label: 'AUTO（推荐）' },
-  { value: 'kimi', label: 'Kimi K2.6' },
-  { value: 'mimo', label: 'MiMo V2.5' },
-  { value: 'deepseek', label: 'DeepSeek V4-Flash' }
+  { value: 'standard', label: '标准模式' },
+  { value: 'premium', label: '高阶模式（明确选择）' }
 ];
 
 const dataSourceOptions = [
@@ -138,11 +139,16 @@ type AnswerState = {
 
 type AssistantAttachment = {
   attachment_id: string;
-  filename: string;
+  filename?: string;
   kind?: string;
   content_type?: string;
   size?: number;
   summary?: string;
+  file_name?: string;
+  media_type?: string;
+  size_bytes?: number;
+  status?: string;
+  error?: unknown;
 };
 
 type AssistantReference = {
@@ -162,6 +168,7 @@ type AssistantMessage = {
   question?: string;
   answerState?: AnswerState;
   trace?: TraceView;
+  requestId?: string;
 };
 
 function providerDisplayName(value?: string) {
@@ -561,7 +568,7 @@ function buildKnowledgeItems(message?: AssistantMessage) {
 
 export function AssistantPage({ onSubNavigate }: PageProps) {
   const { message } = App.useApp();
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, user, permissionSnapshotHash } = useAuth();
   const [assistantData, setAssistantData] = useState<any>({
     conversations: [],
     questions: businessQuestions,
@@ -577,7 +584,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const [developerOpen, setDeveloperOpen] = useState(false);
   const [answerStyle, setAnswerStyle] = useState('professional_brief');
   const [selectedDataSource, setSelectedDataSource] = useState('all');
-  const [modelProvider, setModelProvider] = useState('auto');
+  const [modelProvider, setModelProvider] = useState('standard');
   const [sessionProviders, setSessionProviders] = useState<Record<string, string>>({});
   const [traceRows, setTraceRows] = useState<any[]>([]);
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
@@ -591,6 +598,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const messageScrollRef = useRef<HTMLDivElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const streamControllerRef = useRef<AbortController | null>(null);
 
   const canUseDeveloperMode = Boolean(user?.role === 'admin' || user?.role === 'developer' || hasPermission('assistant:debug') || hasPermission('trace:read'));
   const visibleQuestions = useMemo(() => [...businessQuestions, ...businessQuestions].slice(questionOffset, questionOffset + 8), [questionOffset]);
@@ -642,7 +650,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   }
 
   function finalizeAssistantMessage(id: string, response: any, context?: { attachments: AssistantAttachment[]; references: AssistantReference[] }) {
-    const content = String(response.answer || response.narrative?.text || response.clarification?.question || '').trim() || '本次请求未返回回答内容。';
+    const content = String(response.answer?.markdown || response.answer || response.narrative?.text || response.clarification?.question || '').trim() || '本次请求未返回回答内容。';
     const answerState = {
       ...normalizeAnswerState(response),
       attachments: context?.attachments,
@@ -658,7 +666,8 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       content,
       status: 'done',
       answerState,
-      trace
+      trace,
+      requestId: response.request_id || item.requestId
     }));
     if (developerMode && canUseDeveloperMode) {
       api.aiTraces(30).then((payload) => setTraceRows(payload.traces || [])).catch(() => undefined);
@@ -675,6 +684,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       createdAt: nowText()
     };
     const assistantId = messageId('assistant');
+    const requestId = createAssistantRequestId();
     const assistantMessage: AssistantMessage = {
       id: assistantId,
       role: 'assistant',
@@ -682,7 +692,8 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       content: '',
       createdAt: nowText(),
       status: 'pending',
-      trace: emptyTrace
+      trace: emptyTrace,
+      requestId
     };
     setMessages((current) => [...current, userMessage, assistantMessage]);
     setActiveAssistantId(assistantId);
@@ -692,55 +703,24 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     const contextReferences = [...selectedReferences];
 
     const options = {
-      answer_style: answerStyle,
-      model_provider: modelProvider,
+      request_id: requestId,
+      requested_tier: modelProvider,
+      mode: answerStyle === 'chatbi' ? 'chatbi' : contextAttachments.some((item) => String(item.media_type || item.content_type || '').startsWith('image/')) ? 'vision' : contextAttachments.length ? 'file' : answerStyle === 'plain_language' ? 'general' : 'rag',
+      attachment_ids: contextAttachments.filter((item) => !item.status || item.status === 'ready').map((item) => item.attachment_id),
+      knowledge_scope: contextAttachments.length ? 'authorized_enterprise_and_attachments' : 'authorized_enterprise',
       page_context: {
-        page: 'assistant',
-        data_source_scope: selectedDataSource,
-        attachments: contextAttachments.map((item) => ({
-          attachment_id: item.attachment_id,
-          filename: item.filename,
-          kind: item.kind,
-          summary: item.summary
-        })),
-        references: contextReferences.map((item) => ({
-          id: item.id,
-          label: item.label,
-          type: item.type,
-          summary: item.summary
-        }))
-      },
-      debug: developerMode && canUseDeveloperMode
-    };
-
-    if (answerStyle === 'chatbi') {
-      const activeSessionId = sessionId || `chatbi_${Date.now().toString(36)}`;
-      setSessionId(activeSessionId);
-      setSessionProviders((current) => ({ ...current, [activeSessionId]: modelProvider }));
-      try {
-        const response = await withAssistantTimeout(askChatBI(text, activeSessionId, { model_provider: modelProvider }));
-        finalizeAssistantMessage(assistantId, response);
-      } catch (error) {
-        updateAssistantMessage(assistantId, (item) => ({
-          ...item,
-          content: assistantErrorMessage(error),
-          status: 'error',
-          answerState: {
-            error: error instanceof Error ? error.message : String(error || ''),
-            degraded: true,
-            debugPayload: { error: error instanceof Error ? error.message : String(error || '') }
-          },
-          trace: emptyTrace
-        }));
-        message.error('经营分析请求失败，请检查条件后重试');
-      } finally {
-        setLoading(false);
+        route_key: 'assistant.chat',
+        page_title: 'AI 助手',
+        active_filters: { answer_style: answerStyle, business_scope: selectedDataSource },
+        selected_entity: null,
+        visible_summary: { selected_reference_count: contextReferences.length },
+        permission_snapshot_hash: permissionSnapshotHash
       }
-      return;
-    }
+    };
 
     try {
       const controller = new AbortController();
+      streamControllerRef.current = controller;
       const timer = window.setTimeout(() => controller.abort(), ASSISTANT_CHAT_TIMEOUT_MS);
       let streamedText = '';
       const response = await askAssistantStream(
@@ -748,8 +728,8 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
         sessionId,
         options,
         (event, payload) => {
-          if (event === 'token') {
-            streamedText += payload?.text || '';
+          if (event === 'delta') {
+            streamedText += payload?.text || payload?.delta || payload?.markdown || '';
             updateAssistantMessage(assistantId, (item) => ({
               ...item,
               content: streamedText,
@@ -780,6 +760,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       }));
       message.error('AI 助手请求失败，请稍后重试');
     } finally {
+      streamControllerRef.current = null;
       setLoading(false);
     }
   }
@@ -789,13 +770,15 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     setMessages([]);
     setActiveAssistantId(undefined);
     setInput('');
-    setModelProvider('auto');
+    setAttachments([]);
+    setSelectedReferences([]);
+    setModelProvider('standard');
     message.success('已创建新会话');
   }
 
   function selectConversation(nextSessionId: string) {
     setSessionId(nextSessionId);
-    setModelProvider(sessionProviders[nextSessionId] || 'auto');
+    setModelProvider(sessionProviders[nextSessionId] || 'standard');
   }
 
   function changeModelProvider(value: string) {
@@ -807,8 +790,26 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     setQuestionOffset((value) => (value + 4) % businessQuestions.length);
   }
 
-  async function handleUploadFiles(fileList: FileList | null, kind: 'attachment' | 'image') {
-    const files = Array.from(fileList || []);
+  async function pollPageAttachment(attachmentId: string) {
+    for (let attempt = 0; attempt < 15; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 1200));
+      try {
+        const record = await getAssistantAttachment(attachmentId);
+        setAttachments((current) => current.map((item) => item.attachment_id === attachmentId ? { ...item, ...record } : item));
+        if (['ready', 'failed', 'cancelled', 'deleted'].includes(record.status)) return;
+      } catch (error) {
+        setAttachments((current) => current.map((item) => item.attachment_id === attachmentId ? { ...item, status: 'failed', error } : item));
+        return;
+      }
+    }
+  }
+
+  async function handleUploadFiles(fileList: FileList | File[] | null, kind: 'attachment' | 'image') {
+    const selectedFiles = Array.from(fileList || []);
+    const files = selectedFiles.filter(isSupportedAttachment);
+    if (files.length !== selectedFiles.length) {
+      message.warning('仅支持 PNG、JPG/JPEG、WEBP、PDF、DOCX、TXT、MD、XLSX 和 CSV 文件');
+    }
     if (!files.length) return;
     setUploadingAttachment(true);
     try {
@@ -816,8 +817,9 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       for (const file of files) {
         const payload = await uploadAssistantAttachment(file, kind);
         uploaded.push(payload);
+        setAttachments((current) => [...current, payload]);
+        void pollPageAttachment(payload.attachment_id);
       }
-      setAttachments((current) => [...current, ...uploaded]);
       message.success(`已上传 ${uploaded.length} 个文件`);
     } catch (error) {
       message.error(error instanceof Error ? error.message : '附件上传失败');
@@ -826,6 +828,23 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       if (attachmentInputRef.current) attachmentInputRef.current.value = '';
       if (imageInputRef.current) imageInputRef.current.value = '';
     }
+  }
+
+  function handleComposerDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    void handleUploadFiles(Array.from(event.dataTransfer.files || []), 'attachment');
+  }
+
+  function handleComposerPaste(event: React.ClipboardEvent<HTMLDivElement>) {
+    const items = Array.from(event.clipboardData?.items || []).filter((item) => item.kind === 'file');
+    if (!items.length) return;
+    const files = items.map((item) => item.getAsFile()).filter((file): file is File => Boolean(file));
+    if (!files.length) {
+      message.warning('浏览器无法直接读取该文件，请拖拽或选择文件');
+      return;
+    }
+    event.preventDefault();
+    void handleUploadFiles(files, files.every((file) => file.type.startsWith('image/')) ? 'image' : 'attachment');
   }
 
   async function openReferencePicker() {
@@ -1024,33 +1043,25 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                         <RobotOutlined />
                         <div className="assistant-structured-answer">
                           <div className="assistant-answer-intro">
-                            <strong>{item.status === 'pending' || item.status === 'streaming' ? 'AI 助手正在生成业务研判' : '本次业务研判结果'}</strong>
+                            <strong>{item.status === 'pending' || item.status === 'streaming' ? '正在生成回答' : 'AI 回答'}</strong>
                             <Space size={6}>
-                              {item.answerState?.modelProviderUsed && item.answerState.modelProviderUsed !== 'unavailable' && (
-                                <Tag color={item.answerState.modelFallback ? 'warning' : 'blue'}>
-                                  实际模型：{providerDisplayName(item.answerState.modelProviderUsed)}
-                                </Tag>
-                              )}
-                              {item.answerState?.modelProviderUsed === 'unavailable' && <Tag color="error">所选模型不可用</Tag>}
-                              {item.answerState?.modelFallback && <Tag color="warning">AUTO 已降级</Tag>}
+                              {item.answerState?.modelFallback && <Tag color="warning">服务已降级，请复核依据</Tag>}
                               {item.status === 'streaming' && <Tag color="processing">实时输出</Tag>}
                               {item.status === 'error' && <Tag color="error">请求失败</Tag>}
+                              {(item.status === 'pending' || item.status === 'streaming') && <Button danger type="text" size="small" icon={<PauseCircleOutlined />} onClick={() => streamControllerRef.current?.abort()}>停止生成</Button>}
                               <Button type="text" size="small" icon={<CopyOutlined />} aria-label="复制回答" title="复制回答" onClick={() => copyText(item.content)}>复制</Button>
                             </Space>
                           </div>
                           {item.status === 'error' ? (
                             <Alert type="error" showIcon message="AI 助手请求失败" description={item.content} />
-                          ) : buildAnswerModules(item).map((module) => (
-                            <section className={`assistant-answer-module module-${module.tone}`} key={module.key}>
-                              <div className="assistant-module-title">
-                                <span>{module.icon}</span>
-                                <strong>{module.title}</strong>
-                              </div>
-                              <div className="assistant-module-content">
-                                {module.lines.map((line) => <p key={`${module.key}-${line}`}>{line}</p>)}
-                              </div>
-                            </section>
-                          ))}
+                          ) : item.content ? <DynamicAnswer
+                            markdown={item.content}
+                            citations={item.answerState?.debugPayload?.citations || []}
+                            attachmentCitations={item.answerState?.debugPayload?.attachment_citations || []}
+                            onCopy={() => copyText(item.content)}
+                            onFeedback={(rating) => api.chatFeedback({ request_id: item.requestId, session_id: sessionId, rating }).then(() => message.success('感谢反馈')).catch(() => message.warning('反馈暂未提交'))}
+                            onContinue={() => setInput('请继续分析：')}
+                          /> : <div className="assistant-thinking">正在组织回答…</div>}
                           {item.status !== 'error' && <ChatBIArtifacts payload={item.answerState?.chatbi} />}
                         </div>
                       </div>
@@ -1071,7 +1082,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                 ))}
               </div>
 
-              <div className="chat-input p6-chat-input assistant-input-box">
+              <div className="chat-input p6-chat-input assistant-input-box" onDragOver={(event) => event.preventDefault()} onDrop={handleComposerDrop} onPaste={handleComposerPaste}>
                 <Input.TextArea
                   value={input}
                   autoSize={{ minRows: 2, maxRows: 4 }}
@@ -1088,7 +1099,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                   <div className="assistant-context-tags">
                     {attachments.map((item) => (
                       <Tag key={item.attachment_id} closable onClose={() => removeAttachment(item.attachment_id)} icon={<PaperClipOutlined />}>
-                        {item.filename}
+                        {item.file_name || item.filename} · {item.status === 'ready' ? '可使用' : item.status === 'failed' ? '失败' : item.status === 'parsing' ? '解析中' : '上传中'}
                       </Tag>
                     ))}
                     {selectedReferences.map((item) => (
@@ -1102,6 +1113,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                   ref={attachmentInputRef}
                   type="file"
                   multiple
+                  accept={attachmentAccept}
                   className="assistant-hidden-input"
                   onChange={(event) => handleUploadFiles(event.target.files, 'attachment')}
                 />
@@ -1114,7 +1126,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                   onChange={(event) => handleUploadFiles(event.target.files, 'image')}
                 />
                 <Space className="chat-input-tools">
-                  <span className="assistant-model-label">AI 对话模型</span>
+                  <span className="assistant-model-label">回答模式</span>
                   <Select
                     className="assistant-model-selector"
                     size="small"

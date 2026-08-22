@@ -28,7 +28,10 @@ function percentNote(value: unknown) {
   return `较昨日 ${numeric > 0 ? '+' : ''}${numeric.toFixed(1)}%`;
 }
 
-export async function getTaskCenterData(params: Record<string, any> = {}) {
+export async function getTaskCenterData(
+  params: Record<string, any> = {},
+  capabilities: { canDiagnose?: boolean } = {}
+) {
   try {
     const partialErrors: string[] = [];
     const safeParams = {
@@ -39,19 +42,19 @@ export async function getTaskCenterData(params: Record<string, any> = {}) {
     const [overview, runsPayload, healthPayload, logsPayload, retryPayload, queuePayload, trendPayload, schedulesPayload] = await Promise.all([
       api.taskOverview(),
       api.taskRuns(safeParams),
-      api.tasksHealth().catch((error) => {
+      (capabilities.canDiagnose ? api.tasksHealth() : Promise.resolve({})).catch((error) => {
         partialErrors.push(errorMessage(error));
         return {};
       }),
-      api.taskRecentLogs({ limit: 30, queue_name: params.queue_name || '' }).catch((error) => {
+      (capabilities.canDiagnose ? api.taskRecentLogs({ limit: 30, queue_name: params.queue_name || '' }) : Promise.resolve({ items: [] })).catch((error) => {
         partialErrors.push(errorMessage(error));
         return { items: [] };
       }),
-      api.taskRetryRecent(30).catch((error) => {
+      (capabilities.canDiagnose ? api.taskRetryRecent(30) : Promise.resolve({ items: [] })).catch((error) => {
         partialErrors.push(errorMessage(error));
         return { items: [] };
       }),
-      api.taskQueueOverview().catch((error) => {
+      (capabilities.canDiagnose ? api.taskQueueOverview() : Promise.resolve({ items: [] })).catch((error) => {
         partialErrors.push(errorMessage(error));
         return { items: [] };
       }),

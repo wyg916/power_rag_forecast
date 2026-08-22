@@ -65,18 +65,20 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { hasPermission } = useAuth();
   const canRunForecast = hasPermission('forecast:run');
   const canGenerateStrategy = hasPermission('strategy:generate');
+  const canReadData = hasPermission('data:read');
+  const canReadModel = hasPermission('model:read');
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setRequestError(null);
     try {
-      setData(await getForecastCenterData());
+      setData(await getForecastCenterData({ canReadData, canReadModel }));
     } catch (error) {
       setRequestError(error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canReadData, canReadModel]);
 
   useEffect(() => {
     loadData();
@@ -131,8 +133,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       icon: <SyncOutlined />,
       type: 'primary',
       loading: runningForecast,
-      disabled: !canRunForecast,
-      disabledReason: '需要 forecast:run 权限',
+      hidden: !canRunForecast,
       onClick: runForecast
     };
     const exportAction: PageHeaderAction = {
@@ -159,8 +160,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       label: '生成策略',
       icon: <ThunderboltOutlined />,
       collapseAtNarrow: true,
-      disabled: !canGenerateStrategy,
-      disabledReason: '需要 strategy:generate 权限',
+      hidden: !canGenerateStrategy,
       onClick: () => {
         message.info('已进入策略中心，请在完整业务上下文中生成策略。');
         window.location.hash = '#/strategy/strategy-high';
@@ -233,7 +233,7 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         title={title}
         subtitle={subtitle}
         className="forecast-page-header"
-        navigation={<PageTabs items={forecastTabs} activeKey={activeSubKey} onChange={onSubNavigate} />}
+        navigation={<PageTabs items={forecastTabs.filter((item) => item.key !== 'forecast-model' || canReadModel)} activeKey={activeSubKey} onChange={onSubNavigate} />}
         metadata={(
           <ForecastContextBar
             data={data}

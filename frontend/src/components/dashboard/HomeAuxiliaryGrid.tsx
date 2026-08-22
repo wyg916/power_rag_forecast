@@ -13,7 +13,7 @@ function predictionRows(forecast?: any) {
   ];
 }
 
-export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any }) {
+export function HomeAuxiliaryGrid({ forecast, kpi, canReadData = true, canReadModel = true }: { forecast?: any; kpi?: any; canReadData?: boolean; canReadModel?: boolean }) {
   const context = kpi?.context || {};
   const confidence = context.forecast_confidence || {};
   const model = confidence.model || {};
@@ -45,7 +45,7 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
         />
       </div>
 
-      <div className="home-card home-model-card">
+      {canReadModel ? <div className="home-card home-model-card">
         <div className="home-card-head compact home-head-with-note">
           <div>
             <h2><ThunderboltOutlined /> 模型状态</h2>
@@ -54,7 +54,6 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
         </div>
         {model?.model_version ? (
           <div className="home-model-list">
-            <div><span>模型版本</span><strong title={model.model_version}>{model.model_version}</strong></div>
             <div><span>MAE</span><strong>{formatNumber(confidence.mae, 4)}</strong></div>
             <div><span>RMSE</span><strong>{formatNumber(confidence.rmse, 4)}</strong></div>
             <div><span>最近激活</span><strong>{dateTimeText(model.activated_at || model.created_at)}</strong></div>
@@ -62,9 +61,9 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
         ) : (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="模型注册信息不足，保留待接入态" />
         )}
-      </div>
+      </div> : null}
 
-      <div className="home-card home-health-card">
+      {canReadData ? <div className="home-card home-health-card">
         <div className="home-card-head compact home-head-with-note">
           <div>
             <h2><DatabaseOutlined /> 数据健康</h2>
@@ -87,7 +86,7 @@ export function HomeAuxiliaryGrid({ forecast, kpi }: { forecast?: any; kpi?: any
             <span key={item.name}>{item.name}: {item.status || '--'}</span>
           ))}
         </div>
-      </div>
+      </div> : null}
     </section>
   );
 }

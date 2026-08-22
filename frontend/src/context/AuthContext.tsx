@@ -3,6 +3,14 @@ import type { ReactNode } from 'react';
 import { clearStoredAccessToken, getStoredAccessToken } from '../api';
 import { authApi } from '../services/authApi';
 import type { AuthUser } from '../services/authApi';
+import {
+  canAccessChild as resolveChildAccess,
+  canAccessRoute as resolveRouteAccess,
+  canPerformAction as resolveActionAccess,
+  permissionSnapshotHash as buildPermissionSnapshotHash
+} from '../security/permissions';
+import type { CapabilityManifest } from '../security/permissions';
+import type { RouteKey } from '../types/ui';
 
 interface AuthContextValue {
   authRequired: boolean;
@@ -10,12 +18,17 @@ interface AuthContextValue {
   loading: boolean;
   user: AuthUser | null;
   permissions: string[];
+  capabilityManifest: CapabilityManifest | null;
+  permissionSnapshotHash: string;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   openLogin: () => void;
   closeLogin: () => void;
   hasPermission: (permission: string) => boolean;
+  canAccessRoute: (route: RouteKey) => boolean;
+  canAccessChild: (childKey: string) => boolean;
+  canPerformAction: (action: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -58,7 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     const payload = await authApi.login(username, password);
-    setUser(payload.user);
+    const current = await authApi.me().catch(() => payload.user);
+    setUser(current);
     setLoginRequested(false);
   }, []);
 
@@ -72,10 +86,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const closeLogin = useCallback(() => setLoginRequested(false), []);
 
   const permissions = user?.permissions || [];
+  const capabilityManifest = (user?.capability_manifest || null) as CapabilityManifest | null;
   const hasPermission = useCallback(
     (permission: string) => permissions.includes('*') || permissions.includes(permission),
     [permissions]
   );
+  const canAccessRoute = useCallback(
+    (route: RouteKey) => !authRequired || resolveRouteAccess(route, permissions, capabilityManifest),
+    [permissions, capabilityManifest]
+  );
+  const canAccessChild = useCallback(
+    (childKey: string) => !authRequired || resolveChildAccess(childKey, permissions),
+    [permissions]
+  );
+  const canPerformAction = useCallback(
+    (action: string) => !authRequired || resolveActionAccess(action, permissions, capabilityManifest),
+    [permissions, capabilityManifest]
+  );
+  const permissionSnapshotHash = useMemo(() => buildPermissionSnapshotHash(permissions), [permissions]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -84,14 +112,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       user,
       permissions,
+      capabilityManifest,
+      permissionSnapshotHash,
       isAuthenticated: Boolean(user),
       login,
       logout,
       openLogin,
       closeLogin,
-      hasPermission
+      hasPermission,
+      canAccessRoute,
+      canAccessChild,
+      canPerformAction
     }),
-    [loginRequested, loading, user, permissions, login, logout, openLogin, closeLogin, hasPermission]
+    [loginRequested, loading, user, permissions, capabilityManifest, permissionSnapshotHash, login, logout, openLogin, closeLogin, hasPermission, canAccessRoute, canAccessChild, canPerformAction]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
