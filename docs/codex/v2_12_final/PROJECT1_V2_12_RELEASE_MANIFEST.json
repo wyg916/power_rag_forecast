@@ -1,0 +1,69 @@
+{
+  "schema_version": "project1-release-manifest/v1",
+  "version": "v2.12.0",
+  "stage": "LOCAL_FINAL_RC",
+  "generated_date": "2026-08-23",
+  "integration_branch": "codex/project1-v2.12.0-final-integration",
+  "baseline_sha": "736a39719613a9b14b5f9c94b83e727271764f98",
+  "stage2_candidate_sha": "f56d4a73cf8d2de4dfe2eea5e1aebf5ce3561575",
+  "round1_code_sha": "44e048d56ccc8f21ac60bc52881b2b806f97d92f",
+  "release_document_commit": "SELF",
+  "final_pre_release_sha": null,
+  "final_sha": null,
+  "round1_status": "PASS",
+  "round2_same_sha_status": "PENDING",
+  "hard_gates": {
+    "git": "PASS",
+    "migration": "PASS",
+    "backend": {
+      "status": "PASS",
+      "collected": 1190,
+      "passed": 1156,
+      "skipped": 34,
+      "failed": 0,
+      "errors": 0
+    },
+    "frontend": {
+      "lint": "PASS",
+      "unit": "PASS",
+      "typecheck": "PASS",
+      "build": "PASS"
+    },
+    "prediction": {
+      "status": "PASS",
+      "run_id": "run_20260822T190147191292Z_04ced065c8",
+      "result_rows": 24,
+      "partial_rows": 0,
+      "fake_success_count": 0,
+      "downstream_chain": "PASS"
+    },
+    "chatbi_golden": "50/50",
+    "raw_sql_execution_by_llm": 0,
+    "tri_model_routing": "PASS",
+    "unexpected_premium_usage": 0,
+    "floating_ai": "PASS",
+    "attachment_lifecycle": "PASS",
+    "role_rbac": "PASS",
+    "unauthorized_data_access": 0,
+    "ui_routes": "32/32",
+    "ui_viewports": "128/128",
+    "browser_errors": 0,
+    "rag": "PASS",
+    "memory": "PASS",
+    "startup_double_run": "PASS",
+    "controlled_stop": "PASS",
+    "security_scan": "PASS"
+  },
+  "target_branch": "main",
+  "target_tag": "project1-v2.12.0-local-final-rc-20260823",
+  "publish_state": "NOT_STARTED_PENDING_SAME_SHA_ROUND2",
+  "production": {
+    "go_live": "NOT_EXECUTED",
+    "tls": "NOT_EXECUTED",
+    "secret_manager": "NOT_EXECUTED",
+    "alerting_slo": "NOT_EXECUTED",
+    "capacity_long_run": "NOT_EXECUTED",
+    "disaster_recovery": "NOT_EXECUTED",
+    "external_approval": "NOT_EXECUTED"
+  }
+}

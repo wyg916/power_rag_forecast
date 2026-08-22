@@ -1,0 +1,45 @@
+{
+  "schema_version": "project1-rollback-manifest/v1",
+  "version": "v2.12.0",
+  "stage": "LOCAL_FINAL_RC",
+  "generated_date": "2026-08-23",
+  "pre_release_backup": {
+    "path": "E:\\项目一_v2.12.0_备份\\FINAL_RELEASE_PREP_20260823_005414508",
+    "bundle_sha256": "64ecef0b627d333bfe4876bb7d9d06d2eafb5671f610e4715022763d51d66ea5"
+  },
+  "acl_incremental_backup": {
+    "path": "E:\\项目一_v2.12.0_备份\\ACL_FORECAST_TABLES_PRE_20260823_025003771",
+    "bundle_sha256": "364055CB0FDDF3EDC9C1E9F7647BF5DFDA6E80D06935DEE09892217BC524B281"
+  },
+  "runtime_control_checkpoint": {
+    "path": "E:\\项目一_v2.12.0_备份\\FINAL_REGRESSION_20260823_005414508\\runtime_control_pre_fix_4a108ce",
+    "bundle_sha256": "0B2D50D2511E93C1E92B214338BEA05C42CA062B5B45030FA3CF4BA9C0F99E21"
+  },
+  "safe_git_rollback": [
+    "Do not amend or rewrite the frozen FINAL_SHA.",
+    "If main has not been normalized, leave Integration unchanged and stop publication.",
+    "If main has been normalized, retain the archived pre-v2.12 main ref and use an explicit fast-forward-compatible ref update only after ancestry verification.",
+    "Use the verified git bundle to reconstruct refs; never run git reset --hard or git clean against the ordinary root."
+  ],
+  "runtime_rollback": [
+    "Use scripts/runtime_control.py status before any stop action.",
+    "Stop only controller-owned instances whose PID, creation identity and worktree provenance match state.",
+    "Do not terminate unknown processes on 8000 or 5173."
+  ],
+  "database_rollback": {
+    "strategy": "ACL changes are additive, minimal and idempotent. If revocation is required, first capture the live ACL and revoke only the exact added privileges under database-owner supervision.",
+    "automatic_revoke_authorized": false,
+    "destructive_schema_change": false,
+    "schema_signature_unexpected_change": false
+  },
+  "protected_assets": [
+    "PostgreSQL databases and schemas",
+    "Docker volumes",
+    "model files",
+    "Qdrant collections and RAG indexes",
+    "evidence and historical branches/worktrees",
+    "ordinary-root tracked and untracked user assets"
+  ],
+  "destructive_cleanup_authorized": false,
+  "production_rollback": "NOT_APPLICABLE_PRODUCTION_GO_LIVE_NOT_EXECUTED"
+}
