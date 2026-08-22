@@ -273,7 +273,9 @@ def execute_chatbi_turn(
     planner_meta: dict[str, Any]
     generated_plan = plan is None
     if generated_plan:
-        attempts = 2 if (requested_provider or "auto").strip().lower() == "auto" else 1
+        # One initial provider request plus at most one schema/validation repair.
+        # Provider fallback is governed independently by LLMRouter and never loops here.
+        attempts = 1
         last_error: AnalysisPlanGenerationError | None = None
         for attempt in range(1, attempts + 1):
             try:

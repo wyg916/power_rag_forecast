@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-22 v2.12.0 并行任务 C
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1_V2_12_C_AI_RUNTIME_ATTACHMENTS_STARTUP_QUALITY | `PARTIAL_REMOTE_PROVIDER_BLOCKED`；本地 AI/附件/权限/启动/CI 门禁 PASS | `codex/project1-v2.12.0-ai-runtime-release` / 本行所在提交 | `docs/codex/v2_12_final/C_AI_RUNTIME_RELEASE_REPORT.md`；`docs/codex/evidence/C_ai_runtime/20260822_184743/` | MiMo 视觉真实调用空响应；DeepSeek AnalysisPlan 真实调用未通过冻结 schema。未伪报真实调用 PASS，`READY_FOR_INTEGRATION=NO`。 |
+
 ## 2026-08-16 项目一本地最终收口
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

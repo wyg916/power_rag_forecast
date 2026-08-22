@@ -90,22 +90,34 @@ class _FakeRemote:
             raise self.error
         return type("Result", (), {
             "content": f"{self.name}-answer", "finish_reason": "stop",
-            "reasoning_content": "", "tool_calls": (),
+            "reasoning_content": "", "tool_calls": (), "model": "fake",
+            "input_tokens": 10, "output_tokens": 5, "latency_ms": 1.0,
         })()
 
 
-def test_auto_falls_back_on_retryable_failure_and_records_actual_provider(monkeypatch):
+def test_general_auto_falls_back_once_from_mimo_to_deepseek(monkeypatch):
+    router = LLMRouter()
+    router._providers = {
+        "mimo": _FakeRemote("mimo", ProviderRequestError("mimo", "http_429", status_code=429, retryable=True)),
+        "deepseek": _FakeRemote("deepseek"),
+    }
+    content, status = router.generate_answer(
+        [], task_type="daily_chat", requested_provider="auto", logical_alias="GENERAL_DEFAULT"
+    )
+    assert content == "deepseek-answer"
+    assert status["provider"] == "deepseek" and status["fallback_count"] == 1
+    assert status["fallback_from"] == "mimo"
+    assert status["fallback_reason"] == "http_429"
+
+
+def test_complex_deepseek_failure_never_silently_uses_kimi():
     router = LLMRouter()
     router._providers = {
         "deepseek": _FakeRemote("deepseek", ProviderRequestError("deepseek", "http_429", status_code=429, retryable=True)),
         "kimi": _FakeRemote("kimi"),
     }
-    monkeypatch.setattr(router, "_auto_order", lambda task: ["deepseek", "kimi"])
-    monkeypatch.setattr(router, "_configured", lambda name: True)
-    content, status = router.generate_answer([], task_type="complex_analysis", requested_provider="auto")
-    assert content == "kimi-answer"
-    assert status["provider"] == "kimi" and status["fallback"] is True
-    assert status["fallback_reason"] == "http_429"
+    with pytest.raises(RuntimeError, match="http_429"):
+        router.generate_answer([], task_type="complex_analysis", requested_provider="auto")
 
 
 def test_auto_does_not_fallback_on_auth_or_contract_failure(monkeypatch):

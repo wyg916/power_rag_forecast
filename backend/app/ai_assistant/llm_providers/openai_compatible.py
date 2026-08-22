@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from dataclasses import dataclass
 from typing import Any, Iterator, Mapping, Protocol
 
@@ -15,6 +16,9 @@ class CompletionResult:
     finish_reason: str = ""
     reasoning_content: str = ""
     tool_calls: tuple[dict[str, Any], ...] = ()
+    input_tokens: int = 0
+    output_tokens: int = 0
+    latency_ms: float = 0.0
 
 
 class LLMProvider(Protocol):
@@ -104,7 +108,8 @@ class OpenAICompatibleProvider:
             )
         return response
 
-    def complete(self, messages: list[dict[str, str]], **options: Any) -> CompletionResult:
+    def complete(self, messages: list[dict[str, Any]], **options: Any) -> CompletionResult:
+        started = time.perf_counter()
         model = str(options.pop("model", "") or self.default_model)
         payload = {
             "model": model,
@@ -130,15 +135,18 @@ class OpenAICompatibleProvider:
             finish_reason=str(choice.get("finish_reason") or ""),
             reasoning_content=str(message.get("reasoning_content") or ""),
             tool_calls=tool_calls,
+            input_tokens=int((body.get("usage") or {}).get("prompt_tokens") or 0),
+            output_tokens=int((body.get("usage") or {}).get("completion_tokens") or 0),
+            latency_ms=round((time.perf_counter() - started) * 1000, 3),
         )
 
-    def chat(self, messages: list[dict[str, str]], **options: Any) -> str:
+    def chat(self, messages: list[dict[str, Any]], **options: Any) -> str:
         result = self.complete(messages, **options)
         if not result.content:
             raise ProviderRequestError(self.name, "empty_content")
         return result.content
 
-    def chat_stream(self, messages: list[dict[str, str]], **options: Any) -> Iterator[str]:
+    def chat_stream(self, messages: list[dict[str, Any]], **options: Any) -> Iterator[str]:
         payload = {
             "model": str(options.pop("model", "") or self.default_model),
             "messages": messages,

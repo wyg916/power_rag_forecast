@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from backend.app.api.v1.endpoints import assistant as assistant_endpoint
 from backend.app.ai.chat_memory import MemoryNotFoundError, MemoryPersistenceError
 from backend.app.ai_assistant.service import ModelProviderUnavailableError
+from backend.app.ai_assistant import attachments as attachment_store
 from backend.app.main import app
 
 
@@ -41,19 +42,20 @@ def test_ai_chat_reuses_answer_chat(monkeypatch):
 
 def test_ai_chat_returns_503_when_explicit_provider_is_unavailable(monkeypatch):
     def unavailable(*_args, **_kwargs):
-        raise ModelProviderUnavailableError("ollama", "local model is unavailable")
+        raise ModelProviderUnavailableError("mimo", "provider unavailable")
 
     monkeypatch.setattr(assistant_endpoint, "answer_chat", unavailable)
 
     response = client.post(
         "/api/ai/chat",
-        json={"question": "请分析跨部门协同约束", "model_provider": "ollama"},
+        json={"question": "你好", "model_provider": "mimo"},
     )
 
     assert response.status_code == 503
     assert response.json()["detail"] == {
-        "code": "model_provider_unavailable",
-        "provider": "ollama",
+        "code": "PROVIDER_UNAVAILABLE",
+        "provider": "mimo",
+        "retryable": True,
     }
 
 
@@ -124,11 +126,11 @@ def test_ai_chat_stream_reuses_answer_chat(monkeypatch):
 
     assert response.status_code == 200
     body = response.text
-    assert "event: intent" in body
-    assert "event: tool_start" in body
-    assert "event: rag_result" in body
-    assert "event: token" in body
-    assert "event: final" in body
+    assert "event: meta" in body
+    assert "event: status" in body
+    assert "event: tool_status" in body
+    assert "event: delta" in body
+    assert "event: done" in body
     assert "流式输出复用主问答链路" in body
     assert captured["question"] == "测试流式问答"
 
@@ -163,19 +165,22 @@ def test_ai_export_pdf_reports_unavailable():
 
 
 def test_ai_upload_attachment_saves_metadata(monkeypatch, tmp_path):
-    monkeypatch.setattr(assistant_endpoint, "ASSISTANT_UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr(attachment_store, "ROOT", tmp_path)
 
     response = client.post(
         "/api/ai/attachments",
         files={"file": ("question.txt", b"hello assistant", "text/plain")},
-        data={"kind": "attachment"},
+        data={"session_id": "sess_upload"},
     )
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["filename"] == "question.txt"
-    assert payload["summary"] == "hello assistant"
-    assert (tmp_path / "metadata.jsonl").exists()
+    assert payload["file_name"] == "question.txt"
+    assert payload["status"] == "ready"
+    detail = client.get(
+        f"/api/ai/attachments/{payload['attachment_id']}?session_id=sess_upload"
+    )
+    assert detail.status_code == 200
 
 
 def test_session_crud_uses_authoritative_identity_and_hides_foreign_rows(monkeypatch):

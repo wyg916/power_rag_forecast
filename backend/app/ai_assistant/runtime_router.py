@@ -12,6 +12,9 @@ class AssistantRoute(StrEnum):
     BUSINESS_ANALYSIS = "BUSINESS_ANALYSIS"
     BUSINESS_ADVICE = "BUSINESS_ADVICE"
     REPORT_GENERATION = "REPORT_GENERATION"
+    FILE_QA = "FILE_QA"
+    VISION_ANALYSIS = "VISION_ANALYSIS"
+    PREMIUM_DEEP_ANALYSIS = "PREMIUM_DEEP_ANALYSIS"
 
 
 GENERAL_INTENTS = {
@@ -34,9 +37,23 @@ def route_assistant_request(
     question: str,
     *,
     answer_style: str = "professional_brief",
+    mode: str = "",
+    requested_tier: str = "standard",
+    has_image: bool = False,
 ) -> AssistantRoute:
     """Select the product route before opening AnalysisPlan or RAG runtime."""
 
+    if (requested_tier or "standard").strip().lower() == "premium":
+        return AssistantRoute.PREMIUM_DEEP_ANALYSIS
+    normalized_mode = (mode or "").strip().lower()
+    if normalized_mode == "vision" or has_image:
+        return AssistantRoute.VISION_ANALYSIS
+    if normalized_mode == "file":
+        return AssistantRoute.FILE_QA
+    if normalized_mode == "chatbi":
+        return AssistantRoute.CHATBI
+    if normalized_mode == "rag":
+        return AssistantRoute.RAG_QA
     style = (answer_style or "professional_brief").strip().lower()
     if style == "chatbi":
         return AssistantRoute.CHATBI
@@ -56,3 +73,17 @@ def route_assistant_request(
 
 def route_requires_rag(route: AssistantRoute) -> bool:
     return route == AssistantRoute.RAG_QA
+
+
+def answer_strategy(route: AssistantRoute) -> str:
+    return {
+        AssistantRoute.GENERAL_CHAT: "direct_answer",
+        AssistantRoute.CHATBI: "data_analysis",
+        AssistantRoute.RAG_QA: "rag_answer",
+        AssistantRoute.FILE_QA: "file_qa",
+        AssistantRoute.VISION_ANALYSIS: "vision_analysis",
+        AssistantRoute.BUSINESS_ADVICE: "action_advice",
+        AssistantRoute.PREMIUM_DEEP_ANALYSIS: "premium_deep_analysis",
+        AssistantRoute.REPORT_GENERATION: "premium_deep_analysis",
+        AssistantRoute.BUSINESS_ANALYSIS: "data_analysis",
+    }[route]

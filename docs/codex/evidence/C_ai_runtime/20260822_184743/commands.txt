@@ -1,0 +1,10 @@
+# Commands（已去除所有凭据）
+
+- Gate：`git rev-parse --show-toplevel`、`git branch --show-current`、`git rev-parse HEAD`、`git status --short --branch`。
+- 定向契约：AI runtime、Provider、附件、endpoint、ChatBI package 1-5、API permission、RC launcher。
+- 全量诊断：`python -m pytest -q --disable-warnings --maxfail=50`。
+- 静态验证：`python -m compileall -q ...`、`git diff --check`、`python -m alembic heads`。
+- 权限矩阵：`python scripts/day3_generate_permission_matrix.py --check`。
+- 启动：在 `WEB_BACKEND_PORT=18000`、`WEB_FRONTEND_PORT=15173` 下执行 `start → status → logs → stop → status`。
+- 正式端口仅执行状态/拒绝门禁；未执行 taskkill，未终止 8000/5173 现有进程。
+- Provider：五项最低真实冒烟 + 两次明确失败诊断；未输出 Key、未做无意义重复调用。

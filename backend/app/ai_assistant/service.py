@@ -20,7 +20,7 @@ from .core.tool_router import tools_for_intent
 from .core.trace_manager import TraceManager
 from .context_pack_builder import build_context_pack
 from .expert_answer_planner import normalize_answer_style, plan_expert_answer
-from .llm_router import LLMRouter, sanitize_error
+from .llm_router import LLMRouteError, LLMRouter, sanitize_error
 from .memory.conversation_state import get_conversation_state
 from .memory.enterprise_memory import (
     MemoryCoreError,
@@ -59,9 +59,15 @@ DATA_LABELS = {
 class ModelProviderUnavailableError(RuntimeError):
     """Raised when a user-selected model provider cannot complete the request."""
 
-    def __init__(self, provider: str, reason: str) -> None:
+    def __init__(
+        self, provider: str, reason: str, *, code: str = "PROVIDER_UNAVAILABLE",
+        status_code: int = 503, retryable: bool = True,
+    ) -> None:
         self.provider = provider
         self.reason = reason
+        self.code = code
+        self.status_code = status_code
+        self.retryable = retryable
         super().__init__(f"{provider}: {reason}")
 
 
@@ -1118,15 +1124,7 @@ def apply_answer_style_contract(answer: str, answer_style: str, intent: str, que
             "风险边界：\n当前判断依赖已有事实包和知识库证据，数据不足时需要人工复核。"
         )
     if style == "professional_brief":
-        if _has_any_heading(text, ["结论", "主要原因", "建议"]):
-            return text
-        sentences = _split_sentences(text, 5)
-        return (
-            f"结论：{sentences[0] if sentences else text}\n\n"
-            "主要原因：\n"
-            + "\n".join(f"- {item}" for item in (sentences[1:4] or ["需要结合负荷、天气、供需和预测结果综合判断。"]))
-            + "\n\n建议：重点关注关键小时、预测价格和风险等级变化。"
-        )
+        return text
     return text
 
 
@@ -1464,6 +1462,10 @@ def answer_chat_accurate(
     user_role: str = "trader",
     answer_style: str = "analysis",
     model_provider: str = "auto",
+    logical_alias: str | None = None,
+    requested_tier: str = "standard",
+    premium_confirmed: bool = False,
+    attachment_ids: list[str] | None = None,
     debug: bool = False,
     persist: bool = False,
     identity: IdentityContext | None = None,
@@ -1732,6 +1734,9 @@ def answer_chat_accurate(
                 messages,
                 task_type=llm_task_type,
                 requested_provider=expert_plan.preferred_provider,
+                logical_alias=logical_alias,
+                requested_tier=requested_tier,
+                premium_confirmed=premium_confirmed,
                 temperature=expert_plan.temperature,
                 max_tokens=expert_plan.max_tokens,
             )
@@ -1743,6 +1748,14 @@ def answer_chat_accurate(
                 llm_used = True
             elif llm_answer:
                 trace.step("llm_router", success=True, used_for_answer=False, reason="reasoning_leak", **model_status)
+        except LLMRouteError as exc:
+            if explicit_provider or requested_tier == "premium":
+                raise ModelProviderUnavailableError(
+                    exc.provider or (model_provider or "auto").strip().lower(), sanitize_error(exc),
+                    code=exc.code, status_code=exc.status_code, retryable=exc.retryable,
+                ) from exc
+            model_error = f"模型调用失败，已使用工具事实模板兜底：{sanitize_error(exc)}"
+            trace.step("llm_router", success=False, error_code=exc.code, requested_provider=model_provider)
         except Exception as exc:
             if explicit_provider:
                 raise ModelProviderUnavailableError(
@@ -1789,7 +1802,21 @@ def answer_chat_accurate(
     timings_ms["answer_guard_ms"] = _timing_ms(stage_started)
     trace.step("answer_guard", guard_result=guard_result)
     timings_ms["total_ms"] = _timing_ms(total_started)
-    trace_payload = trace.finish(intent=decision.intent, intent_confidence=decision.confidence, llm_used=llm_used, answer_mode=plan.answer_mode, guard_result=guard_result)
+    trace_payload = trace.finish(
+        intent=decision.intent, intent_confidence=decision.confidence, llm_used=llm_used,
+        answer_mode=plan.answer_mode, guard_result=guard_result,
+        requested_tier=requested_tier,
+        logical_alias=model_status.get("logical_alias") or logical_alias,
+        selected_provider=model_status.get("selected_provider") or model_status.get("provider"),
+        selected_model=model_status.get("selected_model") or model_status.get("model"),
+        route_reason=model_status.get("route_reason"),
+        fallback_from=model_status.get("fallback_from"),
+        fallback_reason=model_status.get("fallback_reason"),
+        input_tokens=model_status.get("input_tokens", 0), output_tokens=model_status.get("output_tokens", 0),
+        latency_ms=model_status.get("latency_ms", timings_ms.get("llm_generate_ms", 0)),
+        estimated_cost=model_status.get("estimated_cost", 0),
+        attachment_ids=list(attachment_ids or []), page_context_used=bool(page_context),
+    )
     tool_calls = [
         {"tool_name": item.name, "input": item.input, "success": item.success, "output": item.output, "error_message": item.error_message}
         for item in tool_results
@@ -1916,6 +1943,23 @@ def answer_chat_accurate(
         "model_provider_used": model_status.get("provider") or "",
         "model_provider_requested": model_provider,
         "model_fallback": bool(model_status.get("fallback")),
+        "route": {
+            "requested_tier": requested_tier,
+            "logical_alias": model_status.get("logical_alias") or logical_alias,
+            "selected_provider": model_status.get("selected_provider") or model_status.get("provider"),
+            "selected_model": model_status.get("selected_model") or model_status.get("model"),
+            "route_reason": model_status.get("route_reason"),
+            "fallback_used": bool(model_status.get("fallback_used") or model_status.get("fallback")),
+            "fallback_from": model_status.get("fallback_from"),
+            "fallback_reason": model_status.get("fallback_reason"),
+        },
+        "usage": {
+            "input_tokens": model_status.get("input_tokens", 0), "output_tokens": model_status.get("output_tokens", 0),
+            "latency_ms": model_status.get("latency_ms", timings_ms.get("llm_generate_ms", 0)),
+            "estimated_cost": model_status.get("estimated_cost", 0), "currency": model_status.get("currency", "CNY"),
+        },
+        "attachment_ids": list(attachment_ids or []),
+        "page_context_used": bool(page_context),
         "llm_used": llm_used,
         "data_used": data_used,
         "evidence_summary": _evidence_summary(evidence),

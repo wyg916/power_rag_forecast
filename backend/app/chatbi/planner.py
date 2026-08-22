@@ -233,7 +233,7 @@ def generate_analysis_plan(
     try:
         raw, metadata = active_router.generate_answer(
             build_plan_messages(question, remembered),
-            task_type="simple_data_answer",
+            task_type="data_planner",
             requested_provider=requested_provider,
             temperature=0.0,
             max_tokens=6000,
@@ -255,7 +255,7 @@ def generate_analysis_plan(
             })
             repaired_raw, repaired_metadata = active_router.generate_answer(
                 repair_messages,
-                task_type="simple_data_answer",
+                task_type="data_planner",
                 requested_provider=requested_provider,
                 temperature=0.0,
                 max_tokens=6000,
@@ -308,7 +308,7 @@ def repair_analysis_plan(
     try:
         raw, metadata = active_router.generate_answer(
             messages,
-            task_type="simple_data_answer",
+            task_type="data_planner",
             requested_provider=requested_provider,
             temperature=0.0,
             max_tokens=6000,

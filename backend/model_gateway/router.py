@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.app.ai_assistant.llm_router import LLMRouter, sanitize_error
+from backend.app.ai_assistant.llm_router import LLMRouteError, LLMRouter, sanitize_error
 from backend.app.core.security import CurrentUser, require_permission
 
 
@@ -18,6 +18,11 @@ class GatewayChatRequest(BaseModel):
     messages: list[dict[str, str]] = Field(default_factory=list)
     model: str | None = None
     model_provider: Literal["auto", "kimi", "mimo", "deepseek", "ollama"] = "auto"
+    logical_alias: Literal[
+        "GENERAL_DEFAULT", "VISION_DEFAULT", "DATA_PLANNER", "COMPLEX_REASONER", "PREMIUM"
+    ] = "GENERAL_DEFAULT"
+    requested_tier: Literal["standard", "premium"] = "standard"
+    premium_confirmed: bool = False
     temperature: float = 0.2
     max_tokens: int = 1200
 
@@ -39,6 +44,9 @@ def gateway_chat(
             payload.messages,
             task_type="general",
             requested_provider=payload.model_provider,
+            logical_alias=payload.logical_alias,
+            requested_tier=payload.requested_tier,
+            premium_confirmed=payload.premium_confirmed,
             temperature=payload.temperature,
             max_tokens=payload.max_tokens,
         )
@@ -47,6 +55,12 @@ def gateway_chat(
             "provider": status.get("provider"),
             "model": status.get("model"),
             "fallback": status.get("fallback", False),
+            "route": status,
         }
+    except LLMRouteError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"code": exc.code, "retryable": exc.retryable},
+        ) from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"模型网关调用失败：{sanitize_error(exc)}") from exc
