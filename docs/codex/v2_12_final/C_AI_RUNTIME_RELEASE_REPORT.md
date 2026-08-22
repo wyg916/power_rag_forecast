@@ -71,3 +71,16 @@
 2. Integration 统一确认正式 8000/5173 所有者；本任务未终止现有进程。
 3. 复验 MiMo 视觉响应和 DeepSeek AnalysisPlan schema；未通过前真实 Provider 门禁保持 PARTIAL。
 4. 若需要全量数据库回归，应使用仓库受限 isolated-schema runner，而不是绕过 pytest 数据库守卫。
+
+## Remediation Closure 更新（2026-08-22）
+
+后续任务 `PROJECT1_V2_12_C_AI_RUNTIME_REMEDIATION_CLOSURE` 已关闭本报告中的两项真实 Provider 阻塞：
+
+- MiMo 普通文本与视觉均真实 PASS；视觉请求为 PNG data URL，HTTP 200、非空 content，并正确识别可见红/蓝证据。
+- DeepSeek AnalysisPlan 真实 6/6 PASS，覆盖单指标、时间、维度、筛选、非法字段拒绝和无权限数据集拒绝；schema 6/6，repair 0，fallback 0，LLM 原始 SQL 0。
+- Kimi 继续仅在显式 Premium 确认后调用，未确认请求被本地拒绝，意外 Premium 使用 0。
+- 附件 POST/GET/DELETE、取消/失败/TTL 清理、删除不可复用、JWT user/tenant 隔离、文件 Citation 与 B 后端契约均 PASS。
+- Semantic Catalog 为 13 metrics / 21 dimensions / 2 whitelist joins；冻结 Golden 50 为 50/50 PASS。
+- 综合 C 门禁 156 passed / 5 isolated-only skipped；起始 SHA 全量 50 项失败已逐项归因，`C_INTRODUCED_REGRESSION=0`。
+
+本报告原先的 `PARTIAL_REMOTE_PROVIDER_BLOCKED` 历史结论保留用于审计，但已由 `C_AI_RUNTIME_REMEDIATION_CLOSURE_REPORT.md` 的当前 `PASS / READY_FOR_INTEGRATION=YES` 判定取代。

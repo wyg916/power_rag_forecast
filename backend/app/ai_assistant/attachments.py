@@ -38,6 +38,7 @@ MEDIA_TYPES = {
     ".xlsx": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
     ".csv": {"text/csv", "application/csv", "text/plain", "application/vnd.ms-excel"},
 }
+TERMINAL_STATUSES = {"failed", "cancelled", "deleted"}
 
 
 class AttachmentError(RuntimeError):
@@ -76,6 +77,26 @@ def _public(meta: dict[str, Any]) -> dict[str, Any]:
         "attachment_id", "session_id", "file_name", "media_type", "size_bytes", "sha256",
         "status", "parser", "created_at", "expires_at", "error", "prompt_injection_detected",
     )}
+
+
+def _discard_attachment_payload(
+    meta: dict[str, Any],
+    data_path: Path,
+    *,
+    status: str,
+    error: dict[str, str] | None = None,
+) -> None:
+    """Remove the temporary object and every parsed-content derivative."""
+    if data_path.is_file():
+        data_path.unlink()
+    meta.update(
+        status=status,
+        chunks=[],
+        properties={},
+        prompt_injection_detected=False,
+        error=error,
+        deleted_at=datetime.now(timezone.utc).isoformat(),
+    )
 
 
 def _check_zip(content: bytes) -> None:
@@ -205,7 +226,12 @@ def upload_attachment(identity: IdentityContext, *, session_id: str, file_name: 
         _write_json(meta_path, meta)
         return _public(meta)
     except AttachmentError as exc:
-        meta.update(status="failed", error={"code": exc.code, "message": exc.message})
+        _discard_attachment_payload(
+            meta,
+            data_path,
+            status="failed",
+            error={"code": exc.code, "message": exc.message},
+        )
         _write_json(meta_path, meta)
         exc.attachment_id = attachment_id
         raise
@@ -220,10 +246,13 @@ def get_attachment(identity: IdentityContext, attachment_id: str, *, session_id:
         raise AttachmentError("PERMISSION_DENIED", "无权访问该附件。", status_code=403)
     if session_id and meta.get("session_id") != session_id:
         raise AttachmentError("PERMISSION_DENIED", "附件不属于当前会话。", status_code=403)
-    if datetime.fromisoformat(meta["expires_at"]) <= datetime.now(timezone.utc) and meta.get("status") not in {"deleted", "failed"}:
-        meta.update(status="deleted", error={"code": "ATTACHMENT_EXPIRED", "message": "附件已过期。"})
-        if data_path.is_file():
-            data_path.unlink()
+    if datetime.fromisoformat(meta["expires_at"]) <= datetime.now(timezone.utc) and meta.get("status") not in TERMINAL_STATUSES:
+        _discard_attachment_payload(
+            meta,
+            data_path,
+            status="deleted",
+            error={"code": "ATTACHMENT_EXPIRED", "message": "附件已过期。"},
+        )
         _write_json(meta_path, meta)
     return meta
 
@@ -231,10 +260,9 @@ def get_attachment(identity: IdentityContext, attachment_id: str, *, session_id:
 def delete_attachment(identity: IdentityContext, attachment_id: str) -> dict[str, Any]:
     meta = get_attachment(identity, attachment_id)
     data_path, meta_path = _paths(identity, attachment_id)
-    if meta.get("status") != "deleted":
-        if data_path.is_file():
-            data_path.unlink()
-        meta.update(status="deleted", chunks=[], properties={})
+    if meta.get("status") not in {"cancelled", "deleted"}:
+        terminal_status = "cancelled" if meta.get("status") in {"uploading", "parsing"} else "deleted"
+        _discard_attachment_payload(meta, data_path, status=terminal_status)
         _write_json(meta_path, meta)
     return _public(meta)
 
@@ -245,8 +273,13 @@ def attachment_context(identity: IdentityContext, attachment_ids: list[str], *, 
     records, citations, images, texts = [], [], [], []
     for attachment_id in attachment_ids:
         meta = get_attachment(identity, attachment_id, session_id=session_id)
-        if meta.get("status") != "ready":
-            raise AttachmentError("ATTACHMENT_PARSE_FAILED", "附件尚未成功解析。", status_code=424)
+        status = str(meta.get("status") or "")
+        if status in {"deleted", "cancelled"}:
+            raise AttachmentError("ATTACHMENT_NOT_AVAILABLE", "附件已删除或取消。", status_code=410)
+        if status == "failed":
+            raise AttachmentError("ATTACHMENT_PARSE_FAILED", "附件解析失败。", status_code=424)
+        if status != "ready":
+            raise AttachmentError("ATTACHMENT_NOT_READY", "附件尚未完成解析。", status_code=409)
         records.append(_public(meta))
         for chunk in meta.get("chunks") or []:
             text = str(chunk.get("text") or "")[:12_000]

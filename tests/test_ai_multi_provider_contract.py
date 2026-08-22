@@ -59,6 +59,60 @@ def test_openai_adapter_chat_structured_tools_stream_and_health(monkeypatch):
     assert all(active.capabilities().values())
 
 
+def test_openai_adapter_normalizes_multipart_content_and_records_safe_diagnostics(monkeypatch):
+    monkeypatch.setattr(requests, "request", lambda *args, **kwargs: _Response({
+        "id": "req_remote_1",
+        "model": "test-model",
+        "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18},
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"content": [
+                {"type": "text", "text": "第一段"},
+                {"type": "output_text", "text": {"value": "第二段"}},
+            ]},
+        }],
+    }))
+    result = provider().complete([{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "describe"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,AA=="}},
+        ],
+    }])
+    assert result.content == "第一段\n第二段"
+    assert result.diagnostics["request"] == {
+        "model": "test-model",
+        "message_count": 1,
+        "content_types": ["text", "image_url"],
+        "image_count": 1,
+        "image_mimes": ["image/png"],
+        "image_url_kinds": ["data"],
+        "max_tokens": 1400,
+        "response_format": None,
+    }
+    assert result.diagnostics["response"]["content_part_types"] == ["text", "output_text"]
+    assert result.diagnostics["response"]["request_id"] == "req_remote_1"
+    assert "第一段" not in json.dumps(result.diagnostics, ensure_ascii=False)
+
+
+def test_structured_completion_reports_types_without_persisting_raw_content(monkeypatch):
+    monkeypatch.setattr(requests, "request", lambda *args, **kwargs: _Response({
+        "choices": [{"message": {"content": '{"status":null,"steps":"bad"}'}}]
+    }))
+    schema = {
+        "type": "object",
+        "required": ["status", "steps"],
+        "properties": {"status": {"type": "string"}, "steps": {"type": "array"}},
+    }
+    with pytest.raises(ProviderRequestError) as raised:
+        provider().structured_completion([], schema)
+    assert raised.value.reason == "structured_response_schema_mismatch"
+    structure = raised.value.diagnostics["structured_output"]
+    assert structure["value_types"] == {"status": "NoneType", "steps": "str"}
+    assert structure["schema_issues"] == ["$.status:type", "$.steps:type"]
+    assert "bad" not in json.dumps(raised.value.diagnostics)
+
+
 @pytest.mark.parametrize("status_code,retryable", [(400, False), (401, False), (429, True), (500, True), (503, True)])
 def test_provider_marks_only_timeout_rate_limit_and_server_errors_retryable(monkeypatch, status_code, retryable):
     monkeypatch.setattr(requests, "request", lambda *args, **kwargs: _Response(status_code=status_code))

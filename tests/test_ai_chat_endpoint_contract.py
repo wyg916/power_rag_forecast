@@ -6,6 +6,7 @@ from backend.app.api.v1.endpoints import assistant as assistant_endpoint
 from backend.app.ai.chat_memory import MemoryNotFoundError, MemoryPersistenceError
 from backend.app.ai_assistant.service import ModelProviderUnavailableError
 from backend.app.ai_assistant import attachments as attachment_store
+from backend.app.core.security import CurrentUser, get_current_user
 from backend.app.main import app
 
 
@@ -166,6 +167,8 @@ def test_ai_export_pdf_reports_unavailable():
 
 def test_ai_upload_attachment_saves_metadata(monkeypatch, tmp_path):
     monkeypatch.setattr(attachment_store, "ROOT", tmp_path)
+    audits: list[dict[str, object]] = []
+    monkeypatch.setattr(assistant_endpoint, "write_audit_log", lambda **kwargs: audits.append(kwargs) or True)
 
     response = client.post(
         "/api/ai/attachments",
@@ -181,6 +184,110 @@ def test_ai_upload_attachment_saves_metadata(monkeypatch, tmp_path):
         f"/api/ai/attachments/{payload['attachment_id']}?session_id=sess_upload"
     )
     assert detail.status_code == 200
+    assert "chunks" not in detail.json() and "properties" not in detail.json()
+    deleted = client.delete(f"/api/ai/attachments/{payload['attachment_id']}")
+    deleted_again = client.delete(f"/api/ai/attachments/{payload['attachment_id']}")
+    assert deleted.status_code == 200 and deleted.json()["status"] == "deleted"
+    assert deleted_again.status_code == 200 and deleted_again.json()["status"] == "deleted"
+    assert [item["action"] for item in audits] == [
+        "ai.attachment.upload", "ai.attachment.delete", "ai.attachment.delete"
+    ]
+    assert all("content" not in item["metadata"] for item in audits)
+
+
+def test_attachment_endpoint_enforces_jwt_user_and_tenant_scope(monkeypatch, tmp_path):
+    monkeypatch.setattr(attachment_store, "ROOT", tmp_path)
+    monkeypatch.setattr(assistant_endpoint, "write_audit_log", lambda **_kwargs: True)
+
+    def jwt_user(user_id: str, tenant_id: str) -> CurrentUser:
+        return CurrentUser(
+            user_id=user_id,
+            username=user_id,
+            role="analyst",
+            permissions=["assistant:use"],
+            auth_mode="jwt",
+            tenant_id=tenant_id,
+            workspace_id="workspace-a",
+            role_ids=("analyst",),
+        )
+
+    original = app.dependency_overrides.get(get_current_user)
+    try:
+        app.dependency_overrides[get_current_user] = lambda: jwt_user("user-a", "tenant-a")
+        uploaded = client.post(
+            "/api/ai/attachments",
+            files={"file": ("owned.txt", b"private evidence", "text/plain")},
+            data={"session_id": "sess-owned"},
+        )
+        assert uploaded.status_code == 200
+        attachment_id = uploaded.json()["attachment_id"]
+
+        app.dependency_overrides[get_current_user] = lambda: jwt_user("user-b", "tenant-a")
+        assert client.get(f"/api/ai/attachments/{attachment_id}").status_code == 404
+        assert client.delete(f"/api/ai/attachments/{attachment_id}").status_code == 404
+
+        app.dependency_overrides[get_current_user] = lambda: jwt_user("user-a", "tenant-b")
+        assert client.get(f"/api/ai/attachments/{attachment_id}").status_code == 404
+
+        app.dependency_overrides[get_current_user] = lambda: jwt_user("user-a", "tenant-a")
+        wrong_session = client.get(f"/api/ai/attachments/{attachment_id}?session_id=sess-other")
+        assert wrong_session.status_code == 403
+        assert client.get("/api/ai/attachments/att_00000000000000000000000000000000").status_code == 404
+    finally:
+        if original is None:
+            app.dependency_overrides.pop(get_current_user, None)
+        else:
+            app.dependency_overrides[get_current_user] = original
+
+
+def test_file_chat_binds_attachment_ids_returns_citation_and_rejects_deleted_reuse(monkeypatch, tmp_path):
+    monkeypatch.setattr(attachment_store, "ROOT", tmp_path)
+    monkeypatch.setattr(assistant_endpoint, "write_audit_log", lambda **_kwargs: True)
+    captured: dict[str, object] = {}
+
+    def grounded_file_answer(question, **kwargs):
+        captured["question"] = question
+        captured["attachment_ids"] = kwargs["attachment_ids"]
+        return {
+            "session_id": "sess_file",
+            "answer": "附件说明了受控结论。",
+            "citations": [],
+            "evidence_summary": [],
+            "warnings": [],
+        }
+
+    monkeypatch.setattr(assistant_endpoint, "answer_chat", grounded_file_answer)
+    uploaded = client.post(
+        "/api/ai/attachments",
+        files={"file": ("evidence.txt", b"controlled attachment evidence", "text/plain")},
+        data={"session_id": "sess_file"},
+    )
+    assert uploaded.status_code == 200
+    attachment_id = uploaded.json()["attachment_id"]
+
+    answered = client.post("/api/ai/chat", json={
+        "question": "附件说了什么？",
+        "session_id": "sess_file",
+        "mode": "file",
+        "attachment_ids": [attachment_id],
+    })
+    assert answered.status_code == 200
+    payload = answered.json()
+    assert payload["attachment_ids"] == [attachment_id]
+    assert payload["attachment_citations"][0]["attachment_id"] == attachment_id
+    assert payload["attachment_citations"][0]["file_name"] == "evidence.txt"
+    assert "controlled attachment evidence" in captured["question"]
+    assert captured["attachment_ids"] == [attachment_id]
+
+    assert client.delete(f"/api/ai/attachments/{attachment_id}").status_code == 200
+    reused = client.post("/api/ai/chat", json={
+        "question": "再次使用附件。",
+        "session_id": "sess_file",
+        "mode": "file",
+        "attachment_ids": [attachment_id],
+    })
+    assert reused.status_code == 410
+    assert reused.json()["detail"]["code"] == "ATTACHMENT_NOT_AVAILABLE"
 
 
 def test_session_crud_uses_authoritative_identity_and_hides_foreign_rows(monkeypatch):

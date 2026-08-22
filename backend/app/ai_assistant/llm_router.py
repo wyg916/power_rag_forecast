@@ -136,6 +136,7 @@ class LLMRouter:
         premium_confirmed: bool = False,
         temperature: float = 0.35,
         max_tokens: int = 1200,
+        response_format: dict[str, Any] | None = None,
     ) -> tuple[str, dict[str, Any]]:
         try:
             alias = LogicalModelAlias(logical_alias) if logical_alias else alias_for_task(
@@ -197,7 +198,14 @@ class LLMRouter:
                     latency_ms = round((time.perf_counter() - started) * 1000, 3)
                 else:
                     model = capability.model or provider.default_model
-                    result = provider.complete(messages, model=model, temperature=temperature, max_tokens=max_tokens)
+                    provider_options: dict[str, Any] = {
+                        "model": model,
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                    }
+                    if response_format is not None:
+                        provider_options["response_format"] = response_format
+                    result = provider.complete(messages, **provider_options)
                     content = result.content
                     model = getattr(result, "model", None) or model
                     input_tokens = int(getattr(result, "input_tokens", 0) or 0)
@@ -208,6 +216,10 @@ class LLMRouter:
                         "reasoning_content": getattr(result, "reasoning_content", ""),
                         "tool_calls": list(getattr(result, "tool_calls", ()) or ()),
                     }
+                    if _env("AI_PROVIDER_DIAGNOSTICS", "0") == "1":
+                        completion_meta["provider_diagnostics"] = dict(
+                            getattr(result, "diagnostics", {}) or {}
+                        )
                 input_rate = float(_env(f"AI_COST_{provider_name.upper()}_INPUT_PER_MILLION", "0") or 0)
                 output_rate = float(_env(f"AI_COST_{provider_name.upper()}_OUTPUT_PER_MILLION", "0") or 0)
                 return content, {

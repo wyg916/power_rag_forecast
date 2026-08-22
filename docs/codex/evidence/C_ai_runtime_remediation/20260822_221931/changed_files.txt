@@ -1,0 +1,9 @@
+# Changed-file scope
+
+- Backend attachment lifecycle and attachment endpoints.
+- OpenAI-compatible Provider diagnostics/content normalization and router metadata.
+- ChatBI structured-output prompt/normalization and diagnostics.
+- Offline Provider and ChatBI contract scripts.
+- C-owned backend tests, CI workflow, status/report/matrix/task status and this evidence directory.
+
+Explicitly unchanged: `frontend/**`, `prediction_engine/**`, `model_ops/**`, migrations, A/B/main, tags and production configuration.

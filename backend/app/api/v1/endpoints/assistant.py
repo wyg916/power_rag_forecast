@@ -530,20 +530,46 @@ def ai_chat_stream(
 
 @router.post("/api/ai/attachments")
 async def ai_upload_attachment(
+    request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
     file: UploadFile = File(...),
     session_id: str = Form(...),
 ) -> dict:
     content = await file.read()
     try:
-        return upload_attachment(
+        record = upload_attachment(
             _identity(user, session_id),
             session_id=session_id,
             file_name=file.filename or "attachment",
             media_type=file.content_type or "application/octet-stream",
             content=content,
         )
+        write_audit_log(
+            action="ai.attachment.upload",
+            user=user,
+            resource_type="ai_attachment",
+            resource_id=record["attachment_id"],
+            request_id=request.headers.get("X-Request-ID", ""),
+            ip_address=request.client.host if request.client else "",
+            metadata={
+                "session_id": record["session_id"],
+                "media_type": record["media_type"],
+                "size_bytes": record["size_bytes"],
+                "status": record["status"],
+            },
+        )
+        return record
     except AttachmentError as exc:
+        write_audit_log(
+            action="ai.attachment.upload",
+            user=user,
+            resource_type="ai_attachment",
+            resource_id=exc.attachment_id,
+            status="failed",
+            request_id=request.headers.get("X-Request-ID", ""),
+            ip_address=request.client.host if request.client else "",
+            metadata={"session_id": session_id, "error_code": exc.code},
+        )
         _raise_attachment_http(exc)
         raise AssertionError("unreachable")
 
@@ -569,11 +595,32 @@ def ai_get_attachment(
 @router.delete("/api/ai/attachments/{attachment_id}")
 def ai_delete_attachment(
     attachment_id: str,
+    request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("assistant:use"))],
 ) -> dict:
     try:
-        return delete_attachment(_identity(user), attachment_id)
+        record = delete_attachment(_identity(user), attachment_id)
+        write_audit_log(
+            action="ai.attachment.delete",
+            user=user,
+            resource_type="ai_attachment",
+            resource_id=attachment_id,
+            request_id=request.headers.get("X-Request-ID", ""),
+            ip_address=request.client.host if request.client else "",
+            metadata={"session_id": record["session_id"], "status": record["status"]},
+        )
+        return record
     except AttachmentError as exc:
+        write_audit_log(
+            action="ai.attachment.delete",
+            user=user,
+            resource_type="ai_attachment",
+            resource_id=attachment_id,
+            status="denied" if exc.code == "PERMISSION_DENIED" else "failed",
+            request_id=request.headers.get("X-Request-ID", ""),
+            ip_address=request.client.host if request.client else "",
+            metadata={"error_code": exc.code},
+        )
         _raise_attachment_http(exc)
         raise AssertionError("unreachable")
 

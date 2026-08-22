@@ -38,7 +38,9 @@ jobs:
       - name: AI runtime, attachment, permission and ChatBI contracts
         run: >-
           python -m pytest -q
+          tests/test_ai_chat_endpoint_contract.py
           tests/test_ai_runtime_release_contract.py
+          tests/test_ai_runtime_remediation_closure.py
           tests/test_ai_multi_provider_contract.py
           tests/test_chatbi_package1.py
           tests/test_chatbi_package2.py
@@ -46,6 +48,8 @@ jobs:
           tests/test_chatbi_package4.py
           tests/test_chatbi_package5.py
           --maxfail=1
+      - name: Offline ChatBI catalog and Golden 50 gate
+        run: python scripts/chatbi_contract_gate.py --output .ci-artifacts/chatbi-contract-gate.json
       - name: No tracked production secret files
         shell: pwsh
         run: |

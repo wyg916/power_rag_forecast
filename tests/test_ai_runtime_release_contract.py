@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import io
+import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import fitz
@@ -121,12 +123,51 @@ def test_attachment_type_parse_failure_and_idempotent_delete(monkeypatch, tmp_pa
     with pytest.raises(AttachmentError) as invalid_image:
         attachments.upload_attachment(identity(), session_id="sess-a", file_name="bad.png", media_type="image/png", content=b"not-png")
     assert invalid_image.value.code == "ATTACHMENT_PARSE_FAILED"
+    failed_id = invalid_image.value.attachment_id
+    failed_data, failed_meta = attachments._paths(identity(), failed_id)
+    assert not failed_data.exists()
+    failed_record = json.loads(failed_meta.read_text(encoding="utf-8"))
+    assert failed_record["status"] == "failed"
+    assert failed_record["chunks"] == [] and failed_record["properties"] == {}
     record = attachments.upload_attachment(identity(), session_id="sess-a", file_name="ok.txt", media_type="text/plain", content=b"ok")
     assert attachments.delete_attachment(identity(), record["attachment_id"])["status"] == "deleted"
     assert attachments.delete_attachment(identity(), record["attachment_id"])["status"] == "deleted"
+    deleted_meta = attachments.get_attachment(identity(), record["attachment_id"])
+    assert deleted_meta["chunks"] == [] and deleted_meta["properties"] == {}
+    with pytest.raises(AttachmentError) as deleted_reuse:
+        attachments.attachment_context(identity(), [record["attachment_id"]], session_id="sess-a")
+    assert deleted_reuse.value.code == "ATTACHMENT_NOT_AVAILABLE"
     with pytest.raises(AttachmentError) as traversal:
         attachments.get_attachment(identity(), "../outside")
     assert traversal.value.code == "ATTACHMENT_NOT_FOUND"
+
+
+def test_attachment_cancel_and_ttl_cleanup_are_idempotent(monkeypatch, tmp_path):
+    monkeypatch.setattr(attachments, "ROOT", tmp_path)
+    owner = identity()
+    parsing = attachments.upload_attachment(
+        owner, session_id="sess-a", file_name="parsing.txt", media_type="text/plain", content=b"pending"
+    )
+    data_path, meta_path = attachments._paths(owner, parsing["attachment_id"])
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["status"] = "parsing"
+    attachments._write_json(meta_path, meta)
+    assert attachments.delete_attachment(owner, parsing["attachment_id"])["status"] == "cancelled"
+    assert attachments.delete_attachment(owner, parsing["attachment_id"])["status"] == "cancelled"
+    assert not data_path.exists()
+
+    expired = attachments.upload_attachment(
+        owner, session_id="sess-a", file_name="expired.txt", media_type="text/plain", content=b"sensitive body"
+    )
+    expired_data, expired_meta_path = attachments._paths(owner, expired["attachment_id"])
+    expired_meta = json.loads(expired_meta_path.read_text(encoding="utf-8"))
+    expired_meta["expires_at"] = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
+    attachments._write_json(expired_meta_path, expired_meta)
+    ttl_record = attachments.get_attachment(owner, expired["attachment_id"])
+    assert ttl_record["status"] == "deleted"
+    assert ttl_record["error"]["code"] == "ATTACHMENT_EXPIRED"
+    assert ttl_record["chunks"] == [] and ttl_record["properties"] == {}
+    assert not expired_data.exists()
 
 
 def test_registry_routes_three_providers_and_requires_explicit_premium(monkeypatch):

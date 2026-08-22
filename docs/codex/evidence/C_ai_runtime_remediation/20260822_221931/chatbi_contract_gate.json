@@ -1,0 +1,617 @@
+{
+  "schema_version": "chatbi-contract-gate/v1",
+  "evaluated_at": "2026-08-22T14:44:27.162601+00:00",
+  "status": "PASS",
+  "catalog": {
+    "status": "PASS",
+    "summary": {
+      "version": "chatbi-v1.0.0",
+      "metrics": 13,
+      "dimensions": 21,
+      "joins": 2
+    },
+    "missing_contract_fields": []
+  },
+  "golden": {
+    "status": "PASS",
+    "question_count": 50,
+    "passed_count": 50,
+    "failed_count": 0,
+    "category_counts": {
+      "ambiguity": 4,
+      "chart_spec": 2,
+      "comparison": 3,
+      "contribution": 3,
+      "drill_down": 3,
+      "empty_data": 2,
+      "group_by": 4,
+      "insufficient_data": 2,
+      "multi_metric": 5,
+      "multi_turn": 2,
+      "prompt_injection": 2,
+      "ranking": 3,
+      "single_metric": 5,
+      "time_series": 4,
+      "unauthorized": 3,
+      "whitelist_join": 3
+    },
+    "required_coverage": {
+      "single_metric": 5,
+      "time_range": 7,
+      "dimension": 13,
+      "filter": 2,
+      "composite": 8,
+      "multi_turn": 2,
+      "illegal": 1,
+      "unauthorized": 3,
+      "no_data": 4,
+      "ambiguous": 4
+    },
+    "raw_sql_execution_by_llm": 0,
+    "results": [
+      {
+        "question_id": "CBI-001",
+        "category": "single_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-002",
+        "category": "single_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-003",
+        "category": "single_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-004",
+        "category": "single_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-005",
+        "category": "single_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-006",
+        "category": "multi_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-007",
+        "category": "multi_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-008",
+        "category": "multi_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-009",
+        "category": "multi_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-010",
+        "category": "multi_metric",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-011",
+        "category": "group_by",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-012",
+        "category": "group_by",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-013",
+        "category": "group_by",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-014",
+        "category": "group_by",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-015",
+        "category": "time_series",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-016",
+        "category": "time_series",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-017",
+        "category": "time_series",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-018",
+        "category": "time_series",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-019",
+        "category": "comparison",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-020",
+        "category": "comparison",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-021",
+        "category": "comparison",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-022",
+        "category": "ranking",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-023",
+        "category": "ranking",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-024",
+        "category": "ranking",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-025",
+        "category": "contribution",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-026",
+        "category": "contribution",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-027",
+        "category": "contribution",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-028",
+        "category": "drill_down",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-029",
+        "category": "drill_down",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-030",
+        "category": "drill_down",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-031",
+        "category": "whitelist_join",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-032",
+        "category": "whitelist_join",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-033",
+        "category": "whitelist_join",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-034",
+        "category": "ambiguity",
+        "status": "PASS",
+        "validation_status": "clarification_required",
+        "executable": false,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-035",
+        "category": "ambiguity",
+        "status": "PASS",
+        "validation_status": "clarification_required",
+        "executable": false,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-036",
+        "category": "ambiguity",
+        "status": "PASS",
+        "validation_status": "clarification_required",
+        "executable": false,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-037",
+        "category": "ambiguity",
+        "status": "PASS",
+        "validation_status": "clarification_required",
+        "executable": false,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-038",
+        "category": "empty_data",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-039",
+        "category": "empty_data",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-040",
+        "category": "insufficient_data",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-041",
+        "category": "insufficient_data",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-042",
+        "category": "unauthorized",
+        "status": "PASS",
+        "validation_status": "invalid",
+        "executable": false,
+        "issue_codes": [
+          "dataset_forbidden",
+          "metric_forbidden"
+        ],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-043",
+        "category": "unauthorized",
+        "status": "PASS",
+        "validation_status": "invalid",
+        "executable": false,
+        "issue_codes": [
+          "sensitive_dimension_forbidden"
+        ],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-044",
+        "category": "unauthorized",
+        "status": "PASS",
+        "validation_status": "invalid",
+        "executable": false,
+        "issue_codes": [
+          "unregistered_metric"
+        ],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-045",
+        "category": "prompt_injection",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-046",
+        "category": "prompt_injection",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-047",
+        "category": "chart_spec",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-048",
+        "category": "chart_spec",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": false,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-049",
+        "category": "multi_turn",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": true,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      },
+      {
+        "question_id": "CBI-050",
+        "category": "multi_turn",
+        "status": "PASS",
+        "validation_status": "valid",
+        "executable": true,
+        "issue_codes": [],
+        "memory_used": true,
+        "planner_source": "llm_analysis_plan",
+        "sql_contract_keys": []
+      }
+    ]
+  },
+  "catalog_snapshot": {
+    "version": "chatbi-v1.0.0",
+    "metrics": 13,
+    "dimensions": 21,
+    "joins": 2
+  }
+}
