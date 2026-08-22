@@ -29,6 +29,9 @@ export interface AssistantChatRequest {
   mode: AssistantMode;
   stream: boolean;
   requested_tier: 'standard' | 'premium';
+  premium_confirmed: boolean;
+  model_provider: 'auto' | 'kimi' | 'mimo' | 'deepseek' | 'ollama';
+  answer_style?: string;
   attachment_ids: string[];
   page_context: AssistantPageContext | null;
   knowledge_scope: KnowledgeScope;
@@ -63,6 +66,9 @@ export function buildAssistantChatRequest(
     mode: options.mode || (attachmentIds.length ? 'file' : 'general'),
     stream: options.stream ?? true,
     requested_tier: options.requested_tier || 'standard',
+    premium_confirmed: options.premium_confirmed ?? false,
+    model_provider: options.model_provider || 'auto',
+    answer_style: options.answer_style,
     attachment_ids: attachmentIds,
     page_context: options.page_context || null,
     knowledge_scope: options.knowledge_scope || (attachmentIds.length ? 'attachments' : 'none')
@@ -226,9 +232,10 @@ export async function askAssistantStream(
   };
 }
 
-export async function uploadAssistantAttachment(file: File, kind = 'attachment') {
+export async function uploadAssistantAttachment(file: File, sessionId: string, kind = 'attachment') {
   const body = new FormData();
   body.append('file', file);
+  body.append('session_id', sessionId);
   body.append('kind', kind);
   const response = await fetch(downloadUrl('/api/ai/attachments'), {
     method: 'POST',
@@ -258,8 +265,9 @@ function normalizeAttachmentRecord(payload: any, file?: File): AssistantAttachme
   };
 }
 
-export async function getAssistantAttachment(attachmentId: string) {
-  const response = await fetch(downloadUrl(`/api/ai/attachments/${encodeURIComponent(attachmentId)}`), {
+export async function getAssistantAttachment(attachmentId: string, sessionId?: string) {
+  const query = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : '';
+  const response = await fetch(downloadUrl(`/api/ai/attachments/${encodeURIComponent(attachmentId)}${query}`), {
     headers: authHeaders(false)
   });
   if (!response.ok) {

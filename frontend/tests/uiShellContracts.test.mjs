@@ -39,6 +39,35 @@ test('AttachmentComposer covers select, drag/drop, clipboard and explicit browse
   assert.match(source, /uploading.*parsing.*ready.*failed/s);
 });
 
+test('attachment uploads and polling preserve the session-scoped backend contract', async () => {
+  const [api, drawer, page] = await Promise.all([
+    read('../src/services/assistantApi.ts'),
+    read('../src/features/globalAssistant/GlobalAssistantDrawer.tsx'),
+    read('../src/pages/assistant/AssistantPage.tsx')
+  ]);
+  assert.match(api, /body\.append\('session_id', sessionId\)/);
+  assert.match(api, /\?session_id=\$\{encodeURIComponent\(sessionId\)\}/);
+  assert.match(drawer, /uploadAssistantAttachment\(file, uploadSessionId,/);
+  assert.match(page, /uploadAssistantAttachment\(file, uploadSessionId,/);
+});
+
+test('premium is forwarded only after the user explicitly selects premium mode', async () => {
+  const [page, api] = await Promise.all([
+    read('../src/pages/assistant/AssistantPage.tsx'),
+    read('../src/services/assistantApi.ts')
+  ]);
+  assert.match(page, /高阶模式（明确选择）/);
+  assert.match(page, /premium_confirmed:\s*modelProvider === 'premium'/);
+  assert.match(api, /premium_confirmed:\s*options\.premium_confirmed \?\? false/);
+});
+
+test('user cancellation has an explicit cancelled state and does not render a provider failure', async () => {
+  const page = await read('../src/pages/assistant/AssistantPage.tsx');
+  assert.match(page, /status\?: 'pending' \| 'streaming' \| 'done' \| 'cancelled' \| 'error'/);
+  assert.match(page, /cancelled \? '已停止生成。' : content/);
+  assert.match(page, /cancelled \? 'cancelled' : 'error'/);
+});
+
 test('GlobalAssistantDrawer is mounted globally and supports stop, collapse and full page navigation', async () => {
   const [drawer, layout] = await Promise.all([
     read('../src/features/globalAssistant/GlobalAssistantDrawer.tsx'),
@@ -72,4 +101,12 @@ test('known unauthorized calls are capability-gated and raw 403 details are sani
   assert.match(task, /capabilities\.canDiagnose\s*\?/);
   assert.match(api, /status === 403/);
   assert.doesNotMatch(api, /\[403\]/);
+});
+
+test('local development identities load their real permission manifest instead of bypassing RBAC', async () => {
+  const source = await read('../src/context/AuthContext.tsx');
+  assert.match(source, /if \(!token && authRequired\)/);
+  assert.doesNotMatch(source, /!authRequired \|\| resolveRouteAccess/);
+  assert.doesNotMatch(source, /!authRequired \|\| resolveChildAccess/);
+  assert.doesNotMatch(source, /!authRequired \|\| resolveActionAccess/);
 });

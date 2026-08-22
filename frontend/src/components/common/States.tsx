@@ -257,10 +257,10 @@ export function SourceContextPanel({
       <div className="source-context-panel-grid">
         <span><small>业务时间</small><b>{timeText(meta.updated_at || meta.generated_at)}</b></span>
         <span>
-          <small>当前状态</small>
+          <small>批次状态</small>
           <b>{meta.is_stale ? `已过期：${freshnessReasonText(meta.stale_reason)}` : '可用'}</b>
         </span>
-        <span><small>最后刷新</small><b>{timeText(lastRefreshedAt)}</b></span>
+        <span><small>更新时间</small><b>{timeText(lastRefreshedAt)}</b></span>
       </div>
     </section>
   );

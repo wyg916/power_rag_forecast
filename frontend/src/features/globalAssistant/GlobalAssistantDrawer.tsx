@@ -73,7 +73,7 @@ export function GlobalAssistantDrawer({
     for (let attempt = 0; attempt < 15 && !pollingTerminal.has(current.status); attempt += 1) {
       await wait(1200);
       try {
-        const record = await getAssistantAttachment(current.attachment_id);
+        const record = await getAssistantAttachment(current.attachment_id, current.session_id || state.sessionId || undefined);
         current = { ...current, ...record };
         globalAssistantStore.replaceAttachment(clientId, current);
       } catch (error) {
@@ -84,6 +84,8 @@ export function GlobalAssistantDrawer({
   }
 
   async function uploadFile(file: File, retryItem?: GlobalAssistantAttachment) {
+    const uploadSessionId = state.sessionId || messageId('sess');
+    if (!state.sessionId) globalAssistantStore.setSessionId(uploadSessionId);
     const clientId = retryItem?.client_id || messageId('attachment');
     const previewUrl = retryItem?.preview_url || (file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined);
     const pending: GlobalAssistantAttachment = {
@@ -100,7 +102,7 @@ export function GlobalAssistantDrawer({
     if (retryItem) globalAssistantStore.replaceAttachment(clientId, pending);
     else globalAssistantStore.addAttachment(pending);
     try {
-      const record = await uploadAssistantAttachment(file, file.type.startsWith('image/') ? 'image' : 'attachment');
+      const record = await uploadAssistantAttachment(file, uploadSessionId, file.type.startsWith('image/') ? 'image' : 'attachment');
       const uploaded = { ...pending, ...record };
       globalAssistantStore.replaceAttachment(clientId, uploaded);
       if (record.session_id && !state.sessionId) globalAssistantStore.setSessionId(record.session_id);

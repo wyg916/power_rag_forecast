@@ -35,13 +35,13 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 const authRequired = String(import.meta.env.VITE_AUTH_REQUIRED ?? '1') !== '0';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(Boolean(getStoredAccessToken()));
+  const [loading, setLoading] = useState(Boolean(getStoredAccessToken()) || !authRequired);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loginRequested, setLoginRequested] = useState(false);
 
   const refreshMe = useCallback(async () => {
     const token = getStoredAccessToken();
-    if (!token) {
+    if (!token && authRequired) {
       setUser(null);
       setLoading(false);
       return;
@@ -92,15 +92,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [permissions]
   );
   const canAccessRoute = useCallback(
-    (route: RouteKey) => !authRequired || resolveRouteAccess(route, permissions, capabilityManifest),
+    (route: RouteKey) => resolveRouteAccess(route, permissions, capabilityManifest),
     [permissions, capabilityManifest]
   );
   const canAccessChild = useCallback(
-    (childKey: string) => !authRequired || resolveChildAccess(childKey, permissions),
+    (childKey: string) => resolveChildAccess(childKey, permissions),
     [permissions]
   );
   const canPerformAction = useCallback(
-    (action: string) => !authRequired || resolveActionAccess(action, permissions, capabilityManifest),
+    (action: string) => resolveActionAccess(action, permissions, capabilityManifest),
     [permissions, capabilityManifest]
   );
   const permissionSnapshotHash = useMemo(() => buildPermissionSnapshotHash(permissions), [permissions]);

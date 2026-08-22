@@ -164,7 +164,7 @@ type AssistantMessage = {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
-  status?: 'pending' | 'streaming' | 'done' | 'error';
+  status?: 'pending' | 'streaming' | 'done' | 'cancelled' | 'error';
   question?: string;
   answerState?: AnswerState;
   trace?: TraceView;
@@ -705,6 +705,8 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     const options = {
       request_id: requestId,
       requested_tier: modelProvider,
+      premium_confirmed: modelProvider === 'premium',
+      answer_style: answerStyle,
       mode: answerStyle === 'chatbi' ? 'chatbi' : contextAttachments.some((item) => String(item.media_type || item.content_type || '').startsWith('image/')) ? 'vision' : contextAttachments.length ? 'file' : answerStyle === 'plain_language' ? 'general' : 'rag',
       attachment_ids: contextAttachments.filter((item) => !item.status || item.status === 'ready').map((item) => item.attachment_id),
       knowledge_scope: contextAttachments.length ? 'authorized_enterprise_and_attachments' : 'authorized_enterprise',
@@ -718,10 +720,15 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       }
     };
 
+    let controller: AbortController | null = null;
+    let timedOut = false;
     try {
-      const controller = new AbortController();
+      controller = new AbortController();
       streamControllerRef.current = controller;
-      const timer = window.setTimeout(() => controller.abort(), ASSISTANT_CHAT_TIMEOUT_MS);
+      const timer = window.setTimeout(() => {
+        timedOut = true;
+        controller?.abort();
+      }, ASSISTANT_CHAT_TIMEOUT_MS);
       let streamedText = '';
       const response = await askAssistantStream(
         text,
@@ -744,21 +751,25 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       finalizeAssistantMessage(assistantId, response, { attachments: contextAttachments, references: contextReferences });
       setAttachments([]);
     } catch (error) {
+      const cancelled = Boolean(controller?.signal.aborted && !timedOut);
       const content = assistantErrorMessage(error);
       updateAssistantMessage(assistantId, (item) => ({
         ...item,
-        content,
-        status: 'error',
+        content: cancelled ? '已停止生成。' : content,
+        status: cancelled ? 'cancelled' : 'error',
         answerState: {
-          error: error instanceof Error ? error.message : String(error || ''),
-          degraded: true,
+          error: cancelled ? undefined : error instanceof Error ? error.message : String(error || ''),
+          degraded: !cancelled,
           attachments: contextAttachments,
           references: contextReferences,
-          debugPayload: { error: error instanceof Error ? error.message : String(error || '') }
+          debugPayload: cancelled
+            ? { status: 'cancelled' }
+            : { error: error instanceof Error ? error.message : String(error || '') }
         },
         trace: emptyTrace
       }));
-      message.error('AI 助手请求失败，请稍后重试');
+      if (cancelled) message.info('已停止生成');
+      else message.error('AI 助手请求失败，请稍后重试');
     } finally {
       streamControllerRef.current = null;
       setLoading(false);
@@ -790,11 +801,11 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     setQuestionOffset((value) => (value + 4) % businessQuestions.length);
   }
 
-  async function pollPageAttachment(attachmentId: string) {
+  async function pollPageAttachment(attachmentId: string, attachmentSessionId: string) {
     for (let attempt = 0; attempt < 15; attempt += 1) {
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
       try {
-        const record = await getAssistantAttachment(attachmentId);
+        const record = await getAssistantAttachment(attachmentId, attachmentSessionId);
         setAttachments((current) => current.map((item) => item.attachment_id === attachmentId ? { ...item, ...record } : item));
         if (['ready', 'failed', 'cancelled', 'deleted'].includes(record.status)) return;
       } catch (error) {
@@ -811,14 +822,16 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       message.warning('仅支持 PNG、JPG/JPEG、WEBP、PDF、DOCX、TXT、MD、XLSX 和 CSV 文件');
     }
     if (!files.length) return;
+    const uploadSessionId = sessionId || messageId('sess');
+    if (!sessionId) setSessionId(uploadSessionId);
     setUploadingAttachment(true);
     try {
       const uploaded: AssistantAttachment[] = [];
       for (const file of files) {
-        const payload = await uploadAssistantAttachment(file, kind);
+        const payload = await uploadAssistantAttachment(file, uploadSessionId, kind);
         uploaded.push(payload);
         setAttachments((current) => [...current, payload]);
-        void pollPageAttachment(payload.attachment_id);
+        void pollPageAttachment(payload.attachment_id, uploadSessionId);
       }
       message.success(`已上传 ${uploaded.length} 个文件`);
     } catch (error) {
@@ -1043,11 +1056,12 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
                         <RobotOutlined />
                         <div className="assistant-structured-answer">
                           <div className="assistant-answer-intro">
-                            <strong>{item.status === 'pending' || item.status === 'streaming' ? '正在生成回答' : 'AI 回答'}</strong>
+                            <strong>{item.status === 'pending' || item.status === 'streaming' ? '正在生成回答' : item.status === 'cancelled' ? '已停止生成' : 'AI 回答'}</strong>
                             <Space size={6}>
                               {item.answerState?.modelFallback && <Tag color="warning">服务已降级，请复核依据</Tag>}
                               {item.status === 'streaming' && <Tag color="processing">实时输出</Tag>}
                               {item.status === 'error' && <Tag color="error">请求失败</Tag>}
+                              {item.status === 'cancelled' && <Tag>已取消</Tag>}
                               {(item.status === 'pending' || item.status === 'streaming') && <Button danger type="text" size="small" icon={<PauseCircleOutlined />} onClick={() => streamControllerRef.current?.abort()}>停止生成</Button>}
                               <Button type="text" size="small" icon={<CopyOutlined />} aria-label="复制回答" title="复制回答" onClick={() => copyText(item.content)}>复制</Button>
                             </Space>
