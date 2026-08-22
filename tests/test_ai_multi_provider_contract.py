@@ -59,6 +59,60 @@ def test_openai_adapter_chat_structured_tools_stream_and_health(monkeypatch):
     assert all(active.capabilities().values())
 
 
+def test_openai_adapter_normalizes_multipart_content_and_records_safe_diagnostics(monkeypatch):
+    monkeypatch.setattr(requests, "request", lambda *args, **kwargs: _Response({
+        "id": "req_remote_1",
+        "model": "test-model",
+        "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18},
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"content": [
+                {"type": "text", "text": "第一段"},
+                {"type": "output_text", "text": {"value": "第二段"}},
+            ]},
+        }],
+    }))
+    result = provider().complete([{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "describe"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,AA=="}},
+        ],
+    }])
+    assert result.content == "第一段\n第二段"
+    assert result.diagnostics["request"] == {
+        "model": "test-model",
+        "message_count": 1,
+        "content_types": ["text", "image_url"],
+        "image_count": 1,
+        "image_mimes": ["image/png"],
+        "image_url_kinds": ["data"],
+        "max_tokens": 1400,
+        "response_format": None,
+    }
+    assert result.diagnostics["response"]["content_part_types"] == ["text", "output_text"]
+    assert result.diagnostics["response"]["request_id"] == "req_remote_1"
+    assert "第一段" not in json.dumps(result.diagnostics, ensure_ascii=False)
+
+
+def test_structured_completion_reports_types_without_persisting_raw_content(monkeypatch):
+    monkeypatch.setattr(requests, "request", lambda *args, **kwargs: _Response({
+        "choices": [{"message": {"content": '{"status":null,"steps":"bad"}'}}]
+    }))
+    schema = {
+        "type": "object",
+        "required": ["status", "steps"],
+        "properties": {"status": {"type": "string"}, "steps": {"type": "array"}},
+    }
+    with pytest.raises(ProviderRequestError) as raised:
+        provider().structured_completion([], schema)
+    assert raised.value.reason == "structured_response_schema_mismatch"
+    structure = raised.value.diagnostics["structured_output"]
+    assert structure["value_types"] == {"status": "NoneType", "steps": "str"}
+    assert structure["schema_issues"] == ["$.status:type", "$.steps:type"]
+    assert "bad" not in json.dumps(raised.value.diagnostics)
+
+
 @pytest.mark.parametrize("status_code,retryable", [(400, False), (401, False), (429, True), (500, True), (503, True)])
 def test_provider_marks_only_timeout_rate_limit_and_server_errors_retryable(monkeypatch, status_code, retryable):
     monkeypatch.setattr(requests, "request", lambda *args, **kwargs: _Response(status_code=status_code))
@@ -90,22 +144,34 @@ class _FakeRemote:
             raise self.error
         return type("Result", (), {
             "content": f"{self.name}-answer", "finish_reason": "stop",
-            "reasoning_content": "", "tool_calls": (),
+            "reasoning_content": "", "tool_calls": (), "model": "fake",
+            "input_tokens": 10, "output_tokens": 5, "latency_ms": 1.0,
         })()
 
 
-def test_auto_falls_back_on_retryable_failure_and_records_actual_provider(monkeypatch):
+def test_general_auto_falls_back_once_from_mimo_to_deepseek(monkeypatch):
+    router = LLMRouter()
+    router._providers = {
+        "mimo": _FakeRemote("mimo", ProviderRequestError("mimo", "http_429", status_code=429, retryable=True)),
+        "deepseek": _FakeRemote("deepseek"),
+    }
+    content, status = router.generate_answer(
+        [], task_type="daily_chat", requested_provider="auto", logical_alias="GENERAL_DEFAULT"
+    )
+    assert content == "deepseek-answer"
+    assert status["provider"] == "deepseek" and status["fallback_count"] == 1
+    assert status["fallback_from"] == "mimo"
+    assert status["fallback_reason"] == "http_429"
+
+
+def test_complex_deepseek_failure_never_silently_uses_kimi():
     router = LLMRouter()
     router._providers = {
         "deepseek": _FakeRemote("deepseek", ProviderRequestError("deepseek", "http_429", status_code=429, retryable=True)),
         "kimi": _FakeRemote("kimi"),
     }
-    monkeypatch.setattr(router, "_auto_order", lambda task: ["deepseek", "kimi"])
-    monkeypatch.setattr(router, "_configured", lambda name: True)
-    content, status = router.generate_answer([], task_type="complex_analysis", requested_provider="auto")
-    assert content == "kimi-answer"
-    assert status["provider"] == "kimi" and status["fallback"] is True
-    assert status["fallback_reason"] == "http_429"
+    with pytest.raises(RuntimeError, match="http_429"):
+        router.generate_answer([], task_type="complex_analysis", requested_provider="auto")
 
 
 def test_auto_does_not_fallback_on_auth_or_contract_failure(monkeypatch):

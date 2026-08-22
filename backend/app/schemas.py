@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 from backend.app.auth.password import validate_password_length
 
@@ -47,12 +47,21 @@ class ForecastRunRequest(BaseModel):
 class ChatRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), extra="forbid")
 
-    question: str = Field(..., min_length=1, max_length=1000)
+    question: str = Field(..., min_length=1, max_length=2000, validation_alias=AliasChoices("question", "message"))
+    request_id: str | None = Field(default=None, max_length=128)
     session_id: str | None = None
     run_id: str = "latest"
     market: str | None = Field(default=None, max_length=64)
     date: str | None = Field(default=None, max_length=32)
     page_context: dict | None = None
+    mode: Literal["general", "chatbi", "rag", "file", "vision"] = "general"
+    stream: bool = False
+    requested_tier: Literal["standard", "premium"] = "standard"
+    premium_confirmed: bool = False
+    attachment_ids: list[str] = Field(default_factory=list, max_length=8)
+    knowledge_scope: Literal[
+        "none", "authorized_enterprise", "attachments", "authorized_enterprise_and_attachments"
+    ] = "none"
     scenario: str = Field(default="power_trading", max_length=64)
     user_role: str = Field(default="trader", max_length=64)
     answer_style: str = Field(default="professional_brief", max_length=64)
@@ -63,12 +72,17 @@ class ChatRequest(BaseModel):
 class AgentAnalyzeRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=(), extra="forbid")
 
-    question: str = Field(..., min_length=1, max_length=1000)
+    question: str = Field(..., min_length=1, max_length=2000, validation_alias=AliasChoices("question", "message"))
+    request_id: str | None = Field(default=None, max_length=128)
     session_id: str | None = None
     run_id: str = "latest"
     market: str | None = Field(default=None, max_length=64)
     date: str | None = Field(default=None, max_length=32)
     page_context: dict | None = None
+    mode: Literal["general", "chatbi", "rag", "file", "vision"] = "general"
+    requested_tier: Literal["standard", "premium"] = "standard"
+    premium_confirmed: bool = False
+    attachment_ids: list[str] = Field(default_factory=list, max_length=8)
     scenario: str = Field(default="power_trading", max_length=64)
     user_role: str = Field(default="trader", max_length=64)
     answer_style: str = Field(default="professional_brief", max_length=64)

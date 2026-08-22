@@ -125,6 +125,28 @@ def test_plan_parser_rejects_sql_and_unknown_contract_fields(raw: str) -> None:
         parse_analysis_plan(raw)
 
 
+def test_plan_parser_applies_one_safe_json_normalization_for_provider_variants() -> None:
+    plan = parse_analysis_plan("""```json
+    {"analysis_plan": {
+      "dataset_id": "market_price_history",
+      "metric": "avg_day_ahead_price",
+      "dimension": "market_code",
+      "filters": null,
+      "groupBy": null,
+      "orderBy": null,
+      "joins": null,
+      "chartIntent": "TABLE",
+      "analysisMode": "AGGREGATE",
+      "clarificationRequired": false
+    }}
+    ```""")
+    assert plan.datasets == ["market_price_history"]
+    assert plan.metrics == ["avg_day_ahead_price"]
+    assert plan.dimensions == ["market_code"]
+    assert plan.filters == [] and plan.group_by == [] and plan.order_by == [] and plan.joins == []
+    assert plan.chart_intent == "table" and plan.analysis_mode == "aggregate"
+
+
 def test_recall_filters_wrong_session_and_non_chatbi_memory(monkeypatch) -> None:
     expected = analysis_context(full_plan())
     items = [

@@ -1,8 +1,8 @@
 # Day 3 API 权限矩阵
 
-- 方法+路径总数：205
-- 唯一路径数：190
-- 风险分布：{'admin': 31, 'business': 109, 'public': 7, 'sensitive': 58}
+- 方法+路径总数：207
+- 唯一路径数：191
+- 风险分布：{'admin': 31, 'business': 111, 'public': 7, 'sensitive': 58}
 - 公共白名单：7
 - 规范：CSV 为机器可读事实源；本文件由脚本同步生成。
 
@@ -10,6 +10,8 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | POST | /api/ai/agent/analyze | backend.app.api.v1.endpoints.assistant | ai_agent_analyze | ai_agent_analyze | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | frontend/src/api.ts:302 | none |
 | POST | /api/ai/attachments | backend.app.api.v1.endpoints.assistant | ai_upload_attachment | ai_upload_attachment | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | frontend/src/services/assistantApi.ts:148 | none |
+| DELETE | /api/ai/attachments/{attachment_id} | backend.app.api.v1.endpoints.assistant | ai_delete_attachment | ai_delete_attachment | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | none | same-path methods=DELETE\|GET |
+| GET | /api/ai/attachments/{attachment_id} | backend.app.api.v1.endpoints.assistant | ai_get_attachment | ai_get_attachment | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | no | none | same-path methods=DELETE\|GET |
 | POST | /api/ai/chat | backend.app.api.v1.endpoints.assistant | ai_chat | ai_chat | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | frontend/src/api.ts:300 | none |
 | POST | /api/ai/chat/feedback | backend.app.api.v1.endpoints.assistant | ai_chat_feedback | ai_chat_feedback | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | yes | frontend/src/api.ts:303 | none |
 | GET | /api/ai/chat/sessions | backend.app.api.v1.endpoints.assistant | ai_chat_sessions | ai_chat_sessions | <class 'dict'> | business | auth:get_current_user\|permission:assistant:use | authenticated+permission:assistant:use | assistant:use | admin\|analyst\|developer | no | no | frontend/src/api.ts:305 | none |

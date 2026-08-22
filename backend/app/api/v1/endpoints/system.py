@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -26,6 +27,7 @@ from ....services import settings_center_service as settings_center
 from ....services.ui_platform_service import response, save_system_config, system_config_snapshot, system_health_snapshot
 from ....data_access import database_runtime_status
 from backend.app.ai_assistant.core.llm_client import get_local_llm_status
+from backend.app.ai_assistant.capability_registry import capability_manifest
 from ....services.rag_runtime_warmup import runtime_warmup_status
 
 
@@ -100,6 +102,10 @@ def security_me(user: Annotated[CurrentUser, Depends(get_current_user)]) -> dict
         "auth_mode": user.auth_mode,
         "tenant_id": user.tenant_id,
         "workspace_id": user.workspace_id,
+        "capability_manifest": {
+            **capability_manifest(user.permissions),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        },
     }
 
 

@@ -4,6 +4,18 @@ setlocal
 
 pushd "%~dp0"
 
+rem v2.12 unified runtime control. Use "legacy" only for the preserved v2.11.2 menu.
+if /I "%~1"=="legacy" (
+    shift
+    goto legacy_runtime
+)
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0run_project.ps1" %*
+set "RC_EXIT_CODE=%ERRORLEVEL%"
+popd
+exit /b %RC_EXIT_CODE%
+
+:legacy_runtime
+
 set "PYTHONUTF8=1"
 set "RC_NO_PAUSE=0"
 if "%NO_PAUSE%"=="1" set "RC_NO_PAUSE=1"

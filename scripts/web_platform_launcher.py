@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover - direct script execution
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = ROOT / "frontend"
 FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
-LOG_DIR = ROOT / "output" / "runtime_logs"
+LOG_DIR = Path(os.environ.get("RUNTIME_LOG_DIR", str(ROOT / "output" / "runtime_logs"))).resolve()
 
 
 def _configured_port(name: str, default: int) -> int:
@@ -429,10 +429,14 @@ def start_backend(py: str, sync: bool) -> bool:
             "-m",
             "uvicorn",
             "backend.app.main:app",
+            "--app-dir",
+            str(ROOT),
             "--host",
             "127.0.0.1",
             "--port",
             str(BACKEND_PORT),
+            "--log-level",
+            os.environ.get("WEB_BACKEND_LOG_LEVEL", "info"),
         ],
         ROOT,
         "web_backend.log",

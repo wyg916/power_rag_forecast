@@ -1,0 +1,10 @@
+# Commands (credentials and response bodies omitted)
+
+- Gate: `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse HEAD`, `git status --porcelain`.
+- Full diagnostic: approved E-drive Python `-m pytest -q --disable-warnings --maxfail=50`.
+- Attachment/API: targeted endpoint, lifecycle, RBAC, citation, cancel/delete/TTL and format parser tests.
+- Provider: `scripts/ai_provider_remediation_smoke.py`; initial complete matrix, then DeepSeek-only remediation replay. No key or answer body was printed.
+- ChatBI: `scripts/chatbi_contract_gate.py` plus packages 1–5.
+- Composite regression: 18 C/RBAC/ChatBI/startup files, `156 passed / 5 skipped`.
+- Startup: `run_project.ps1 status -Json`, `logs -Lines 5`, `doctor -Json`.
+- Static: compileall, `git diff --check`, Alembic heads, permission matrix `--check`, CI YAML parse, raw-SQL safety scan.

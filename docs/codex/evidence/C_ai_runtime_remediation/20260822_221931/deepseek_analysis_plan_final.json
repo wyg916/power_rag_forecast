@@ -1,0 +1,883 @@
+{
+  "schema_version": "ai-provider-remediation-smoke/v1",
+  "evaluated_at": "2026-08-22T14:42:38.464009+00:00",
+  "redaction": "No API key, prompt body, model answer, image bytes, or attachment body is persisted.",
+  "status": "PASS",
+  "checks": {
+    "deepseek_analysis_plan": {
+      "status": "PASS",
+      "elapsed_ms": 19203.793,
+      "provider": "deepseek",
+      "scenario_count": 6,
+      "passed_count": 6,
+      "raw_sql_execution_by_llm": 0,
+      "scenarios": [
+        {
+          "scenario": "single_metric",
+          "status": "PASS",
+          "schema_valid": true,
+          "executable": true,
+          "issue_codes": [],
+          "plan_summary": {
+            "datasets": [
+              "market_price_history"
+            ],
+            "metrics": [
+              "avg_day_ahead_price"
+            ],
+            "dimensions": [],
+            "filter_dimensions": [],
+            "time_range_present": false,
+            "time_grain": null,
+            "clarification_required": false,
+            "forbidden_sql_keys": []
+          },
+          "metadata": {
+            "provider": "deepseek",
+            "model": "deepseek-v4-flash",
+            "fallback": false,
+            "finish_reason": "stop",
+            "provider_diagnostics": {
+              "request": {
+                "model": "deepseek-chat",
+                "message_count": 2,
+                "content_types": [
+                  "text",
+                  "text"
+                ],
+                "image_count": 0,
+                "image_mimes": [],
+                "image_url_kinds": [],
+                "max_tokens": 1800,
+                "response_format": "json_object"
+              },
+              "response": {
+                "http_status": 200,
+                "request_id": "9d8743b1-e351-4a4e-b236-487643e150a7",
+                "body_keys": [
+                  "choices",
+                  "created",
+                  "id",
+                  "model",
+                  "object",
+                  "system_fingerprint",
+                  "usage"
+                ],
+                "choice_count": 1,
+                "message_keys": [
+                  "content",
+                  "role"
+                ],
+                "content_type": "str",
+                "content_part_types": [
+                  "text"
+                ],
+                "reasoning_part_types": [
+                  "NoneType"
+                ],
+                "content_chars": 336,
+                "reasoning_chars": 0,
+                "finish_reason": "stop",
+                "usage": {
+                  "prompt_tokens": 2478,
+                  "completion_tokens": 97,
+                  "total_tokens": 2575
+                }
+              }
+            },
+            "raw_response_structure": {
+              "content_chars": 336,
+              "markdown_fence": false,
+              "json_object_bounds": true,
+              "json_valid": true,
+              "root_type": "object",
+              "root_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "envelope": null,
+              "payload_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "value_types": {
+                "datasets": "list",
+                "metrics": "list",
+                "dimensions": "list",
+                "filters": "list",
+                "time_range": "NoneType",
+                "time_grain": "NoneType",
+                "comparison": "NoneType",
+                "group_by": "list",
+                "order_by": "list",
+                "limit": "int",
+                "joins": "list",
+                "drill_level": "NoneType",
+                "chart_intent": "str",
+                "analysis_mode": "str",
+                "clarification_required": "bool",
+                "clarification_question": "NoneType"
+              },
+              "null_fields": [
+                "clarification_question",
+                "comparison",
+                "drill_level",
+                "time_grain",
+                "time_range"
+              ],
+              "alias_keys": [],
+              "enum_fields": {
+                "time_grain": null,
+                "comparison": null,
+                "chart_intent": "table",
+                "analysis_mode": "aggregate"
+              }
+            },
+            "repair_attempted": false
+          }
+        },
+        {
+          "scenario": "time_range",
+          "status": "PASS",
+          "schema_valid": true,
+          "executable": true,
+          "issue_codes": [],
+          "plan_summary": {
+            "datasets": [
+              "market_price_history"
+            ],
+            "metrics": [
+              "avg_day_ahead_price"
+            ],
+            "dimensions": [
+              "market_observed_at"
+            ],
+            "filter_dimensions": [],
+            "time_range_present": true,
+            "time_grain": "day",
+            "clarification_required": false,
+            "forbidden_sql_keys": []
+          },
+          "metadata": {
+            "provider": "deepseek",
+            "model": "deepseek-v4-flash",
+            "fallback": false,
+            "finish_reason": "stop",
+            "provider_diagnostics": {
+              "request": {
+                "model": "deepseek-chat",
+                "message_count": 2,
+                "content_types": [
+                  "text",
+                  "text"
+                ],
+                "image_count": 0,
+                "image_mimes": [],
+                "image_url_kinds": [],
+                "max_tokens": 1800,
+                "response_format": "json_object"
+              },
+              "response": {
+                "http_status": 200,
+                "request_id": "ff93674d-12fa-44b6-98dd-1b2622f56d66",
+                "body_keys": [
+                  "choices",
+                  "created",
+                  "id",
+                  "model",
+                  "object",
+                  "system_fingerprint",
+                  "usage"
+                ],
+                "choice_count": 1,
+                "message_keys": [
+                  "content",
+                  "role"
+                ],
+                "content_type": "str",
+                "content_part_types": [
+                  "text"
+                ],
+                "reasoning_part_types": [
+                  "NoneType"
+                ],
+                "content_chars": 461,
+                "reasoning_chars": 0,
+                "finish_reason": "stop",
+                "usage": {
+                  "prompt_tokens": 2497,
+                  "completion_tokens": 135,
+                  "total_tokens": 2632
+                }
+              }
+            },
+            "raw_response_structure": {
+              "content_chars": 461,
+              "markdown_fence": false,
+              "json_object_bounds": true,
+              "json_valid": true,
+              "root_type": "object",
+              "root_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "envelope": null,
+              "payload_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "value_types": {
+                "datasets": "list",
+                "metrics": "list",
+                "dimensions": "list",
+                "filters": "list",
+                "time_range": "dict",
+                "time_grain": "str",
+                "comparison": "NoneType",
+                "group_by": "list",
+                "order_by": "list",
+                "limit": "int",
+                "joins": "list",
+                "drill_level": "NoneType",
+                "chart_intent": "str",
+                "analysis_mode": "str",
+                "clarification_required": "bool",
+                "clarification_question": "NoneType"
+              },
+              "null_fields": [
+                "clarification_question",
+                "comparison",
+                "drill_level"
+              ],
+              "alias_keys": [],
+              "enum_fields": {
+                "time_grain": "day",
+                "comparison": null,
+                "chart_intent": "line",
+                "analysis_mode": "aggregate"
+              }
+            },
+            "repair_attempted": false
+          }
+        },
+        {
+          "scenario": "dimension",
+          "status": "PASS",
+          "schema_valid": true,
+          "executable": true,
+          "issue_codes": [],
+          "plan_summary": {
+            "datasets": [
+              "market_price_history"
+            ],
+            "metrics": [
+              "avg_day_ahead_price"
+            ],
+            "dimensions": [
+              "market_code"
+            ],
+            "filter_dimensions": [],
+            "time_range_present": false,
+            "time_grain": null,
+            "clarification_required": false,
+            "forbidden_sql_keys": []
+          },
+          "metadata": {
+            "provider": "deepseek",
+            "model": "deepseek-v4-flash",
+            "fallback": false,
+            "finish_reason": "stop",
+            "provider_diagnostics": {
+              "request": {
+                "model": "deepseek-chat",
+                "message_count": 2,
+                "content_types": [
+                  "text",
+                  "text"
+                ],
+                "image_count": 0,
+                "image_mimes": [],
+                "image_url_kinds": [],
+                "max_tokens": 1800,
+                "response_format": "json_object"
+              },
+              "response": {
+                "http_status": 200,
+                "request_id": "ba951ae6-7942-44f6-9435-8c35eeddd3f1",
+                "body_keys": [
+                  "choices",
+                  "created",
+                  "id",
+                  "model",
+                  "object",
+                  "system_fingerprint",
+                  "usage"
+                ],
+                "choice_count": 1,
+                "message_keys": [
+                  "content",
+                  "role"
+                ],
+                "content_type": "str",
+                "content_part_types": [
+                  "text"
+                ],
+                "reasoning_part_types": [
+                  "NoneType"
+                ],
+                "content_chars": 362,
+                "reasoning_chars": 0,
+                "finish_reason": "stop",
+                "usage": {
+                  "prompt_tokens": 2483,
+                  "completion_tokens": 103,
+                  "total_tokens": 2586
+                }
+              }
+            },
+            "raw_response_structure": {
+              "content_chars": 362,
+              "markdown_fence": false,
+              "json_object_bounds": true,
+              "json_valid": true,
+              "root_type": "object",
+              "root_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "envelope": null,
+              "payload_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "value_types": {
+                "datasets": "list",
+                "metrics": "list",
+                "dimensions": "list",
+                "filters": "list",
+                "time_range": "NoneType",
+                "time_grain": "NoneType",
+                "comparison": "NoneType",
+                "group_by": "list",
+                "order_by": "list",
+                "limit": "int",
+                "joins": "list",
+                "drill_level": "NoneType",
+                "chart_intent": "str",
+                "analysis_mode": "str",
+                "clarification_required": "bool",
+                "clarification_question": "NoneType"
+              },
+              "null_fields": [
+                "clarification_question",
+                "comparison",
+                "drill_level",
+                "time_grain",
+                "time_range"
+              ],
+              "alias_keys": [],
+              "enum_fields": {
+                "time_grain": null,
+                "comparison": null,
+                "chart_intent": "table",
+                "analysis_mode": "aggregate"
+              }
+            },
+            "repair_attempted": false
+          }
+        },
+        {
+          "scenario": "filter",
+          "status": "PASS",
+          "schema_valid": true,
+          "executable": true,
+          "issue_codes": [],
+          "plan_summary": {
+            "datasets": [
+              "market_price_history"
+            ],
+            "metrics": [
+              "avg_day_ahead_price"
+            ],
+            "dimensions": [
+              "market_observed_at",
+              "market_code"
+            ],
+            "filter_dimensions": [
+              "market_code"
+            ],
+            "time_range_present": false,
+            "time_grain": null,
+            "clarification_required": false,
+            "forbidden_sql_keys": []
+          },
+          "metadata": {
+            "provider": "deepseek",
+            "model": "deepseek-v4-flash",
+            "fallback": false,
+            "finish_reason": "stop",
+            "provider_diagnostics": {
+              "request": {
+                "model": "deepseek-chat",
+                "message_count": 2,
+                "content_types": [
+                  "text",
+                  "text"
+                ],
+                "image_count": 0,
+                "image_mimes": [],
+                "image_url_kinds": [],
+                "max_tokens": 1800,
+                "response_format": "json_object"
+              },
+              "response": {
+                "http_status": 200,
+                "request_id": "1e6e5cab-34a3-484e-a9a6-471d53163165",
+                "body_keys": [
+                  "choices",
+                  "created",
+                  "id",
+                  "model",
+                  "object",
+                  "system_fingerprint",
+                  "usage"
+                ],
+                "choice_count": 1,
+                "message_keys": [
+                  "content",
+                  "role"
+                ],
+                "content_type": "str",
+                "content_part_types": [
+                  "text"
+                ],
+                "reasoning_part_types": [
+                  "NoneType"
+                ],
+                "content_chars": 427,
+                "reasoning_chars": 0,
+                "finish_reason": "stop",
+                "usage": {
+                  "prompt_tokens": 2481,
+                  "completion_tokens": 119,
+                  "total_tokens": 2600
+                }
+              }
+            },
+            "raw_response_structure": {
+              "content_chars": 427,
+              "markdown_fence": false,
+              "json_object_bounds": true,
+              "json_valid": true,
+              "root_type": "object",
+              "root_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "envelope": null,
+              "payload_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "value_types": {
+                "datasets": "list",
+                "metrics": "list",
+                "dimensions": "list",
+                "filters": "list",
+                "time_range": "NoneType",
+                "time_grain": "NoneType",
+                "comparison": "NoneType",
+                "group_by": "list",
+                "order_by": "list",
+                "limit": "int",
+                "joins": "list",
+                "drill_level": "NoneType",
+                "chart_intent": "str",
+                "analysis_mode": "str",
+                "clarification_required": "bool",
+                "clarification_question": "NoneType"
+              },
+              "null_fields": [
+                "clarification_question",
+                "comparison",
+                "drill_level",
+                "time_grain",
+                "time_range"
+              ],
+              "alias_keys": [],
+              "enum_fields": {
+                "time_grain": null,
+                "comparison": null,
+                "chart_intent": "table",
+                "analysis_mode": "aggregate"
+              }
+            },
+            "repair_attempted": false
+          }
+        },
+        {
+          "scenario": "illegal_field",
+          "status": "PASS",
+          "schema_valid": true,
+          "executable": false,
+          "issue_codes": [],
+          "plan_summary": {
+            "datasets": [],
+            "metrics": [],
+            "dimensions": [],
+            "filter_dimensions": [],
+            "time_range_present": false,
+            "time_grain": null,
+            "clarification_required": true,
+            "forbidden_sql_keys": []
+          },
+          "metadata": {
+            "provider": "deepseek",
+            "model": "deepseek-v4-flash",
+            "fallback": false,
+            "finish_reason": "stop",
+            "provider_diagnostics": {
+              "request": {
+                "model": "deepseek-chat",
+                "message_count": 2,
+                "content_types": [
+                  "text",
+                  "text"
+                ],
+                "image_count": 0,
+                "image_mimes": [],
+                "image_url_kinds": [],
+                "max_tokens": 1800,
+                "response_format": "json_object"
+              },
+              "response": {
+                "http_status": 200,
+                "request_id": "6bc94100-db73-4afa-97ca-161c7e0dc7a3",
+                "body_keys": [
+                  "choices",
+                  "created",
+                  "id",
+                  "model",
+                  "object",
+                  "system_fingerprint",
+                  "usage"
+                ],
+                "choice_count": 1,
+                "message_keys": [
+                  "content",
+                  "role"
+                ],
+                "content_type": "str",
+                "content_part_types": [
+                  "text"
+                ],
+                "reasoning_part_types": [
+                  "NoneType"
+                ],
+                "content_chars": 199,
+                "reasoning_chars": 0,
+                "finish_reason": "stop",
+                "usage": {
+                  "prompt_tokens": 2483,
+                  "completion_tokens": 93,
+                  "total_tokens": 2576
+                }
+              }
+            },
+            "raw_response_structure": {
+              "content_chars": 199,
+              "markdown_fence": false,
+              "json_object_bounds": true,
+              "json_valid": true,
+              "root_type": "object",
+              "root_keys": [
+                "clarification_question",
+                "clarification_required"
+              ],
+              "envelope": null,
+              "payload_keys": [
+                "clarification_question",
+                "clarification_required"
+              ],
+              "value_types": {
+                "clarification_required": "bool",
+                "clarification_question": "str"
+              },
+              "null_fields": [],
+              "alias_keys": [],
+              "enum_fields": {}
+            },
+            "repair_attempted": false
+          }
+        },
+        {
+          "scenario": "unauthorized_dataset",
+          "status": "PASS",
+          "schema_valid": true,
+          "executable": false,
+          "issue_codes": [
+            "dataset_forbidden",
+            "metric_forbidden"
+          ],
+          "plan_summary": {
+            "datasets": [
+              "market_price_history"
+            ],
+            "metrics": [
+              "avg_day_ahead_price"
+            ],
+            "dimensions": [],
+            "filter_dimensions": [],
+            "time_range_present": false,
+            "time_grain": null,
+            "clarification_required": false,
+            "forbidden_sql_keys": []
+          },
+          "metadata": {
+            "provider": "deepseek",
+            "model": "deepseek-v4-flash",
+            "fallback": false,
+            "finish_reason": "stop",
+            "provider_diagnostics": {
+              "request": {
+                "model": "deepseek-chat",
+                "message_count": 2,
+                "content_types": [
+                  "text",
+                  "text"
+                ],
+                "image_count": 0,
+                "image_mimes": [],
+                "image_url_kinds": [],
+                "max_tokens": 1800,
+                "response_format": "json_object"
+              },
+              "response": {
+                "http_status": 200,
+                "request_id": "55d7fe25-f8c4-4f0f-82f0-721b0b92792e",
+                "body_keys": [
+                  "choices",
+                  "created",
+                  "id",
+                  "model",
+                  "object",
+                  "system_fingerprint",
+                  "usage"
+                ],
+                "choice_count": 1,
+                "message_keys": [
+                  "content",
+                  "role"
+                ],
+                "content_type": "str",
+                "content_part_types": [
+                  "text"
+                ],
+                "reasoning_part_types": [
+                  "NoneType"
+                ],
+                "content_chars": 336,
+                "reasoning_chars": 0,
+                "finish_reason": "stop",
+                "usage": {
+                  "prompt_tokens": 2478,
+                  "completion_tokens": 97,
+                  "total_tokens": 2575
+                }
+              }
+            },
+            "raw_response_structure": {
+              "content_chars": 336,
+              "markdown_fence": false,
+              "json_object_bounds": true,
+              "json_valid": true,
+              "root_type": "object",
+              "root_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "envelope": null,
+              "payload_keys": [
+                "analysis_mode",
+                "chart_intent",
+                "clarification_question",
+                "clarification_required",
+                "comparison",
+                "datasets",
+                "dimensions",
+                "drill_level",
+                "filters",
+                "group_by",
+                "joins",
+                "limit",
+                "metrics",
+                "order_by",
+                "time_grain",
+                "time_range"
+              ],
+              "value_types": {
+                "datasets": "list",
+                "metrics": "list",
+                "dimensions": "list",
+                "filters": "list",
+                "time_range": "NoneType",
+                "time_grain": "NoneType",
+                "comparison": "NoneType",
+                "group_by": "list",
+                "order_by": "list",
+                "limit": "int",
+                "joins": "list",
+                "drill_level": "NoneType",
+                "chart_intent": "str",
+                "analysis_mode": "str",
+                "clarification_required": "bool",
+                "clarification_question": "NoneType"
+              },
+              "null_fields": [
+                "clarification_question",
+                "comparison",
+                "drill_level",
+                "time_grain",
+                "time_range"
+              ],
+              "alias_keys": [],
+              "enum_fields": {
+                "time_grain": null,
+                "comparison": null,
+                "chart_intent": "table",
+                "analysis_mode": "aggregate"
+              }
+            },
+            "repair_attempted": false
+          }
+        }
+      ]
+    }
+  }
+}
