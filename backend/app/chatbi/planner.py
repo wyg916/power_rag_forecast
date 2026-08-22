@@ -154,7 +154,9 @@ def _normalize_plan_payload(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(normalized.get(key), str):
             normalized[key] = [normalized[key]]
     for key in ("filters", "group_by", "order_by", "joins"):
-        if normalized.get(key) is None:
+        # Preserve omission so the multi-turn merge can safely restore only
+        # verified session context; normalize only an explicitly supplied null.
+        if key in normalized and normalized[key] is None:
             normalized[key] = []
     for key in ("time_grain", "comparison", "chart_intent", "analysis_mode"):
         if isinstance(normalized.get(key), str):
