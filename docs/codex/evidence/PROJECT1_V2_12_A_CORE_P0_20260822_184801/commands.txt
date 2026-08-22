@@ -1,0 +1,21 @@
+git rev-parse --show-toplevel
+git branch --show-current
+git rev-parse HEAD
+git status --porcelain=v1
+git check-ignore --quiet -- .env
+E:/智能运营分析项目/.venv/Scripts/python.exe --version
+E:/智能运营分析项目/.venv/Scripts/python.exe -c <dependency-import-check>
+pg_dump --schema-only --no-owner --no-privileges <approved-local-postgresql>
+SQLAlchemy read-only table/schema/model/input/run consistency probes
+run_price_predict baseline reproduction with approved local runtime config
+rg/get-content targeted source and test inspection
+正式 Celery worker：专用 queue `project1_v212_a_core_p0`，solo concurrency=1，唯一 nodename
+POST /api/forecast/run：真实提交并轮询 PENDING -> RUNNING -> SUCCESS
+PostgreSQL：核对 model_registry、forecast_input_batches/snapshots、forecast_runs/results、task_runs/logs
+PostgreSQL：缺特征、artifact hash、Active 缺失、行 12 故障注入，均验证 0 结果
+POST /api/forecast/run：同一 idempotency_key 重复提交，计数 1/24/1/24 不变
+报告/策略：生成、重复 submit、异人 approve、historical publish 拒绝
+worker 停止/重启后：11 个预测/任务/报告/策略/首页 API 两轮回读
+pytest -q -m 'not integration' <A 定向测试集> => 110 passed, 9 skipped, 1 deselected
+python ast.parse <11 changed Python files> => PASS
+git diff --check => PASS

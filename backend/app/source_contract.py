@@ -364,7 +364,10 @@ def resolve_forecast_source(
         )
         return run, [], meta
 
-    historical = bool(latest and resolved_run_id != str(latest.get("run_id")))
+    declared_source = str(run.get("source_type") or "").strip().lower()
+    historical = declared_source == SourceType.HISTORICAL.value or bool(
+        latest and resolved_run_id != str(latest.get("run_id"))
+    )
     is_stale, stale_reason, expected_refresh_at = _forecast_stale(run, historical=historical)
     meta = source_meta(
         SourceType.HISTORICAL if historical else SourceType.REAL,

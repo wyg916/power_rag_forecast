@@ -72,12 +72,15 @@ def run_forecast(
     user: Annotated[CurrentUser, Depends(require_permission("forecast:run"))],
 ) -> dict:
     mapping = {
-        "fast_forecast": "fast_forecast",
-        "refresh_fast_forecast": "today_analysis",
+        "fast_forecast": "forecast_run",
+        "refresh_fast_forecast": "forecast_run",
         "retrain_model": "retrain_model",
     }
+    task_payload = {}
+    if payload.idempotency_key:
+        task_payload["idempotency_key"] = payload.idempotency_key
     try:
-        result = enqueue_task(mapping[payload.mode])
+        result = enqueue_task(mapping[payload.mode], task_payload)
     except RuntimeError as exc:
         raise HTTPException(
             status_code=503,
