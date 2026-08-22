@@ -143,6 +143,7 @@ export function KnowledgeBasePage(_: PageProps) {
   const { hasPermission } = useAuth();
   const canWriteKnowledge = hasPermission('knowledge:write');
   const canPublishKnowledge = hasPermission('knowledge:publish');
+  const canExportKnowledge = hasPermission('knowledge:export');
   const [error, setError] = useState('');
   const [query, setQuery] = useState('分时电价、现货交易风险和购电建议是什么？');
   const [topK, setTopK] = useState(5);
@@ -357,8 +358,7 @@ export function KnowledgeBasePage(_: PageProps) {
             icon: <SyncOutlined />,
             type: 'primary',
             loading,
-            disabled: !canWriteKnowledge,
-            disabledReason: '需要 knowledge:write 权限',
+            hidden: !canWriteKnowledge,
             onClick: rebuildIndex
           },
           {
@@ -366,15 +366,13 @@ export function KnowledgeBasePage(_: PageProps) {
             label: '刷新 Embedding',
             icon: <ReloadOutlined />,
             loading,
-            disabled: !canWriteKnowledge,
-            disabledReason: '需要 knowledge:write 权限',
+            hidden: !canWriteKnowledge,
             onClick: refreshEmbeddings
           },
-          { key: 'validate', label: '批量校验', icon: <SafetyCertificateOutlined />, loading: searching, collapseAtNarrow: true, onClick: batchValidate },
-          { key: 'export', label: '导出结果', icon: <DownloadOutlined />, collapseAtNarrow: true, onClick: exportResult }
+          { key: 'validate', label: '批量校验', icon: <SafetyCertificateOutlined />, loading: searching, collapseAtNarrow: true, hidden: !canWriteKnowledge, onClick: batchValidate },
+          { key: 'export', label: '导出结果', icon: <DownloadOutlined />, collapseAtNarrow: true, hidden: !canExportKnowledge, onClick: exportResult }
         ]}
-        extra={<Upload
-          disabled={!canWriteKnowledge}
+        extra={canWriteKnowledge ? <Upload
           showUploadList={false}
           beforeUpload={(file) => {
             uploadDocument(file as File);
@@ -382,8 +380,8 @@ export function KnowledgeBasePage(_: PageProps) {
           }}
           accept=".txt,.md,.csv,.json"
         >
-          <Button className="knowledge-upload-button" disabled={!canWriteKnowledge} title={!canWriteKnowledge ? '需要 knowledge:write 权限' : undefined} icon={<CloudUploadOutlined />}>上传文档</Button>
-        </Upload>}
+          <Button className="knowledge-upload-button" icon={<CloudUploadOutlined />}>上传文档</Button>
+        </Upload> : null}
       />
       <div className="knowledge-top-workspace">
         <SectionCard title="索引状态" className="knowledge-flow-card knowledge-flow-card-top" compact>
@@ -446,13 +444,11 @@ export function KnowledgeBasePage(_: PageProps) {
                 render: (_, record: any) => (
                   <Space size={4}>
                     <Button type="link" size="small" onClick={() => { setDetailData(record.raw || record); setDetailOpen(true); }}>详情</Button>
-                    <Button
+                    {canWriteKnowledge ? <Button
                       type="link"
                       size="small"
-                      disabled={!canWriteKnowledge}
-                      title={!canWriteKnowledge ? '需要 knowledge:write 权限' : undefined}
                       onClick={rebuildIndex}
-                    >重新索引</Button>
+                    >重新索引</Button> : null}
                   </Space>
                 )
               }
@@ -499,7 +495,6 @@ export function KnowledgeBasePage(_: PageProps) {
               {activeRelease ? (
                 <>
                   <dl>
-                    <div><dt>版本</dt><dd>{activeRelease.release_id}</dd></div>
                     <div><dt>门禁</dt><dd>{activeRelease.gates.passed}/{activeRelease.gates.total}</dd></div>
                     <div><dt>台账</dt><dd>{formatNumber(releaseLedgerCount)}/{formatNumber(releaseLedgerCount)}</dd></div>
                     <div><dt>可发布</dt><dd>{formatNumber(activeRelease.documents)}</dd></div>
@@ -508,29 +503,27 @@ export function KnowledgeBasePage(_: PageProps) {
                     <div><dt>知识片段</dt><dd>{formatNumber(activeRelease.chunks)}</dd></div>
                   </dl>
                   <Space className="knowledge-release-actions" wrap>
-                    {(activeRelease.status === 'candidate' || activeRelease.status === 'rolled_back') && (
+                    {canPublishKnowledge && (activeRelease.status === 'candidate' || activeRelease.status === 'rolled_back') && (
                       <Button
                         size="small"
-                        disabled={!canPublishKnowledge || !activeRelease.gates.ready}
+                        disabled={!activeRelease.gates.ready}
                         loading={releaseActionLoading === `${activeRelease.release_id}:validate`}
-                        title={!canPublishKnowledge ? '需要 knowledge:publish 权限' : !activeRelease.gates.ready ? '全部发布门禁通过后才可校验' : undefined}
+                        title={!activeRelease.gates.ready ? '全部发布门禁通过后才可校验' : undefined}
                         onClick={() => runReleaseAction(activeRelease, 'validate')}
                       >校验版本</Button>
                     )}
-                    {activeRelease.status === 'validated' && (
+                    {canPublishKnowledge && activeRelease.status === 'validated' && (
                       <Button
                         type="primary"
                         size="small"
-                        disabled={!canPublishKnowledge}
                         loading={releaseActionLoading === `${activeRelease.release_id}:publish`}
                         onClick={() => runReleaseAction(activeRelease, 'publish')}
                       >发布版本</Button>
                     )}
-                    {activeRelease.status === 'published' && activeRelease.is_current && (
+                    {canPublishKnowledge && activeRelease.status === 'published' && activeRelease.is_current && (
                       <Button
                         danger
                         size="small"
-                        disabled={!canPublishKnowledge}
                         loading={releaseActionLoading === `${activeRelease.release_id}:rollback`}
                         onClick={() => runReleaseAction(activeRelease, 'rollback')}
                       >回滚版本</Button>

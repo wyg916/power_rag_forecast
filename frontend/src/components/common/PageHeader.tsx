@@ -14,6 +14,7 @@ export interface PageHeaderAction {
   type?: 'primary' | 'default' | 'text' | 'link';
   collapseAtNarrow?: boolean;
   disabledReason?: string;
+  hidden?: boolean;
 }
 
 export interface PageHeaderProps {
@@ -57,8 +58,9 @@ export function PageHeader({
   moreLabel = '更多',
   className
 }: PageHeaderProps) {
-  const visibleActions = actions.filter((action) => !action.collapseAtNarrow);
-  const collapsibleActions = actions.filter((action) => action.collapseAtNarrow);
+  const permittedActions = actions.filter((action) => !action.hidden);
+  const visibleActions = permittedActions.filter((action) => !action.collapseAtNarrow);
+  const collapsibleActions = permittedActions.filter((action) => action.collapseAtNarrow);
   const moreItems: MenuProps['items'] = collapsibleActions.map((action) => ({
     key: action.key,
     label: action.label,
@@ -78,14 +80,15 @@ export function PageHeader({
             <h1 title={title}>{title}</h1>
           </div>
         </div>
-        {subtitle && <p className="page-subtitle">{subtitle}</p>}
+        {/* 页面副标题不进入默认业务标题区；必要说明应放入对应业务状态或详情。 */}
+        {void subtitle}
         {navigation && <nav className="page-heading-navigation" aria-label={`${title}子页面导航`}>{navigation}</nav>}
       </div>
-      {(metadata || filters || actions.length || extra) && (
+      {(metadata || filters || permittedActions.length || extra) && (
         <div className="page-heading-utility">
           {metadata && <div className="page-heading-context">{metadata}</div>}
           {filters && <div className="page-heading-filters">{filters}</div>}
-          {(actions.length || extra) && (
+          {(permittedActions.length || extra) && (
             <Space className="page-heading-actions" size={8}>
               {visibleActions.map((action) => <HeaderActionButton key={action.key} action={action} />)}
               {collapsibleActions.map((action) => (

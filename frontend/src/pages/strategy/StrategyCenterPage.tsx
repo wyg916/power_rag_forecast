@@ -82,7 +82,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     canReview: allowed('strategy:review'),
     canPublish: allowed('strategy:publish')
   };
-  const canConfigure = allowed('task:run');
+  const canConfigure = allowed('strategy:manage');
   const mode = useMemo<'overview' | 'storage' | 'review'>(() => {
     if (activeSubKey === 'strategy-review') return 'review';
     if (activeSubKey === 'strategy-low' || activeSubKey === 'strategy-storage') return 'storage';
@@ -235,8 +235,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         label: '策略配置',
         icon: <SettingOutlined />,
         collapseAtNarrow: true,
-        disabled: !canConfigure,
-        disabledReason: '缺少 task:run 权限，不能修改运行时策略配置',
+        hidden: !canConfigure,
         onClick: () => setConfigOpen(true)
       });
     }
@@ -279,36 +278,13 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       <PageHeader
         title="策略中心"
         subtitle={strategySubtitle}
-        navigation={<div className="strategy-page-tabs"><PageTabs items={strategyTabs} activeKey={activeTabKey} onChange={handleStrategyTabChange} /></div>}
+        navigation={<div className="strategy-page-tabs"><PageTabs items={strategyTabs.filter((item) => item.key !== 'strategy-review' || reviewPermissions.canReview)} activeKey={activeTabKey} onChange={handleStrategyTabChange} /></div>}
         className="strategy-page-header"
         metadata={(
           <div className="strategy-header-metadata">
             <span><small>{mode === 'review' ? '复核日期' : '策略日期'}</small><strong>{data?.strategyDate || '--'}</strong></span>
-            <span><small>策略版本</small><strong>{data?.strategyVersion || '--'}</strong></span>
-            <span><small>模型版本</small><strong>{data?.modelVersion || '--'}</strong></span>
-            <span className="strategy-meta-run">
-              <small>run_id</small>
-              <Tooltip title={data?.runId || '当前接口未提供 run_id'}><strong>{data?.runId || '--'}</strong></Tooltip>
-            </span>
-            <span className="strategy-meta-run">
-              <small>事实批次</small>
-              <Tooltip title={data?.runtimeBatchId || '当前无运行事实批次'}><strong>{data?.runtimeBatchId || '--'}</strong></Tooltip>
-            </span>
-            <span>
-              <small>生成时间</small>
-              <strong>{displayTimestamp(data?.generatedAt)}</strong>
-            </span>
-            <span><small>批次状态</small><Tag color={data?.isStale ? 'warning' : 'success'}>{data?.isStale ? '适用窗口已结束' : '可用'}</Tag></span>
+            <span><small>业务状态</small><Tag color={data?.isStale ? 'warning' : 'success'}>{data?.isStale ? '仅供复盘' : '可用'}</Tag></span>
             <span><small>审核状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
-            <span className="strategy-meta-run"><small>适用窗口</small><Tooltip title={`${data?.strategyValidFrom || '--'} 至 ${data?.strategyValidTo || '--'}`}><strong>{data?.strategyValidFrom && data?.strategyValidTo ? `${String(data.strategyValidFrom).slice(5, 16)} 至 ${String(data.strategyValidTo).slice(5, 16)}` : '--'}</strong></Tooltip></span>
-            {data?.isStale && (
-              <span className="strategy-meta-stale">
-                <small>过期原因</small>
-                <Tooltip title={data?.staleReason || '上游数据已过有效期'}>
-                  <Tag color="warning">{staleReasonText(data?.staleReason)}</Tag>
-                </Tooltip>
-              </span>
-            )}
           </div>
         )}
         filters={(

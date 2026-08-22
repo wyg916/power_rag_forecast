@@ -25,6 +25,12 @@
 | PROJECT1_V2_12_C_AI_RUNTIME_ATTACHMENTS_STARTUP_QUALITY | `PARTIAL_REMOTE_PROVIDER_BLOCKED`；本地 AI/附件/权限/启动/CI 门禁 PASS | `codex/project1-v2.12.0-ai-runtime-release` / 本行所在提交 | `docs/codex/v2_12_final/C_AI_RUNTIME_RELEASE_REPORT.md`；`docs/codex/evidence/C_ai_runtime/20260822_184743/` | MiMo 视觉真实调用空响应；DeepSeek AnalysisPlan 真实调用未通过冻结 schema。未伪报真实调用 PASS，`READY_FOR_INTEGRATION=NO`。 |
 | PROJECT1_V2_12_C_AI_RUNTIME_REMEDIATION_CLOSURE | `PASS`；MiMo/DeepSeek/Kimi、附件生命周期、Catalog/Golden、启动/CI 均闭环 | `codex/project1-v2.12.0-ai-runtime-release` / 本行所在提交 | `docs/codex/v2_12_final/C_AI_RUNTIME_REMEDIATION_CLOSURE_REPORT.md`；`docs/codex/v2_12_final/C_FULL_DIAGNOSTIC_FAILURE_MATRIX.md`；`docs/codex/evidence/C_ai_runtime_remediation/20260822_221931/` | 无 C 代码或 Provider 阻塞；数据库隔离回归与 A 模型资产由 Final Integration 按矩阵复验。`READY_FOR_INTEGRATION=YES`。 |
 
+## 2026-08-22 PROJECT1 v2.12.0 B：UI RBAC GLOBAL AI SHELL
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1 v2.12.0 B / UI RBAC GLOBAL AI SHELL | PASS_WITH_INTEGRATION_DEPENDENCY | codex/project1-v2.12.0-ui-rbac-ai-shell / 本行所在提交 | docs/codex/evidence/B_ui/PROJECT1_V2_12_B_20260822_191034；docs/codex/v2_12_final/B_UI_RBAC_AI_SHELL_REPORT.md | 前端 32/32 路由、四视口 128/128、权限友好化、全局 AI Drawer、跨页状态、Ctrl+V/拖拽/附件 UI、动态回答、lint 6/6、unit 22/22、typecheck/build 全部 PASS；集成依赖为后端缺少冻结契约中的附件 GET/DELETE，上传 POST 已实测成功且前端按失败态处理；未越界修改后端。 |
+
 ## 2026-08-16 项目一本地最终收口
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

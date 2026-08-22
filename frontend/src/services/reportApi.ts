@@ -123,12 +123,12 @@ function buildPreviewMetrics(report: any) {
   ];
 }
 
-export async function getReportFacts(report: any): Promise<any> {
+export async function getReportFacts(report: any, capabilities: { canReview?: boolean } = {}): Promise<any> {
   if (!report?.report_id) return { report, previewCurve: [], previewMetrics: [], risks: [], reviews: [] };
   const [detailPayload, forecast, reviewsPayload] = await Promise.all([
     api.reportDetail(report.report_id),
     report?.run_id ? api.forecastRunResults(report.run_id) : Promise.resolve({ records: [] }),
-    api.reportReviews(report.report_id)
+    capabilities.canReview ? api.reportReviews(report.report_id) : Promise.resolve({ reviews: [] })
   ]);
   const detail = normalizeReport(detailPayload?.report_id ? { ...report, ...detailPayload } : report);
   return {
@@ -140,7 +140,10 @@ export async function getReportFacts(report: any): Promise<any> {
   };
 }
 
-export async function getReportCenterData(params: Record<string, any> = {}): Promise<any> {
+export async function getReportCenterData(
+  params: Record<string, any> = {},
+  capabilities: { canReview?: boolean } = {}
+): Promise<any> {
   const partialErrors: string[] = [];
   const [list, summary, latest] = await Promise.all([
     api.reports({ page: 1, page_size: 20, ...params }).catch((error) => {
@@ -164,7 +167,7 @@ export async function getReportCenterData(params: Record<string, any> = {}): Pro
   let facts = { report: activeReport, previewCurve: [] as any[], previewMetrics: buildPreviewMetrics(activeReport), risks: activeReport?.risks || [], reviews: [] as any[] };
   if (activeReport) {
     try {
-      facts = await getReportFacts(activeReport);
+      facts = await getReportFacts(activeReport, capabilities);
     } catch (error) {
       partialErrors.push(error instanceof Error ? error.message : String(error));
     }

@@ -396,22 +396,20 @@ function ReviewDetail({ row, onAction, permissions, reviewHistory }: {
             <InsightBlock tone="red" title="受控解释"><p>{row.evidence?.explanation}</p><p>风险概率：{row.evidence?.riskProbability == null ? '--' : `${fmt(row.evidence.riskProbability * 100, 1)}%`}</p></InsightBlock>
             <div className="review-evidence-grid">
               <InsightBlock tone="blue" title="模型依据"><p>最高预测价格：{fmt(row.evidence?.predictedPrice, 3)}</p><p>峰谷价差：{fmt(row.evidence?.peakValleySpread, 3)}</p><p>置信度：{row.confidence == null ? '未提供' : `${fmt(row.confidence, 1)}%`}</p></InsightBlock>
-              <InsightBlock tone="green" title="追溯信息"><p>run_id：{row.runId || '--'}</p><p>report_id：{row.reportId || '--'}</p></InsightBlock>
             </div>
-            <div className="review-related"><h3>完整性与禁止项</h3><p><span>内容哈希</span><strong>{row.contentHash ? `${row.contentHash.slice(0, 16)}…` : '--'}</strong></p><p><span>禁止自动动作</span><strong>{row.prohibitedActions?.length || 0} 项</strong></p></div>
             <div className="review-related"><h3>不可变审核历史（{reviewHistory.length}）</h3>
               {reviewHistory.length ? reviewHistory.map((item: any) => <p key={item.review_id}><span>{item.action} · {item.reviewer}</span><strong>{item.previous_status} → {item.new_status}</strong></p>) : <p><span>暂无状态流转记录</span><strong>--</strong></p>}
             </div>
             <label className="review-comment">复核意见（驳回/退回必填）<Input.TextArea value={comment} maxLength={2000} showCount rows={3} placeholder="输入人工判断依据；每次动作均写入不可变审核记录" onChange={(event) => setComment(event.target.value)} /></label>
           </div>
           <div className="review-actions">
-            {row.status === 'draft' && <Tooltip title={permissions.canSubmit ? '提交后进入待复核状态' : '缺少 strategy:submit 权限'}><Button type="primary" disabled={!permissions.canSubmit} onClick={() => onAction(row, 'submit', comment)}>提交复核</Button></Tooltip>}
-            {row.status === 'pending_review' && <>
-              <Tooltip title={permissions.canReview ? '确认已核对证据后批准' : '缺少 strategy:review 权限'}><Button type="primary" disabled={!permissions.canReview} onClick={() => onAction(row, 'approve', comment)}>通过</Button></Tooltip>
-              <Tooltip title={permissions.canReview ? '必须填写驳回原因' : '缺少 strategy:review 权限'}><Button danger disabled={!permissions.canReview} onClick={() => onAction(row, 'reject', comment)}>驳回</Button></Tooltip>
-              <Tooltip title={permissions.canReview ? '退回草稿并要求补充' : '缺少 strategy:review 权限'}><Button disabled={!permissions.canReview} onClick={() => onAction(row, 'return', comment)}>退回补充</Button></Tooltip>
-            </>}
-            {row.status === 'approved' && <Tooltip title={row.isStale ? '历史或过期策略禁止发布' : permissions.canPublish ? '仅管理员可发布，仍不会触发执行' : '缺少 strategy:publish 权限'}><Button type="primary" disabled={row.isStale || !permissions.canPublish} onClick={() => onAction(row, 'publish', comment)}>发布策略记录</Button></Tooltip>}
+            {row.status === 'draft' && permissions.canSubmit ? <Button type="primary" onClick={() => onAction(row, 'submit', comment)}>提交复核</Button> : null}
+            {row.status === 'pending_review' && permissions.canReview ? <>
+              <Button type="primary" onClick={() => onAction(row, 'approve', comment)}>通过</Button>
+              <Button danger onClick={() => onAction(row, 'reject', comment)}>驳回</Button>
+              <Button onClick={() => onAction(row, 'return', comment)}>退回补充</Button>
+            </> : null}
+            {row.status === 'approved' && permissions.canPublish ? <Tooltip title={row.isStale ? '历史或过期策略禁止发布' : '发布仅形成受控记录，不触发执行'}><Button type="primary" disabled={row.isStale} onClick={() => onAction(row, 'publish', comment)}>发布策略记录</Button></Tooltip> : null}
             {!['draft', 'pending_review', 'approved'].includes(row.status) && <Tag color={statusColor(row.status)}>该状态无可用人工动作</Tag>}
           </div>
         </>

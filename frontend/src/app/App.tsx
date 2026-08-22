@@ -3,6 +3,7 @@ import type { LazyExoticComponent } from 'react';
 import { BasicLayout } from '../layout/BasicLayout';
 import { PageContainer } from '../layout/PageContainer';
 import { LoadingBlock } from '../components/common/States';
+import { PermissionRoute } from '../components/security/PermissionRoute';
 import { useAuth } from '../context/AuthContext';
 import { LoginPage } from '../pages/LoginPage';
 import { getDefaultChildKey, normalizeRouteState, routeTitles } from './router';
@@ -61,10 +62,12 @@ export function App() {
     >
       <PageContainer title={title.title} subtitle={title.subtitle} hideHeader={routeState.route === 'dashboard' || routeState.route === 'forecast' || routeState.route === 'data' || routeState.route === 'strategy' || routeState.route === 'report' || routeState.route === 'knowledge' || routeState.route === 'model' || routeState.route === 'task'}>
         <Suspense fallback={<LoadingBlock rows={8} />}>
-          <ActivePage
-            activeSubKey={routeState.childKey}
-            onSubNavigate={(childKey) => handleNavigate(routeState.route, childKey)}
-          />
+          <PermissionRoute route={routeState.route} childKey={routeState.childKey}>
+            <ActivePage
+              activeSubKey={routeState.childKey}
+              onSubNavigate={(childKey) => handleNavigate(routeState.route, childKey)}
+            />
+          </PermissionRoute>
         </Suspense>
       </PageContainer>
     </BasicLayout>

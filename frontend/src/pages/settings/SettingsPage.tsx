@@ -316,7 +316,7 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
   return (
     <div className="settings-workbench page-stack">
       <div className="settings-tabs-row">
-        <PageTabs items={tabs} activeKey={effectiveSubKey} onChange={onSubNavigate} />
+        <PageTabs items={tabs.filter((item) => item.key !== 'settings-user' || canReadUsers)} activeKey={effectiveSubKey} onChange={onSubNavigate} />
         <SettingsToolbar
           activeKey={effectiveSubKey}
           keyword={keyword}
@@ -406,6 +406,7 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
           onEdit={openInterfaceEdit}
           onToggle={toggleInterface}
           onViewLogs={viewInterfaceLogs}
+          canWrite={canWriteSettings}
         />
       )}
 
@@ -476,7 +477,7 @@ function SettingsToolbar({
           onSearch={onUserSearch}
           style={{ width: 300 }}
         />
-        <Button type="primary" icon={<PlusOutlined />} disabled={!canCreate} onClick={onCreate}>新增用户</Button>
+        {canCreate ? <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>新增用户</Button> : null}
         <Button icon={<ReloadOutlined />} onClick={onRefresh}>刷新</Button>
         <Tooltip title={selectedCount ? '当前仅支持逐个处理已选用户' : '请选择用户后再执行批量操作'}>
           <Button disabled>批量操作</Button>
@@ -496,9 +497,9 @@ function SettingsToolbar({
           onSearch={onUserSearch}
           style={{ width: 300 }}
         />
-        <Button onClick={onTestAll}>测试全部接口</Button>
+        {canSave ? <Button onClick={onTestAll}>测试全部接口</Button> : null}
         <Button icon={<ReloadOutlined />} onClick={onRefresh}>刷新</Button>
-        <Button type="primary" icon={<SaveOutlined />} disabled={!canSave} onClick={onSave}>保存配置</Button>
+        {canSave ? <Button type="primary" icon={<SaveOutlined />} onClick={onSave}>保存配置</Button> : null}
       </Space>
     );
   }
@@ -614,7 +615,7 @@ function SystemStatusTab({
             <SwitchParam label="系统维护模式" checked={Boolean(configValues.maintenance_mode_enabled)} onChange={(value) => setConfigValues((prev) => ({ ...prev, maintenance_mode_enabled: value }))} />
             <SwitchParam label="自动数据备份" checked={Boolean(configValues.auto_backup_enabled ?? true)} onChange={(value) => setConfigValues((prev) => ({ ...prev, auto_backup_enabled: value }))} />
           </div>
-          <Button type="primary" icon={<SaveOutlined />} disabled={!canWriteSettings} onClick={saveConfig}>保存运行参数</Button>
+          {canWriteSettings ? <Button type="primary" icon={<SaveOutlined />} onClick={saveConfig}>保存运行参数</Button> : null}
         </SectionCard>
         <TableCard
           title="最近健康检查记录"
@@ -683,7 +684,7 @@ function UserPermissionTab({
           minHeight={390}
           dataSource={users}
           rowKey={userKey}
-          rowSelection={{ selectedRowKeys: selectedKeys, onChange: setSelectedKeys }}
+          rowSelection={canWrite ? { selectedRowKeys: selectedKeys, onChange: setSelectedKeys } : undefined}
           pagination={{ total: usersTotal, pageSize: 5, showSizeChanger: false }}
           scroll={{ x: 980, y: 260 }}
           columns={[
@@ -698,21 +699,21 @@ function UserPermissionTab({
               title: '操作',
               fixed: 'right',
               width: 260,
-              render: (_, row) => (
+              render: (_, row) => canWrite ? (
                 <Space size={4}>
-                  <Button type="link" size="small" disabled={!canWrite} onClick={() => onEdit(row)}>编辑</Button>
-                  <Popconfirm title={row.is_active ? '确认禁用该用户？' : '确认启用该用户？'} disabled={!canWrite} onConfirm={() => onToggle(row)}>
-                    <Button type="link" size="small" danger={row.is_active} disabled={!canWrite}>{row.is_active ? '禁用' : '启用'}</Button>
+                  <Button type="link" size="small" onClick={() => onEdit(row)}>编辑</Button>
+                  <Popconfirm title={row.is_active ? '确认禁用该用户？' : '确认启用该用户？'} onConfirm={() => onToggle(row)}>
+                    <Button type="link" size="small" danger={row.is_active}>{row.is_active ? '禁用' : '启用'}</Button>
                   </Popconfirm>
-                  <Button type="link" size="small" disabled={!canWrite} onClick={() => onReset(row)}>重置密码</Button>
+                  <Button type="link" size="small" onClick={() => onReset(row)}>重置密码</Button>
                   <Tooltip title="角色分配通过编辑用户角色完成">
-                    <Button type="link" size="small" disabled={!canWrite} onClick={() => onEdit(row)}>分配角色</Button>
+                    <Button type="link" size="small" onClick={() => onEdit(row)}>分配角色</Button>
                   </Tooltip>
                   <Tooltip title="当前后端提供禁用，不提供物理删除接口">
                     <Button type="link" size="small" danger disabled icon={<DeleteOutlined />}>删除</Button>
                   </Tooltip>
                 </Space>
-              )
+              ) : <span className="settings-readonly-label">只读</span>
             }
           ]}
         />
@@ -771,7 +772,8 @@ function InterfaceConfigTab({
   onTest,
   onEdit,
   onToggle,
-  onViewLogs
+  onViewLogs,
+  canWrite
 }: {
   loading: boolean;
   metrics: any[];
@@ -781,6 +783,7 @@ function InterfaceConfigTab({
   onEdit: (row: any) => void;
   onToggle: (row: any) => void;
   onViewLogs: (row: any) => void;
+  canWrite: boolean;
 }) {
   const cards = (data.interfaceConfigs || []).map((item: any) => ({
     key: item.interface_key || item.id,
@@ -804,10 +807,10 @@ function InterfaceConfigTab({
                 <p key={label}><span>{label}</span><strong>{value || '--'}</strong></p>
               ))}
             </div>
-            <Space>
+            {canWrite ? <Space>
               <Button onClick={card.action}>测试连接</Button>
               <Button icon={<EditOutlined />} onClick={card.edit}>编辑配置</Button>
-            </Space>
+            </Space> : null}
           </ConfigCard>
         ))}
       </div>
@@ -830,10 +833,10 @@ function InterfaceConfigTab({
             width: 230,
             render: (_, row) => (
               <Space size={4}>
-                <Button type="link" size="small" onClick={() => onTest(row.name, () => api.testSettingsInterface(row.interfaceKey || row.key))}>测试连接</Button>
-                <Button type="link" size="small" onClick={() => onEdit(row.raw || row)}>编辑</Button>
+                {canWrite ? <Button type="link" size="small" onClick={() => onTest(row.name, () => api.testSettingsInterface(row.interfaceKey || row.key))}>测试连接</Button> : null}
+                {canWrite ? <Button type="link" size="small" onClick={() => onEdit(row.raw || row)}>编辑</Button> : null}
                 <Button type="link" size="small" onClick={() => onViewLogs(row)}>查看日志</Button>
-                <Button type="link" size="small" onClick={() => onToggle(row)}>{row.enabled === false ? '启用' : '禁用'}</Button>
+                {canWrite ? <Button type="link" size="small" onClick={() => onToggle(row)}>{row.enabled === false ? '启用' : '禁用'}</Button> : null}
               </Space>
             )
           }

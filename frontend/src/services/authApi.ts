@@ -8,6 +8,12 @@ export interface AuthUser {
   role: string;
   permissions: string[];
   auth_mode?: string;
+  capability_manifest?: {
+    routes?: Record<string, boolean>;
+    actions?: Record<string, boolean>;
+    generated_at?: string;
+    policy_version?: string;
+  };
 }
 
 export interface LoginResponse {
@@ -29,8 +35,20 @@ export const authApi = {
   },
 
   async me(): Promise<AuthUser> {
-    const payload = await api.authMe();
-    return payload.user;
+    const authPayload = await api.authMe();
+    const baseUser = authPayload?.user || authPayload;
+    try {
+      const securityPayload = await api.securityMe();
+      const securityUser = securityPayload?.user || securityPayload?.data || securityPayload || {};
+      return {
+        ...baseUser,
+        ...securityUser,
+        permissions: securityUser.permissions || baseUser.permissions || [],
+        capability_manifest: securityUser.capability_manifest || baseUser.capability_manifest
+      };
+    } catch {
+      return { ...baseUser, permissions: baseUser.permissions || [] };
+    }
   },
 
   async logout(): Promise<void> {

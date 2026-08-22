@@ -4,7 +4,7 @@ const DEVELOPMENT_IDENTITY_HEADERS: Record<string, string> = AUTH_REQUIRED
   ? {}
   : {
       'X-User': String(import.meta.env.VITE_DEV_USERNAME || 'frontend-development-reader'),
-      'X-Role': 'developer'
+      'X-Role': String(import.meta.env.VITE_DEV_ROLE || 'developer')
     };
 export const ACCESS_TOKEN_KEY = 'power_trading_access_token';
 
@@ -52,6 +52,8 @@ export class ApiError extends Error {
 }
 
 function responseError(status: number, text: string): ParsedResponseError {
+  if (status === 401) return { message: '登录状态已失效，请重新登录。', code: 'AUTH_REQUIRED' };
+  if (status === 403) return { message: '当前账号未开通此项能力。', code: 'PERMISSION_DENIED' };
   if (!text) return { message: `HTTP ${status}`, code: `HTTP_${status}` };
   try {
     const payload = JSON.parse(text);
@@ -296,8 +298,8 @@ export const api = {
   strategyAction: (strategyId: string, action: string, payload: { request_id: string; review_comment: string }) => request<any>(`/api/strategies/${encodeURIComponent(strategyId)}/${encodeURIComponent(action)}`, { method: 'POST', body: JSON.stringify(payload) }),
   anomalyLatest: () => request<any>('/api/anomaly/latest'),
   explainAnomaly: () => request<any>('/api/anomaly/explain', { method: 'POST', body: '{}' }),
-  chat: (question: string, session_id?: string, options: any = {}) =>
-    request<any>('/api/ai/chat', { method: 'POST', body: JSON.stringify({ question, session_id, ...options }) }),
+  chat: (payload: Record<string, unknown>) =>
+    request<any>('/api/ai/chat', { method: 'POST', body: JSON.stringify(payload) }),
   agentAnalyze: (question: string, options: any = {}) =>
     request<any>('/api/ai/agent/analyze', { method: 'POST', body: JSON.stringify({ question, ...options }) }),
   chatFeedback: (payload: any) => request<any>('/api/ai/chat/feedback', { method: 'POST', body: JSON.stringify(payload) }),

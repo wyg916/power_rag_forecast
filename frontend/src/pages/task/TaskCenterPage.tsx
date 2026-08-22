@@ -186,8 +186,9 @@ export function TaskCenterPage(_props: PageProps) {
   const [taskData, setTaskData] = useState<any>({ tasks: [], metrics: [], health: {}, retryQueue: [], recentLogs: [], queueRows: [], trendRows: [] });
   const [loading, setLoading] = useState(true);
   const { authRequired, hasPermission } = useAuth();
-  const canRunTask = !authRequired || hasPermission('task:run');
+  const canRunTask = !authRequired || hasPermission('task:manage');
   const canManageSchedules = !authRequired || hasPermission('task:manage');
+  const canDiagnoseTasks = !authRequired || hasPermission('task:diagnostics');
   const [createOpen, setCreateOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
@@ -223,11 +224,11 @@ export function TaskCenterPage(_props: PageProps) {
         trend_days: trendDays,
         page: 1,
         page_size: 100
-      }));
+      }, { canDiagnose: canDiagnoseTasks }));
     } finally {
       setLoading(false);
     }
-  }, [dateRange, keyword, selectedQueue, selectedTaskKind, trendDays]);
+  }, [canDiagnoseTasks, dateRange, keyword, selectedQueue, selectedTaskKind, trendDays]);
 
   useEffect(() => {
     loadData();
@@ -429,8 +430,8 @@ export function TaskCenterPage(_props: PageProps) {
       render: (_: any, record: any) => (
         <Space size={4}>
           <Button type="link" size="small" onClick={() => openDetail(record)}>详情</Button>
-          <Button type="link" size="small" onClick={() => openLogs(record.task_id)}>日志</Button>
-          <Dropdown
+          {canDiagnoseTasks ? <Button type="link" size="small" onClick={() => openLogs(record.task_id)}>日志</Button> : null}
+          {canManageSchedules ? <Dropdown
             trigger={['click']}
             menu={{
               items: [
@@ -444,7 +445,7 @@ export function TaskCenterPage(_props: PageProps) {
             }}
           >
             <Button type="link" size="small">更多</Button>
-          </Dropdown>
+          </Dropdown> : null}
         </Space>
       )
     }
@@ -464,7 +465,7 @@ export function TaskCenterPage(_props: PageProps) {
     { title: '任务名称', render: (_: any, record: any) => taskName(record) },
     { title: '原因', render: (_: any, record: any) => record.error_message || statusText(record.status) },
     { title: '处理建议', render: (_: any, record: any) => failureAdvice(record) },
-    { title: '操作', width: 98, render: (_: any, record: any) => <Button className="task-retry-button" size="small" disabled={!canRetryTask(record)} onClick={() => retryTask(record.task_id)}>立即重试</Button> }
+    ...(canManageSchedules ? [{ title: '操作', width: 98, render: (_: any, record: any) => <Button className="task-retry-button" size="small" disabled={!canRetryTask(record)} onClick={() => retryTask(record.task_id)}>立即重试</Button> }] : [])
   ];
 
   const queueColumns = [
@@ -497,8 +498,9 @@ export function TaskCenterPage(_props: PageProps) {
             label: '启动任务',
             icon: <PlayCircleOutlined />,
             type: 'primary',
-            disabled: !canRunTask || selectedTaskKind === 'all',
-            disabledReason: !canRunTask ? '需要 task:run 权限' : '请先选择具体任务类型',
+            hidden: !canRunTask,
+            disabled: selectedTaskKind === 'all',
+            disabledReason: selectedTaskKind === 'all' ? '请先选择具体任务类型' : undefined,
             onClick: () => runTask()
           }
         ]}
@@ -523,7 +525,7 @@ export function TaskCenterPage(_props: PageProps) {
             <div className="task-card-head">
               <div>
                 <h2>任务列表</h2>
-                <Button type="primary" icon={<PlusOutlined />} disabled={!canManageSchedules} title={!canManageSchedules ? '需要 task:manage 权限' : undefined} onClick={() => setCreateOpen(true)}>新建定时任务</Button>
+                {canManageSchedules ? <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建定时任务</Button> : null}
               </div>
               <Space size={8}>
                 <Button icon={<ColumnHeightOutlined />} onClick={() => setColumnSettingsOpen(true)}>列设置</Button>

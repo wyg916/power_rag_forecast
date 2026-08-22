@@ -83,6 +83,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { authRequired, hasPermission } = useAuth();
   const canSync = authRequired ? hasPermission('data:sync') : developmentCanSync;
   const canExport = authRequired ? hasPermission('data:export') : developmentCanExport;
+  const canManageSettings = !authRequired || hasPermission('settings:read');
   const qualityMode = activeSubKey === 'data-quality';
 
   const loadData = useCallback(async () => {
@@ -281,8 +282,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       icon: <SyncOutlined />,
       type: 'primary',
       loading: syncing,
-      disabled: !canSync,
-      disabledReason: '需要 data:sync 权限',
+      hidden: !canSync,
       onClick: syncData
     },
     {
@@ -290,8 +290,9 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       label: qualityMode ? '导出质量报告' : '导出概览',
       icon: <DownloadOutlined />,
       collapseAtNarrow: true,
-      disabled: !canExport || !exportRows.length,
-      disabledReason: !canExport ? '需要 data:export 权限' : '当前没有可导出的接口记录',
+      hidden: !canExport,
+      disabled: !exportRows.length,
+      disabledReason: !exportRows.length ? '当前没有可导出的接口记录' : undefined,
       onClick: exportCurrentView
     }
   ], [canExport, canSync, exportCurrentView, exportRows, loading, loadData, qualityMode, syncing]);
@@ -377,6 +378,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
               syncing={syncing}
               canSync={canSync}
               canExport={canExport && Boolean(exportRows.length)}
+              canManageSettings={canManageSettings}
             />
           </div>
           <div className="data-overview-workspace">

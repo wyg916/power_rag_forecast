@@ -228,7 +228,7 @@ function buildDataHealth(dataStatus: any, forecast24h: any, dataQuality: any) {
   };
 }
 
-export async function getForecastCenterData() {
+export async function getForecastCenterData(capabilities: { canReadData?: boolean; canReadModel?: boolean } = {}) {
   const partialErrors: string[] = [];
   const requestErrors: unknown[] = [];
   const safe = async <T>(label: string, loader: () => Promise<T>): Promise<T | null> => {
@@ -249,14 +249,14 @@ export async function getForecastCenterData() {
     safe('marketHistory', () => api.marketHistory()),
     safe('riskSummary', api.riskSummary),
     safe('strategyToday', api.strategyToday),
-    safe('dataStatus', api.dataStatus),
-    safe('dataQuality', api.dataQuality),
-    safe('models', api.models),
-    safe('modelExplain', () => api.modelExplain()),
-    safe('modelBacktestSummary', api.modelBacktestSummary),
-    safe('modelFeatureSchema', api.modelFeatureSchema),
-    safe('modelLeakageCheck', api.modelLeakageCheck),
-    safe('retrainSuggestion', api.retrainSuggestion),
+    capabilities.canReadData ? safe('dataStatus', api.dataStatus) : Promise.resolve(null),
+    capabilities.canReadData ? safe('dataQuality', api.dataQuality) : Promise.resolve(null),
+    capabilities.canReadModel ? safe('models', api.models) : Promise.resolve(null),
+    capabilities.canReadModel ? safe('modelExplain', () => api.modelExplain()) : Promise.resolve(null),
+    capabilities.canReadModel ? safe('modelBacktestSummary', api.modelBacktestSummary) : Promise.resolve(null),
+    capabilities.canReadModel ? safe('modelFeatureSchema', api.modelFeatureSchema) : Promise.resolve(null),
+    capabilities.canReadModel ? safe('modelLeakageCheck', api.modelLeakageCheck) : Promise.resolve(null),
+    capabilities.canReadModel ? safe('retrainSuggestion', api.retrainSuggestion) : Promise.resolve(null),
     safe('forecastRuns', () => api.forecastRuns('success', 3))
   ]);
 

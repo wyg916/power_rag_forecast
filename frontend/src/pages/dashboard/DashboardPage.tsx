@@ -38,6 +38,11 @@ export function DashboardPage(_: PageProps) {
   const [logText, setLogText] = useState('');
   const { authRequired, hasPermission } = useAuth();
   const canGenerateReport = !authRequired || hasPermission('report:generate');
+  const canUseAssistant = !authRequired || hasPermission('assistant:use');
+  const canReadData = !authRequired || hasPermission('data:read');
+  const canReadModel = !authRequired || hasPermission('model:read');
+  const canReadTasks = !authRequired || hasPermission('task:read');
+  const canDiagnoseTasks = !authRequired || hasPermission('task:diagnostics');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -118,14 +123,14 @@ export function DashboardPage(_: PageProps) {
             label: '生成日报',
             icon: <FileTextOutlined />,
             type: 'primary',
-            disabled: !canGenerateReport,
-            disabledReason: '需要 report:generate 权限',
+            hidden: !canGenerateReport,
             onClick: generateReport
           },
           {
             key: 'assistant',
             label: 'AI 智能问答',
             icon: <RobotOutlined />,
+            hidden: !canUseAssistant,
             onClick: () => { window.location.hash = '/assistant/assistant-chat'; }
           },
           {
@@ -134,7 +139,14 @@ export function DashboardPage(_: PageProps) {
             icon: <ReloadOutlined />,
             onClick: loadData
           },
-          ...homeQuickActions()
+          ...homeQuickActions().map((action) => ({
+            ...action,
+            hidden: action.key === 'assistant-chat' ? !canUseAssistant
+              : action.key === 'report-review' ? !hasPermission('report:review')
+                : action.key === 'model-evaluation' ? !canReadModel
+                  : action.key === 'task-center' ? !canReadTasks
+                    : false
+          }))
         ]}
       />
 
@@ -144,14 +156,17 @@ export function DashboardPage(_: PageProps) {
         <HomeKpiStrip items={kpiItems} />
         <div className="home-dashboard-left">
           <HomeForecastChart forecast={data?.forecast} risk={data?.risk} isStale={data?.isStale} />
-          <HomeAuxiliaryGrid forecast={data?.forecast} kpi={data?.kpi} />
+          <HomeAuxiliaryGrid forecast={data?.forecast} kpi={data?.kpi} canReadData={canReadData} canReadModel={canReadModel} />
         </div>
         <HomeSideRail
           risk={data?.risk}
           strategy={data?.strategy}
           tasks={data?.tasks}
           isStale={data?.isStale}
-          onOpenTaskLog={openTaskLog}
+          canUseAssistant={canUseAssistant}
+          canReadTasks={canReadTasks}
+          canDiagnoseTasks={canDiagnoseTasks}
+          onOpenTaskLog={canDiagnoseTasks ? openTaskLog : undefined}
         />
       </section> : null}
 
