@@ -142,3 +142,50 @@ def test_forecast_endpoint_returns_503_when_worker_queue_is_unavailable(monkeypa
 
     assert exc_info.value.status_code == 503
     assert "队列当前不可用" in str(exc_info.value.detail)
+
+
+@pytest.mark.parametrize("mode", ["fast_forecast", "refresh_fast_forecast"])
+def test_forecast_endpoint_routes_formal_worker_and_preserves_idempotency(
+    monkeypatch, mode
+):
+    submitted: list[tuple[str, dict]] = []
+    monkeypatch.setattr(
+        forecast_endpoint,
+        "enqueue_task",
+        lambda kind, payload: submitted.append((kind, payload))
+        or {"task_id": "task_formal", "status": "pending"},
+    )
+    monkeypatch.setattr(forecast_endpoint, "write_audit_log", lambda **kwargs: None)
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/forecast/run",
+            "headers": [],
+            "query_string": b"",
+            "client": ("127.0.0.1", 12345),
+            "server": ("127.0.0.1", 8000),
+            "scheme": "http",
+        }
+    )
+    user = CurrentUser(
+        user_id="analyst-id",
+        username="analyst",
+        role="analyst",
+        permissions=["forecast:run"],
+        auth_mode="unit_test",
+    )
+
+    result = forecast_endpoint.run_forecast(
+        ForecastRunRequest(
+            mode=mode,
+            idempotency_key="forecast-request-001",
+        ),
+        request,
+        user,
+    )
+
+    assert result["task_id"] == "task_formal"
+    assert submitted == [
+        ("forecast_run", {"idempotency_key": "forecast-request-001"})
+    ]

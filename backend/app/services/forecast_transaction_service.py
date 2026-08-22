@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -57,12 +58,21 @@ class ForecastRunRequest:
     source_metadata: dict[str, Any] | None = None
     freshness_status: str | None = None
     development_mode: bool = False
+    idempotency_key: str | None = None
 
 
 @dataclass(frozen=True)
 class PredictionBatch:
     timestamps: pd.DatetimeIndex
     values: pd.DataFrame
+    input_features: pd.DataFrame | None = None
+    input_batch_id: str | None = None
+    input_hash: str | None = None
+    environment_hash: str | None = None
+    manifest_result_hash: str | None = None
+    source_versions: dict[str, Any] | None = None
+    source_hashes: dict[str, Any] | None = None
+    source_metadata: dict[str, Any] | None = None
 
 
 def generate_run_id(now: datetime | None = None) -> str:
@@ -110,6 +120,85 @@ class ForecastTransactionService:
             raise ForecastTransactionError("ACTIVE_MODEL_CONFLICT", "存在多个 Active 模型")
         return models[0]
 
+    def record_failure(
+        self,
+        request: ForecastRunRequest,
+        run_id: str,
+        exc: BaseException,
+    ) -> dict[str, Any]:
+        """Persist one explicit failed run without creating result rows."""
+
+        safe_run_id = str(run_id or "").strip()
+        if not re.fullmatch(r"run_\d{8}T\d{12}Z_[0-9a-f]{10}", safe_run_id):
+            raise ForecastTransactionError("RUN_ID_INVALID", "run_id 格式无效")
+        self._record_failed_run(safe_run_id, request, exc)
+        return self.get_run(safe_run_id)
+
+    def find_idempotent_success(
+        self,
+        request: ForecastRunRequest,
+        model: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        if not request.idempotency_key:
+            return {}
+        with self.engine.connect() as conn:
+            resolved = model
+            if resolved is None:
+                models = self.model_resolver(conn, request.domain, request.target_name)
+                if len(models) != 1:
+                    return {}
+                resolved = models[0]
+            return self._find_idempotent_success(conn, request, resolved)
+
+    @staticmethod
+    def _input_idempotency_key(
+        request: ForecastRunRequest,
+        model: dict[str, Any],
+    ) -> str:
+        if not request.idempotency_key:
+            return ""
+        payload = {
+            "request_key": request.idempotency_key,
+            "domain": request.domain,
+            "target_name": request.target_name,
+            "input_hash": request.input_hash,
+            "model_version": model.get("model_version"),
+            "artifact_hash": model.get("artifact_hash"),
+            "feature_version": model.get("feature_version"),
+            "schema_hash": model.get("schema_hash"),
+        }
+        encoded = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def _find_idempotent_success(
+        self,
+        conn: Connection,
+        request: ForecastRunRequest,
+        model: dict[str, Any],
+    ) -> dict[str, Any]:
+        key = self._input_idempotency_key(request, model)
+        if not key:
+            return {}
+        row = conn.execute(
+            text(
+                """
+                SELECT r.* FROM forecast_input_batches b
+                JOIN forecast_runs r ON r.run_id = b.run_id
+                WHERE b.idempotency_key = :idempotency_key
+                  AND r.status = 'success' AND r.record_count = 24
+                  AND (SELECT COUNT(*) FROM forecast_results fr WHERE fr.run_id = r.run_id) = 24
+                LIMIT 1
+                """
+            ),
+            {"idempotency_key": key},
+        ).mappings().first()
+        return dict(row) if row else {}
+
     def execute(
         self,
         request: ForecastRunRequest,
@@ -146,6 +235,7 @@ class ForecastTransactionService:
                 raise
             raise ForecastTransactionError(_error_code(exc), _safe_error_message(exc)) from exc
 
+        business_idempotent = bool(result.pop("_business_idempotent", False))
         export_status = "disabled"
         if exporter is not None:
             try:
@@ -153,7 +243,7 @@ class ForecastTransactionService:
                 export_status = "success"
             except Exception:
                 export_status = "failed_after_commit"
-        return {**result, "idempotent": False, "export_status": export_status}
+        return {**result, "idempotent": business_idempotent, "export_status": export_status}
 
     def get_run(self, run_id: str) -> dict[str, Any]:
         with self.engine.connect() as conn:
@@ -199,6 +289,16 @@ class ForecastTransactionService:
             missing = [field for field in REQUIRED_IDENTITY_FIELDS if not model.get(field)]
             if missing:
                 raise ForecastTransactionError("MODEL_IDENTITY_INCOMPLETE", f"Active 模型身份缺失：{','.join(missing)}")
+
+            idempotency_key = self._input_idempotency_key(request, model)
+            if idempotency_key:
+                conn.execute(
+                    text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                    {"key": idempotency_key},
+                )
+            duplicate = self._find_idempotent_success(conn, request, model)
+            if duplicate:
+                return {**duplicate, "_business_idempotent": True}
 
             now = datetime.now(timezone.utc)
             conn.execute(
@@ -248,11 +348,15 @@ class ForecastTransactionService:
             batch = predictor(model)
             timestamps, values = self._validate_batch(batch, model)
             data_hash = result_data_hash(timestamps, values)
-            if request.expected_result_hash and data_hash != request.expected_result_hash:
+            expected_hash = batch.manifest_result_hash or request.expected_result_hash
+            if expected_hash and data_hash != expected_hash:
                 raise ForecastTransactionError(
                     "RESULT_HASH_MISMATCH",
                     "预测结果与隔离推理 manifest 的 result_hash 不一致",
                 )
+            resolved_input_batch_id = self._persist_input_batch(
+                conn, run_id, request, model, batch, timestamps
+            )
             self._transition(conn, run_id, "validating", "running")
             self._observe("running", state_observer)
 
@@ -304,7 +408,7 @@ class ForecastTransactionService:
                         "component_outputs": pd.Series(component_outputs).to_json(),
                         "source_type": request.source_type,
                         "source_row": index + 1,
-                        "input_batch_id": request.input_batch_id,
+                        "input_batch_id": resolved_input_batch_id,
                         "forecast_load": float(row["forecast_load"]) if "forecast_load" in row and pd.notna(row["forecast_load"]) else None,
                         "risk_level": str(row["risk_level"]) if "risk_level" in row else None,
                     },
@@ -371,6 +475,177 @@ class ForecastTransactionService:
         )
         if result.rowcount != 1:
             raise ForecastTransactionError("STATE_TRANSITION_CONFLICT", f"{current}→{target} 更新失败")
+
+
+    def _persist_input_batch(
+        self,
+        conn: Connection,
+        run_id: str,
+        request: ForecastRunRequest,
+        model: dict[str, Any],
+        batch: PredictionBatch,
+        timestamps: pd.DatetimeIndex,
+    ) -> str | None:
+        if batch.input_features is None:
+            if not request.input_batch_id:
+                return None
+            existing = conn.execute(
+                text(
+                    """
+                    SELECT batch_id, feature_version, schema_hash, row_count
+                    FROM forecast_input_batches WHERE batch_id = :batch_id
+                    """
+                ),
+                {"batch_id": request.input_batch_id},
+            ).mappings().first()
+            if not existing:
+                raise ForecastTransactionError("INPUT_BATCH_MISSING", "指定输入批次不存在")
+            if (
+                str(existing["feature_version"]) != str(model["feature_version"])
+                or str(existing["schema_hash"]) != str(model["schema_hash"])
+                or int(existing["row_count"]) != 24
+            ):
+                raise ForecastTransactionError("INPUT_BATCH_IDENTITY_MISMATCH", "输入批次与模型身份不一致")
+            return str(existing["batch_id"])
+
+        features = batch.input_features.copy()
+        if features.shape != (24, 170):
+            raise ForecastTransactionError(
+                "INPUT_FEATURE_SHAPE_INVALID",
+                f"冻结输入必须为 24x170，实际 {features.shape[0]}x{features.shape[1]}",
+            )
+        columns = [str(name) for name in features.columns]
+        if len(set(columns)) != 170:
+            raise ForecastTransactionError("INPUT_FEATURE_DUPLICATE", "冻结输入特征名存在重复")
+        for name in columns:
+            if str(features[name].dtype) != "float64":
+                raise ForecastTransactionError("INPUT_FEATURE_DTYPE_INVALID", f"{name} 必须为 float64")
+        matrix = features.to_numpy(dtype="float64", copy=False)
+        if not np.isfinite(matrix).all():
+            raise ForecastTransactionError("INPUT_FEATURE_NONFINITE", "冻结输入包含 NaN 或 Inf")
+        if batch.input_hash and str(batch.input_hash) != str(request.input_hash):
+            raise ForecastTransactionError("INPUT_HASH_MISMATCH", "冻结输入 hash 与请求不一致")
+
+        idempotency_key = self._input_idempotency_key(request, model)
+        if not idempotency_key:
+            idempotency_key = hashlib.sha256(
+                f"{run_id}|{request.input_hash}|{model['artifact_hash']}".encode("utf-8")
+            ).hexdigest()
+        batch_id = str(batch.input_batch_id or f"batch_v212_{idempotency_key[:48]}")
+        metadata = {
+            **(request.source_metadata or {}),
+            **(batch.source_metadata or {}),
+            "batch_id": batch_id,
+            "run_id": run_id,
+            "model_id": model["model_id"],
+            "model_version": model["model_version"],
+            "artifact_id": model["artifact_id"],
+            "artifact_hash": model["artifact_hash"],
+            "feature_version": model["feature_version"],
+            "schema_hash": model["schema_hash"],
+            "missing_value_strategy": "forbid",
+            "feature_order_strategy": "strict",
+        }
+        now = datetime.now(timezone.utc)
+        conn.execute(
+            text(
+                """
+                INSERT INTO forecast_input_batches (
+                    batch_id, idempotency_key, run_id, anchor_time, data_cutoff_time,
+                    forecast_start, forecast_end, timezone, source_versions,
+                    source_hashes, source_metadata, feature_version, schema_hash,
+                    row_count, continuity_status, quality_status, environment,
+                    created_at, updated_at
+                ) VALUES (
+                    :batch_id, :idempotency_key, :run_id, :anchor_time, :data_cutoff_time,
+                    :forecast_start, :forecast_end, :timezone,
+                    CAST(:source_versions AS jsonb), CAST(:source_hashes AS jsonb),
+                    CAST(:source_metadata AS jsonb), :feature_version, :schema_hash,
+                    24, 'complete', 'success', :environment, :created_at, :created_at
+                )
+                """
+            ),
+            {
+                "batch_id": batch_id,
+                "idempotency_key": idempotency_key,
+                "run_id": run_id,
+                "anchor_time": now,
+                "data_cutoff_time": _utc(request.input_start_at, "input_start_at"),
+                "forecast_start": timestamps[0].to_pydatetime(),
+                "forecast_end": timestamps[-1].to_pydatetime(),
+                "timezone": str(timestamps.tz),
+                "source_versions": json.dumps(batch.source_versions or {}, ensure_ascii=False, default=str),
+                "source_hashes": json.dumps(batch.source_hashes or {}, ensure_ascii=False, default=str),
+                "source_metadata": json.dumps(metadata, ensure_ascii=False, default=str),
+                "feature_version": model["feature_version"],
+                "schema_hash": model["schema_hash"],
+                "environment": str(metadata.get("environment") or "local_rc"),
+                "created_at": now,
+            },
+        )
+        source_status = {
+            "source_type": request.source_type,
+            "is_simulated": bool(metadata.get("is_simulated", False)),
+            "missing_value_strategy": "forbid",
+            "schema_hash": model["schema_hash"],
+        }
+        for index, timestamp in enumerate(timestamps):
+            values = [float(item) for item in matrix[index]]
+            feature_payload = {"feature_names": columns, "feature_values": values}
+            encoded = json.dumps(
+                feature_payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO forecast_input_snapshots (
+                        snapshot_id, batch_id, run_id, forecast_time,
+                        feature_position_count, feature_values, feature_hash,
+                        source_status, created_at
+                    ) VALUES (
+                        :snapshot_id, :batch_id, :run_id, :forecast_time,
+                        170, CAST(:feature_values AS jsonb), :feature_hash,
+                        CAST(:source_status AS jsonb), :created_at
+                    )
+                    """
+                ),
+                {
+                    "snapshot_id": f"snapshot_{batch_id}_{index + 1:02d}",
+                    "batch_id": batch_id,
+                    "run_id": run_id,
+                    "forecast_time": timestamp.to_pydatetime(),
+                    "feature_values": json.dumps(feature_payload, ensure_ascii=False),
+                    "feature_hash": hashlib.sha256(encoded).hexdigest(),
+                    "source_status": json.dumps(source_status, ensure_ascii=False),
+                    "created_at": now,
+                },
+            )
+        update_result = conn.execute(
+            text(
+                """
+                UPDATE forecast_runs
+                SET input_batch_id = :batch_id,
+                    environment_hash = :environment_hash,
+                    source_metadata_json = CAST(:source_metadata AS jsonb),
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE run_id = :run_id AND status = 'validating'
+                """
+            ),
+            {
+                "batch_id": batch_id,
+                "environment_hash": batch.environment_hash or request.environment_hash,
+                "source_metadata": json.dumps(metadata, ensure_ascii=False, default=str),
+                "run_id": run_id,
+            },
+        )
+        if update_result.rowcount != 1:
+            raise ForecastTransactionError(
+                "INPUT_BATCH_RUN_LINK_FAILED", "输入批次无法绑定当前预测 run"
+            )
+        return batch_id
 
     @staticmethod
     def _validate_batch(

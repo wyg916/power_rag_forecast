@@ -49,12 +49,14 @@ TASK_POLICIES: dict[str, TaskRuntimePolicy] = {
 
 
 TASK_KIND_ALIASES = {
-    "forecast_run": "fast_forecast",
+    "forecast_run": "price_predict",
+    "fast_forecast": "price_predict",
 }
 
 FORECAST_TASK_KINDS = {
     "today_analysis",
     "fast_forecast",
+    "price_predict",
     "retrain_model",
     "model_auto_optimize",
 }

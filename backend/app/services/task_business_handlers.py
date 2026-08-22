@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Protocol
 
 import numpy as np
 import pandas as pd
-from backend.app.config import PROJECT_ROOT, project_paths
+from backend.app.config import PROJECT_ROOT, runtime_asset_root
 from backend.app.repositories.base import postgres_engine
 from backend.app.services.core_data_sync import sync_core_facts_and_tariff_assets
 from backend.app.services.forecast_transaction_service import (
@@ -20,6 +21,14 @@ from backend.app.services.forecast_transaction_service import (
 )
 from backend.app.services.report_generation_service import generate_operational_report
 from model_ops.result_hash import RESULT_VALUE_COLUMNS
+from model_ops.safe_model_contract import (
+    ModelContractError,
+    build_artifact_manifest,
+    build_feature_contract,
+    prepare_frozen_24_input,
+    sha256_file,
+    validate_feature_batch,
+)
 
 
 class TaskStepLogger(Protocol):
@@ -40,51 +49,170 @@ def _write_backend_forecast(payload: dict[str, Any], context: TaskStepLogger | N
     )
 
 
+def _isolated_inference_error_code(stderr: str) -> str:
+    for code in re.findall(r"\b([A-Z][A-Z0-9_]{2,63})\s*:", str(stderr or "")):
+        if code not in {"TRACEBACK", "ERROR"}:
+            return code
+    return "MODEL_INFERENCE_FAILED"
+
+
+def _forecast_asset_root(service: ForecastTransactionService) -> Path:
+    """Resolve shared read-only assets from config or the PostgreSQL model fact."""
+
+    relative_input = Path("结果-3") / "结果表" / "18_未来24小时预测输入特征_正式版.xlsx"
+    relative_runtime = Path(".codex_envs") / "t002_sklearn160" / "Scripts" / "python.exe"
+    configured = runtime_asset_root()
+    if (configured / relative_input).is_file() and (configured / relative_runtime).is_file():
+        return configured
+
+    active = service.active_model("price", "da_price")
+    artifact_path = Path(str(active.get("artifact_path") or "")).resolve(strict=True)
+    for candidate in artifact_path.parents:
+        if (candidate / relative_input).is_file() and (candidate / relative_runtime).is_file():
+            return candidate
+    return configured
+
+
 def run_price_predict(payload: dict[str, Any], context: TaskStepLogger | None = None) -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         raise RuntimeError("PostgreSQL 不可用，无法启动预测事务。")
     service = ForecastTransactionService(engine)
     run_id = generate_run_id()
-    active = service.active_model("price", "da_price")
-    input_path = project_paths().result_table_dir / "18_未来24小时预测输入特征_正式版.xlsx"
+    asset_root = _forecast_asset_root(service)
+    input_path = asset_root / "结果-3" / "结果表" / "18_未来24小时预测输入特征_正式版.xlsx"
     if not input_path.exists():
         raise RuntimeError("严格 24×170 预测输入不存在；未创建 forecast run。")
-    artifact_path = Path(str(active.get("artifact_path") or "")).resolve(strict=True)
-    isolated_python = PROJECT_ROOT / ".codex_envs" / "t002_sklearn160" / "Scripts" / "python.exe"
-    if not isolated_python.exists():
-        raise RuntimeError("T002 隔离推理环境不存在；未创建 forecast run。")
-    output_dir = PROJECT_ROOT / ".codex_tmp" / "t003_runtime" / run_id
-    output_dir.mkdir(parents=True, exist_ok=False)
-    temp_dir = PROJECT_ROOT / ".codex_tmp" / "task_runtime_tmp"
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    if context:
-        context.log("parse", "创建统一预测 run_id", progress=18, metadata={"run_id": run_id})
-        context.log("load_data", "使用唯一 Active 模型与 T002 隔离环境", progress=36)
-    child_env = dict(os.environ)
-    child_env.update(
-        {
-            "TEMP": str(temp_dir),
-            "TMP": str(temp_dir),
-            "PYTHONDONTWRITEBYTECODE": "1",
-            "PYTHONUTF8": "1",
-            "PYTHONIOENCODING": "utf-8",
-            "PYTHONPATH": str(PROJECT_ROOT),
-            "OMP_NUM_THREADS": "1",
-            "MKL_NUM_THREADS": "1",
-            "OPENBLAS_NUM_THREADS": "1",
-            "NUMEXPR_NUM_THREADS": "1",
-            "VECLIB_MAXIMUM_THREADS": "1",
-            "PYTHONHASHSEED": "0",
-            "HTTP_PROXY": "",
-            "HTTPS_PROXY": "",
-            "ALL_PROXY": "",
-            "NO_PROXY": "*",
-            "T003_OPENPYXL_SITE_PACKAGES": str(PROJECT_ROOT / ".venv" / "Lib" / "site-packages"),
-        }
-    )
-    child_env.pop("DATABASE_URL", None)
+
+    input_hash = sha256_file(input_path)
     try:
+        raw_time = pd.read_excel(input_path, usecols=["datetime"], engine="openpyxl")
+        input_timestamps = pd.DatetimeIndex(raw_time["datetime"])
+        if input_timestamps.tz is not None:
+            raise ForecastTransactionError("SOURCE_TIMEZONE_UNEXPECTED", "冻结输入时间不得重复携带时区")
+        input_timestamps = input_timestamps.tz_localize(
+            "America/New_York", ambiguous="raise", nonexistent="raise"
+        )
+        if len(input_timestamps) != 24 or input_timestamps.has_duplicates:
+            raise ForecastTransactionError("INPUT_WINDOW_INVALID", "冻结输入必须包含 24 个唯一小时")
+        diffs = input_timestamps.to_series(index=range(24)).diff().dropna()
+        if not bool((diffs == pd.Timedelta(hours=1)).all()):
+            raise ForecastTransactionError("NON_CONTIGUOUS_HOURS", "冻结输入必须连续 24 小时")
+    except ForecastTransactionError:
+        raise
+    except Exception as exc:
+        raise ForecastTransactionError("INPUT_HEADER_INVALID", "冻结输入时间字段无效") from exc
+
+    request_key = str(payload.get("idempotency_key") or run_id).strip()
+    generated_at = pd.Timestamp(input_path.stat().st_mtime, unit="s", tz="UTC").isoformat()
+    source_metadata = {
+        "data_source": "historical_frozen_business_features",
+        "is_simulated": False,
+        "generated_at": generated_at,
+        "scenario": "v2_12_core_p0_historical_replay",
+        "asset_name": input_path.name,
+        "input_file_hash": input_hash,
+        "timezone": "America/New_York",
+        "row_count": 24,
+        "feature_count": 170,
+        "environment": "local_rc_historical_replay",
+        "freshness_semantics": "historical_frozen_input_not_current_realtime",
+    }
+    request = ForecastRunRequest(
+        domain="price",
+        target_name="da_price",
+        input_start_at=input_timestamps[0].to_pydatetime(),
+        input_end_at=input_timestamps[-1].to_pydatetime(),
+        input_hash=input_hash,
+        environment_hash="pending_isolated_runtime",
+        source_type="historical",
+        source_metadata=source_metadata,
+        freshness_status="stale",
+        development_mode=False,
+        idempotency_key=request_key,
+    )
+
+    try:
+        active = service.active_model(request.domain, request.target_name)
+        duplicate = service.find_idempotent_success(request, active)
+        if duplicate:
+            return {
+                "available": True,
+                "execution_path": "t003_atomic_forecast",
+                "formal_worker": True,
+                "idempotent": True,
+                "run_id": duplicate["run_id"],
+                "status": duplicate["status"],
+                "rows": duplicate["record_count"],
+                "input_batch_id": duplicate.get("input_batch_id"),
+                "model_version": duplicate["model_version"],
+                "feature_version": duplicate["feature_version"],
+                "result_hash": duplicate["result_hash"],
+                "source_type": duplicate["source_type"],
+                "current_latest_write": False,
+            }
+
+        artifact_path = Path(str(active.get("artifact_path") or "")).resolve(strict=True)
+        manifest = build_artifact_manifest(artifact_path)
+        contract = build_feature_contract(artifact_path)
+        contract["artifact_id"] = manifest["artifact_id"]
+        for field in ("artifact_id", "artifact_hash", "model_version", "feature_version", "schema_hash"):
+            if not active.get(field):
+                raise ForecastTransactionError("MODEL_IDENTITY_INCOMPLETE", f"Active 模型缺少 {field}")
+            if str(active[field]) != str(manifest[field]):
+                raise ForecastTransactionError(field.upper() + "_MISMATCH", f"{field} 与 PostgreSQL 模型事实不一致")
+
+        features, frozen_timestamps = prepare_frozen_24_input(
+            input_path,
+            input_path,
+            contract,
+            source_timezone="America/New_York",
+        )
+        validate_feature_batch(
+            features,
+            frozen_timestamps,
+            contract,
+            {
+                "artifact_id": manifest["artifact_id"],
+                "feature_version": manifest["feature_version"],
+                "schema_hash": manifest["schema_hash"],
+            },
+        )
+
+        isolated_python = asset_root / ".codex_envs" / "t002_sklearn160" / "Scripts" / "python.exe"
+        if not isolated_python.exists():
+            raise ForecastTransactionError("ISOLATED_RUNTIME_MISSING", "T002 隔离推理环境不存在")
+        output_dir = PROJECT_ROOT / ".codex_tmp" / "t003_runtime" / run_id
+        output_dir.mkdir(parents=True, exist_ok=False)
+        temp_dir = PROJECT_ROOT / ".codex_tmp" / "task_runtime_tmp"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        if context:
+            context.log("parse", "创建统一预测 run_id", progress=18, metadata={"run_id": run_id})
+            context.log("load_data", "读取 PostgreSQL Active 模型事实与冻结输入", progress=36)
+
+        child_env = dict(os.environ)
+        child_env.update(
+            {
+                "TEMP": str(temp_dir),
+                "TMP": str(temp_dir),
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONUTF8": "1",
+                "PYTHONIOENCODING": "utf-8",
+                "PYTHONPATH": str(PROJECT_ROOT),
+                "OMP_NUM_THREADS": "1",
+                "MKL_NUM_THREADS": "1",
+                "OPENBLAS_NUM_THREADS": "1",
+                "NUMEXPR_NUM_THREADS": "1",
+                "VECLIB_MAXIMUM_THREADS": "1",
+                "PYTHONHASHSEED": "0",
+                "HTTP_PROXY": "",
+                "HTTPS_PROXY": "",
+                "ALL_PROXY": "",
+                "NO_PROXY": "*",
+                "T003_OPENPYXL_SITE_PACKAGES": str(asset_root / ".venv" / "Lib" / "site-packages"),
+            }
+        )
+        child_env.pop("DATABASE_URL", None)
         completed = subprocess.run(
             [
                 str(isolated_python),
@@ -106,33 +234,46 @@ def run_price_predict(payload: dict[str, Any], context: TaskStepLogger | None = 
             check=False,
         )
         if completed.returncode != 0:
-            raise ForecastTransactionError("MODEL_INFERENCE_FAILED", "隔离模型推理失败")
-        manifest = json.loads((output_dir / "prediction_manifest.json").read_text(encoding="utf-8"))
+            code = _isolated_inference_error_code(completed.stderr)
+            raise ForecastTransactionError(code, "隔离模型推理失败")
+
+        prediction_manifest = json.loads(
+            (output_dir / "prediction_manifest.json").read_text(encoding="utf-8")
+        )
         timestamps = pd.DatetimeIndex(
             pd.to_datetime(
                 json.loads((output_dir / "prediction_timestamps.json").read_text(encoding="utf-8")),
                 utc=True,
             )
         ).tz_convert("America/New_York")
+        if not timestamps.equals(frozen_timestamps):
+            raise ForecastTransactionError("INPUT_TIMESTAMP_MISMATCH", "隔离推理时间与冻结输入不一致")
         values = pd.DataFrame(
             np.load(output_dir / "prediction_values.npy", allow_pickle=False),
             columns=list(RESULT_VALUE_COLUMNS),
         )
-        batch = PredictionBatch(timestamps, values)
-        request = ForecastRunRequest(
-            domain="price",
-            target_name="da_price",
-            input_start_at=timestamps[0].to_pydatetime(),
-            input_end_at=timestamps[-1].to_pydatetime(),
-            input_hash=str(manifest["input_file_hash"]),
-            environment_hash=str(manifest["environment_hash"]),
-            source_type="real",
-            expected_result_hash=str(manifest["result_data_hash"]),
+        batch = PredictionBatch(
+            timestamps,
+            values,
+            input_features=features,
+            input_hash=input_hash,
+            environment_hash=str(prediction_manifest["environment_hash"]),
+            manifest_result_hash=str(prediction_manifest["result_data_hash"]),
+            source_versions={
+                "input_contract": contract["contract_version"],
+                "artifact_manifest": manifest["manifest_version"],
+            },
+            source_hashes={
+                "input_file": input_hash,
+                "artifact": manifest["artifact_hash"],
+                "schema": manifest["schema_hash"],
+            },
+            source_metadata=source_metadata,
         )
 
         def predictor(model: dict[str, Any]) -> PredictionBatch:
             for field in ("artifact_id", "artifact_hash", "feature_version", "schema_hash", "model_version"):
-                if str(model.get(field) or "") != str(manifest.get(field) or ""):
+                if str(model.get(field) or "") != str(prediction_manifest.get(field) or ""):
                     raise ForecastTransactionError(
                         f"{field.upper()}_MISMATCH",
                         f"{field} 与 Active 模型身份不一致",
@@ -140,25 +281,40 @@ def run_price_predict(payload: dict[str, Any], context: TaskStepLogger | None = 
             return batch
 
         if context:
-            context.log("persist", "原子写入 forecast_runs / forecast_results", progress=78)
+            context.log("persist", "原子写入输入批次、forecast run 与 24 行结果", progress=78)
         result = service.execute(request, predictor, run_id=run_id)
         return {
             "available": True,
             "execution_path": "t003_atomic_forecast",
+            "formal_worker": True,
+            "idempotent": bool(result.get("idempotent")),
             "run_id": result["run_id"],
             "status": result["status"],
             "rows": result["record_count"],
+            "input_batch_id": result.get("input_batch_id"),
             "model_version": result["model_version"],
             "feature_version": result["feature_version"],
             "result_hash": result["result_hash"],
             "source_type": result["source_type"],
             "current_latest_write": False,
         }
-    except Exception as exc:
+    except ModelContractError as exc:
+        wrapped = ForecastTransactionError(exc.code, "冻结输入或模型静态契约校验失败")
+        service.record_failure(request, run_id, wrapped)
         if context:
-            context.log("predict", "Active 模型预测失败；已 fail-closed，未生成合成预测。", level="error", progress=62)
-        raise RuntimeError("预测事务未完成，未写入任何预测事实。") from exc
-
+            context.log("validate", "模型或输入契约失败；结果为 0 行。", level="error", progress=62)
+        raise wrapped from exc
+    except ForecastTransactionError as exc:
+        service.record_failure(request, run_id, exc)
+        if context:
+            context.log("predict", "正式预测失败；事务已回滚为 0 结果行。", level="error", progress=62)
+        raise
+    except Exception as exc:
+        wrapped = ForecastTransactionError("FORECAST_RUNTIME_FAILED", "正式预测运行时失败")
+        service.record_failure(request, run_id, wrapped)
+        if context:
+            context.log("predict", "正式预测失败；事务已回滚为 0 结果行。", level="error", progress=62)
+        raise wrapped from exc
 
 def run_data_sync(payload: dict[str, Any], context: TaskStepLogger | None = None) -> dict[str, Any]:
     if context:

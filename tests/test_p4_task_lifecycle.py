@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from datetime import datetime, timezone
 
 from backend.app.core import config
 from backend.app.services.task_runtime import normalize_task_kind, queue_for_kind, task_policy
@@ -19,10 +20,45 @@ def test_task_runtime_policies_cover_required_task_types():
     assert task_policy("data_sync").max_retries == 3
     assert task_policy("price_predict").queue_name == "price_predict"
     assert task_policy("report_daily").queue_name == "report_daily"
-    assert task_policy("forecast_run").queue_name == "forecast"
+    assert task_policy("forecast_run").queue_name == "price_predict"
     assert normalize_task_kind("data_sync") == "data_sync"
-    assert normalize_task_kind("forecast_run") == "fast_forecast"
+    assert normalize_task_kind("forecast_run") == "price_predict"
+    assert normalize_task_kind("fast_forecast") == "price_predict"
     assert queue_for_kind("knowledge_import") == "rag"
+
+
+def test_forecast_business_idempotency_binds_input_and_model_identity():
+    from backend.app.services.forecast_transaction_service import (
+        ForecastRunRequest,
+        ForecastTransactionService,
+    )
+
+    request = ForecastRunRequest(
+        domain="price",
+        target_name="da_price",
+        input_start_at=datetime(2026, 6, 17, tzinfo=timezone.utc),
+        input_end_at=datetime(2026, 6, 18, tzinfo=timezone.utc),
+        input_hash="input-a",
+        environment_hash="env-a",
+        idempotency_key="request-001",
+    )
+    model = {
+        "model_version": "model-a",
+        "artifact_hash": "artifact-a",
+        "feature_version": "features-a",
+        "schema_hash": "schema-a",
+    }
+
+    first = ForecastTransactionService._input_idempotency_key(request, model)
+    second = ForecastTransactionService._input_idempotency_key(request, model)
+    changed = ForecastTransactionService._input_idempotency_key(
+        ForecastRunRequest(**{**request.__dict__, "input_hash": "input-b"}),
+        model,
+    )
+
+    assert len(first) == 64
+    assert first == second
+    assert changed != first
 
 
 def test_forecast_queue_can_be_isolated_from_historical_backlog(monkeypatch):

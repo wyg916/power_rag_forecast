@@ -21,6 +21,7 @@ from backend.app.services.report_generation_service import (
 def _run(run_id: str = "run_phase5_c_unit_00000000000001") -> dict:
     return {
         "run_id": run_id,
+        "input_batch_id": "batch-phase5-c-unit",
         "status": "success",
         "record_count": 24,
         "model_id": "price-model",
@@ -70,6 +71,7 @@ def test_report_contract_is_traceable_and_stale_safe() -> None:
 
     assert report["report_schema_version"] == REPORT_SCHEMA_VERSION
     assert report["source"]["run_id"] == _run()["run_id"]
+    assert report["source"]["input_batch_id"] == "batch-phase5-c-unit"
     assert report["source"]["model_version"] == "model_20260620_063015"
     assert report["source"]["feature_version"] == "features_140db8af25f9"
     assert report["source"]["is_stale"] is True

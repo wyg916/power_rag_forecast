@@ -488,6 +488,10 @@ def load_strategy_facts(run_id: str, report_id: str, *, engine: Engine) -> dict[
 
     metadata = _json_mapping(report_data.get("metadata_json"))
     content = _json_mapping(report_data.get("content_json"))
+    run_input_batch_id = str(run_data.get("input_batch_id") or "").strip()
+    report_input_batch_id = str(metadata.get("input_batch_id") or "").strip()
+    if run_input_batch_id and report_input_batch_id and run_input_batch_id != report_input_batch_id:
+        raise StrategyGovernanceError("run_report_input_batch_mismatch")
     evidence = content.get("evidence") if isinstance(content.get("evidence"), list) else []
     if len(evidence) < 2:
         raise StrategyGovernanceError("report_evidence_insufficient")
@@ -515,8 +519,11 @@ def load_strategy_facts(run_id: str, report_id: str, *, engine: Engine) -> dict[
         "stale_reason": metadata.get("stale_reason") or ("forecast_window_expired" if is_stale else None),
         "applicable_start_at": run_data.get("forecast_start_at") or run_data.get("forecast_start"),
         "applicable_end_at": end_at,
+        "input_batch_id": run_input_batch_id or report_input_batch_id or None,
         "model_version": run_data.get("model_version"),
         "feature_version": run_data.get("feature_version"),
+        "schema_hash": run_data.get("schema_hash"),
+        "artifact_hash": run_data.get("artifact_hash"),
         "domain": run_data.get("domain") or "price",
         "target_name": run_data.get("target_name") or "da_price",
         "result_hash": run_data.get("result_hash"),
@@ -553,8 +560,11 @@ def generate_strategy_draft(
         "facts": {
             "run_id": facts["run_id"],
             "report_id": facts["report_id"],
+            "input_batch_id": facts.get("input_batch_id"),
             "model_version": facts.get("model_version"),
             "feature_version": facts.get("feature_version"),
+            "schema_hash": facts.get("schema_hash"),
+            "artifact_hash": facts.get("artifact_hash"),
             "result_hash": facts.get("result_hash"),
             "report_hash": facts.get("report_hash"),
             "forecast_record_count": facts.get("forecast_record_count"),

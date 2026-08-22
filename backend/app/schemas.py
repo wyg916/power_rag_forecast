@@ -41,6 +41,7 @@ class TaskCreateRequest(TaskRunRequest):
 
 class ForecastRunRequest(BaseModel):
     mode: Literal["fast_forecast", "refresh_fast_forecast", "retrain_model"] = "refresh_fast_forecast"
+    idempotency_key: str | None = Field(default=None, min_length=8, max_length=256)
 
 
 class ChatRequest(BaseModel):
