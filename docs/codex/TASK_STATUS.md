@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-23 v2.12.0 Final Integration Stage 2 / C + B
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 正常 no-ff 合并 C 后合并 B、A 核心回归、三模型/附件/RBAC/UI 实际联调与 Final Candidate 冻结 | `PASS`；forecast SUCCESS/24/0 partial；MiMo/DeepSeek/明示 Kimi、六格式附件、4 角色及 32 路由×4 视口通过；raw SQL=0、raw 403 可见=0、越权数据=0 | `codex/project1-v2.12.0-final-integration`；C merge `549d5e5129c0393074cb239c45ae14a820953d29`；B merge `ebc08b25626980f2b000c1dfa028f054442f9f42`；集成修复 `aa2114f417ab39534750c7bcc06e73741e7080e0` | `docs/codex/v2_12_final/INTEGRATION_STAGE_2_C_B_REPORT.md`；`docs/codex/v2_12_final/FINAL_CANDIDATE_STATUS.md`；`docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_2_CB_20260822_231423/` | 无 Stage 2 集成阻塞；C 诊断环境矩阵必须在下一阶段用隔离 fixture/准入模型资产做 Final Full Regression。main/tag/生产切流未变。 |
+
 ## 2026-08-22 v2.12.0 Integration Stage 1 / A
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
