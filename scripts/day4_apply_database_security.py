@@ -115,6 +115,7 @@ BUSINESS_VIEWS = (
     "vw_recent_model_errors",
 )
 BUSINESS_WRITE_TABLES = frozenset(BUSINESS_TABLES)
+RUNTIME_SEQUENCE_TABLES = BUSINESS_WRITE_TABLES | frozenset({"audit_logs"})
 DELETE_TABLES = frozenset(
     {
         "ai_answer_feedback",
@@ -242,6 +243,15 @@ def _grant(cur: psycopg.Cursor, privileges: str, objects: Iterable[str], role: s
         )
 
 
+def _sequence_grantees(owner_table: str) -> tuple[str, ...]:
+    roles: list[str] = []
+    if owner_table in RUNTIME_SEQUENCE_TABLES:
+        roles.append(RUNTIME_GROUP)
+    if owner_table in SECURITY_TABLES:
+        roles.append(SECURITY_GROUP)
+    return tuple(roles)
+
+
 def apply_security(local_config: Path) -> dict[str, object]:
     base = _migration_url()
     config_path = _assert_external_config(local_config)
@@ -288,10 +298,8 @@ def apply_security(local_config: Path) -> dict[str, object]:
             ]
             for sequence in sequences:
                 owner_table = sequence.removesuffix("_id_seq")
-                if owner_table in BUSINESS_WRITE_TABLES:
-                    _grant(cur, "USAGE, SELECT", (sequence,), RUNTIME_GROUP, object_kind="SEQUENCE")
-                if owner_table in SECURITY_TABLES:
-                    _grant(cur, "USAGE, SELECT", (sequence,), SECURITY_GROUP, object_kind="SEQUENCE")
+                for role in _sequence_grantees(owner_table):
+                    _grant(cur, "USAGE, SELECT", (sequence,), role, object_kind="SEQUENCE")
         conn.commit()
     return {
         "runtime_group": RUNTIME_GROUP,

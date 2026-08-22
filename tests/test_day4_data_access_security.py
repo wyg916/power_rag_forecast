@@ -178,6 +178,21 @@ def test_role_manifest_covers_runtime_rag_memory_and_chatbi_tables():
     }.issubset(DELETE_TABLES)
 
 
+def test_role_manifest_keeps_insert_and_sequence_privileges_consistent():
+    from scripts.day4_apply_database_security import (
+        RUNTIME_GROUP,
+        RUNTIME_SEQUENCE_TABLES,
+        SECURITY_GROUP,
+        _sequence_grantees,
+    )
+
+    assert "audit_logs" in RUNTIME_SEQUENCE_TABLES
+    assert _sequence_grantees("audit_logs") == (RUNTIME_GROUP, SECURITY_GROUP)
+    assert _sequence_grantees("forecast_results") == (RUNTIME_GROUP,)
+    assert _sequence_grantees("users") == (SECURITY_GROUP,)
+    assert _sequence_grantees("unknown_table") == ()
+
+
 def test_internal_dynamic_object_helpers_are_allowlisted():
     from backend.app.ai_assistant.tools.tariff_tools import _read_table
     from backend.app.repositories.market_data_repository import load_table_rows, table_exists
