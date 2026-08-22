@@ -54,6 +54,8 @@ BUSINESS_TABLES = (
     "anomaly_explanations",
     "chatbi_analysis_plans",
     "feature_importance",
+    "forecast_input_batches",
+    "forecast_input_snapshots",
     "forecast_results",
     "forecast_runs",
     "kb_chunks",
@@ -114,8 +116,14 @@ BUSINESS_VIEWS = (
     "vw_model_comparison",
     "vw_recent_model_errors",
 )
-BUSINESS_WRITE_TABLES = frozenset(BUSINESS_TABLES)
-RUNTIME_SEQUENCE_TABLES = BUSINESS_WRITE_TABLES | frozenset({"audit_logs"})
+BUSINESS_INSERT_ONLY_TABLES = frozenset(
+    {
+        "forecast_input_batches",
+        "forecast_input_snapshots",
+    }
+)
+BUSINESS_WRITE_TABLES = frozenset(BUSINESS_TABLES) - BUSINESS_INSERT_ONLY_TABLES
+RUNTIME_SEQUENCE_TABLES = BUSINESS_WRITE_TABLES | BUSINESS_INSERT_ONLY_TABLES | frozenset({"audit_logs"})
 DELETE_TABLES = frozenset(
     {
         "ai_answer_feedback",
@@ -287,6 +295,7 @@ def apply_security(local_config: Path) -> dict[str, object]:
                 RUNTIME_GROUP,
             )
             _grant(cur, "INSERT, UPDATE", BUSINESS_WRITE_TABLES, RUNTIME_GROUP)
+            _grant(cur, "INSERT", BUSINESS_INSERT_ONLY_TABLES, RUNTIME_GROUP)
             _grant(cur, "DELETE", DELETE_TABLES, RUNTIME_GROUP)
             _grant(cur, "INSERT", ("audit_logs",), RUNTIME_GROUP)
             _grant(cur, "SELECT, INSERT, UPDATE", SECURITY_TABLES, SECURITY_GROUP)

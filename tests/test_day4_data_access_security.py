@@ -138,10 +138,12 @@ def test_role_manifest_never_grants_all_tables_or_ddl():
     assert '"users"' in script and '"audit_logs"' in script
 
 
-def test_role_manifest_covers_runtime_rag_memory_and_chatbi_tables():
+def test_role_manifest_covers_runtime_forecast_rag_memory_and_chatbi_tables():
     from scripts.day4_apply_database_security import (
+        BUSINESS_INSERT_ONLY_TABLES,
         BUSINESS_READ_ONLY_TABLES,
         BUSINESS_TABLES,
+        BUSINESS_WRITE_TABLES,
         DELETE_TABLES,
     )
 
@@ -155,6 +157,8 @@ def test_role_manifest_covers_runtime_rag_memory_and_chatbi_tables():
         "chatbi_metric_catalog",
     }.issubset(BUSINESS_READ_ONLY_TABLES)
     assert {
+        "forecast_input_batches",
+        "forecast_input_snapshots",
         "ai_memory_records",
         "ai_memory_versions",
         "ai_memory_relations",
@@ -167,6 +171,11 @@ def test_role_manifest_covers_runtime_rag_memory_and_chatbi_tables():
         "ai_memory_deletion_proofs",
         "chatbi_analysis_plans",
     }.issubset(BUSINESS_TABLES)
+    assert BUSINESS_INSERT_ONLY_TABLES == {
+        "forecast_input_batches",
+        "forecast_input_snapshots",
+    }
+    assert BUSINESS_INSERT_ONLY_TABLES.isdisjoint(BUSINESS_WRITE_TABLES)
     assert {
         "ai_chat_sessions",
         "ai_chat_messages",
