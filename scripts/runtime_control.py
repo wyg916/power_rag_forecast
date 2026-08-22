@@ -123,6 +123,22 @@ def _write_state(payload: dict[str, Any]) -> None:
     temporary.replace(STATE_FILE)
 
 
+def _state_belongs_to_this_worktree(state: dict[str, Any]) -> bool:
+    try:
+        return Path(str(state.get("working_directory") or "")).resolve() == ROOT
+    except OSError:
+        return False
+
+
+def _same_recorded_process(recorded: dict[str, Any], current: dict[str, Any]) -> bool:
+    return bool(
+        recorded.get("pid")
+        and recorded.get("pid") == current.get("pid")
+        and recorded.get("created")
+        and recorded.get("created") == current.get("created")
+    )
+
+
 def status(*, as_json: bool = False) -> dict[str, Any]:
     backend_port = int(os.environ.get("WEB_BACKEND_PORT", "8000"))
     frontend_port = int(os.environ.get("WEB_FRONTEND_PORT", "5173"))
@@ -170,6 +186,7 @@ def doctor(*, as_json: bool = False) -> int:
 
 
 def start(*, debug: bool, silent: bool, as_json: bool = False) -> int:
+    previous_state = _read_state()
     before = status(as_json=False)
     foreign = [item for item in before["services"].values() if item.get("port") and item.get("pid") and not item.get("source_owned")]
     if foreign:
@@ -205,7 +222,15 @@ def start(*, debug: bool, silent: bool, as_json: bool = False) -> int:
     for name, item in current["services"].items():
         before_item = before["services"].get(name) or {}
         before_pid = before_item.get("pid") if before_item.get("health") in {"healthy", "running", "listening"} else None
-        item["managed"] = bool(item.get("pid")) and item.get("pid") != before_pid
+        previous_item = (previous_state.get("services") or {}).get(name) or {}
+        still_managed = (
+            _state_belongs_to_this_worktree(previous_state)
+            and bool(previous_item.get("managed"))
+            and _same_recorded_process(previous_item, item)
+        )
+        item["managed"] = bool(item.get("pid")) and (
+            item.get("pid") != before_pid or still_managed
+        )
     state = {
         **_identity(), "started_at": datetime.now(timezone.utc).isoformat(), "log_path": str(log_dir),
         "visible_consoles": 0 if silent else 1, "debug": debug, "services": current["services"],
@@ -222,11 +247,7 @@ def start(*, debug: bool, silent: bool, as_json: bool = False) -> int:
 def stop(*, as_json: bool = False) -> int:
     state = _read_state()
     failures, stopped = [], []
-    state_owned = False
-    try:
-        state_owned = Path(str(state.get("working_directory") or "")).resolve() == ROOT
-    except OSError:
-        state_owned = False
+    state_owned = _state_belongs_to_this_worktree(state)
     for name, recorded in (state.get("services") or {}).items():
         if name == "celery":
             continue
