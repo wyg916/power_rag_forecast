@@ -107,7 +107,7 @@ function exportSystemStatus(rows: any[]) {
 
 export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { message } = App.useApp();
-  const { hasPermission } = useAuth();
+  const { hasPermission, canPerformAction } = useAuth();
   const [data, setData] = useState<any>({ dataSource: 'backend_api', mockFallback: false });
   const [loading, setLoading] = useState(true);
   const [sourceRefreshedAt, setSourceRefreshedAt] = useState<string | null>(null);
@@ -128,9 +128,9 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [passwordForm] = Form.useForm();
   const [interfaceForm] = Form.useForm();
   const canReadUsers = hasPermission('user:read');
-  const canWriteUsers = hasPermission('user:write');
+  const canWriteUsers = canPerformAction('user:write');
   const canReadAudit = hasPermission('audit:read');
-  const canWriteSettings = hasPermission('settings:write');
+  const canWriteSettings = canPerformAction('settings.write');
   const effectiveSubKey = canReadUsers ? normalizeSettingsTab(activeSubKey) : normalizeSettingsTab(activeSubKey) === 'settings-user' ? 'settings-status' : normalizeSettingsTab(activeSubKey);
 
   async function loadData(nextKeyword = keyword) {

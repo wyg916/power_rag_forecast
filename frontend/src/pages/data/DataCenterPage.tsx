@@ -26,10 +26,6 @@ import { resolvePageDataMeta } from '../../services/viewState';
 import type { PageProps } from '../../types/ui';
 import './data-center-workspace.css';
 
-const developmentRole = String(import.meta.env.VITE_DEV_ROLE || 'developer').toLowerCase();
-const developmentCanSync = ['admin', 'analyst', 'operator'].includes(developmentRole);
-const developmentCanExport = ['admin', 'analyst', 'operator', 'developer'].includes(developmentRole);
-
 function exportCsv(filename: string, rows: any[]) {
   if (!rows.length) {
     return false;
@@ -80,10 +76,10 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [tableSearchDraft, setTableSearchDraft] = useState('');
   const [tableExporting, setTableExporting] = useState(false);
   const [detail, setDetail] = useState<any>(null);
-  const { authRequired, hasPermission } = useAuth();
-  const canSync = authRequired ? hasPermission('data:sync') : developmentCanSync;
-  const canExport = authRequired ? hasPermission('data:export') : developmentCanExport;
-  const canManageSettings = !authRequired || hasPermission('settings:read');
+  const { hasPermission, canPerformAction } = useAuth();
+  const canSync = canPerformAction('data:sync');
+  const canExport = canPerformAction('data.export');
+  const canManageSettings = hasPermission('settings:read');
   const qualityMode = activeSubKey === 'data-quality';
 
   const loadData = useCallback(async () => {

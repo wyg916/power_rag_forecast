@@ -43,8 +43,8 @@ def test_strategy_header_actions_are_real_permission_aware_and_collapsible():
 
     assert "onClick: loadData" in page
     assert "exportCsv(" in page
-    assert "canConfigure = allowed('task:run')" in page
-    assert "缺少 task:run 权限" in page
+    assert "canConfigure = canPerformAction('strategy:manage')" in page
+    assert "hidden: !canConfigure" in page
     assert "collapseAtNarrow: true" in page
     assert "批量通过（暂不可用）" in page
     assert "批量驳回（暂不可用）" in page
@@ -52,12 +52,15 @@ def test_strategy_header_actions_are_real_permission_aware_and_collapsible():
     assert "Math.random" not in page
 
 
-def test_strategy_header_uses_real_metadata_without_frontend_region_or_config_fallback():
+def test_strategy_header_uses_neutral_business_metadata_without_technical_trace_blocks_or_fallback():
     page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
     service = _read("frontend/src/services/strategyApi.ts")
 
-    for field in ("strategyDate", "strategyVersion", "modelVersion", "sourceType"):
-        assert field in page
+    assert "data?.strategyDate" in page
+    metadata = page.split('className="strategy-header-metadata"', 1)[1].split("</div>", 1)[0]
+    for field in ("strategyVersion", "modelVersion", "sourceType", "runId", "generatedAt"):
+        assert field not in metadata
+        assert field in service
     assert "strategyVersion: governedItems[0]?.strategy_version || ''" in service
     assert "region: devices[0]?.region || governedItems[0]?.region || forecast?.region || today?.region || latest?.region || null" in service
     assert "const resolvedConfig = config && typeof config === 'object' ? config : {}" in service

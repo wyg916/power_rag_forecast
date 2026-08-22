@@ -55,6 +55,18 @@ export const childPermissions: Record<string, string[]> = {
   'settings-api': ['settings:read']
 };
 
+// Keys are the frozen capability-manifest action names returned by the
+// backend; values are the endpoint permissions from API_PERMISSION_MATRIX.
+export const actionPermissions: Record<string, string> = {
+  'forecast.run': 'forecast:run',
+  'data.export': 'data:export',
+  'strategy.generate': 'strategy:generate',
+  'report.generate': 'report:generate',
+  'settings.write': 'settings:write',
+  'assistant.use': 'assistant:use',
+  'assistant.export': 'assistant:export'
+};
+
 export function hasAllPermissions(permissions: string[], required: string[] = []) {
   if (!required.length) return true;
   if (permissions.includes('*')) return true;
@@ -86,8 +98,9 @@ export function canPerformAction(
   capabilityManifest?: CapabilityManifest | null
 ) {
   if (capabilityManifest?.actions?.[action] === false) return false;
+  const permission = actionPermissions[action] || action;
   if (permissions.includes('*')) return true;
-  return permissions.includes(action);
+  return permissions.includes(permission);
 }
 
 export function permissionSnapshotHash(permissions: string[]) {

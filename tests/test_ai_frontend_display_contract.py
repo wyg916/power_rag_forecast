@@ -34,16 +34,16 @@ def test_assistant_page_uses_messages_and_drawer_without_layout_debug_panel() ->
     assert "TracePanel {...activeTrace}" in content
 
 
-def test_ai_conversation_model_selector_is_four_way_and_session_scoped() -> None:
+def test_ai_conversation_tier_selector_requires_explicit_premium_and_is_session_scoped() -> None:
     content = ASSISTANT_PAGE.read_text(encoding="utf-8")
 
-    for label in ["AUTO（推荐）", "Kimi K2.6", "MiMo V2.5", "DeepSeek V4-Flash"]:
+    for label in ["标准模式", "高阶模式（明确选择）"]:
         assert label in content
     assert "const [sessionProviders, setSessionProviders]" in content
-    assert "setModelProvider(sessionProviders[nextSessionId] || 'auto')" in content
+    assert "setModelProvider(sessionProviders[nextSessionId] || 'standard')" in content
+    assert "requested_tier: modelProvider" in content
+    assert "premium_confirmed: modelProvider === 'premium'" in content
     assert 'aria-label="AI 对话模型"' in content
-    assert "实际模型：{providerDisplayName(item.answerState.modelProviderUsed)}" in content
-    assert "AUTO 已降级" in content
     assert "model_20260620_063015" not in content
 
 
@@ -52,7 +52,9 @@ def test_normal_mode_does_not_create_fake_business_answer() -> None:
     page_content = ASSISTANT_PAGE.read_text(encoding="utf-8")
 
     assert "mock_fallback" not in api_content
-    assert "return api.chat(question, sessionId, options)" in api_content
+    assert "return api.chat(buildAssistantChatRequest(question" in api_content
+    assert "premium_confirmed: options.premium_confirmed ?? false" in api_content
+    assert "model_provider: options.model_provider || 'auto'" in api_content
     assert "exportAssistantConversation" in api_content
     assert "uploadAssistantAttachment" in api_content
     assert "getAssistantReferenceOptions" in api_content

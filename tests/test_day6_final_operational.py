@@ -146,6 +146,6 @@ def test_frontend_development_identity_is_read_only_and_build_gated() -> None:
     source = (PROJECT_ROOT / "frontend/src/api.ts").read_text(encoding="utf-8")
     assert "const AUTH_REQUIRED = String(import.meta.env.VITE_AUTH_REQUIRED ?? '1') !== '0'" in source
     assert "const DEVELOPMENT_IDENTITY_HEADERS" in source
-    assert "'X-Role': 'developer'" in source
+    assert "'X-Role': String(import.meta.env.VITE_DEV_ROLE || 'developer')" in source
     assert "...DEVELOPMENT_IDENTITY_HEADERS" in source
     assert "'X-Role': 'admin'" not in source

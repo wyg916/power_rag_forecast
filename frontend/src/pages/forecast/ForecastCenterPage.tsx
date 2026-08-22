@@ -62,9 +62,9 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [selectedHour, setSelectedHour] = useState<any>(null);
   const [historyGranularity, setHistoryGranularity] = useState<'hour' | 'day' | 'week'>('hour');
   const [historyRangeDays, setHistoryRangeDays] = useState<7 | 30>(30);
-  const { hasPermission } = useAuth();
-  const canRunForecast = hasPermission('forecast:run');
-  const canGenerateStrategy = hasPermission('strategy:generate');
+  const { hasPermission, canPerformAction } = useAuth();
+  const canRunForecast = canPerformAction('forecast.run');
+  const canGenerateStrategy = canPerformAction('strategy.generate');
   const canReadData = hasPermission('data:read');
   const canReadModel = hasPermission('model:read');
 

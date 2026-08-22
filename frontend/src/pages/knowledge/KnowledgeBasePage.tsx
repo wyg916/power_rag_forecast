@@ -140,10 +140,10 @@ export function KnowledgeBasePage(_: PageProps) {
   const { message } = App.useApp();
   const [data, setData] = useState<KnowledgeData>(defaultKnowledgeData);
   const [loading, setLoading] = useState(true);
-  const { hasPermission } = useAuth();
-  const canWriteKnowledge = hasPermission('knowledge:write');
-  const canPublishKnowledge = hasPermission('knowledge:publish');
-  const canExportKnowledge = hasPermission('knowledge:export');
+  const { canPerformAction } = useAuth();
+  const canWriteKnowledge = canPerformAction('knowledge:write');
+  const canPublishKnowledge = canPerformAction('knowledge:publish');
+  const canExportKnowledge = canPerformAction('knowledge:export');
   const [error, setError] = useState('');
   const [query, setQuery] = useState('分时电价、现货交易风险和购电建议是什么？');
   const [topK, setTopK] = useState(5);

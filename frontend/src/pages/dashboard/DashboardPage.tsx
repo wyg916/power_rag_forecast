@@ -36,13 +36,13 @@ export function DashboardPage(_: PageProps) {
   const [logOpen, setLogOpen] = useState(false);
   const [logLoading, setLogLoading] = useState(false);
   const [logText, setLogText] = useState('');
-  const { authRequired, hasPermission } = useAuth();
-  const canGenerateReport = !authRequired || hasPermission('report:generate');
-  const canUseAssistant = !authRequired || hasPermission('assistant:use');
-  const canReadData = !authRequired || hasPermission('data:read');
-  const canReadModel = !authRequired || hasPermission('model:read');
-  const canReadTasks = !authRequired || hasPermission('task:read');
-  const canDiagnoseTasks = !authRequired || hasPermission('task:diagnostics');
+  const { hasPermission, canPerformAction } = useAuth();
+  const canGenerateReport = canPerformAction('report.generate');
+  const canUseAssistant = canPerformAction('assistant.use');
+  const canReadData = hasPermission('data:read');
+  const canReadModel = hasPermission('model:read');
+  const canReadTasks = hasPermission('task:read');
+  const canDiagnoseTasks = hasPermission('task:diagnostics');
 
   const loadData = useCallback(async () => {
     setLoading(true);

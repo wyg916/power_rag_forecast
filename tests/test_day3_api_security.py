@@ -293,7 +293,7 @@ def test_frontend_auth_and_permission_contracts():
     assert "auth:unauthorized" in api_source
     assert "requestDownload(`/api/reports/${encodeURIComponent(reportId)}/download`)" in api_source
     assert "window.open(api.reportDownloadUrl" not in report_page
-    assert "report:generate" in report_page and "report:review" in report_page
+    assert "report.generate" in report_page and "report:review" in report_page
     assert "task:manage" in task_page
     assert "model:manage" in model_page
     assert "descriptor.status === 403" in view_state and "state: 'forbidden'" in view_state

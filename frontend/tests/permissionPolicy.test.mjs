@@ -31,5 +31,7 @@ test('ActionGuard and permission snapshot remain deterministic', async () => {
   const policy = await importTypeScript('../src/security/permissions.ts');
   assert.equal(policy.canPerformAction('report:generate', ['report:read']), false);
   assert.equal(policy.canPerformAction('report:generate', ['report:read', 'report:generate']), true);
+  assert.equal(policy.canPerformAction('report.generate', ['report:generate'], { actions: { 'report.generate': true } }), true);
+  assert.equal(policy.canPerformAction('report.generate', ['report:generate'], { actions: { 'report.generate': false } }), false);
   assert.equal(policy.permissionSnapshotHash(['b', 'a']), policy.permissionSnapshotHash(['a', 'b']));
 });

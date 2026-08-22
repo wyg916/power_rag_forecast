@@ -107,7 +107,7 @@ function buildPriceOption(rows: any[], review = false) {
 
 export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { message } = App.useApp();
-  const { hasPermission, user } = useAuth();
+  const { canPerformAction, user } = useAuth();
   const isReviewPage = activeSubKey === 'report-review' || activeSubKey === 'report-publish';
   const [data, setData] = useState<any>({ reports: [], summary: {} });
   const [loading, setLoading] = useState(true);
@@ -119,9 +119,9 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [reportPage, setReportPage] = useState(1);
   const [reviewComment, setReviewComment] = useState('');
   const permissions = {
-    canDownload: hasPermission('report:download'),
-    canGenerate: hasPermission('report:generate'),
-    canReview: hasPermission('report:review')
+    canDownload: canPerformAction('report:download'),
+    canGenerate: canPerformAction('report.generate'),
+    canReview: canPerformAction('report:review')
   };
 
   async function loadData(nextKeyword = keyword, nextPage = reportPage, nextType = reportType, nextStatus = reportStatus) {

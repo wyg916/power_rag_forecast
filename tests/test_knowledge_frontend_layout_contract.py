@@ -41,10 +41,10 @@ def test_knowledge_page_uses_existing_real_api_boundaries() -> None:
     assert "api.knowledgeExport()" in content
     assert "api.knowledgeReleaseAction" in content
     assert "knowledge:publish" in content
-    assert "const canWriteKnowledge = hasPermission('knowledge:write')" in content
-    assert "const canPublishKnowledge = hasPermission('knowledge:publish')" in content
+    assert "const canWriteKnowledge = canPerformAction('knowledge:write')" in content
+    assert "const canPublishKnowledge = canPerformAction('knowledge:publish')" in content
     assert "!authRequired || hasPermission('knowledge:publish')" not in content
-    assert "title={!canWriteKnowledge ? '需要 knowledge:write 权限' : undefined}" in content
+    assert "hidden: !canWriteKnowledge" in content
     assert "releaseLedgerCount" in content
     assert "<dt>隔离</dt>" in content
     assert "<dt>重复</dt>" in content

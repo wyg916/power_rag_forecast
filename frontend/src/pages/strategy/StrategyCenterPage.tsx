@@ -75,14 +75,13 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [reviewFilters, setReviewFilters] = useState<ReviewFilters>(DEFAULT_REVIEW_FILTERS);
 
   const [reviewHistory, setReviewHistory] = useState<any[]>([]);
-  const { authRequired, hasPermission } = useAuth();
-  const allowed = useCallback((permission: string) => !authRequired || hasPermission(permission), [authRequired, hasPermission]);
+  const { canPerformAction } = useAuth();
   const reviewPermissions = {
-    canSubmit: allowed('strategy:submit'),
-    canReview: allowed('strategy:review'),
-    canPublish: allowed('strategy:publish')
+    canSubmit: canPerformAction('strategy:submit'),
+    canReview: canPerformAction('strategy:review'),
+    canPublish: canPerformAction('strategy:publish')
   };
-  const canConfigure = allowed('strategy:manage');
+  const canConfigure = canPerformAction('strategy:manage');
   const mode = useMemo<'overview' | 'storage' | 'review'>(() => {
     if (activeSubKey === 'strategy-review') return 'review';
     if (activeSubKey === 'strategy-low' || activeSubKey === 'strategy-storage') return 'storage';

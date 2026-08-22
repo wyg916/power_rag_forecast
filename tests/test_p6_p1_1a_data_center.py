@@ -128,8 +128,8 @@ def test_data_center_actions_and_alert_details_are_real():
     page = _read("frontend/src/pages/data/DataCenterPage.tsx")
     design = _read("frontend/src/components/data/DataCenterDesign.tsx")
     assert "api.dataRefresh()" in page
-    assert "data:sync" in page and "data:export" in page
-    assert "disabled: !canSync" in page
+    assert "canPerformAction('data:sync')" in page and "canPerformAction('data.export')" in page
+    assert "hidden: !canSync" in page
     assert "alertId: item.alert_id" in design
     assert "qualityMode ? '数据质量异常详情' : '同步任务详情'" in page
 

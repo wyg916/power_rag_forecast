@@ -12,24 +12,23 @@ def test_sc006_uses_one_shared_three_page_header_and_layout_system() -> None:
     page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
     assert page.count("\n      <PageHeader\n") == 1
     assert page.count("<StrategyMetricStrip") == 1
-    assert "items={strategyTabs}" in page
+    assert "items={strategyTabs.filter(" in page
     assert "activeKey={activeTabKey}" in page
     assert "onChange={handleStrategyTabChange}" in page
     for mode in ("overview", "storage", "review"):
         assert f"mode === '{mode}'" in page
 
 
-def test_sc006_exposes_the_same_trace_metadata_on_all_subpages() -> None:
+def test_sc006_hides_technical_trace_metadata_on_all_default_subpages() -> None:
     page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
     metadata_start = page.index('className="strategy-header-metadata"')
     metadata_end = page.index("</div>", metadata_start)
     metadata = page[metadata_start:metadata_end]
-    for field in ("strategyDate", "strategyVersion", "modelVersion", "runId", "generatedAt"):
-        assert field in metadata
-    assert "sourceType" not in metadata
-    assert "staleReason" in metadata
-    assert "strategy-meta-run" in metadata
-    assert "strategy-meta-stale" in metadata
+    assert "strategyDate" in metadata
+    for field in ("strategyVersion", "modelVersion", "runId", "generatedAt", "sourceType", "staleReason"):
+        assert field not in metadata
+    assert "strategy-meta-run" not in metadata
+    assert "strategy-meta-stale" not in metadata
 
 
 def test_review_filter_policy_is_explicit_and_can_be_cleared() -> None:

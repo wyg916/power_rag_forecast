@@ -61,18 +61,20 @@ def test_api_error_preserves_http_status_for_401_and_403_mapping():
 def test_refresh_and_permission_actions_are_real_or_explicitly_disabled():
     data = _read("frontend/src/pages/data/DataCenterPage.tsx")
     forecast = _read("frontend/src/pages/forecast/ForecastCenterPage.tsx")
+    policy = _read("frontend/src/security/permissions.ts")
     for source in [data, forecast]:
         assert "onClick: loadData" in source
         assert "loading," in source
     assert "api.dataRefresh()" in data
-    assert "data:sync" in data
+    assert "canPerformAction('data:sync')" in data
+    assert "canPerformAction('data.export')" in data
     assert "api.runForecast()" in forecast
-    assert "forecast:run" in forecast
-    assert "strategy:generate" in forecast
-    assert "const canRunForecast = hasPermission('forecast:run')" in forecast
-    assert "const canGenerateStrategy = hasPermission('strategy:generate')" in forecast
+    assert "const canRunForecast = canPerformAction('forecast.run')" in forecast
+    assert "const canGenerateStrategy = canPerformAction('strategy.generate')" in forecast
+    assert "'forecast.run': 'forecast:run'" in policy
+    assert "'strategy.generate': 'strategy:generate'" in policy
     assert "!authRequired || hasPermission" not in forecast
-    assert "disabled: !canGenerateStrategy" in forecast
+    assert "hidden: !canGenerateStrategy" in forecast
     assert "#/strategy/strategy-high" in forecast
     assert "在完整业务上下文中生成策略" in forecast
 
@@ -162,9 +164,13 @@ def test_migrated_header_actions_keep_permission_and_noop_guards():
     model = _read("frontend/src/pages/model/ModelCenterPage.tsx")
     knowledge = _read("frontend/src/pages/knowledge/KnowledgeBasePage.tsx")
     task = _read("frontend/src/pages/task/TaskCenterPage.tsx")
-    assert "report:generate" in dashboard
-    assert "task:run" in model
+    strategy = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
+    data = _read("frontend/src/pages/data/DataCenterPage.tsx")
+    assert "canPerformAction('report.generate')" in dashboard
+    assert "model:manage" in model
     assert "knowledge:write" in knowledge
-    assert "task:run" in task
+    assert "task:manage" in task
     assert "selectedTaskKind === 'all'" in task
     assert "请先选择具体任务类型" in task
+    for source in (dashboard, data, model, task, strategy):
+        assert "!authRequired" not in source

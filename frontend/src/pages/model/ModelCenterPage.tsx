@@ -130,10 +130,10 @@ export function ModelCenterPage(_props: PageProps) {
   const [logLoading, setLogLoading] = useState(false);
   const [logText, setLogText] = useState('');
   const [eventsOpen, setEventsOpen] = useState(false);
-  const { authRequired, hasPermission } = useAuth();
-  const canRunTraining = !authRequired || hasPermission('model:manage');
-  const canExportModels = !authRequired || hasPermission('model:export');
-  const canDiagnoseTasks = !authRequired || hasPermission('task:diagnostics');
+  const { canPerformAction } = useAuth();
+  const canRunTraining = canPerformAction('model:manage');
+  const canExportModels = canPerformAction('model:export');
+  const canDiagnoseTasks = canPerformAction('task:diagnostics');
 
   async function loadData(nextFilters = filters) {
     setLoading(true);
