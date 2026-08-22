@@ -1,0 +1,21 @@
+种子提交 3b6eb33df96ece08a60acce802d6ec249ec5a826：
+docs/codex/v2_12_final/PARALLEL_EXECUTION_MANIFEST.md
+docs/codex/v2_12_final/INTERFACE_CONTRACT.md
+docs/codex/v2_12_final/FILE_OWNERSHIP.md
+docs/codex/v2_12_final/ACCEPTANCE_MATRIX.md
+docs/codex/v2_12_final/CURRENT_STATUS.md
+docs/codex/v2_12_final/WORKTREE_ENV_SETUP.md
+docs/codex/v2_12_final/PARALLEL_HANDOFF.md
+
+Bootstrap 收口提交：
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/plan.md
+docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/changed_files.txt
+docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/commands.txt
+docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/test_summary.md
+docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/rollback.md
+docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/unresolved.md
+docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/environment_summary.md
+
+非 Git 环境资产：四个新 worktree 各自根目录的 ignored `.env` 副本，以及 `frontend/node_modules` 目录联接；均未被 Git 跟踪。
+冻结基线 worktree 和普通根目录没有本轮 Git 内容修改。

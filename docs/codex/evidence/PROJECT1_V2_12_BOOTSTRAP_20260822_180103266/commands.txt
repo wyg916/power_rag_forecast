@@ -1,0 +1,17 @@
+# 关键命令摘要
+
+- `git rev-parse --show-toplevel`、`git branch --show-current`、`git rev-parse HEAD`、`git tag --points-at HEAD`
+- `git status --short --branch`、`git rev-list --left-right --count @{u}...HEAD`、`git remote -v`
+- `git worktree list --porcelain`、逐 worktree `git status --short --branch`
+- `git bundle create <E盘备份路径>/repository_all_refs.bundle --all`、`git bundle verify`
+- 普通根目录 `git diff --binary --full-index`、`git diff --cached --binary --full-index`、`git ls-files --others --exclude-standard`
+- 普通根目录未跟踪文件逐文件复制及 `Get-FileHash -Algorithm SHA256`
+- `Get-NetTCPConnection`、`Win32_Process`、`docker ps`、`docker inspect`、Redis `PING`、6333 TCP 只读探测
+- `git worktree add -b <branch> <path> <seed-sha>`
+- `git check-ignore .env`、`git ls-files --error-unmatch .env`、源/目标 `.env` SHA256 比对
+- 共享 Python 运行时模块导入、`python -m pytest --version`、`python -m alembic heads`
+- Node/npm 版本、Vite/TypeScript/React 包解析、前端脚本识别
+- `scripts/web_platform_launcher.py --preflight-only`（A/B/C，未启动服务）
+- `git diff --check`、`git status --short --branch`
+
+命令与证据均未打印密钥、Token、密码或完整 DSN。
