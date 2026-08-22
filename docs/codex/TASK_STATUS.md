@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-22 v2.12.0 Bootstrap 与并行环境
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 权威基线核验、可恢复备份、端口来源盘点、唯一集成 worktree、A/B/C 具名并行 worktree、接口契约/文件所有权冻结及环境预检 | `PASS`；`PARALLEL_READY=YES`；未实现 A/B/C 业务内容，未执行生产切流 | `codex/project1-v2.12.0-final-integration`；并行种子 `3b6eb33df96ece08a60acce802d6ec249ec5a826` | `docs/codex/v2_12_final/`；`docs/codex/evidence/PROJECT1_V2_12_BOOTSTRAP_20260822_180103266/`；外置备份 `E:\项目一_v2.12.0_备份\BOOTSTRAP_20260822_180103266` | 无；现有端口实例仅只读识别，未复用为新 worktree 实例；DOCX 已结构化读取，因本机缺少 LibreOffice 未做视觉渲染。 |
+
 ## 2026-08-16 项目一本地最终收口
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
