@@ -1,0 +1,8 @@
+docs/codex/TASK_STATUS.md
+docs/codex/v2_12_final/INTEGRATION_STAGE_1_A_REPORT.md
+docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_1_A_20260822_222047/plan.md
+docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_1_A_20260822_222047/changed_files.txt
+docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_1_A_20260822_222047/commands.txt
+docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_1_A_20260822_222047/test_summary.md
+docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_1_A_20260822_222047/rollback.md
+docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_1_A_20260822_222047/unresolved.md

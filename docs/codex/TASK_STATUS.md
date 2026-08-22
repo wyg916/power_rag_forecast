@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-22 v2.12.0 Integration Stage 1 / A
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 预集成核验、无压缩合并 A、Integration SHA 上 PostgreSQL 预测链定向回归 | `PASS`；正式 Celery `PENDING/ACCEPTED -> RUNNING -> SUCCESS`；run `run_20260822T142807620068Z_ed7f7a4549`；24 行、0 partial；幂等、失败回滚、API/task/重启读回及 prediction→dashboard→strategy→report 链通过 | `codex/project1-v2.12.0-final-integration`；A merge `814bf633d09853b7e29d13c8734399fc9e4cfb05` | `docs/codex/v2_12_final/INTEGRATION_STAGE_1_A_REPORT.md`；`docs/codex/evidence/PROJECT1_V2_12_INTEGRATION_STAGE_1_A_20260822_222047/` | 无 Stage 1 阻塞；B/C 未合入，main/tag 未变更。 |
+
 ## 2026-08-22 v2.12.0 Bootstrap 与并行环境
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

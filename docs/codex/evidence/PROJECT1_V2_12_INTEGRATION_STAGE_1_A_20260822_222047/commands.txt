@@ -1,0 +1,8 @@
+git merge-base --is-ancestor 3b6eb33df96ece08a60acce802d6ec249ec5a826 61204f48a870e36742fed8c5fb407dc9c6e7e55b
+git diff --name-status 3b6eb33df96ece08a60acce802d6ec249ec5a826..61204f48a870e36742fed8c5fb407dc9c6e7e55b
+git merge --no-ff codex/project1-v2.12.0-core-p0
+python -m pytest -q -m "not integration" <A targeted test files>
+POWER_TRADING_ASSET_ROOT=E:\智能运营分析项目 python -m pytest -q tests/test_t002_safe_model_contract.py
+celery -A backend.app.workers.celery_app:celery_app worker --pool=solo -Q project1_v212_integration_stage1_a
+Integration TestClient/SQLAlchemy targeted E2E, rollback, downstream and restart readback scripts
+git diff --check
