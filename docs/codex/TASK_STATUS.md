@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-22 项目一 v2.12.0 并行任务 A
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 核心预测 P0 与预测→首页→报告→策略→审核业务链 | `PASS`；正式 Celery 任务 `PENDING/ACCEPTED -> RUNNING -> SUCCESS`；run `run_20260822T115159818317Z_5370682c70`；结果/输入快照均 24 行；幂等、失败零半成品、刷新与 worker 重启回读通过；historical 策略发布按预期阻断 | `codex/project1-v2.12.0-core-p0` / 本行所在提交 | `docs/codex/v2_12_final/A_CORE_P0_REPORT.md`；`docs/codex/evidence/PROJECT1_V2_12_A_CORE_P0_20260822_184801/` | 无 A 范围 P0 阻塞；ChatBI 20 个 Golden 问题语义基础归 C，详见 `A_TO_INTEGRATION_DEPENDENCIES.md`。 |
+
 ## 2026-08-16 项目一本地最终收口
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
