@@ -12,6 +12,7 @@
 | V212-RBAC-STRATEGY-REVIEW | Analyst 可触发无权限的 review history 请求 | review Tab、mode 与请求 effect 未共同受 capability 保护 | `a073f96` | Analyst review guard 与前端契约 PASS；known unauthorized request count=0 | CLOSED |
 | V212-DEEPSEEK-ENDPOINT-MODEL | 成本受控 smoke 绕过 DATA_PLANNER 能力路由并使用 Provider 默认模型 | smoke 未把 capability registry 解析出的 endpoint model 显式传给 Adapter | `a073f96` | HTTP 200；request model `deepseek-chat`；Adapter/schema/semantic PASS；retry 0 | CLOSED |
 | V212-ATTACHMENT-EVALUATOR | Grounding/Citation 被耦合为整体布尔值，真实结果无法独立证明 | evaluator 未保存检索来源与 citation attachment/file/source 映射 | `a073f96` | A–F 离线矩阵；真实调用 1 次；Grounding/Citation 独立 PASS；Enterprise KB chunk=0 | CLOSED |
+| V212-PERMISSION-MATRIX-DRIFT | 前一 SAME-SHA Backend Full 的权限矩阵复现测试失败 | `a073f96` 已把四个 Settings GET runtime guard 收紧为最小只读权限，但遗漏重新生成 CSV/Markdown 快照 | `c1e33b3` | generator check；Python 54；frontend policy 4；Backend Full 1173 passed/34 skipped；public match；write guard regression=0 | CLOSED |
 
 ## ACL 最小权限闭环
 

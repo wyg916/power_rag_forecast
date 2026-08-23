@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-23 v2.12.0 Permission Matrix Drift Final Closure
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 关闭前一 SAME-SHA Backend Full 唯一的权限矩阵复现漂移 | `PASS`（进入新 SAME-SHA Full Regression）；真源为 runtime route metadata + 既有 generator + role registry；四个 Settings GET 同步为 `settings:read`，三个写路由仍为 `settings:write`；targeted Python 54、frontend policy 4、Backend Full 1173 passed/34 skipped/0 failed/error；public match、临时对象残留 0 | `codex/project1-v2.12.0-final-integration`；失败候选 `dfd9ebe958762aa30792b8681521f5dd67aa4e22`；`PERMISSION_MATRIX_REMEDIATION_SHA=c1e33b3e500874497276a8d0ffff1119d5fcee2a`；新 `FINAL_PRE_RELEASE_SHA=SELF` | `docs/codex/evidence/PROJECT1_V2_12_PERMISSION_MATRIX_DRIFT_20260823_144740484/README.md`；仓库外原始证据 `E:\项目一_v2.12.0_备份\PERMISSION_MATRIX_DRIFT_20260823_144740484`；检查点 `backups/phase3/20260823_144740484_PERMISSION_MATRIX_DRIFT_PRE/` | 新 `FINAL_PRE_RELEASE_SHA` 尚待唯一一次 SAME-SHA Full Regression；本地零成本门禁未全绿前真实 Provider 调用保持 0。 |
+
 ## 2026-08-23 v2.12.0 Attachment Evaluator Remediation / Targeted Gate
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

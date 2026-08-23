@@ -25,10 +25,11 @@ v2.12.0 汇总 A 的预测与模型事实闭环、B 的前端/RBAC/全局 AI she
 - 修复 Analyst 无权限时仍进入策略审核模式并请求 review history 的问题。
 - 修复 DeepSeek 成本受控复验绕过 `DATA_PLANNER` endpoint model 路由的问题，并补齐脱敏 Adapter 诊断。
 - 修复附件回答将 Grounding/Citation 证据耦合的问题；A–F 离线矩阵与一次授权真实 selected-only 附件 QA 均通过，Enterprise KB chunk 为 0。
+- 修复前一 SAME-SHA 回归发现的权限矩阵生成物漂移：四个 Settings GET 的 runtime/matrix 均为 `settings:read`，写接口仍为 `settings:write`；提交前 Backend Full 为 1173 passed、34 skipped、0 failed/error。
 
 ## 验证状态
 
-历史 Round 1 在代码 SHA `44e048d56ccc8f21ac60bc52881b2b806f97d92f` PASS；阻断修复提交为 `a073f96b67d3d2b387ef51dee905e055dc983c69`。包含本发布文件的提交以 `SELF` 表示新的 `FINAL_PRE_RELEASE_SHA`；提交后不再修改 tracked 文件。只有在该同一 SHA 上完成 Round 2 全量回归后，才能冻结 `FINAL_SHA` 并评估 main/root/tag/remote 归一。
+历史 Round 1 在代码 SHA `44e048d56ccc8f21ac60bc52881b2b806f97d92f` PASS；附件/Provider/RBAC 阻断修复提交为 `a073f96b67d3d2b387ef51dee905e055dc983c69`。前一预发布 `dfd9ebe958762aa30792b8681521f5dd67aa4e22` 的 SAME-SHA Backend Full 因权限矩阵漂移唯一失败；最小同步修复提交为 `c1e33b3e500874497276a8d0ffff1119d5fcee2a`。包含本发布文件的提交以 `SELF` 表示新的 `FINAL_PRE_RELEASE_SHA`；提交后不再修改 tracked 文件。只有在该同一 SHA 上完成一次全量 SAME-SHA 回归后，才能冻结 `FINAL_SHA` 并评估 main/root/tag/remote 归一。
 
 ## 已知边界
 

@@ -1,10 +1,13 @@
 {
   "schema_version": "project1-evidence-manifest/v1",
   "version": "v2.12.0",
-  "round": "ROUND1_PLUS_REMEDIATION_TARGETED",
-  "code_sha": "a073f96b67d3d2b387ef51dee905e055dc983c69",
+  "round": "ROUND1_PLUS_REMEDIATIONS_PENDING_FINAL_SAME_SHA",
+  "code_sha": "c1e33b3e500874497276a8d0ffff1119d5fcee2a",
   "historical_round1_code_sha": "44e048d56ccc8f21ac60bc52881b2b806f97d92f",
   "evidence_root": "E:\\项目一_v2.12.0_备份\\FINAL_REGRESSION_20260823_005414508",
+  "previous_failed_pre_release_sha": "dfd9ebe958762aa30792b8681521f5dd67aa4e22",
+  "previous_same_sha_evidence_root": "E:\\项目一_v2.12.0_备份\\FINAL_SAME_SHA_20260823062926002",
+  "permission_matrix_remediation_evidence_root": "E:\\项目一_v2.12.0_备份\\PERMISSION_MATRIX_DRIFT_20260823_144740484",
   "hash_algorithm": "SHA256",
   "files": [
     {"path": "round1_backend_full_44e048d_v3.xml", "sha256": "1145A4A7F5270649D89DB1FF1CCCE9D2AF65C9A15AC735442E2BF177327657CE", "gate": "backend_full"},
@@ -45,9 +48,43 @@
       "status": "PASS",
       "real_call_count": 1,
       "retry_count": 0
+    },
+    {
+      "path": "targeted_permission_pytest.xml",
+      "sha256": "4C6BDB457AEF2D219A69613C6F0A0F6A645BE3C3F08C9FB91BC4E66572E35B91",
+      "gate": "permission_matrix_api_security_settings_role_mapping",
+      "status": "PASS",
+      "passed": 54
+    },
+    {
+      "path": "targeted_frontend_permission.tap",
+      "sha256": "8C5FB92ABD3B17682B421FC535B23AA3D1C2CFB2F8670D99CAF64B5B39A81578",
+      "gate": "frontend_permission_policy",
+      "status": "PASS",
+      "passed": 4
+    },
+    {
+      "path": "precommit_backend_full.xml",
+      "sha256": "D4C71EC9BB367A62F306B63BC14110DAA38CC5C7350380415753015B6B981598",
+      "gate": "permission_matrix_precommit_backend_full",
+      "status": "PASS",
+      "collected": 1207,
+      "passed": 1173,
+      "skipped": 34,
+      "failed": 0,
+      "errors": 0
+    },
+    {
+      "path": "precommit_backend_full_guard.json",
+      "sha256": "9CE1B9B7A0F1105DDB6CC4EC4DFA3AD5F8FD83B98499124AC3C9237EA6DF6EE5",
+      "gate": "permission_matrix_precommit_backend_isolation",
+      "status": "PASS",
+      "public_match": true,
+      "residual_schema_count": 0,
+      "residual_role_count": 0
     }
   ],
   "final_pre_release_sha": "SELF",
-  "round2_evidence_manifest": "PENDING_EXTERNAL_SAME_SHA_RUN",
+  "round2_evidence_manifest": "PENDING_NEW_EXTERNAL_SAME_SHA_RUN",
   "secrets_in_manifest": false
 }

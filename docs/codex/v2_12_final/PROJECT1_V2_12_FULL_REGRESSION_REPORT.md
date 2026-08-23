@@ -3,11 +3,14 @@
 ## 范围与判定
 
 - 历史 Round 1 最终代码 SHA：`44e048d56ccc8f21ac60bc52881b2b806f97d92f`
-- 阻断修复提交：`a073f96b67d3d2b387ef51dee905e055dc983c69`
+- 附件/Provider/RBAC 阻断修复提交：`a073f96b67d3d2b387ef51dee905e055dc983c69`
+- 前一失败预发布 SHA：`dfd9ebe958762aa30792b8681521f5dd67aa4e22`
+- 权限矩阵漂移修复提交：`c1e33b3e500874497276a8d0ffff1119d5fcee2a`
 - 证据根目录：`E:\项目一_v2.12.0_备份\FINAL_REGRESSION_20260823_005414508`
 - Round 1：`PASS`
 - Remediation Targeted Gate：`PASS`
-- Round 2 SAME-SHA：本发布文件所在提交为 `FINAL_PRE_RELEASE_SHA=SELF`；提交后冻结 tracked 文件并执行，本报告冻结时为 `PENDING`。
+- 前一 Round 2 SAME-SHA：`FAIL`；Backend Full 为 1207 collected / 1172 passed / 34 skipped / 1 failed / 0 errors，唯一失败是权限矩阵生成物未同步四个 Settings GET runtime guard。因本次修复产生新代码提交，该 SHA 不再是最终候选。
+- 新 Round 2 SAME-SHA：本发布文件所在提交为 `FINAL_PRE_RELEASE_SHA=SELF`；提交后冻结 tracked 文件并仅执行一次，本报告冻结时为 `PENDING`。
 - 生产发布：`NOT_EXECUTED`
 
 ## Round 1 权威结果
@@ -42,6 +45,19 @@
 | Scope/secret gate | PASS | 19 个 remediation 文件均在授权白名单；高置信 secret pattern 0 |
 
 本节证据：`docs/codex/v2_12_final/ATTACHMENT_EVALUATOR_REMEDIATION_REPORT.md` 与 `docs/codex/v2_12_final/evidence/attachment_real_qa_20260823_141859563.json`。历史 Round 1 不能替代后续 SAME-SHA Round 2；最终结论只以 `FINAL_PRE_RELEASE_SHA` 的新执行结果为准。
+
+## Permission Matrix Drift Closure
+
+| 门禁 | 结果 | 关键证据 |
+|---|---|---|
+| Source of Truth | PASS | 既有生成器从 runtime route dependency、权限映射和角色注册表生成 CSV/Markdown；CSV 是运行时机器可读策略快照 |
+| 四个 Settings GET | PASS | `/interfaces`、`/interfaces/configs`、`/interfaces/overview`、`/interfaces/test-logs` 的 runtime 与 matrix 均为 `settings:read` |
+| Settings writes | PASS | `PUT /interfaces/{interface_id}`、`POST /interfaces/{interface_id}/test`、`POST /interfaces/test-all` 均继续为 `settings:write` |
+| Reproducibility | PASS | 207 method+path；191 path；仅两份同步生成物各四行变化；drift=0 |
+| Targeted | PASS | Python 54 passed；frontend permission policy 4 passed |
+| Backend Full（提交前） | PASS | 1207 collected；1173 passed；34 skipped；0 failed；0 errors；public match；临时 schema/role 残留 0 |
+
+证据索引：`docs/codex/evidence/PROJECT1_V2_12_PERMISSION_MATRIX_DRIFT_20260823_144740484/README.md`；仓库外原始证据：`E:\项目一_v2.12.0_备份\PERMISSION_MATRIX_DRIFT_20260823_144740484`。本节仍只是新 SAME-SHA Full Regression 的前置门禁。
 
 ## 环境失误与有效结果选择
 

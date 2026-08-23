@@ -11,7 +11,9 @@
 - B 最终提交：`4d1d87463dd4e45f8f01cb15ce958711f6e06099`
 - Stage 2 候选：`f56d4a73cf8d2de4dfe2eea5e1aebf5ce3561575`
 - Round 1 代码候选：`44e048d56ccc8f21ac60bc52881b2b806f97d92f`
-- 阻断修复提交：`a073f96b67d3d2b387ef51dee905e055dc983c69`
+- 附件/Provider/RBAC 阻断修复提交：`a073f96b67d3d2b387ef51dee905e055dc983c69`
+- 前一失败预发布 SHA：`dfd9ebe958762aa30792b8681521f5dd67aa4e22`
+- 权限矩阵漂移修复提交：`c1e33b3e500874497276a8d0ffff1119d5fcee2a`
 - `FINAL_PRE_RELEASE_SHA`：`SELF`，即包含本文件在内的单次发布文件提交；随后所有 tracked 文件冻结并执行 SAME-SHA Round 2。
 - `FINAL_SHA`：仅当 Round 2 全部硬门禁通过后，等于 `FINAL_PRE_RELEASE_SHA`。
 
@@ -46,9 +48,16 @@ Round 1 在 `44e048d56ccc8f21ac60bc52881b2b806f97d92f` 的最终代码状态完�
 - DeepSeek `DATA_PLANNER` 真实 AnalysisPlan：PASS；schema/semantic PASS；raw SQL 0
 - Attachment evaluator A–F：PASS；Grounding/Citation 独立判定
 - 真实附件 selected-only QA：调用 1、retry 0、附件 chunk 1、Enterprise KB chunk 0、Citation 1、Grounding/Citation PASS
-- `REMEDIATION_SHA=a073f96b67d3d2b387ef51dee905e055dc983c69`
+- `ATTACHMENT_PROVIDER_RBAC_REMEDIATION_SHA=a073f96b67d3d2b387ef51dee905e055dc983c69`
 
-以上是进入 SAME-SHA Round 2 的前置结果，不代替 Round 2。
+## 权限矩阵漂移修复冻结结果
+
+- 前一预发布 `dfd9ebe958762aa30792b8681521f5dd67aa4e22` 的 SAME-SHA Backend Full 唯一失败为矩阵复现漂移：1172 passed、34 skipped、1 failed、0 errors；该 SHA 已废止为最终候选。
+- 既有生成器从 runtime route dependency、权限映射与角色注册表同步生成 CSV/Markdown；四个 Settings GET 现为 `settings:read`，三个相关写路由仍为 `settings:write`。
+- generator reproducibility、Python 54、frontend permission policy 4 与提交前 Backend Full 1173 passed/34 skipped/0 failed/0 errors 均 PASS；public match，临时 schema/role 残留 0。
+- `PERMISSION_MATRIX_REMEDIATION_SHA=c1e33b3e500874497276a8d0ffff1119d5fcee2a`
+
+以上是进入新候选单次 SAME-SHA Full Regression 的前置结果，不代替最终同 SHA 回归。
 
 ## 生产外部门禁
 

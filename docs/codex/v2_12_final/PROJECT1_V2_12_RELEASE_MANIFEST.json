@@ -7,7 +7,11 @@
   "baseline_sha": "736a39719613a9b14b5f9c94b83e727271764f98",
   "stage2_candidate_sha": "f56d4a73cf8d2de4dfe2eea5e1aebf5ce3561575",
   "round1_code_sha": "44e048d56ccc8f21ac60bc52881b2b806f97d92f",
-  "remediation_sha": "a073f96b67d3d2b387ef51dee905e055dc983c69",
+  "attachment_provider_rbac_remediation_sha": "a073f96b67d3d2b387ef51dee905e055dc983c69",
+  "previous_failed_pre_release_sha": "dfd9ebe958762aa30792b8681521f5dd67aa4e22",
+  "previous_same_sha_status": "FAIL_PERMISSION_MATRIX_DRIFT",
+  "permission_matrix_remediation_sha": "c1e33b3e500874497276a8d0ffff1119d5fcee2a",
+  "remediation_sha": "c1e33b3e500874497276a8d0ffff1119d5fcee2a",
   "release_document_commit": "SELF",
   "final_pre_release_sha": "SELF",
   "final_sha": null,
@@ -23,6 +27,20 @@
       "skipped": 34,
       "failed": 0,
       "errors": 0
+    },
+    "permission_matrix_remediation": {
+      "status": "PASS",
+      "source_of_truth": "runtime_route_metadata_plus_generator_and_role_registry",
+      "affected_get_routes": 4,
+      "matrix_drift": 0,
+      "write_route_permission_regression": 0,
+      "targeted_python_passed": 54,
+      "targeted_frontend_passed": 4,
+      "precommit_backend_collected": 1207,
+      "precommit_backend_passed": 1173,
+      "precommit_backend_skipped": 34,
+      "precommit_backend_failed": 0,
+      "precommit_backend_errors": 0
     },
     "frontend": {
       "lint": "PASS",
@@ -65,7 +83,7 @@
   },
   "target_branch": "main",
   "target_tag": "project1-v2.12.0-local-final-rc-20260823",
-  "publish_state": "FROZEN_PRE_RELEASE_PENDING_SAME_SHA_ROUND2",
+  "publish_state": "NEW_PRE_RELEASE_PENDING_SINGLE_SAME_SHA_FULL_REGRESSION",
   "production": {
     "go_live": "NOT_EXECUTED",
     "tls": "NOT_EXECUTED",
