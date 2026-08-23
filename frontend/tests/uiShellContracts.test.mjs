@@ -18,14 +18,49 @@ test('PermissionGate and PermissionRoute expose friendly full-page and section f
 });
 
 test('StickyPageHeader is shared and remains below navigation and overlays', async () => {
-  const [header, styles] = await Promise.all([
+  const [header, container, styles] = await Promise.all([
     read('../src/components/common/PageHeader.tsx'),
+    read('../src/layout/PageContainer.tsx'),
     read('../src/styles.css')
   ]);
   assert.match(header, /page-heading-unified/);
+  assert.match(header, /data-max-rows="2"/);
+  assert.match(header, /className="page-heading-actions" size=\{8\} wrap/);
   assert.doesNotMatch(header, /page-heading-subtitle/);
+  assert.match(container, /page-header-area/);
+  assert.match(container, /page-content-area/);
   assert.match(styles, /\.page-heading-unified\s*\{[\s\S]*?position:\s*sticky/);
-  assert.match(styles, /\.page-heading-unified\s*\{[\s\S]*?z-index:\s*8/);
+  assert.match(styles, /\.page-heading-unified\s*\{[\s\S]*?z-index:\s*var\(--z-page-header\)/);
+});
+
+test('Phase 2 design tokens expose one global typography, spacing and semantic contract', async () => {
+  const [variables, theme] = await Promise.all([
+    read('../src/theme/variables.css'),
+    read('../src/theme/themeConfig.ts')
+  ]);
+  assert.match(variables, /--font-family-base:\s*Inter, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif/);
+  for (const token of [
+    '--font-page-title: 24px', '--font-section-title: 16px', '--font-card-title: 15px',
+    '--font-body: 14px', '--font-table: 14px', '--font-control: 14px', '--font-helper: 13px',
+    '--font-meta: 12px', '--font-ai-answer: 15px', '--font-code: 13px', '--font-chart: 12px',
+    '--page-padding: var(--space-4)', '--card-gap: var(--space-3)', '--control-height: 36px',
+    '--radius-card: 10px', '--color-success:', '--color-warning:', '--color-danger:', '--color-info:', '--color-neutral:'
+  ]) assert.match(variables, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(theme, /export const globalFontStack/);
+  assert.match(theme, /borderRadiusLG:\s*10/);
+  assert.match(theme, /controlHeight:\s*36/);
+  assert.match(theme, /zIndexPopupBase:\s*1000/);
+});
+
+test('Phase 2 AppShell fixes navigation and delegates scrolling to the main content area', async () => {
+  const styles = await read('../src/styles.css');
+  assert.match(styles, /\.app-shell > \.header-bar,[\s\S]*?position:\s*fixed !important/);
+  assert.match(styles, /\.app-shell \.app-body > \.sidebar-shell\s*\{[\s\S]*?position:\s*fixed !important/);
+  assert.match(styles, /\.app-shell \.main-shell > \.content-shell,[\s\S]*?overflow-y:\s*auto !important/);
+  assert.match(styles, /\.page-container--headerless > \.page-content-area > :has\(> \.page-heading-unified\)[\s\S]*?overflow:\s*visible !important/);
+  assert.match(styles, /padding-bottom:\s*calc\(var\(--page-padding\) \+ var\(--floating-ai-safe-zone\)\) !important/);
+  assert.match(styles, /z-index:\s*var\(--z-floating-assistant\) !important/);
+  assert.match(styles, /@media \(max-width: 1366px\), \(max-height: 768px\)/);
 });
 
 test('AttachmentComposer covers select, drag/drop, clipboard and explicit browser fallback', async () => {

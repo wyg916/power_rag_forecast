@@ -72,7 +72,7 @@ export function PageHeader({
   }));
 
   return (
-    <header className={`page-heading page-heading-unified ${className || ''}`}>
+    <header className={`page-heading page-heading-unified ${className || ''}`} data-shell-region="page-header" data-max-rows="2">
       <div className="page-heading-copy">
         <div className="page-heading-title-row">
           <div className="page-heading-main">
@@ -89,7 +89,7 @@ export function PageHeader({
           {metadata && <div className="page-heading-context">{metadata}</div>}
           {filters && <div className="page-heading-filters">{filters}</div>}
           {(permittedActions.length || extra) && (
-            <Space className="page-heading-actions" size={8}>
+            <Space className="page-heading-actions" size={8} wrap>
               {visibleActions.map((action) => <HeaderActionButton key={action.key} action={action} />)}
               {collapsibleActions.map((action) => (
                 <span className="page-heading-secondary-action" key={action.key}>

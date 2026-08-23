@@ -5,15 +5,19 @@
 html,
 body,
 #root {
+  width: 100%;
+  height: 100%;
   min-height: 100%;
 }
 
 body {
   margin: 0;
-  overflow-x: hidden;
+  overflow: clip;
   background: var(--color-bg-page);
   color: var(--color-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
 }
 
 a {
@@ -23,23 +27,32 @@ a {
 
 .app-shell {
   display: flex;
+  width: 100%;
+  height: 100dvh;
   flex-direction: column;
   align-items: stretch;
-  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: clip;
   background: var(--color-bg-page);
 }
 
 .app-body {
+  position: relative;
   display: flex;
+  height: calc(100dvh - var(--header-height));
   min-width: 0;
-  flex: 1 1 auto;
+  min-height: 0;
+  flex: 0 0 calc(100dvh - var(--header-height));
   align-items: stretch;
   flex-direction: row !important;
+  margin-top: var(--header-height);
 }
 
 .sidebar-shell {
-  position: sticky;
+  position: fixed;
   top: var(--header-height);
+  bottom: 0;
+  left: 0;
   z-index: var(--z-sidebar);
   display: flex;
   flex: 0 0 var(--sidebar-width);
@@ -236,13 +249,22 @@ a {
 
 .main-shell {
   flex: 1 1 auto;
+  height: 100%;
   min-width: 0;
-  min-height: calc(100vh - var(--header-height));
+  min-height: 0;
+  margin-inline-start: var(--sidebar-width);
+  transition: margin-inline-start 0.2s ease;
+}
+
+.sidebar-shell.collapsed + .main-shell {
+  margin-inline-start: var(--sidebar-collapsed);
 }
 
 .header-bar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  right: 0;
+  left: 0;
   z-index: var(--z-header);
   display: flex;
   height: var(--header-height);
@@ -351,8 +373,15 @@ a {
 }
 
 .content-shell {
+  height: 100%;
   min-width: 0;
-  padding: 20px 24px;
+  min-height: 0;
+  padding: var(--page-padding);
+  padding-bottom: calc(var(--page-padding) + var(--floating-ai-safe-zone));
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: var(--page-padding) calc(var(--floating-ai-safe-zone) + var(--page-padding));
   background: var(--color-bg-page);
 }
 
@@ -386,8 +415,33 @@ a {
 }
 
 .page-container {
+  display: flex;
+  min-width: 0;
   max-width: 100%;
-  min-height: calc(100vh - var(--header-height) - 40px);
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.page-header-area {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-page-header);
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.page-header-area > .page-heading-unified {
+  position: relative;
+  top: auto;
+}
+
+.page-content-area {
+  min-width: 0;
+  min-height: 0;
+}
+
+.page-container--headerless > .page-content-area {
+  height: 100%;
 }
 
 .page-heading {
@@ -399,7 +453,7 @@ a {
 .page-heading-unified {
   position: sticky;
   top: 0;
-  z-index: 8;
+  z-index: var(--z-page-header);
   container-type: inline-size;
   display: grid;
   flex: 0 0 auto;
@@ -408,7 +462,7 @@ a {
   gap: 10px 16px;
   padding: 10px 12px;
   border: 1px solid var(--color-border-soft);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   background: var(--color-bg-card);
   box-shadow: var(--shadow-soft);
 }
@@ -416,7 +470,7 @@ a {
 .report-page-toolbar {
   position: sticky;
   top: 0;
-  z-index: 8;
+  z-index: var(--z-page-header);
   background: var(--color-bg-page);
 }
 
@@ -449,11 +503,11 @@ a {
 }
 
 .global-assistant-fab.ant-float-btn {
-  right: 24px;
-  bottom: 28px;
-  width: 52px;
-  height: 52px;
-  z-index: 900;
+  right: max(var(--floating-ai-offset), env(safe-area-inset-right));
+  bottom: max(var(--floating-ai-offset), env(safe-area-inset-bottom));
+  width: var(--floating-ai-size);
+  height: var(--floating-ai-size);
+  z-index: var(--z-floating-assistant) !important;
   box-shadow: 0 12px 30px rgba(0, 143, 114, 0.28);
 }
 
@@ -729,9 +783,9 @@ a {
   overflow: visible;
   margin: 0;
   color: var(--color-title);
-  font-size: 22px;
+  font-size: var(--font-size-page-title);
   font-weight: 700;
-  line-height: var(--line-height-tight);
+  line-height: var(--line-height-page-title);
   white-space: nowrap;
 }
 
@@ -938,27 +992,27 @@ a {
 .page-stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--card-gap);
 }
 
 .unified-page {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--card-gap);
 }
 
 .responsive-grid {
   display: grid;
   grid-template-columns: repeat(var(--grid-columns, auto-fit), minmax(min(100%, var(--grid-min, 280px)), 1fr));
-  gap: var(--space-4);
+  gap: var(--card-gap);
   min-width: 0;
 }
 
 .panel-grid {
   display: grid;
   grid-template-columns: var(--panel-template);
-  gap: 16px;
+  gap: var(--card-gap);
   align-items: stretch;
   min-width: 0;
 }
@@ -985,7 +1039,7 @@ a {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--card-gap);
 }
 
 .unified-row > .ant-col > .section-card,
@@ -996,7 +1050,7 @@ a {
 .three-column-layout {
   display: grid;
   grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(260px, 320px);
-  gap: 16px;
+  gap: var(--card-gap);
   align-items: start;
   min-width: 0;
 }
@@ -1100,7 +1154,7 @@ a {
 }
 
 .section-card .ant-card-body {
-  padding: 14px 16px;
+  padding: var(--card-padding);
   min-width: 0;
   overflow: hidden;
 }
@@ -11128,4 +11182,154 @@ a {
 .content-shell .ant-picker,
 .content-shell .ant-select-single:not(.ant-select-sm) .ant-select-selector {
   min-height: 36px;
+}
+
+/* Phase 2 global shell and design-token contract. Keep this block last so route styles cannot re-enable page scrolling. */
+.app-shell > .header-bar,
+.app-shell.data-workspace-shell > .header-bar.data-workspace-header,
+.app-shell.app-shell--report > .header-bar {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: var(--header-height) !important;
+  margin: 0 !important;
+  z-index: var(--z-header) !important;
+}
+
+.app-shell > .app-body {
+  height: calc(100dvh - var(--header-height));
+  min-width: 0;
+  min-height: 0;
+  margin-top: var(--header-height);
+}
+
+.app-shell .app-body > .sidebar-shell {
+  position: fixed !important;
+  top: var(--header-height) !important;
+  bottom: 0;
+  left: 0;
+  height: calc(100dvh - var(--header-height));
+  min-height: 0;
+  z-index: var(--z-sidebar) !important;
+}
+
+.app-shell .app-body > .main-shell {
+  width: auto;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin-inline-start: var(--sidebar-width);
+}
+
+.app-shell .app-body > .sidebar-shell.collapsed + .main-shell {
+  margin-inline-start: var(--sidebar-collapsed);
+}
+
+.app-shell .main-shell > .content-shell,
+.app-shell.data-workspace-shell .main-shell.data-workspace-main > .content-shell,
+.app-shell.app-shell--report .main-shell > .content-shell {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding-inline: var(--page-padding) !important;
+  padding-bottom: calc(var(--page-padding) + var(--floating-ai-safe-zone)) !important;
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.app-shell .content-shell .page-heading-unified,
+.app-shell .content-shell .report-page-toolbar,
+.app-shell .content-shell .page-header-area {
+  top: 0;
+  z-index: var(--z-page-header) !important;
+}
+
+.app-shell .content-shell .page-heading-unified h1,
+.app-shell .content-shell .report-page-toolbar h1 {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-page-title) !important;
+  line-height: var(--line-height-page-title) !important;
+}
+
+.app-shell .page-container > .page-content-area > * {
+  min-width: 0;
+  font-family: var(--font-family-base) !important;
+}
+
+/* Legacy pages used viewport-height roots as their own scroll containers. The shell now owns page scrolling. */
+.app-shell .page-container--headerless > .page-content-area > :has(> .page-heading-unified) {
+  height: auto !important;
+  min-height: calc(100dvh - var(--header-height) - (2 * var(--page-padding))) !important;
+  overflow: visible !important;
+}
+
+.app-shell .content-shell h2 {
+  font-size: var(--font-size-section-title);
+  line-height: var(--line-height-section-title);
+}
+
+.app-shell .content-shell h3,
+.app-shell .content-shell .section-card .ant-card-head-title {
+  font-size: var(--font-size-card-title);
+  line-height: var(--line-height-card-title);
+}
+
+.app-shell .content-shell,
+.app-shell .content-shell .ant-table,
+.app-shell .content-shell .ant-table-cell,
+.app-shell .content-shell label,
+.app-shell .content-shell .ant-btn:not(.ant-btn-sm),
+.app-shell .content-shell .ant-input:not(textarea),
+.app-shell .content-shell .ant-picker,
+.app-shell .content-shell .ant-select-single:not(.ant-select-sm) .ant-select-selector {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.app-shell .content-shell .page-subtitle,
+.app-shell .content-shell .ant-typography-secondary,
+.app-shell .content-shell .ant-form-item-extra,
+.app-shell .content-shell .ant-form-item-explain {
+  font-size: var(--font-size-helper) !important;
+  line-height: var(--line-height-helper);
+}
+
+.app-shell .content-shell small,
+.app-shell .content-shell .page-eyebrow {
+  font-size: var(--font-size-meta);
+  line-height: var(--line-height-meta);
+}
+
+.app-shell .content-shell code,
+.app-shell .content-shell pre {
+  font-family: var(--font-family-code);
+  font-size: var(--font-size-code);
+}
+
+.global-assistant-shell,
+.global-assistant-message {
+  font-family: var(--font-family-ai);
+  font-size: var(--font-size-ai);
+  line-height: var(--line-height-ai);
+}
+
+.page-heading-actions,
+.filter-bar-actions,
+.card-actions {
+  gap: var(--button-group-gap) !important;
+}
+
+@media (max-width: 1366px), (max-height: 768px) {
+  .global-assistant-fab.ant-float-btn {
+    right: max(var(--space-4), env(safe-area-inset-right));
+    bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    width: var(--floating-ai-compact-size);
+    height: var(--floating-ai-compact-size);
+  }
 }

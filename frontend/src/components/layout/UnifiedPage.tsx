@@ -72,7 +72,7 @@ export function PanelGrid({ children, template = 'minmax(0, 1fr)', className, mi
 export function TwoColumnLayout({ children, left = { xs: 24, lg: 16, xl: 17 }, right = { xs: 24, lg: 8, xl: 7 }, className }: AntGridProps) {
   const nodes = Array.isArray(children) ? children : [children];
   return (
-    <Row gutter={[16, 16]} className={`unified-row ${className || ''}`}>
+    <Row gutter={[12, 12]} className={`unified-row ${className || ''}`}>
       <Col {...(typeof left === 'number' ? { span: left } : left)}>{nodes[0]}</Col>
       <Col {...(typeof right === 'number' ? { span: right } : right)}>{nodes[1]}</Col>
     </Row>

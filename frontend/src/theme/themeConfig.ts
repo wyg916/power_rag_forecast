@@ -1,5 +1,8 @@
 import type { ThemeConfig } from 'antd';
 
+export const globalFontStack =
+  'Inter, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif';
+
 export const themeTokens = {
   primary: '#00B894',
   primaryDark: '#008F72',
@@ -16,6 +19,7 @@ export const themeTokens = {
   danger: '#FF4D4F',
   warning: '#FAAD14',
   info: '#1677FF',
+  neutral: '#64748B',
   purple: '#7C3AED'
 };
 
@@ -36,15 +40,23 @@ export const themeConfig: ThemeConfig = {
     colorBgContainer: themeTokens.cardBg,
     colorBgElevated: themeTokens.cardBg,
     borderRadius: 8,
-    borderRadiusLG: 12,
+    borderRadiusLG: 10,
     fontSize: 14,
     fontSizeSM: 13,
     fontSizeLG: 16,
+    fontSizeHeading1: 24,
+    fontSizeHeading2: 16,
+    fontSizeHeading3: 15,
+    lineHeight: 22 / 14,
+    lineHeightHeading1: 32 / 24,
+    lineHeightHeading2: 24 / 16,
+    lineHeightHeading3: 22 / 15,
     controlHeight: 36,
     controlHeightSM: 30,
     controlHeightLG: 40,
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
+    boxShadowSecondary: '0 2px 8px rgba(15, 23, 42, 0.05)',
+    zIndexPopupBase: 1000,
+    fontFamily: globalFontStack
   },
   components: {
     Layout: {
@@ -56,12 +68,12 @@ export const themeConfig: ThemeConfig = {
       itemSelectedBg: themeTokens.primaryLight,
       itemSelectedColor: themeTokens.primaryDark,
       itemHoverColor: themeTokens.primaryDark,
-      itemBorderRadius: 10,
+      itemBorderRadius: 8,
       itemHeight: 44,
       subMenuItemBg: 'transparent'
     },
     Card: {
-      borderRadiusLG: 12,
+      borderRadiusLG: 10,
       paddingLG: 16
     },
     Button: {
