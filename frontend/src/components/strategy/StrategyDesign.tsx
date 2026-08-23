@@ -345,7 +345,7 @@ export function ReviewWorkspace({
     { title: '置信度', dataIndex: 'confidence', width: 82, render: (value) => value == null ? '--' : `${fmt(value, 1)}%` },
     { title: '提交时间', dataIndex: 'submittedAt', width: 142, render: (value) => String(value).slice(5, 16) },
     { title: '审核状态', dataIndex: 'status', width: 92, render: (value, row) => <Tag color={statusColor(value)}>{row.statusLabel || value}</Tag> },
-    { title: '操作', width: 105, render: (_, row) => <Space size={2}><Button type="link" size="small" onClick={() => onSelect(row)}>查看</Button><Button type="link" size="small" onClick={() => onSelect(row)}>人工审核</Button></Space> }
+    { title: '操作', width: 144, render: (_, row) => <Space size={2}><Button type="link" size="small" onClick={() => onSelect(row)}>查看</Button><Button type="link" size="small" onClick={() => onSelect(row)}>人工审核</Button></Space> }
   ];
   return (
     <div className="review-workspace">

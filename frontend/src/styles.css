@@ -11496,3 +11496,317 @@ a {
     height: var(--floating-ai-compact-size);
   }
 }
+
+/* Phase 4 core-page layout convergence. Page roots use the shell scroll owner;
+   deliberate table, list, chat and detail regions retain their local scroll. */
+.home-dashboard-page,
+.data-design-page,
+.forecast-design-page,
+.strategy-design-page,
+.model-workbench-page,
+.knowledge-workbench-page,
+.task-workbench-page,
+.settings-workbench {
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  min-height: calc(100dvh - var(--header-height) - (2 * var(--page-padding)));
+  align-content: start;
+  overflow: visible;
+}
+
+.home-dashboard-page > *,
+.data-design-page > *,
+.forecast-design-page > *,
+.strategy-design-page > *,
+.model-workbench-page > *,
+.knowledge-workbench-page > *,
+.task-workbench-page > *,
+.settings-workbench > *,
+.report-workbench > * {
+  min-width: 0;
+}
+
+.home-dashboard-page .ant-table-wrapper,
+.data-design-page .ant-table-wrapper,
+.forecast-design-page .ant-table-wrapper,
+.strategy-design-page .ant-table-wrapper,
+.model-workbench-page .ant-table-wrapper,
+.knowledge-workbench-page .ant-table-wrapper,
+.task-workbench-page .ant-table-wrapper,
+.settings-workbench .ant-table-wrapper,
+.report-workbench .ant-table-wrapper {
+  width: 100%;
+  min-width: 0;
+}
+
+.home-dashboard-page .ant-table-content,
+.data-design-page .ant-table-content,
+.forecast-design-page .ant-table-content,
+.strategy-design-page .ant-table-content,
+.model-workbench-page .ant-table-content,
+.knowledge-workbench-page .ant-table-content,
+.task-workbench-page .ant-table-content,
+.settings-workbench .ant-table-content,
+.report-workbench .ant-table-content {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.home-kpi-grid,
+.data-metric-grid,
+.forecast-metric-grid,
+.strategy-metric-strip,
+.model-kpi-grid,
+.knowledge-kpi-grid,
+.task-kpi-grid {
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+}
+
+.home-kpi-card,
+.forecast-metric-card,
+.strategy-metric,
+.model-kpi-card,
+.knowledge-kpi-card,
+.task-kpi-card {
+  height: auto;
+  min-height: 96px;
+}
+
+.home-title-insights span,
+.settings-status-row p,
+.model-kpi-card h3,
+.model-kpi-card strong,
+.task-kpi-card span,
+.report-list-item strong,
+.report-list-item small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.forecast-chart-card,
+.forecast-insight-panel,
+.forecast-detail-grid > .forecast-table-card,
+.forecast-history-bottom > .forecast-table-card,
+.forecast-bottom-summary .compact-card,
+.history-side-cards .compact-card,
+.forecast-view-model .peak-gauge-card,
+.forecast-view-model .peak-explain-card,
+.forecast-view-model .model-eval-section,
+.forecast-view-model .forecast-baseline-grid,
+.forecast-view-model .forecast-baseline-grid > .forecast-card {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.forecast-chart-card,
+.forecast-insight-panel {
+  min-height: 304px;
+}
+
+.forecast-detail-grid > .forecast-table-card,
+.forecast-history-bottom > .forecast-table-card,
+.forecast-bottom-summary .compact-card,
+.history-side-cards .compact-card {
+  min-height: 178px;
+}
+
+.strategy-overview-main,
+.strategy-overview-bottom,
+.storage-workspace,
+.review-workspace,
+.task-body-grid,
+.task-main-grid,
+.model-chart-grid,
+.model-bottom-grid,
+.knowledge-content-grid,
+.knowledge-search-grid,
+.settings-status-grid,
+.settings-bottom-grid,
+.settings-user-layout,
+.settings-api-grid,
+.report-workspace-grid {
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.strategy-overview-bottom {
+  flex-basis: auto;
+}
+
+.report-workbench.page-stack {
+  height: auto;
+  min-height: calc(100dvh - var(--header-height) - (2 * var(--page-padding)));
+  grid-template-rows: auto auto;
+  align-content: start;
+  overflow: visible;
+}
+
+.report-page-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-page-header);
+  padding-block: var(--space-2);
+  background: var(--color-bg);
+}
+
+.report-workspace-grid {
+  min-height: 640px;
+}
+
+.report-list-item {
+  min-height: 56px;
+  align-items: start;
+}
+
+.assistant-workspace-page {
+  width: 100%;
+  height: calc(100dvh - var(--header-height) - (2 * var(--page-padding)));
+  min-width: 0;
+  min-height: 620px;
+  overflow: visible;
+}
+
+.assistant-workspace-grid {
+  grid-template-columns: minmax(232px, 240px) minmax(0, 1fr) minmax(300px, 320px);
+}
+
+.assistant-left-rail,
+.assistant-chat-main,
+.assistant-right-rail,
+.assistant-session-card,
+.assistant-chat-card,
+.assistant-evidence-card,
+.assistant-kpi-card,
+.assistant-knowledge-card {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Reserve the lower-right floating-assistant safe area for page controls. */
+.assistant-workspace-page .assistant-side-actions,
+.home-task-card .home-card-head,
+.home-task-card .home-task-list,
+.task-trend-card .task-card-head,
+.task-right-column .task-card-head {
+  padding-right: 64px;
+}
+
+.data-workspace-main .data-alert-panel .data-alert-row {
+  padding-right: 64px;
+}
+
+.knowledge-doc-card .ant-table-pagination {
+  margin-right: 64px !important;
+}
+
+.knowledge-answer-card .ant-card-head {
+  padding-right: 64px;
+}
+
+.forecast-bottom-summary .ant-btn-block,
+.history-side-cards .ant-btn-block {
+  width: calc(100% - 64px);
+}
+
+.data-workspace-main .data-design-page .data-source-status {
+  padding-right: 64px;
+}
+
+@media (max-width: 1366px) {
+  .home-dashboard-content,
+  .forecast-primary-grid,
+  .forecast-detail-grid,
+  .forecast-history-bottom,
+  .forecast-peak-model-grid,
+  .strategy-overview-main,
+  .storage-workspace,
+  .review-workspace,
+  .model-chart-grid,
+  .model-bottom-grid,
+  .task-body-grid,
+  .task-main-grid,
+  .settings-status-grid,
+  .settings-bottom-grid,
+  .settings-user-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-dashboard-content,
+  .knowledge-content-grid,
+  .knowledge-search-grid {
+    grid-template-rows: auto;
+  }
+
+  .home-dashboard-left,
+  .knowledge-doc-card,
+  .knowledge-rag-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .knowledge-content-grid,
+  .knowledge-search-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-api-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .strategy-overview-bottom,
+  .forecast-bottom-summary,
+  .model-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .page-heading-unified .page-heading-utility,
+  .strategy-page-header .page-heading-utility,
+  .forecast-page-header .page-heading-utility {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-heading-unified .page-heading-actions,
+  .strategy-page-header .page-heading-actions,
+  .forecast-page-header .page-heading-actions {
+    grid-column: 1;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 1100px) {
+  .assistant-workspace-page {
+    height: auto;
+  }
+
+  .assistant-workspace-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .assistant-left-rail,
+  .assistant-right-rail {
+    max-height: 520px;
+  }
+
+  .settings-api-grid,
+  .strategy-overview-bottom,
+  .forecast-bottom-summary,
+  .model-metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1366px), (max-height: 768px) {
+  .strategy-review-page .ant-table-thead > tr > th:last-child,
+  .strategy-review-page .ant-table-tbody > tr > td:last-child {
+    width: 144px !important;
+    min-width: 144px !important;
+    padding-inline: var(--space-2) !important;
+  }
+}

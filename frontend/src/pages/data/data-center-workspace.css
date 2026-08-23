@@ -1277,3 +1277,116 @@
   .data-workspace-main .data-sync-table,
   .data-workspace-main .data-overview-rail { grid-area: auto; min-height: 218px; }
 }
+
+/* Phase 4 data-page convergence: keep business content readable and delegate
+   outer scrolling to the shared shell while tables retain local scrolling. */
+.data-workspace-main .data-design-page {
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  min-height: calc(100dvh - var(--header-height) - (2 * var(--page-padding)));
+  overflow: visible;
+}
+
+.data-workspace-main .data-page-header,
+.data-workspace-main .data-overview-top,
+.data-workspace-main .data-overview-workspace,
+.data-workspace-main .data-quality-main,
+.data-workspace-main .data-catalog-panel,
+.data-workspace-main .data-source-status {
+  min-width: 0;
+}
+
+.data-workspace-main .data-design-filter .filter-bar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--button-group-gap);
+}
+
+.data-workspace-main .data-design-filter .ant-select-selector,
+.data-workspace-main .data-design-filter .ant-input-affix-wrapper,
+.data-workspace-main .data-design-filter .ant-btn {
+  min-height: var(--control-height);
+  font-size: var(--font-size-control);
+}
+
+.data-workspace-main .ant-table,
+.data-workspace-main .ant-table-cell,
+.data-workspace-main .catalog-detail .ant-table-thead > tr > th,
+.data-workspace-main .catalog-detail .ant-table-tbody > tr > td,
+.data-workspace-main .data-exception-card .ant-table-thead > tr > th,
+.data-workspace-main .data-exception-card .ant-table-tbody > tr > td {
+  font-size: var(--font-size-table);
+  line-height: var(--line-height-table);
+}
+
+.data-workspace-main .catalog-detail .ant-table-thead > tr > th,
+.data-workspace-main .data-exception-card .ant-table-thead > tr > th {
+  height: 44px !important;
+  padding: 9px 8px !important;
+  font-weight: 600;
+}
+
+.data-workspace-main .catalog-detail .ant-table-tbody > tr > td,
+.data-workspace-main .data-exception-card .ant-table-tbody > tr > td {
+  min-height: 46px;
+  padding: 9px 8px !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.data-workspace-main .data-metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+}
+
+.data-workspace-main .data-metric-grid .metric-note,
+.data-workspace-main .data-source-status span,
+.data-workspace-main .data-source-status small {
+  overflow: visible;
+  font-size: var(--font-size-helper);
+  line-height: var(--line-height-helper);
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.data-workspace-main .data-source-status {
+  height: auto;
+  min-height: 60px;
+  flex-basis: auto;
+  grid-template-columns: minmax(96px, auto) repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.data-workspace-main .data-source-status > div {
+  height: auto;
+  min-height: 54px;
+}
+
+@media (max-width: 1366px) {
+  .data-workspace-main .data-overview-top,
+  .data-workspace-main .data-overview-workspace,
+  .data-workspace-main .data-quality-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: none;
+  }
+
+  .data-workspace-main .data-overview-top > *,
+  .data-workspace-main .data-overview-workspace > *,
+  .data-workspace-main .data-quality-main > * {
+    grid-area: auto;
+  }
+
+  .data-workspace-main .catalog-card-grid {
+    max-height: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .data-workspace-main .data-process-flow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .data-workspace-main .data-process-step i {
+    display: none;
+  }
+}

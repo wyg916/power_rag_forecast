@@ -440,7 +440,7 @@ export function KnowledgeBasePage(_: PageProps) {
               { title: '状态', dataIndex: 'status', width: 92, render: documentStatusTag },
               {
                 title: '操作',
-                width: 124,
+                width: 168,
                 render: (_, record: any) => (
                   <Space size={4}>
                     <Button type="link" size="small" onClick={() => { setDetailData(record.raw || record); setDetailOpen(true); }}>详情</Button>

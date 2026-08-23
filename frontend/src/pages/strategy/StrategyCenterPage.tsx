@@ -272,7 +272,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       : mode === 'overview'
     ? data?.strategyUsable
       ? '展示处于有效窗口且通过治理门禁的策略事实；执行前仍须人工复核。'
-      : '展示可追溯的历史策略记录；当前记录已过期或未通过，不可作为当前策略。'
+      : '展示已归档的策略记录，仅供复盘与审计。'
     : mode === 'storage'
       ? '展示设备状态、计划反馈与收益口径，支持只读复核。'
       : '承接高风险策略的人工审核与人机协同闭环，确保关键交易决策安全、合规、可追溯。';
@@ -348,7 +348,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         )}
         actions={headerActions}
       />
-      <PageDataState meta={viewMeta} onRetry={loadData} mockFallback={false} />
+      {viewMeta.state !== 'stale' ? <PageDataState meta={viewMeta} onRetry={loadData} mockFallback={false} /> : null}
       {showContent ? <StrategyMetricStrip data={data} mode={mode} /> : null}
       {showContent && mode === 'overview' && (
         <>
