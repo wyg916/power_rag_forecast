@@ -4,7 +4,7 @@
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
 |---|---|---|---|---|
-| 独立 Grounding/Citation evaluator、A–F 离线矩阵及一次授权真实附件 QA | `PASS`（Targeted Gate）；A–F 六种组合独立判定全 PASS；关联后端 56 passed、前端 unit 28/28、lint/typecheck 与 UI shell 10/10；真实附件调用严格 `1/1`、retry 0、output 233/上限 300，事实命中、附件 chunk 1、Enterprise KB chunk 0、Citation 1，Grounding/Citation 均 PASS | `codex/project1-v2.12.0-final-integration`；起点 `edc5c0973e9fbff63748bdcc33845b387805ae5f`；本行所在 remediation 提交 | `docs/codex/v2_12_final/ATTACHMENT_EVALUATOR_REMEDIATION_REPORT.md`；`docs/codex/v2_12_final/evidence/attachment_real_qa_20260823_141859563.json`；检查点 `backups/phase3/20260823_140602185_ATTACHMENT_EVALUATOR_PRE/` | 无 Targeted Gate 阻塞；下一步只能生成 `REMEDIATION_SHA`，随后更新 Release 文件形成新的 `FINAL_PRE_RELEASE_SHA` 并执行唯一一次 SAME-SHA Full Regression。 |
+| 独立 Grounding/Citation evaluator、A–F 离线矩阵及一次授权真实附件 QA | `PASS`（Targeted Gate）；A–F 六种组合独立判定全 PASS；关联后端 56 passed、前端 unit 28/28、lint/typecheck 与 UI shell 10/10；真实附件调用严格 `1/1`、retry 0、output 233/上限 300，事实命中、附件 chunk 1、Enterprise KB chunk 0、Citation 1，Grounding/Citation 均 PASS | `codex/project1-v2.12.0-final-integration`；起点 `edc5c0973e9fbff63748bdcc33845b387805ae5f`；`REMEDIATION_SHA=a073f96b67d3d2b387ef51dee905e055dc983c69` | `docs/codex/v2_12_final/ATTACHMENT_EVALUATOR_REMEDIATION_REPORT.md`；`docs/codex/v2_12_final/evidence/attachment_real_qa_20260823_141859563.json`；检查点 `backups/phase3/20260823_140602185_ATTACHMENT_EVALUATOR_PRE/` | 无 Targeted Gate 阻塞；Release 文件提交以 `SELF` 表示 `FINAL_PRE_RELEASE_SHA`，随后所有 tracked 文件冻结并执行唯一一次 SAME-SHA Full Regression。 |
 
 ## 2026-08-23 v2.12.0 DeepSeek Empty Response Root Cause / Final Fix
 

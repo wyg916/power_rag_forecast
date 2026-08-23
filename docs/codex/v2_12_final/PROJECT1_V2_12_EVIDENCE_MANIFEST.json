@@ -1,8 +1,9 @@
 {
   "schema_version": "project1-evidence-manifest/v1",
   "version": "v2.12.0",
-  "round": "ROUND1",
-  "code_sha": "44e048d56ccc8f21ac60bc52881b2b806f97d92f",
+  "round": "ROUND1_PLUS_REMEDIATION_TARGETED",
+  "code_sha": "a073f96b67d3d2b387ef51dee905e055dc983c69",
+  "historical_round1_code_sha": "44e048d56ccc8f21ac60bc52881b2b806f97d92f",
   "evidence_root": "E:\\项目一_v2.12.0_备份\\FINAL_REGRESSION_20260823_005414508",
   "hash_algorithm": "SHA256",
   "files": [
@@ -36,6 +37,17 @@
     {"path": "round1_security_scan_44e048d.json", "sha256": "261F40C327A15996868F5ABCBA88BE1C5100012FCB4B371348EA8928CD48A8C3", "gate": "secret_large_file_scan"},
     {"path": "round1_git_fsck_44e048d.log", "sha256": "860C94E1472778F55FDE3C9AE389E58CFA3F432F50A2908AFE0BBAF68ACF7425", "gate": "git_fsck"}
   ],
+  "remediation_evidence": [
+    {
+      "path": "docs/codex/v2_12_final/evidence/attachment_real_qa_20260823_141859563.json",
+      "sha256": "6C8E1E5532E3AED369B62EF77A0AFBEA4D27A755AA05F3D21F0B8D84B789113C",
+      "gate": "attachment_grounding_and_citation",
+      "status": "PASS",
+      "real_call_count": 1,
+      "retry_count": 0
+    }
+  ],
+  "final_pre_release_sha": "SELF",
   "round2_evidence_manifest": "PENDING_EXTERNAL_SAME_SHA_RUN",
   "secrets_in_manifest": false
 }

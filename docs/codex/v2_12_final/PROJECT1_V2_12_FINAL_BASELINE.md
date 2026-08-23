@@ -11,7 +11,8 @@
 - B 最终提交：`4d1d87463dd4e45f8f01cb15ce958711f6e06099`
 - Stage 2 候选：`f56d4a73cf8d2de4dfe2eea5e1aebf5ce3561575`
 - Round 1 代码候选：`44e048d56ccc8f21ac60bc52881b2b806f97d92f`
-- `FINAL_PRE_RELEASE_SHA`：由包含本文件在内的单次发布文件提交确定，随后执行 SAME-SHA Round 2。
+- 阻断修复提交：`a073f96b67d3d2b387ef51dee905e055dc983c69`
+- `FINAL_PRE_RELEASE_SHA`：`SELF`，即包含本文件在内的单次发布文件提交；随后所有 tracked 文件冻结并执行 SAME-SHA Round 2。
 - `FINAL_SHA`：仅当 Round 2 全部硬门禁通过后，等于 `FINAL_PRE_RELEASE_SHA`。
 
 ## 冻结规则
@@ -38,6 +39,16 @@ Round 1 在 `44e048d56ccc8f21ac60bc52881b2b806f97d92f` 的最终代码状态完�
 - RAG：50 问质量、安全与只读门禁 PASS；未切 production alias
 - Startup：cold start、第二次幂等 start、restart、controlled stop PASS
 - Security：高置信密钥发现 0，越权数据访问 0
+
+## 阻断修复冻结结果
+
+- Settings Read / Strategy Review RBAC：PASS；已知未授权请求 0
+- DeepSeek `DATA_PLANNER` 真实 AnalysisPlan：PASS；schema/semantic PASS；raw SQL 0
+- Attachment evaluator A–F：PASS；Grounding/Citation 独立判定
+- 真实附件 selected-only QA：调用 1、retry 0、附件 chunk 1、Enterprise KB chunk 0、Citation 1、Grounding/Citation PASS
+- `REMEDIATION_SHA=a073f96b67d3d2b387ef51dee905e055dc983c69`
+
+以上是进入 SAME-SHA Round 2 的前置结果，不代替 Round 2。
 
 ## 生产外部门禁
 

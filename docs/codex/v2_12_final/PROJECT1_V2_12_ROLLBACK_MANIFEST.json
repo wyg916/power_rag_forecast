@@ -3,6 +3,8 @@
   "version": "v2.12.0",
   "stage": "LOCAL_FINAL_RC",
   "generated_date": "2026-08-23",
+  "remediation_sha": "a073f96b67d3d2b387ef51dee905e055dc983c69",
+  "final_pre_release_sha": "SELF",
   "pre_release_backup": {
     "path": "E:\\项目一_v2.12.0_备份\\FINAL_RELEASE_PREP_20260823_005414508",
     "bundle_sha256": "64ecef0b627d333bfe4876bb7d9d06d2eafb5671f610e4715022763d51d66ea5"
@@ -14,6 +16,12 @@
   "runtime_control_checkpoint": {
     "path": "E:\\项目一_v2.12.0_备份\\FINAL_REGRESSION_20260823_005414508\\runtime_control_pre_fix_4a108ce",
     "bundle_sha256": "0B2D50D2511E93C1E92B214338BEA05C42CA062B5B45030FA3CF4BA9C0F99E21"
+  },
+  "attachment_evaluator_checkpoint": {
+    "path": "backups/phase3/20260823_140602185_ATTACHMENT_EVALUATOR_PRE",
+    "manifest_sha256": "0D69437C8505F8FA4DF12709399D949EE0411DDE0388F822864C9CBB1A3E33EB",
+    "database_impact": "none",
+    "temporary_attachment_deleted": true
   },
   "safe_git_rollback": [
     "Do not amend or rewrite the frozen FINAL_SHA.",

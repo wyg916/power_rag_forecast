@@ -2,10 +2,12 @@
 
 ## 范围与判定
 
-- Round 1 最终代码 SHA：`44e048d56ccc8f21ac60bc52881b2b806f97d92f`
+- 历史 Round 1 最终代码 SHA：`44e048d56ccc8f21ac60bc52881b2b806f97d92f`
+- 阻断修复提交：`a073f96b67d3d2b387ef51dee905e055dc983c69`
 - 证据根目录：`E:\项目一_v2.12.0_备份\FINAL_REGRESSION_20260823_005414508`
 - Round 1：`PASS`
-- Round 2 SAME-SHA：在发布文件提交形成 `FINAL_PRE_RELEASE_SHA` 后执行；本报告提交时为 `PENDING`。
+- Remediation Targeted Gate：`PASS`
+- Round 2 SAME-SHA：本发布文件所在提交为 `FINAL_PRE_RELEASE_SHA=SELF`；提交后冻结 tracked 文件并执行，本报告冻结时为 `PENDING`。
 - 生产发布：`NOT_EXECUTED`
 
 ## Round 1 权威结果
@@ -27,6 +29,19 @@
 | Memory | PASS | 9/9 live gates；隔离、读写、幂等、回滚、TTL/legal hold/delete/trace |
 | Runtime | PASS | cold start、second idempotent start、doctor/logs/restart/controlled stop；visible console=0 |
 | Security | PASS | 156 targeted security contracts；secret findings=0；tracked large files=0 |
+
+## Remediation Targeted Gate
+
+| 门禁 | 结果 | 关键证据 |
+|---|---|---|
+| RBAC Settings | PASS | Developer 四个只读接口允许；写/测试动作继续 403 |
+| Analyst Strategy Review | PASS | 无 `strategy:review` 时不进入 review 模式、不请求 review history |
+| DeepSeek AnalysisPlan | PASS | `DATA_PLANNER -> deepseek-chat`；HTTP/Adapter/schema/semantic 全 PASS；raw SQL execution=0 |
+| Evaluator offline A–F | PASS | Grounding 与 Citation 独立判定，六种正反组合符合冻结预期 |
+| Attachment real QA | PASS | 调用 1、retry 0、output 233/上限 300；事实命中；附件 chunk 1；Enterprise KB chunk 0；Citation 1 |
+| Scope/secret gate | PASS | 19 个 remediation 文件均在授权白名单；高置信 secret pattern 0 |
+
+本节证据：`docs/codex/v2_12_final/ATTACHMENT_EVALUATOR_REMEDIATION_REPORT.md` 与 `docs/codex/v2_12_final/evidence/attachment_real_qa_20260823_141859563.json`。历史 Round 1 不能替代后续 SAME-SHA Round 2；最终结论只以 `FINAL_PRE_RELEASE_SHA` 的新执行结果为准。
 
 ## 环境失误与有效结果选择
 

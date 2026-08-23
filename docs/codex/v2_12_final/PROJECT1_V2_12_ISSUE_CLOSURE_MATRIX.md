@@ -8,6 +8,10 @@
 | V212-ACL-FORECAST | runtime 读取冻结预测输入事实表被 ACL 拒绝 | 安全脚本未给运行身份最小只读权限 | `4a108ce` | 指定事实表只读 PASS；写入仍拒绝；脚本幂等；schema signature 无非预期变化 | CLOSED |
 | V212-RUNTIME-OWNERSHIP | 第二次 start 将同一控制器拥有的进程降为 unmanaged | 幂等发现逻辑覆盖了既有受控归属 | `44e048d` | 15 targeted tests；cold/second start PID 与 creation identity 不变且 managed=true；restart/stop PASS | CLOSED |
 | V212-RAG-LATENCY | 首次 Formal 50 的 P95 超门槛 | 16GB 本机上并发/批次组合不适合固定模型资源 | 无代码修改；固定并发 4、batch 4、候选 3 的受控验收配置 | 50 问、20/20 gates，P95=803.891ms，Recall@3/5=1，MRR=.9467，写计数 0 | CLOSED |
+| V212-RBAC-SETTINGS-READ | Developer 具备冻结的 Settings Read capability，但四个 GET 仍要求 write | 读写权限依赖未按接口方法拆分 | `a073f96` | 四个 GET=200；PUT/test/test-all 继续 403；权限矩阵与前端 gate PASS | CLOSED |
+| V212-RBAC-STRATEGY-REVIEW | Analyst 可触发无权限的 review history 请求 | review Tab、mode 与请求 effect 未共同受 capability 保护 | `a073f96` | Analyst review guard 与前端契约 PASS；known unauthorized request count=0 | CLOSED |
+| V212-DEEPSEEK-ENDPOINT-MODEL | 成本受控 smoke 绕过 DATA_PLANNER 能力路由并使用 Provider 默认模型 | smoke 未把 capability registry 解析出的 endpoint model 显式传给 Adapter | `a073f96` | HTTP 200；request model `deepseek-chat`；Adapter/schema/semantic PASS；retry 0 | CLOSED |
+| V212-ATTACHMENT-EVALUATOR | Grounding/Citation 被耦合为整体布尔值，真实结果无法独立证明 | evaluator 未保存检索来源与 citation attachment/file/source 映射 | `a073f96` | A–F 离线矩阵；真实调用 1 次；Grounding/Citation 独立 PASS；Enterprise KB chunk=0 | CLOSED |
 
 ## ACL 最小权限闭环
 

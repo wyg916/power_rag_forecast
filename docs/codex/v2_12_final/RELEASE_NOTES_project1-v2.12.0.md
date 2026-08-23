@@ -21,10 +21,14 @@ v2.12.0 汇总 A 的预测与模型事实闭环、B 的前端/RBAC/全局 AI she
 - 按最小权限补齐 runtime 合法写入 `audit_logs` 所需的 `audit_logs_id_seq` 权限，并新增回归测试。
 - 按最小权限补齐预测冻结输入事实表只读权限；写路径仍拒绝。
 - 修复运行控制第二次 start 丢失进程 ownership 的问题，未知进程仍不会被接管。
+- 修复 Settings 只读接口错误要求写权限的问题；所有写入与接口测试动作仍保持更高权限边界。
+- 修复 Analyst 无权限时仍进入策略审核模式并请求 review history 的问题。
+- 修复 DeepSeek 成本受控复验绕过 `DATA_PLANNER` endpoint model 路由的问题，并补齐脱敏 Adapter 诊断。
+- 修复附件回答将 Grounding/Citation 证据耦合的问题；A–F 离线矩阵与一次授权真实 selected-only 附件 QA 均通过，Enterprise KB chunk 为 0。
 
 ## 验证状态
 
-Round 1 在代码 SHA `44e048d56ccc8f21ac60bc52881b2b806f97d92f` PASS。包含本发布文件的提交将形成 `FINAL_PRE_RELEASE_SHA`；只有在该同一 SHA 上完成 Round 2 全量回归后，才能冻结 `FINAL_SHA` 并进行 main/root/tag/remote 归一。
+历史 Round 1 在代码 SHA `44e048d56ccc8f21ac60bc52881b2b806f97d92f` PASS；阻断修复提交为 `a073f96b67d3d2b387ef51dee905e055dc983c69`。包含本发布文件的提交以 `SELF` 表示新的 `FINAL_PRE_RELEASE_SHA`；提交后不再修改 tracked 文件。只有在该同一 SHA 上完成 Round 2 全量回归后，才能冻结 `FINAL_SHA` 并评估 main/root/tag/remote 归一。
 
 ## 已知边界
 
