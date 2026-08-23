@@ -93,9 +93,13 @@
   --floating-ai-compact-size: 44px;
   --floating-ai-offset: 20px;
   --floating-ai-safe-zone: 76px;
-  --z-page-header: 100;
+  --z-page-header: 300;
   --z-sidebar: 200;
   --z-header: 300;
   --z-floating-assistant: 850;
   --z-overlay-base: 1000;
+  --z-drawer: 1000;
+  --z-modal: 1000;
+  --z-popover: 1030;
+  --z-tooltip: 1070;
 }

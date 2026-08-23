@@ -26,7 +26,10 @@ export function SectionCard({ title, extra, children, className, bodyClassName, 
       extra={extra}
       style={height ? { height } : undefined}
     >
-      <div className={bodyClassName} style={minHeight ? { minHeight } : undefined}>
+      <div
+        className={`section-card-body-content ${bodyClassName || ''}`.trim()}
+        style={minHeight ? { minHeight } : undefined}
+      >
         {content}
       </div>
     </Card>

@@ -6,5 +6,5 @@ interface AppChartProps {
 }
 
 export function AppChart({ option, height = 260 }: AppChartProps) {
-  return <ReactECharts className="app-chart" option={option} style={{ height, width: '100%' }} notMerge lazyUpdate opts={{ renderer: 'canvas' }} />;
+  return <ReactECharts autoResize className="app-chart" option={option} style={{ height, width: '100%' }} notMerge lazyUpdate opts={{ renderer: 'canvas' }} />;
 }

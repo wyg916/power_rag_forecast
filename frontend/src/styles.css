@@ -900,8 +900,11 @@ a {
 }
 
 .page-state-panel {
-  border-radius: 10px;
-  overflow: hidden;
+  min-height: 0;
+  border-radius: var(--radius-card);
+  overflow: visible;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
 }
 
 .page-state-loading {
@@ -914,7 +917,8 @@ a {
   margin-bottom: 8px;
   color: var(--color-title);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 600;
+  line-height: var(--line-height-helper);
 }
 
 .page-state-skeleton .ant-skeleton-paragraph {
@@ -948,7 +952,8 @@ a {
   flex: 1 1 auto;
   align-items: center;
   gap: 8px 14px;
-  overflow: hidden;
+  flex-wrap: wrap;
+  overflow: visible;
 }
 
 .page-state-meta > span {
@@ -961,16 +966,17 @@ a {
 .page-state-meta small {
   flex: 0 0 auto;
   color: var(--color-secondary);
-  font-size: 11px;
+  font-size: var(--font-size-meta);
+  line-height: var(--line-height-meta);
 }
 
 .page-state-meta b {
-  overflow: hidden;
+  overflow: visible;
   color: var(--color-title);
-  font-size: 11px;
+  font-size: var(--font-size-meta);
   font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: var(--line-height-meta);
+  overflow-wrap: anywhere;
 }
 
 .page-state-stale-inline {
@@ -1070,29 +1076,51 @@ a {
 }
 
 .page-tabs {
-  margin-top: -10px;
+  min-width: 0;
+  margin-top: 0;
 }
 
 .page-tabs .ant-tabs-nav {
-  margin-bottom: 8px;
+  min-height: var(--control-height);
+  margin: 0 0 var(--space-2);
+}
+
+.page-tabs .ant-tabs-tab {
+  min-height: var(--control-height);
+  padding: 7px 0;
+  font-size: var(--font-size-control);
+  font-weight: 500;
+  line-height: var(--line-height-body);
 }
 
 .page-toolbar {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
-  margin-top: -48px;
-  pointer-events: none;
+  gap: var(--button-group-gap);
+  margin-top: 0;
 }
 
 .page-toolbar > * {
-  pointer-events: auto;
+  min-width: 0;
+}
+
+.page-toolbar .ant-btn,
+.page-toolbar .ant-input,
+.page-toolbar .ant-picker,
+.page-toolbar .ant-select-single .ant-select-selector {
+  min-height: var(--control-height);
 }
 
 .filter-bar {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--button-group-gap);
   padding: 14px 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
@@ -1103,9 +1131,10 @@ a {
 .filter-bar-main {
   display: flex;
   min-width: 0;
+  flex-wrap: wrap;
   flex: 1 1 auto;
   align-items: center;
-  gap: 14px;
+  gap: var(--button-group-gap);
 }
 
 .filter-bar-label {
@@ -1120,12 +1149,24 @@ a {
 }
 
 .filter-bar-controls .ant-space {
-  row-gap: 8px;
+  gap: var(--button-group-gap) !important;
+}
+
+.filter-bar-controls .ant-btn,
+.filter-bar-controls .ant-input,
+.filter-bar-controls .ant-picker,
+.filter-bar-controls .ant-select-single .ant-select-selector,
+.filter-bar-actions .ant-btn {
+  min-height: var(--control-height);
 }
 
 .filter-bar-actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   flex: 0 0 auto;
   justify-content: flex-end;
+  gap: var(--button-group-gap);
 }
 
 .filter-bar-compact {
@@ -1133,35 +1174,61 @@ a {
 }
 
 .section-card {
+  display: flex;
   min-width: 0;
-  height: 100%;
+  min-height: 0;
+  align-self: stretch;
+  flex-direction: column;
   border: 1px solid var(--color-border-soft) !important;
   border-radius: var(--radius-card) !important;
   box-shadow: var(--shadow-card);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .section-card .ant-card-head {
   min-height: 48px;
+  flex: 0 0 auto;
   border-bottom-color: var(--color-border-soft);
   padding: 0 16px;
 }
 
 .section-card .ant-card-head-title {
   color: var(--color-title);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: var(--font-size-card-title);
+  font-weight: 600;
+  line-height: var(--line-height-card-title);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .section-card .ant-card-body {
-  padding: var(--card-padding);
+  display: flex;
   min-width: 0;
-  overflow: hidden;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: var(--card-padding);
+  overflow: visible;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.section-card-body-content {
+  min-width: 0;
+  min-height: 0;
 }
 
 .section-card-scrollable .ant-card-body {
-  height: calc(100% - 46px);
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.section-card-scrollable .section-card-body-content {
+  min-height: 100%;
 }
 
 .section-card-compact .ant-card-body {
@@ -1171,12 +1238,17 @@ a {
 .chart-card-body {
   display: flex;
   min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
   flex-direction: column;
   justify-content: center;
 }
 
 .app-chart {
   min-width: 0;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .section-card .ant-table-wrapper,
@@ -1242,8 +1314,8 @@ a {
 .metric-card {
   position: relative;
   display: flex;
-  height: 100%;
   min-height: 112px;
+  align-self: stretch;
   gap: var(--space-4);
   align-items: center;
   padding: 16px;
@@ -1251,7 +1323,7 @@ a {
   border-radius: var(--radius-card);
   background: var(--color-bg-card);
   box-shadow: var(--shadow-card);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .metric-card-accent {
@@ -1328,8 +1400,9 @@ a {
 
 .metric-title {
   color: var(--color-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-size: var(--font-size-card-title);
+  font-weight: 600;
+  line-height: var(--line-height-card-title);
 }
 
 .metric-status {
@@ -1338,8 +1411,9 @@ a {
   border-radius: 999px;
   background: var(--color-success-bg);
   color: var(--color-primary-dark);
-  font-size: 11px;
+  font-size: var(--font-size-meta);
   font-weight: 800;
+  line-height: var(--line-height-meta);
 }
 
 .metric-status-warning {
@@ -1376,9 +1450,10 @@ a {
 
 .metric-value-text {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .metric-value-compact .metric-value-text {
@@ -1398,14 +1473,15 @@ a {
   gap: 6px;
   margin-top: auto;
   color: var(--color-secondary);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-helper);
+  line-height: var(--line-height-helper);
 }
 
 .metric-description {
   margin-top: 6px;
   color: var(--color-muted);
-  font-size: var(--font-size-xs);
-  line-height: 1.45;
+  font-size: var(--font-size-helper);
+  line-height: var(--line-height-helper);
 }
 
 .trend-up {
@@ -2564,23 +2640,36 @@ a {
   border-style: dashed;
 }
 
+.error-state {
+  min-width: 0;
+  min-height: 0;
+}
+
 .empty-state {
   display: grid;
   min-height: 120px;
   place-items: center;
   padding: 18px 12px;
   color: var(--color-secondary);
+  font-size: var(--font-size-helper);
+  line-height: var(--line-height-helper);
+  overflow: visible;
 }
 
 .empty-state-title {
   margin-bottom: 8px;
   color: var(--color-title);
-  font-size: var(--font-size-base);
-  font-weight: 800;
+  font-size: var(--font-size-card-title);
+  font-weight: 600;
+  line-height: var(--line-height-card-title);
 }
 
 .empty-state .ant-empty-description {
   color: var(--color-secondary);
+  font-size: var(--font-size-helper);
+  line-height: var(--line-height-helper);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .detail-drawer .ant-drawer-header {
@@ -5449,6 +5538,80 @@ a {
 .ant-table-thead > tr > th {
   color: var(--color-secondary) !important;
   font-weight: 700 !important;
+}
+
+.public-data-table {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: var(--font-table);
+  line-height: var(--line-height-body);
+}
+
+.public-data-table .ant-table-container {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.public-data-table .ant-table-content {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.public-data-table .ant-table-thead > tr > th {
+  height: 44px;
+  padding: 10px 12px;
+  font-size: var(--font-table);
+  line-height: var(--line-height-body);
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.public-data-table .ant-table-tbody > tr > td {
+  min-height: 46px;
+  padding: 11px 12px;
+  font-size: var(--font-table);
+  line-height: var(--line-height-body);
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.public-data-table .ant-table-pagination.ant-pagination {
+  min-height: var(--control-height);
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 0;
+}
+
+.public-data-table .ant-table-sticky-holder {
+  z-index: 1;
+}
+
+.status-tag.ant-tag {
+  min-height: 22px;
+  margin-inline-end: 0;
+  font-size: var(--font-size-meta);
+  line-height: 20px;
+}
+
+.ant-drawer-content-wrapper {
+  max-width: calc(100vw - (2 * var(--space-2)));
+}
+
+.detail-drawer .ant-drawer-body,
+.task-log-drawer .ant-drawer-body {
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.ant-popover {
+  max-width: min(420px, calc(100vw - (2 * var(--space-2))));
+}
+
+.ant-tooltip {
+  max-width: min(360px, calc(100vw - (2 * var(--space-2))));
 }
 
 .home-dashboard-page {

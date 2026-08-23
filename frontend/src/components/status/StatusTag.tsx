@@ -20,5 +20,5 @@ interface StatusTagProps {
 
 export function StatusTag({ status, text }: StatusTagProps) {
   const item = statusMap[status];
-  return <Tag color={item.color}>{text || item.text}</Tag>;
+  return <Tag className={`status-tag status-tag-${status}`} color={item.color} aria-label={`状态：${text || item.text}`}>{text || item.text}</Tag>;
 }

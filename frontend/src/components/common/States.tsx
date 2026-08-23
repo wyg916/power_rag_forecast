@@ -44,7 +44,7 @@ export function EmptyState({
   queryScope?: ReactNode;
 }) {
   return (
-    <div className="empty-state">
+    <div className="empty-state" role="status" aria-live="polite">
       {title && <div className="empty-state-title">{title}</div>}
       <Empty
         image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -76,6 +76,7 @@ export function ErrorState({
   if (!message) return null;
   return (
     <Result
+      className="error-state"
       status="error"
       title="加载失败"
       subTitle={(

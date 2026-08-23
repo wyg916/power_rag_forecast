@@ -10,7 +10,7 @@ interface TaskLogViewerProps {
 
 export function TaskLogViewer({ open, title = '任务日志', log, loading, onClose }: TaskLogViewerProps) {
   return (
-    <Drawer width={820} title={title} open={open} onClose={onClose} destroyOnHidden>
+    <Drawer className="task-log-drawer" width={820} title={title} open={open} onClose={onClose} destroyOnHidden>
       {loading ? (
         <Typography.Text>日志加载中...</Typography.Text>
       ) : log ? (

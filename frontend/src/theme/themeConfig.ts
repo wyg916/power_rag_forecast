@@ -91,6 +91,15 @@ export const themeConfig: ThemeConfig = {
     Tabs: {
       itemSelectedColor: themeTokens.primaryDark,
       inkBarColor: themeTokens.primary
+    },
+    Drawer: {
+      zIndexPopup: 1000
+    },
+    Popover: {
+      zIndexPopup: 1030
+    },
+    Tooltip: {
+      zIndexPopup: 1070
     }
   }
 };

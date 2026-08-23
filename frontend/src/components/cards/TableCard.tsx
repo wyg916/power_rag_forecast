@@ -24,6 +24,7 @@ export function TableCard<T extends object>({
   empty,
   scrollable,
   locale,
+  className,
   ...tableProps
 }: TableCardProps<T>) {
   return (
@@ -31,6 +32,7 @@ export function TableCard<T extends object>({
       <Table<T>
         size="small"
         scroll={scroll || { x: 'max-content' }}
+        className={`public-data-table ${className || ''}`.trim()}
         pagination={pagination === undefined ? { pageSize: 8, showSizeChanger: false } : pagination}
         locale={locale || { emptyText: <EmptyState description="暂无表格数据" /> }}
         loading={false}
