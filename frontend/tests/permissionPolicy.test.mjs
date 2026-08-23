@@ -35,3 +35,17 @@ test('ActionGuard and permission snapshot remain deterministic', async () => {
   assert.equal(policy.canPerformAction('report.generate', ['report:generate'], { actions: { 'report.generate': false } }), false);
   assert.equal(policy.permissionSnapshotHash(['b', 'a']), policy.permissionSnapshotHash(['a', 'b']));
 });
+
+test('analyst strategy view suppresses review history queries and protected review content', async () => {
+  const source = await readFile(new URL('../src/pages/strategy/StrategyCenterPage.tsx', import.meta.url), 'utf8');
+  assert.match(source, /activeSubKey === 'strategy-review' && canReview/);
+  assert.match(source, /if \(!canReview \|\| mode !== 'review'\)/);
+  assert.match(source, /if \(!canReview \|\| !strategyId\)/);
+});
+
+test('selected attachments default to isolated attachment knowledge scope', async () => {
+  const drawer = await readFile(new URL('../src/features/globalAssistant/GlobalAssistantDrawer.tsx', import.meta.url), 'utf8');
+  const page = await readFile(new URL('../src/pages/assistant/AssistantPage.tsx', import.meta.url), 'utf8');
+  assert.match(drawer, /readyAttachments\.length \? 'attachments' : 'authorized_enterprise'/);
+  assert.match(page, /contextAttachments\.length \? 'attachments' : 'authorized_enterprise'/);
+});

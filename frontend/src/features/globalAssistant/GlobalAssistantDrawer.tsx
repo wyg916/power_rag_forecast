@@ -148,7 +148,7 @@ export function GlobalAssistantDrawer({
         requested_tier: 'standard',
         attachment_ids: readyAttachments.map((item) => item.attachment_id),
         page_context: state.includePageContext ? pageContext : null,
-        knowledge_scope: readyAttachments.length ? 'authorized_enterprise_and_attachments' : 'authorized_enterprise'
+        knowledge_scope: readyAttachments.length ? 'attachments' : 'authorized_enterprise'
       }, (event, payload) => {
         if (event === 'meta' && payload?.session_id) globalAssistantStore.setSessionId(payload.session_id);
         if (event === 'delta') {

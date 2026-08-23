@@ -473,13 +473,13 @@ def settings_audit_logs(
 
 
 @router.get("/api/settings/interfaces/overview")
-def settings_interfaces_overview(_: Annotated[CurrentUser, Depends(require_permission("settings:write"))]) -> dict:
+def settings_interfaces_overview(_: Annotated[CurrentUser, Depends(require_permission("settings:read"))]) -> dict:
     return settings_center.interface_overview()
 
 
 @router.get("/api/settings/interfaces/configs")
 def settings_interfaces_configs(
-    _: Annotated[CurrentUser, Depends(require_permission("settings:write"))],
+    _: Annotated[CurrentUser, Depends(require_permission("settings:read"))],
     keyword: str = Query(default="", max_length=128),
     interface_type: str = Query(default="", max_length=64),
     status_value: str = Query(default="", alias="status", max_length=32),
@@ -524,7 +524,7 @@ def settings_interfaces_test_all(
 
 @router.get("/api/settings/interfaces")
 def settings_interfaces(
-    _: Annotated[CurrentUser, Depends(require_permission("settings:write"))],
+    _: Annotated[CurrentUser, Depends(require_permission("settings:read"))],
     keyword: str = Query(default="", max_length=128),
     interface_type: str = Query(default="", max_length=64),
     status_value: str = Query(default="", alias="status", max_length=32),
@@ -536,7 +536,7 @@ def settings_interfaces(
 
 @router.get("/api/settings/interfaces/test-logs")
 def settings_interfaces_test_logs(
-    _: Annotated[CurrentUser, Depends(require_permission("settings:write"))],
+    _: Annotated[CurrentUser, Depends(require_permission("settings:read"))],
     interface_name: str = Query(default="", max_length=128),
     result: str = Query(default="", max_length=32),
     limit: int = Query(default=100, ge=1, le=500),

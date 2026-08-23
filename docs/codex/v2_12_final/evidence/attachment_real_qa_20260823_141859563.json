@@ -1,0 +1,58 @@
+{
+  "schema_version": "project1-cost-controlled-provider-smoke/v1",
+  "evaluated_at": "2026-08-23T06:19:29.626105+00:00",
+  "check": "targeted_attachment",
+  "status": "PASS",
+  "call_count": 1,
+  "input_tokens": 2145,
+  "output_tokens": 233,
+  "estimated_cost_cny": null,
+  "cost_estimate_available": false,
+  "cost_capture": "PRICING_NOT_CONFIGURED",
+  "redaction": "No API key, prompt body, response body, attachment body, or DSN is persisted.",
+  "checks": {
+    "attachment_qa": {
+      "status": "PASS",
+      "provider": "mimo",
+      "model": "mimo-v2.5",
+      "purpose": "attachment_grounded_qa",
+      "call_count": 1,
+      "input_tokens": 2145,
+      "output_tokens": 233,
+      "latency_ms": 8044.427,
+      "estimated_cost_cny": null,
+      "cost_estimate_available": false,
+      "http_status": 200,
+      "request_id": "req_cost_2d699e1dfc7d44679c08e8c2a9d92432",
+      "trace_id_present": true,
+      "failure_layer": "",
+      "attachment_lifecycle": "PASS",
+      "knowledge_scope": "attachments",
+      "max_output_tokens": 300,
+      "ATTACHMENT_ID": "att_9f12ee47f6a74c34af63c64f3290e2ff",
+      "FILE_NAME": "alpha-7281.txt",
+      "QUESTION": "这个文件中的 PROJECT_CODE 是什么？",
+      "EXPECTED_FACT": "ALPHA-7281",
+      "ANSWER_TEXT_REDACTED": "根据提供的文件内容，这个文件中的 PROJECT_CODE 是 ALPHA-7281。",
+      "ANSWER_CONTAINS_EXPECTED_FACT": true,
+      "RETRIEVED_ATTACHMENT_CHUNK_COUNT": 1,
+      "RETRIEVED_ATTACHMENT_SOURCE_IDS": [
+        "attachment:att_9f12ee47f6a74c34af63c64f3290e2ff:achunk_ddc06289e4024294b821428100f00d82"
+      ],
+      "ENTERPRISE_KB_CHUNK_COUNT": 0,
+      "ONLY_SELECTED_ATTACHMENTS_MODE": true,
+      "GROUNDING_PASS": true,
+      "CITATION_COUNT": 1,
+      "CITATION_ATTACHMENT_IDS": [
+        "att_9f12ee47f6a74c34af63c64f3290e2ff"
+      ],
+      "CITATION_FILE_NAMES": [
+        "alpha-7281.txt"
+      ],
+      "CITATION_SOURCE_IDS": [
+        "attachment:att_9f12ee47f6a74c34af63c64f3290e2ff:achunk_ddc06289e4024294b821428100f00d82"
+      ],
+      "CITATION_PASS": true
+    }
+  }
+}

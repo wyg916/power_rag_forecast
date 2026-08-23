@@ -1,5 +1,23 @@
 # TASK_STATUS.md
 
+## 2026-08-23 v2.12.0 Attachment Evaluator Remediation / Targeted Gate
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| 独立 Grounding/Citation evaluator、A–F 离线矩阵及一次授权真实附件 QA | `PASS`（Targeted Gate）；A–F 六种组合独立判定全 PASS；关联后端 56 passed、前端 unit 28/28、lint/typecheck 与 UI shell 10/10；真实附件调用严格 `1/1`、retry 0、output 233/上限 300，事实命中、附件 chunk 1、Enterprise KB chunk 0、Citation 1，Grounding/Citation 均 PASS | `codex/project1-v2.12.0-final-integration`；起点 `edc5c0973e9fbff63748bdcc33845b387805ae5f`；本行所在 remediation 提交 | `docs/codex/v2_12_final/ATTACHMENT_EVALUATOR_REMEDIATION_REPORT.md`；`docs/codex/v2_12_final/evidence/attachment_real_qa_20260823_141859563.json`；检查点 `backups/phase3/20260823_140602185_ATTACHMENT_EVALUATOR_PRE/` | 无 Targeted Gate 阻塞；下一步只能生成 `REMEDIATION_SHA`，随后更新 Release 文件形成新的 `FINAL_PRE_RELEASE_SHA` 并执行唯一一次 SAME-SHA Full Regression。 |
+
+## 2026-08-23 v2.12.0 DeepSeek Empty Response Root Cause / Final Fix
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| DeepSeek 空响应离线根因、可观测性、夹具与一次真实复验；条件式附件真实 Smoke | `FAIL`（Targeted Gate）；DeepSeek 根因归类 `G_MODEL_ENDPOINT_CAPABILITY_MISMATCH`，修复定向脚本绕过 `DATA_PLANNER` 能力路由的问题；唯一真实复验 HTTP 200、Adapter/Frozen Schema/Semantic PASS；本地组合 202 passed/12 classified skipped，新增适配器门禁 24 passed，ChatBI 50/50、raw SQL 0 | `codex/project1-v2.12.0-final-integration`；起点及当前 HEAD `edc5c0973e9fbff63748bdcc33845b387805ae5f`；Targeted 未全 PASS，未形成 `REMEDIATION_SHA`/`FINAL_PRE_RELEASE_SHA` | `docs/codex/v2_12_final/DEEPSEEK_EMPTY_RESPONSE_DIAGNOSTIC.md`；`docs/codex/evidence/DEEPSEEK_EMPTY_RESPONSE_20260823_140020/`；检查点 `backups/phase3/20260823_133753849_DEEPSEEK_EMPTY_RESPONSE_PRE/` | Attachment 唯一真实调用 HTTP 200 且 `grounding_status=grounded`，但旧 evaluator 将完整 key/value 字符串与 citation 命中错误耦合，已落盘证据不足以重算回答/citation 是否满足冻结要求；预算内禁止重试。因此 Attachment real grounding/citation 未证明，未提交、未执行 Final SAME-SHA Full Regression。 |
+
+## 2026-08-23 v2.12.0 Final Blocker Remediation / Cost-Controlled Regression
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| RBAC Settings/Strategy 与附件 Grounding 定向修复、成本受控 Provider 重验 | `FAIL`（Targeted Gate）；Settings 四个只读接口与 Developer 权限矩阵对齐，Analyst review Tab/请求守卫及附件 selected-only grounding/citation 本地门禁通过；ChatBI Contract 50/50、目标后端 193 passed/12 isolated-only skipped、前端 unit 28/28 与 lint/typecheck、专用端口 Browser RBAC 均 PASS | `codex/project1-v2.12.0-final-integration`；起点 `edc5c0973e9fbff63748bdcc33845b387805ae5f`；按门禁未形成 `FINAL_PRE_RELEASE_SHA`，改动保持未提交供后续处置 | `E:\项目一_v2.12.0_备份\FINAL_BLOCKER_REMEDIATION_EVIDENCE_20260823_125058922`；检查点 `E:\项目一_v2.12.0_备份\FINAL_BLOCKER_REMEDIATION_PRE_20260823_123747820` | 唯一一次 Targeted DeepSeek AnalysisPlan 调用不再是 402，但返回 `empty_response`，Frozen Schema 无法校验；按 `CONTENT_QUALITY_RETRY_MAX=0` 未重试，并停止 Attachment 真实调用、Final SAME-SHA Full Regression、main/remote/tag/普通根目录归一。 |
+
 ## 2026-08-23 v2.12.0 Final Integration Stage 2 / C + B
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

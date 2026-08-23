@@ -709,7 +709,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       answer_style: answerStyle,
       mode: answerStyle === 'chatbi' ? 'chatbi' : contextAttachments.some((item) => String(item.media_type || item.content_type || '').startsWith('image/')) ? 'vision' : contextAttachments.length ? 'file' : answerStyle === 'plain_language' ? 'general' : 'rag',
       attachment_ids: contextAttachments.filter((item) => !item.status || item.status === 'ready').map((item) => item.attachment_id),
-      knowledge_scope: contextAttachments.length ? 'authorized_enterprise_and_attachments' : 'authorized_enterprise',
+      knowledge_scope: contextAttachments.length ? 'attachments' : 'authorized_enterprise',
       page_context: {
         route_key: 'assistant.chat',
         page_title: 'AI 助手',

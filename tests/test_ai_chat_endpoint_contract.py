@@ -248,12 +248,21 @@ def test_file_chat_binds_attachment_ids_returns_citation_and_rejects_deleted_reu
     def grounded_file_answer(question, **kwargs):
         captured["question"] = question
         captured["attachment_ids"] = kwargs["attachment_ids"]
+        captured["attachment_evidence"] = kwargs["attachment_evidence"]
+        captured["knowledge_scope"] = kwargs["knowledge_scope"]
         return {
             "session_id": "sess_file",
             "answer": "附件说明了受控结论。",
             "citations": [],
             "evidence_summary": [],
             "warnings": [],
+            "attachment_grounding": {
+                "context_applied": True,
+                "knowledge_scope": kwargs["knowledge_scope"],
+                "selected_attachment_ids": kwargs["attachment_ids"],
+                "source_ids": [item["source_id"] for item in kwargs["attachment_evidence"]],
+                "chunk_count": len(kwargs["attachment_evidence"]),
+            },
         }
 
     monkeypatch.setattr(assistant_endpoint, "answer_chat", grounded_file_answer)
@@ -270,14 +279,22 @@ def test_file_chat_binds_attachment_ids_returns_citation_and_rejects_deleted_reu
         "session_id": "sess_file",
         "mode": "file",
         "attachment_ids": [attachment_id],
+        "knowledge_scope": "attachments",
     })
     assert answered.status_code == 200
     payload = answered.json()
     assert payload["attachment_ids"] == [attachment_id]
     assert payload["attachment_citations"][0]["attachment_id"] == attachment_id
     assert payload["attachment_citations"][0]["file_name"] == "evidence.txt"
-    assert "controlled attachment evidence" in captured["question"]
+    assert payload["attachment_citations"][0]["source_id"].startswith(f"attachment:{attachment_id}:")
+    assert payload["attachment_claims"][0]["citation_ids"] == [
+        payload["attachment_citations"][0]["citation_id"]
+    ]
+    assert payload["grounding_status"] == "grounded"
+    assert captured["question"] == "附件说了什么？"
+    assert captured["attachment_evidence"][0]["text"] == "controlled attachment evidence"
     assert captured["attachment_ids"] == [attachment_id]
+    assert captured["knowledge_scope"] == "attachments"
 
     assert client.delete(f"/api/ai/attachments/{attachment_id}").status_code == 200
     reused = client.post("/api/ai/chat", json={

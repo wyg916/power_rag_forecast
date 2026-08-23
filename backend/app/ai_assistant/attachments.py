@@ -270,7 +270,7 @@ def delete_attachment(identity: IdentityContext, attachment_id: str) -> dict[str
 def attachment_context(identity: IdentityContext, attachment_ids: list[str], *, session_id: str) -> dict[str, Any]:
     if len(attachment_ids) > 8:
         raise AttachmentError("ATTACHMENT_LIMIT_EXCEEDED", "单次附件数量超过限制。", status_code=422)
-    records, citations, images, texts = [], [], [], []
+    records, citations, grounding_evidence, images, texts = [], [], [], [], []
     for attachment_id in attachment_ids:
         meta = get_attachment(identity, attachment_id, session_id=session_id)
         status = str(meta.get("status") or "")
@@ -283,14 +283,29 @@ def attachment_context(identity: IdentityContext, attachment_ids: list[str], *, 
         records.append(_public(meta))
         for chunk in meta.get("chunks") or []:
             text = str(chunk.get("text") or "")[:12_000]
+            source_id = f"attachment:{attachment_id}:{chunk.get('chunk_id')}"
             texts.append(f"<untrusted_attachment name={json.dumps(meta['file_name'], ensure_ascii=False)}>\n{text}\n</untrusted_attachment>")
             citations.append({
                 "citation_id": f"acit_{uuid4().hex}", "attachment_id": attachment_id,
                 "file_name": meta["file_name"], "location": chunk.get("location") or {},
-                "quote": text[:240], "chunk_id": chunk.get("chunk_id"),
+                "quote": text[:240], "chunk_id": chunk.get("chunk_id"), "source_id": source_id,
+            })
+            grounding_evidence.append({
+                "source_id": source_id,
+                "attachment_id": attachment_id,
+                "chunk_id": chunk.get("chunk_id"),
+                "file_name": meta["file_name"],
+                "location": chunk.get("location") or {},
+                "text": text,
             })
         if (meta.get("properties") or {}).get("vision"):
             data_path, _ = _paths(identity, attachment_id)
             encoded = base64.b64encode(data_path.read_bytes()).decode("ascii")
             images.append({"attachment_id": attachment_id, "data_url": f"data:{meta['media_type']};base64,{encoded}"})
-    return {"records": records, "citations": citations, "images": images, "untrusted_text": "\n".join(texts)[:60_000]}
+    return {
+        "records": records,
+        "citations": citations,
+        "grounding_evidence": grounding_evidence,
+        "images": images,
+        "untrusted_text": "\n".join(texts)[:60_000],
+    }

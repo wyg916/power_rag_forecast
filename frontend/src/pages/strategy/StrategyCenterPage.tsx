@@ -76,17 +76,18 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   const [reviewHistory, setReviewHistory] = useState<any[]>([]);
   const { canPerformAction } = useAuth();
+  const canReview = canPerformAction('strategy:review');
   const reviewPermissions = {
     canSubmit: canPerformAction('strategy:submit'),
-    canReview: canPerformAction('strategy:review'),
+    canReview,
     canPublish: canPerformAction('strategy:publish')
   };
   const canConfigure = canPerformAction('strategy:manage');
   const mode = useMemo<'overview' | 'storage' | 'review'>(() => {
-    if (activeSubKey === 'strategy-review') return 'review';
+    if (activeSubKey === 'strategy-review' && canReview) return 'review';
     if (activeSubKey === 'strategy-low' || activeSubKey === 'strategy-storage') return 'storage';
     return 'overview';
-  }, [activeSubKey]);
+  }, [activeSubKey, canReview]);
   const activeTabKey = mode === 'overview' ? 'strategy-high' : mode === 'storage' ? 'strategy-storage' : 'strategy-review';
   const filteredReviewRows = useMemo(() => {
     const rows = data?.reviewRows || [];
@@ -129,7 +130,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   }, []);
 
   const loadReviewHistory = useCallback(async (strategyId?: string) => {
-    if (!strategyId) {
+    if (!canReview || !strategyId) {
       setReviewHistory([]);
       return;
     }
@@ -139,17 +140,21 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     } catch {
       setReviewHistory([]);
     }
-  }, []);
+  }, [canReview]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   useEffect(() => {
+    if (!canReview || mode !== 'review') {
+      setReviewHistory([]);
+      return;
+    }
     const row = data?.reviewRows?.find((item: any) => item.key === selectedReview);
     if (row?.contentHash) loadReviewHistory(row.id);
     else setReviewHistory([]);
-  }, [data, selectedReview, loadReviewHistory]);
+  }, [canReview, data, mode, selectedReview, loadReviewHistory]);
 
   useEffect(() => {
     if (mode !== 'review') return;

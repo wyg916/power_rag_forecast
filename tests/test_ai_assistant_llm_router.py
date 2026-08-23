@@ -168,3 +168,61 @@ def test_explicit_provider_failure_is_not_wrapped_as_success(monkeypatch):
         assert "provider offline" in exc.reason
     else:
         raise AssertionError("explicit provider failure must not return a success payload")
+
+
+def test_only_selected_attachment_evidence_reaches_model_context_without_rag(monkeypatch):
+    captured: dict[str, object] = {}
+
+    class CapturingRouter:
+        def generate_answer(self, messages, **kwargs):
+            captured["messages"] = messages
+            captured["kwargs"] = kwargs
+            return "附件中的项目代码是 PROJECT_CODE=ALPHA-7281。", {
+                "provider": "mimo",
+                "selected_provider": "mimo",
+                "model": "fixture-model",
+                "selected_model": "fixture-model",
+                "input_tokens": 40,
+                "output_tokens": 16,
+                "latency_ms": 2,
+                "estimated_cost": 0,
+                "currency": "CNY",
+                "fallback": False,
+            }
+
+    monkeypatch.setattr(service, "LLMRouter", CapturingRouter)
+    monkeypatch.setenv("AI_ASSISTANT_LLM_ENABLED", "1")
+    monkeypatch.setenv("AI_ATTACHMENT_MAX_TOKENS", "300")
+    monkeypatch.setattr(service, "get_conversation_state", lambda _identity: None)
+    monkeypatch.setattr(service, "_execute_tools", lambda *_args, **_kwargs: [])
+    result = service.answer_chat_accurate(
+        "所选附件中的项目代码是什么？",
+        session_id="sess-alpha",
+        model_provider="mimo",
+        attachment_ids=["att_alpha"],
+        attachment_evidence=[{
+            "source_id": "attachment:att_alpha:achunk_alpha",
+            "attachment_id": "att_alpha",
+            "chunk_id": "achunk_alpha",
+            "file_name": "alpha.txt",
+            "location": {"section": "document"},
+            "text": "PROJECT_CODE=ALPHA-7281",
+        }],
+        knowledge_scope="attachments",
+    )
+
+    prompt = str(captured["messages"])
+    assert "PROJECT_CODE=ALPHA-7281" in prompt
+    assert "only_selected_attachments" not in prompt
+    assert captured["kwargs"]["max_tokens"] == 300
+    assert result["answer"] == "附件中的项目代码是 PROJECT_CODE=ALPHA-7281。"
+    assert result["attachment_grounding"] == {
+        "context_applied": True,
+        "knowledge_scope": "attachments",
+        "selected_attachment_ids": ["att_alpha"],
+        "source_ids": ["attachment:att_alpha:achunk_alpha"],
+        "chunk_count": 1,
+        "enterprise_kb_chunk_count": 0,
+        "only_selected_attachments_mode": True,
+        "max_output_tokens": 300,
+    }

@@ -121,6 +121,9 @@ def _request_shape(payload: Mapping[str, Any]) -> dict[str, Any]:
                 image_mimes.append(match.group(1).lower() if match else "")
     response_format = payload.get("response_format")
     return {
+        "endpoint": "chat/completions",
+        "request_mode": "stream" if bool(payload.get("stream")) else "non_stream",
+        "stream": bool(payload.get("stream")),
         "model": str(payload.get("model") or ""),
         "message_count": len(messages),
         "content_types": content_types,
@@ -269,25 +272,61 @@ class OpenAICompatibleProvider:
         content, part_types = _content_text(message.get("content"))
         reasoning_content, reasoning_part_types = _content_text(message.get("reasoning_content"))
         tool_calls = tuple(message.get("tool_calls") or ())
+        response_headers = getattr(response, "headers", {}) or {}
+        usage_payload = body.get("usage") if isinstance(body.get("usage"), dict) else None
+        provider_error = body.get("error") if isinstance(body.get("error"), dict) else None
+        if content:
+            adapter_parse_result = "PASS_CONTENT"
+        elif tool_calls:
+            adapter_parse_result = "PASS_TOOL_CALLS"
+        elif reasoning_content:
+            adapter_parse_result = "FAIL_REASONING_ONLY"
+        elif not (body.get("choices") or []):
+            adapter_parse_result = "FAIL_CHOICES_MISSING"
+        elif not isinstance(choice.get("message"), dict):
+            adapter_parse_result = "FAIL_MESSAGE_MISSING"
+        else:
+            adapter_parse_result = "FAIL_CONTENT_EMPTY"
         diagnostics = {
             "request": _request_shape(payload),
             "response": {
                 "http_status": response.status_code,
                 "request_id": _request_id(response, str(body.get("id") or "")),
+                "response_header_names": sorted(str(key).lower() for key in response_headers),
+                "content_type_header": str(response_headers.get("content-type") or "")[:120],
+                "body_present": True,
+                "body_type": type(body).__name__,
                 "body_keys": sorted(body) if isinstance(body, dict) else [],
                 "choice_count": len(body.get("choices") or []),
+                "message_present": isinstance(choice.get("message"), dict),
                 "message_keys": sorted(message) if isinstance(message, dict) else [],
                 "content_type": type(message.get("content")).__name__,
                 "content_part_types": part_types,
                 "reasoning_part_types": reasoning_part_types,
+                "content_present": bool(content),
+                "reasoning_content_present": bool(reasoning_content),
                 "content_chars": len(content),
                 "reasoning_chars": len(reasoning_content),
+                "tool_calls_count": len(tool_calls),
                 "finish_reason": str(choice.get("finish_reason") or ""),
+                "response_model": str(body.get("model") or ""),
+                "provider_error": {
+                    "type": str(provider_error.get("type") or "")[:80],
+                    "code": str(provider_error.get("code") or "")[:80],
+                    "message": re.sub(
+                        r"sk-[A-Za-z0-9_\-]{8,}",
+                        "sk-***",
+                        str(provider_error.get("message") or ""),
+                    )[:300],
+                } if provider_error else None,
+                "adapter_parse_result": adapter_parse_result,
                 "usage": {
-                    "prompt_tokens": int((body.get("usage") or {}).get("prompt_tokens") or 0),
-                    "completion_tokens": int((body.get("usage") or {}).get("completion_tokens") or 0),
-                    "total_tokens": int((body.get("usage") or {}).get("total_tokens") or 0),
+                    "capture_status": "CAPTURED" if usage_payload is not None else "USAGE_NOT_RETURNED_BY_PROVIDER",
+                    "prompt_tokens": int((usage_payload or {}).get("prompt_tokens") or 0),
+                    "completion_tokens": int((usage_payload or {}).get("completion_tokens") or 0),
+                    "total_tokens": int((usage_payload or {}).get("total_tokens") or 0),
                 },
+                "latency_ms": round((time.perf_counter() - started) * 1000, 3),
             },
         }
         if not content and not tool_calls:
