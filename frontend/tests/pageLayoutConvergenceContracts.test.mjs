@@ -88,3 +88,24 @@ test('report workspace keeps list and preview readable below the three-column de
   assert.match(phase6, /\.report-list-item strong\s*\{[\s\S]*?-webkit-line-clamp:\s*2/);
   assert.match(phase6, /\.report-list-item small\s*\{[\s\S]*?text-overflow:\s*ellipsis[\s\S]*?white-space:\s*nowrap/);
 });
+
+test('final visual acceptance keeps visible text and forecast chart labels at least 12px', async () => {
+  const [styles, dataStyles, forecast] = await Promise.all([
+    read('../src/styles.css'),
+    read('../src/pages/data/data-center-workspace.css'),
+    read('../src/components/forecast/ForecastDesign.tsx')
+  ]);
+
+  const cssBelowTwelve = [styles, dataStyles]
+    .flatMap((source) => Array.from(source.matchAll(/font-size\s*:\s*([0-9]+(?:\.[0-9]+)?)px/g), (match) => Number(match[1])))
+    .filter((size) => size < 12);
+
+  assert.deepEqual(cssBelowTwelve, []);
+  assert.match(dataStyles, /\.data-alert-row\s*\{[\s\S]*?grid-template-columns:[^;]*128px/);
+  assert.match(dataStyles, /\.catalog-card-grid button\s*\{[\s\S]*?position:\s*relative[\s\S]*?grid-template-columns:\s*30px minmax\(0, 1fr\)/);
+  assert.match(dataStyles, /@media \(max-width: 1600px\)[\s\S]*?\.catalog-card-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(2/);
+  assert.match(styles, /\.task-health-item span,[\s\S]*?overflow-wrap:\s*anywhere[\s\S]*?text-overflow:\s*clip/);
+  assert.match(styles, /@media \(max-width: 1366px\)[\s\S]*?\.task-list-card \.task-table\s*\{[\s\S]*?width:\s*calc\(100% - 56px\) !important/);
+  assert.match(styles, /\.home-derived-note\s*\{[\s\S]*?display:\s*block[\s\S]*?overflow:\s*visible/);
+  assert.doesNotMatch(forecast, /fontSize\s*:\s*(?:[0-9]|10|11)(?:\D|$)/);
+});

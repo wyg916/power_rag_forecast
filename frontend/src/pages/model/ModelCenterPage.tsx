@@ -393,7 +393,7 @@ export function ModelCenterPage(_props: PageProps) {
                 <strong title={item.fullValue || item.value}>{item.value}</strong>
                 {item.tag && <Tag color={item.tone === 'orange' ? 'warning' : 'success'}>{item.tag}</Tag>}
               </div>
-              <p>{item.note}</p>
+              <p title={item.note}>{item.note}</p>
             </div>
             <i>{item.icon}</i>
           </div>
@@ -435,8 +435,8 @@ export function ModelCenterPage(_props: PageProps) {
               {data.admission.rules.map((rule) => (
                 <p key={rule.label}>
                   <CheckCircleOutlined className={rule.passed ? 'ok' : 'warn'} />
-                  <span>{rule.label}</span>
-                  <strong>{rule.passed ? '是' : '否'}（{rule.detail}）</strong>
+                  <span title={rule.label}>{rule.label}</span>
+                  <strong title={`${rule.passed ? '是' : '否'}（${rule.detail}）`}>{rule.passed ? '是' : '否'}（{rule.detail}）</strong>
                 </p>
               ))}
               <div className={`model-admission-result ${data.admission.passed ? 'passed' : 'blocked'}`}>

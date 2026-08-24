@@ -108,7 +108,7 @@ export function HeaderBar({ workspaceMode = 'default' }: { workspaceMode?: 'defa
         <Dropdown trigger={['click']} menu={{ items: menuItems }}>
           <Button type="text" className="user-area">
             <Avatar icon={<UserOutlined />} />
-            <strong>{displayName}</strong>
+            <strong title={displayName}>{displayName}</strong>
             <Tag>{role}</Tag>
             <DownOutlined />
           </Button>

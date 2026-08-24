@@ -83,7 +83,7 @@ export function HomeAuxiliaryGrid({ forecast, kpi, canReadData = true, canReadMo
         )}
         <div className="home-source-mini-list">
           {sources.slice(0, 4).map((item: any) => (
-            <span key={item.name}>{item.name}: {item.status || '--'}</span>
+            <span key={item.name} title={`${item.name}: ${item.status || '--'}`}>{item.name}: {item.status || '--'}</span>
           ))}
         </div>
       </div> : null}

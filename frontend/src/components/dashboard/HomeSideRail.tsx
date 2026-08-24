@@ -100,7 +100,7 @@ export function HomeSideRail({ risk, strategy, tasks, isStale = false, canUseAss
                 <Tag color={statusClass(item.status) === 'danger' ? 'error' : statusClass(item.status) === 'warning' ? 'warning' : 'success'}>
                   {item.status || '--'}
                 </Tag>
-                <span>{item.task_name || item.kind || item.task_kind || '系统任务'}</span>
+                <span title={item.task_name || item.kind || item.task_kind || '系统任务'}>{item.task_name || item.kind || item.task_kind || '系统任务'}</span>
                 <small>{dateTimeText(item.started_at || item.updated_at || item.created_at)}</small>
               </button>
             ) : (

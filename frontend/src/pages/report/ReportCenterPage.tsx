@@ -476,8 +476,8 @@ function ReportListCard({ title, reports, selectedId, setSelectedId, total, page
             <button key={item.report_id} className={`report-list-item ${selectedId === item.report_id ? 'active' : ''}`} onClick={() => setSelectedId(item.report_id)}>
               <span>
                 <FileTextOutlined />
-                <strong>{item.title}</strong>
-                <small>{item.report_id}</small>
+                <strong title={item.title}>{item.title}</strong>
+                <small title={item.report_id}>{item.report_id}</small>
               </span>
               <Tag>{item.typeText}</Tag>
               <Tag color={statusColor[item.statusText] || 'default'}>{item.statusText}</Tag>
@@ -621,8 +621,8 @@ function ReviewPublishView({ metrics, loading, reports, total, page, onPageChang
 function ReportBaseInfo({ report, compact }: any) {
   return (
     <div className={`report-base-info ${compact ? 'compact' : ''}`}>
-      <p><span>报告名称</span><strong>{report?.title || '--'}</strong></p>
-      <p><span>报告 ID</span><strong>{report?.report_id || '--'}</strong></p>
+      <p><span>报告名称</span><strong title={report?.title || undefined}>{report?.title || '--'}</strong></p>
+      <p><span>报告 ID</span><strong title={report?.report_id || undefined}>{report?.report_id || '--'}</strong></p>
       <p><span>报告类型</span><strong>{report?.typeText || '--'}</strong></p>
       <p><span>报告状态</span><strong>{report?.statusText || '--'}</strong></p>
     </div>

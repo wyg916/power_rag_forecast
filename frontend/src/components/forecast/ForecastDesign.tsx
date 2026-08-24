@@ -239,8 +239,8 @@ export function ForecastChartCard({ data }: { data: any }) {
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A', fontSize: 12 } },
     legend: { top: 0, left: 0, itemWidth: 24, itemHeight: 8, textStyle: { fontSize: 12 }, data: ['预测电价', ...(intervalAvailable ? ['置信区间（95%）'] : []), '峰值点'] },
     grid: { left: 48, right: 26, top: 48, bottom: 44 },
-    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', fontSize: 11, interval: 1 } },
-    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085', fontSize: 11 } },
+    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', fontSize: 12, interval: 1 } },
+    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085', fontSize: 12 } },
     series: [
       ...(intervalAvailable ? [
         {
@@ -453,7 +453,7 @@ export function ComparisonChartCard({
           formatter: `${String(row.time).slice(0, 5)} ${row.remark}\n${row.rate}`,
           position: String(row.time).startsWith('17') ? 'top' : 'bottom',
           color: chartColors.green,
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: 700,
           lineHeight: 14,
           padding: [5, 7],
@@ -484,8 +484,8 @@ export function ComparisonChartCard({
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#D8E2EC', textStyle: { color: '#18233A', fontSize: 12 } },
     legend: { top: 0, left: 0, itemWidth: 24, itemHeight: 8, textStyle: { fontSize: 12 }, data: legend },
     grid: { left: 48, right: 26, top: 52, bottom: 44 },
-    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', fontSize: 11, interval: granularity === 'hour' ? 1 : 0 } },
-    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085', fontSize: 11 } },
+    xAxis: { type: 'category', boundaryGap: false, data: times, axisTick: { show: false }, axisLine: { lineStyle: { color: '#E5EAF0' } }, axisLabel: { color: '#667085', fontSize: 12, interval: granularity === 'hour' ? 1 : 0 } },
+    yAxis: { type: 'value', splitNumber: 5, splitLine: { lineStyle: { color: '#E7EDF4' } }, axisLabel: { color: '#667085', fontSize: 12 } },
     series: chartSeries
   };
   return (
