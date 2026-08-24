@@ -76,3 +76,15 @@ test('page actions reserve the floating assistant safe area without removing con
   assert.match(strategy, /title:\s*'操作',\s*width:\s*144/);
   assert.match(knowledge, /title:\s*'操作',[\s\S]*?width:\s*168/);
 });
+
+test('report workspace keeps list and preview readable below the three-column desktop width', async () => {
+  const styles = await read('../src/styles.css');
+  const phase6 = styles.slice(styles.indexOf('/* Phase 6 regression closure:'));
+
+  assert.match(phase6, /@media \(max-width: 1450px\)/);
+  assert.match(phase6, /\.report-main-grid,[\s\S]*?grid-template-columns:\s*minmax\(320px, 340px\) minmax\(0, 1fr\)/);
+  assert.match(phase6, /\.report-main-grid > \.report-workspace-right,[\s\S]*?grid-column:\s*1 \/ -1/);
+  assert.match(phase6, /\.report-list-head,[\s\S]*?grid-template-columns:\s*minmax\(148px, 1fr\) 88px 64px/);
+  assert.match(phase6, /\.report-list-item strong\s*\{[\s\S]*?-webkit-line-clamp:\s*2/);
+  assert.match(phase6, /\.report-list-item small\s*\{[\s\S]*?text-overflow:\s*ellipsis[\s\S]*?white-space:\s*nowrap/);
+});

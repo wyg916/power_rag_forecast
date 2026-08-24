@@ -12073,3 +12073,51 @@ a {
     padding-inline: var(--space-2) !important;
   }
 }
+
+/* Phase 6 regression closure: preserve readable report list and preview columns
+   once the fixed shell leaves less than a three-column desktop workspace. */
+@media (max-width: 1450px) {
+  .report-main-grid,
+  .report-review-grid {
+    grid-template-columns: minmax(320px, 340px) minmax(0, 1fr);
+  }
+
+  .report-main-grid > .report-workspace-right,
+  .report-review-grid > .report-workspace-right {
+    grid-column: 1 / -1;
+    height: auto;
+    grid-template-rows: auto;
+  }
+
+  .report-main-grid > .report-workspace-right {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .report-review-grid > .report-workspace-right {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-review-grid .report-review-info-grid {
+    grid-column: 1 / -1;
+  }
+
+  .report-list-head,
+  .report-list-item {
+    grid-template-columns: minmax(148px, 1fr) 88px 64px;
+  }
+
+  .report-list-item strong {
+    display: -webkit-box;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .report-list-item small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
