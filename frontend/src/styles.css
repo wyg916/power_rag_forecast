@@ -11497,6 +11497,269 @@ a {
   }
 }
 
+/* Phase 5 AI content renderer: natural answers, stable local scrolling and no page-width escape. */
+.dynamic-answer,
+.assistant-markdown,
+.assistant-markdown-block {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.dynamic-answer {
+  overflow: visible;
+}
+
+.assistant-structured-answer {
+  overflow: visible;
+}
+
+.assistant-markdown {
+  color: var(--color-text);
+  font-size: 15px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.assistant-markdown-block > :first-child {
+  margin-top: 0;
+}
+
+.assistant-markdown h1,
+.assistant-markdown h2,
+.assistant-markdown h3 {
+  margin: 18px 0 8px;
+  color: var(--color-title);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.assistant-markdown h1 { font-size: 20px; }
+.assistant-markdown h2 { font-size: 18px; }
+.assistant-markdown h3 { font-size: 16px; }
+
+.assistant-markdown p,
+.assistant-markdown ul,
+.assistant-markdown ol,
+.assistant-markdown blockquote {
+  margin: 8px 0 12px;
+}
+
+.assistant-markdown p,
+.assistant-markdown blockquote {
+  white-space: pre-wrap;
+}
+
+.assistant-markdown ul,
+.assistant-markdown ol {
+  padding-inline-start: 28px;
+}
+
+.assistant-markdown li + li {
+  margin-top: 4px;
+}
+
+.assistant-markdown a,
+.assistant-citation-title,
+.assistant-citation-id,
+.assistant-citations p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.assistant-markdown code,
+.assistant-citation-id {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #edf2f7;
+  font-family: var(--font-family-code);
+  font-size: 13px;
+}
+
+.assistant-code-block {
+  max-width: 100%;
+  margin: 10px 0 14px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 9px;
+  background: #f7f9fc;
+}
+
+.assistant-code-block.is-streaming {
+  border-color: rgba(47, 111, 237, 0.35);
+}
+
+.assistant-code-language {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--color-border-soft);
+  color: var(--color-secondary);
+  font-family: var(--font-family-code);
+  font-size: 12px;
+  text-transform: lowercase;
+}
+
+.assistant-code-block pre {
+  max-width: 100%;
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  white-space: pre;
+}
+
+.assistant-code-block pre code {
+  padding: 0;
+  background: transparent;
+  font-size: 13px;
+}
+
+.assistant-markdown-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  margin: 10px 0 14px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 9px;
+  background: #fff;
+  overscroll-behavior-inline: contain;
+}
+
+.assistant-markdown-table-scroll table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.assistant-markdown-table-scroll th,
+.assistant-markdown-table-scroll td {
+  min-width: 120px;
+  padding: 9px 11px;
+  border-right: 1px solid var(--color-border-soft);
+  border-bottom: 1px solid var(--color-border-soft);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.assistant-markdown-table-scroll th {
+  background: var(--color-bg-soft);
+  color: var(--color-title);
+  font-weight: 750;
+}
+
+.assistant-citations {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-inline-start: 24px;
+}
+
+.assistant-citations li {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.assistant-citation-title {
+  display: -webkit-box;
+  font-weight: 700;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.assistant-citation-id {
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 5px;
+}
+
+.assistant-citations p {
+  margin: 6px 0 0;
+  color: var(--color-secondary);
+}
+
+.assistant-message-scroll,
+.global-assistant-messages {
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.assistant-right-rail {
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.assistant-right-rail .section-card {
+  flex: 0 0 auto;
+}
+
+.assistant-right-rail .section-card .ant-card-body {
+  overflow: visible;
+}
+
+.report-risk-cell > span {
+  display: block;
+}
+
+.report-review-summary,
+.report-summary-block p {
+  white-space: pre-line;
+}
+
+@media (max-width: 1600px) {
+  .assistant-chat-card {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+  }
+
+  .assistant-chat-card .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-block: 8px;
+  }
+
+  .assistant-chat-card .ant-card-head-title,
+  .assistant-chat-card .ant-card-extra {
+    width: 100%;
+    flex: 1 1 100%;
+    margin-inline-start: 0;
+  }
+
+  .assistant-mode-tabs {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .assistant-chat-tools {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .assistant-chat-card .ant-card-body {
+    height: auto;
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 1280px) {
+  .assistant-mode-tabs .ant-btn {
+    min-width: 76px;
+    padding-inline: 8px;
+  }
+}
+
 /* Phase 4 core-page layout convergence. Page roots use the shell scroll owner;
    deliberate table, list, chat and detail regions retain their local scroll. */
 .home-dashboard-page,

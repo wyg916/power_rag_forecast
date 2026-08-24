@@ -1,4 +1,5 @@
 import { api } from '../api';
+import { formatReportValueLines } from './reportValue';
 import { withServiceState } from './serviceState';
 
 function statusText(status: string) {
@@ -63,6 +64,7 @@ export function normalizeReport(item: any) {
   const meta = item?.meta || {};
   const source = summary?.source || metadata?.source || {};
   const executiveSummary = summary?.executive_summary || {};
+  const explicitSummary = summary?.summary || summary?.content || summary?.conclusion;
   const id = item?.report_id || item?.run_id || 'latest';
   return {
     ...item,
@@ -89,9 +91,7 @@ export function normalizeReport(item: any) {
     metrics: summary?.metrics || summary?.kpis || executiveSummary,
     risks: normalizeRisks(summary),
     summaryText:
-      summary?.summary ||
-      summary?.content ||
-      summary?.conclusion ||
+      (explicitSummary ? formatReportValueLines(explicitSummary).join('\n') : '') ||
       (Object.keys(executiveSummary).length
         ? `共 ${executiveSummary.record_count ?? '--'} 个预测时点，平均电价 ${executiveSummary.average_price ?? '--'} 元/MWh，最高 ${executiveSummary.maximum_price ?? '--'}，最低 ${executiveSummary.minimum_price ?? '--'}；尖峰风险 ${executiveSummary.spike_risk_hour_count ?? '--'} 个时段，负电价 ${executiveSummary.negative_price_hour_count ?? '--'} 个时段。`
         : '') ||

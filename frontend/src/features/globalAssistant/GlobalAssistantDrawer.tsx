@@ -20,6 +20,7 @@ import {
 import type { AssistantPageContext } from '../../services/assistantApi';
 import { SectionUnavailable } from '../../components/security/PermissionGate';
 import { AttachmentComposer } from './AttachmentComposer';
+import { resolveAssistantAnswerMarkdown } from './assistantContent';
 import { DynamicAnswer } from './DynamicAnswer';
 import { globalAssistantStore } from './globalAssistantStore';
 import type { GlobalAssistantAttachment } from './globalAssistantStore';
@@ -157,7 +158,7 @@ export function GlobalAssistantDrawer({
         }
       }, controller.signal);
       if (response.session_id) globalAssistantStore.setSessionId(response.session_id);
-      const markdown = String(response.answer?.markdown || streamed || '').trim();
+      const markdown = resolveAssistantAnswerMarkdown(response.answer, streamed);
       if (!markdown) throw new Error('回答为空，未作为成功结果展示。');
       globalAssistantStore.updateMessage(assistantId, {
         markdown,

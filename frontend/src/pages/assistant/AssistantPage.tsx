@@ -1,7 +1,5 @@
 import {
   BarChartOutlined,
-  BulbOutlined,
-  CheckCircleOutlined,
   ClockCircleOutlined,
   CopyOutlined,
   DatabaseOutlined,
@@ -38,15 +36,16 @@ import {
 } from '../../services/assistantApi';
 import { DynamicAnswer } from '../../features/globalAssistant/DynamicAnswer';
 import { attachmentAccept, isSupportedAttachment } from '../../features/globalAssistant/AttachmentComposer';
+import { resolveAssistantAnswerMarkdown } from '../../features/globalAssistant/assistantContent';
+import {
+  ASSISTANT_MODE_CONTRACTS,
+  DEFAULT_ASSISTANT_ANSWER_STYLE,
+  resolveAssistantRequestMode
+} from '../../features/globalAssistant/assistantModes';
+import type { AssistantAnswerStyle } from '../../features/globalAssistant/assistantModes';
 import type { PageProps } from '../../types/ui';
 
-const answerModeTabs = [
-  { key: 'chatbi', label: '经营分析' },
-  { key: 'professional_brief', label: '专业解读' },
-  { key: 'plain_language', label: '通俗解释' },
-  { key: 'business_advice', label: '业务建议' },
-  { key: 'report_style', label: '报告摘要' }
-];
+const answerModeTabs = ASSISTANT_MODE_CONTRACTS;
 
 const modelProviderOptions = [
   { value: 'standard', label: '标准模式' },
@@ -203,19 +202,6 @@ function asList(value: any): string[] {
   if (Array.isArray(value)) return value.map((item) => String(item)).filter(Boolean);
   if (value === undefined || value === null || value === '') return [];
   return [String(value)];
-}
-
-function sectionText(answer: string, title: string, fallback = '') {
-  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const titles = ['结论', '数据依据', '原因解释', '业务建议', '风险提示'];
-  const next = titles.filter((item) => item !== title).join('|');
-  const match = answer.match(new RegExp(`${escaped}[：:]?\\s*([\\s\\S]*?)(?=\\n\\s*(${next})[：:]?|$)`));
-  return (match?.[1] || fallback).trim();
-}
-
-function splitContent(value: any): string[] {
-  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
-  return String(value || '').split(/\n+/).map((item) => item.trim()).filter(Boolean);
 }
 
 function firstBusinessOutput(response: any) {
@@ -425,90 +411,6 @@ function withAssistantTimeout<T>(promise: Promise<T>, timeoutMs = ASSISTANT_CHAT
   });
 }
 
-function buildAnswerModules(message?: AssistantMessage) {
-  const answerText = String(message?.content || '').trim();
-  const state = message?.answerState || {};
-  const evidenceSummary = compactEvidenceItems(state.evidenceSummary || []);
-  const knowledgeSummary = compactEvidenceItems(state.knowledgeEvidenceSummary || []);
-  const streamEvents = state.streamEvents || [];
-  if (!answerText && (message?.status === 'pending' || message?.status === 'streaming')) {
-    return [
-      {
-        key: 'progress',
-        title: '生成进度',
-        icon: <ClockCircleOutlined />,
-        tone: 'info',
-        lines: streamEvents.length ? streamEvents.map((item) => item.message) : ['正在识别问题并调用业务工具链。']
-      }
-    ];
-  }
-
-  const hasStructuredSections = ['结论', '数据依据', '原因解释', '业务建议', '风险提示'].some((title) =>
-    new RegExp(`${title}[：:]`).test(answerText)
-  );
-  const warningLines = splitContent(sectionText(answerText, '风险提示'));
-  if (state.modelFallback || state.warnings?.length) {
-    warningLines.push('本次回答未完成标准生成流程，当前仅保留可核验的业务依据，请人工复核。');
-  }
-
-  const modules: Array<{ key: string; title: string; icon: any; tone: string; lines: string[] }> = [
-    {
-      key: 'conclusion',
-      title: '结论',
-      icon: <CheckCircleOutlined />,
-      tone: 'success',
-      lines: splitContent(hasStructuredSections ? sectionText(answerText, '结论', answerText) : answerText)
-    },
-    {
-      key: 'evidence',
-      title: '数据依据',
-      icon: <BarChartOutlined />,
-      tone: 'info',
-      lines: [
-        ...splitContent(sectionText(answerText, '数据依据')),
-        ...evidenceSummary.map((item) => `数据摘要：${item}`),
-        ...knowledgeSummary.map((item) => `知识引用：${item}`)
-      ]
-    }
-  ];
-
-  if (hasStructuredSections) {
-    modules.push(
-      {
-        key: 'reason',
-        title: '原因解释',
-        icon: <BulbOutlined />,
-        tone: 'purple',
-        lines: splitContent(sectionText(answerText, '原因解释'))
-      },
-      {
-        key: 'suggestion',
-        title: '业务建议',
-        icon: <FileTextOutlined />,
-        tone: 'warning',
-        lines: splitContent(sectionText(answerText, '业务建议'))
-      },
-      {
-        key: 'warning',
-        title: '风险提示',
-        icon: <ExclamationCircleOutlined />,
-        tone: 'danger',
-        lines: warningLines
-      }
-    );
-  } else if (warningLines.length) {
-    modules.push({
-      key: 'warning',
-      title: '风险提示',
-      icon: <ExclamationCircleOutlined />,
-      tone: 'danger',
-      lines: warningLines
-    });
-  }
-
-  return modules.filter((item) => item.lines.length);
-}
-
 function buildEvidenceRows(message?: AssistantMessage) {
   if (!message || message.status === 'pending') return [];
   const state = message.answerState || {};
@@ -582,7 +484,8 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const [questionOffset, setQuestionOffset] = useState(0);
   const [developerMode, setDeveloperMode] = useState(false);
   const [developerOpen, setDeveloperOpen] = useState(false);
-  const [answerStyle, setAnswerStyle] = useState('professional_brief');
+  const [answerStyle, setAnswerStyle] = useState<AssistantAnswerStyle>(DEFAULT_ASSISTANT_ANSWER_STYLE);
+  const [sessionAnswerStyles, setSessionAnswerStyles] = useState<Record<string, AssistantAnswerStyle>>({});
   const [selectedDataSource, setSelectedDataSource] = useState('all');
   const [modelProvider, setModelProvider] = useState('standard');
   const [sessionProviders, setSessionProviders] = useState<Record<string, string>>({});
@@ -608,7 +511,6 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const evidenceRows = useMemo(() => buildEvidenceRows(activeAssistant), [activeAssistant]);
   const kpiCards = useMemo(() => buildKpiCards(activeAssistant), [activeAssistant]);
   const knowledgeItems = useMemo(() => buildKnowledgeItems(activeAssistant), [activeAssistant]);
-  const answerModules = useMemo(() => buildAnswerModules(activeAssistant), [activeAssistant]);
   const providerSessionKey = sessionId || 'new-conversation';
 
   useEffect(() => {
@@ -650,7 +552,9 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   }
 
   function finalizeAssistantMessage(id: string, response: any, context?: { attachments: AssistantAttachment[]; references: AssistantReference[] }) {
-    const content = String(response.answer?.markdown || response.answer || response.narrative?.text || response.clarification?.question || '').trim() || '本次请求未返回回答内容。';
+    const content = resolveAssistantAnswerMarkdown(
+      response.answer ?? response.narrative?.text ?? response.clarification?.question
+    ) || '本次请求未返回回答内容。';
     const answerState = {
       ...normalizeAnswerState(response),
       attachments: context?.attachments,
@@ -660,6 +564,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     if (response.session_id) {
       setSessionId(response.session_id);
       setSessionProviders((current) => ({ ...current, [response.session_id]: modelProvider }));
+      setSessionAnswerStyles((current) => ({ ...current, [response.session_id]: answerStyle }));
     }
     updateAssistantMessage(id, (item) => ({
       ...item,
@@ -707,7 +612,10 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
       requested_tier: modelProvider,
       premium_confirmed: modelProvider === 'premium',
       answer_style: answerStyle,
-      mode: answerStyle === 'chatbi' ? 'chatbi' : contextAttachments.some((item) => String(item.media_type || item.content_type || '').startsWith('image/')) ? 'vision' : contextAttachments.length ? 'file' : answerStyle === 'plain_language' ? 'general' : 'rag',
+      mode: resolveAssistantRequestMode(answerStyle, {
+        hasImage: contextAttachments.some((item) => String(item.media_type || item.content_type || '').startsWith('image/')),
+        hasAttachments: contextAttachments.length > 0
+      }),
       attachment_ids: contextAttachments.filter((item) => !item.status || item.status === 'ready').map((item) => item.attachment_id),
       knowledge_scope: contextAttachments.length ? 'attachments' : 'authorized_enterprise',
       page_context: {
@@ -784,12 +692,19 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     setAttachments([]);
     setSelectedReferences([]);
     setModelProvider('standard');
+    setAnswerStyle(DEFAULT_ASSISTANT_ANSWER_STYLE);
     message.success('已创建新会话');
   }
 
   function selectConversation(nextSessionId: string) {
     setSessionId(nextSessionId);
     setModelProvider(sessionProviders[nextSessionId] || 'standard');
+    setAnswerStyle(sessionAnswerStyles[nextSessionId] || DEFAULT_ASSISTANT_ANSWER_STYLE);
+  }
+
+  function changeAnswerStyle(value: AssistantAnswerStyle) {
+    setAnswerStyle(value);
+    setSessionAnswerStyles((current) => ({ ...current, [providerSessionKey]: value }));
   }
 
   function changeModelProvider(value: string) {
@@ -823,7 +738,10 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     }
     if (!files.length) return;
     const uploadSessionId = sessionId || messageId('sess');
-    if (!sessionId) setSessionId(uploadSessionId);
+    if (!sessionId) {
+      setSessionId(uploadSessionId);
+      setSessionAnswerStyles((current) => ({ ...current, [uploadSessionId]: answerStyle }));
+    }
     setUploadingAttachment(true);
     try {
       const uploaded: AssistantAttachment[] = [];
@@ -1022,7 +940,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
             title={
               <div className="assistant-mode-tabs" role="tablist" aria-label="回答模式">
                 {answerModeTabs.map((item) => (
-                  <Button key={item.key} type={answerStyle === item.key ? 'primary' : 'default'} onClick={() => setAnswerStyle(item.key)}>
+                  <Button key={item.key} type={answerStyle === item.key ? 'primary' : 'default'} onClick={() => changeAnswerStyle(item.key)}>
                     {item.label}
                   </Button>
                 ))}

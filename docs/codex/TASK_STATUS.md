@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-24 项目一 UI 统一整改 Phase 5
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| AI 助手、渲染器与报告对象专项修复 | `PASS`；五个既有模式契约、SSE 终态、Markdown/代码/JSON/Table/Citation、10000 字长回答、报告对象格式化与稳定 rowKey 均闭环；32 路由、128 角色路由、153 API 签名和冻结控件语义不变；frontend lint 12/12、unit 51/51、typecheck、build、四视口与 Provider 5/5 冒烟通过 | `codex/project1-ui-unification-safe-20260823`；本行所在提交 | `E:\项目一_UI统一整改证据\PHASE_5_20260824_122047` | 无；费用因 pricing 未配置而不可计算；未合并 main、未推送、未创建 Tag，未进入 Phase 6。 |
+
 ## 2026-08-23 v2.12.0 Permission Matrix Drift Final Closure
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

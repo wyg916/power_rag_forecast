@@ -27,6 +27,7 @@ import { PageDataState } from '../../components/common/States';
 import { MetricGrid } from '../../components/layout/UnifiedPage';
 import { useAuth } from '../../context/AuthContext';
 import { getReportCenterData, getReportFacts } from '../../services/reportApi';
+import { formatReportValueLines, pickReportScalar } from '../../services/reportValue';
 import { resolvePageDataMeta } from '../../services/viewState';
 import type { PageProps } from '../../types/ui';
 
@@ -51,12 +52,12 @@ function shortTime(value: unknown) {
 }
 
 function compactRiskPeriod(value: unknown) {
-  const text = String(value || '--');
+  const text = pickReportScalar(value, ['period', 'time_range', 'time', 'start', 'value']);
   return text.includes('T') ? text.slice(11, 16) : text;
 }
 
 function compactRiskLevel(value: unknown) {
-  const text = String(value || '--');
+  const text = pickReportScalar(value, ['level', 'risk_level', 'priority', 'value', 'label']);
   const normalized = text.toLowerCase();
   if (text.includes('高') || normalized === 'high') return '高';
   if (text.includes('中') || normalized === 'medium') return '中';
@@ -66,8 +67,13 @@ function compactRiskLevel(value: unknown) {
 }
 
 function RiskCell({ value }: { value: unknown }) {
-  const text = String(value || '--');
-  return <Tooltip title={text}><span className="report-risk-cell">{text}</span></Tooltip>;
+  const lines = formatReportValueLines(value);
+  const text = lines.join('；');
+  return (
+    <Tooltip title={text}>
+      <span className="report-risk-cell">{lines.map((line, index) => <span key={`${index}-${line}`}>{line}</span>)}</span>
+    </Tooltip>
+  );
 }
 
 function mainMetrics(summary: any) {
@@ -520,7 +526,15 @@ function ReportPreviewView({ metrics, loading, reports, total, page, onPageChang
               locale={{ emptyText: '接口未返回结构化风险时段' }}
               columns={[
                 { title: '时段', dataIndex: 'period', width: 58, render: (value) => <RiskCell value={compactRiskPeriod(value)} /> },
-                { title: '等级', dataIndex: 'level', width: 62, render: (value) => <Tooltip title={String(value || '--')}><Tag color={String(value).includes('高') || String(value).toLowerCase() === 'high' ? 'error' : String(value).includes('中') || String(value).toLowerCase() === 'medium' ? 'warning' : 'success'}>{compactRiskLevel(value)}</Tag></Tooltip> },
+                {
+                  title: '等级',
+                  dataIndex: 'level',
+                  width: 62,
+                  render: (value) => {
+                    const level = compactRiskLevel(value);
+                    return <Tooltip title={level}><Tag color={level === '高' ? 'error' : level === '中' ? 'warning' : 'success'}>{level}</Tag></Tooltip>;
+                  }
+                },
                 { title: '风险类型', dataIndex: 'type', width: 92, render: (value) => <RiskCell value={value} /> },
                 { title: '影响', dataIndex: 'impact', width: 58, render: (value) => <RiskCell value={compactRiskLevel(value)} /> },
                 { title: '建议动作', dataIndex: 'action', render: (value) => <RiskCell value={value} /> }

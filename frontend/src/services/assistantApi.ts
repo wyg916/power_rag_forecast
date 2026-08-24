@@ -1,4 +1,5 @@
 import { api, clearStoredAccessToken, downloadUrl, getStoredAccessToken } from '../api';
+import { AssistantSseParser } from '../features/globalAssistant/assistantStream';
 import { errorMessage, withServiceState } from './serviceState';
 
 const assistantAuthRequired = String(import.meta.env.VITE_AUTH_REQUIRED ?? '1') !== '0';
@@ -199,32 +200,15 @@ export async function askAssistantStream(
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');
-  let buffer = '';
-  let finalPayload: any;
-  let streamedMarkdown = '';
+  const parser = new AssistantSseParser(onEvent);
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const frames = buffer.replace(/\r\n/g, '\n').split('\n\n');
-    buffer = frames.pop() || '';
-    for (const frame of frames) {
-      const lines = frame.split('\n');
-      const event = lines.find((line) => line.startsWith('event:'))?.slice(6).trim() || 'message';
-      const dataText = lines
-        .filter((line) => line.startsWith('data:'))
-        .map((line) => line.slice(5).trim())
-        .join('\n');
-      const payload = dataText ? JSON.parse(dataText) : {};
-      onEvent(event, payload);
-      if (event === 'delta') streamedMarkdown += payload?.text || payload?.delta || payload?.markdown || '';
-      if (event === 'error') throw new Error(payload?.error?.message || payload?.message || '流式问答返回错误');
-      if (event === 'done') finalPayload = payload;
-    }
+    parser.push(decoder.decode(value, { stream: true }));
   }
-
-  if (!finalPayload) throw new Error('流式问答未返回完成事件。');
+  parser.push(decoder.decode());
+  const { finalPayload, streamedMarkdown } = parser.finish();
   return {
     ...finalPayload,
     request_id: finalPayload.request_id || request.request_id,
