@@ -12478,3 +12478,372 @@ a {
     grid-template-rows: repeat(3, minmax(180px, auto));
   }
 }
+
+/* P6 AI assistant integration: keep the complete chat composer and all three
+   business rails inside the viewport while each content-heavy region owns its
+   own scroll. Existing handlers, RBAC and assistant request contracts remain
+   untouched. */
+.app-shell .main-shell > .content-shell:has(.assistant-workspace-page) {
+  height: 100%;
+  min-height: 0;
+  padding: 0 16px 12px !important;
+  overflow: hidden !important;
+  scrollbar-gutter: auto;
+}
+
+.content-shell:has(.assistant-workspace-page) > .page-container {
+  height: 100%;
+  min-height: 0;
+}
+
+.content-shell:has(.assistant-workspace-page) > .page-container > .page-header-area {
+  isolation: isolate;
+  height: 56px;
+  min-height: 56px;
+  flex: 0 0 56px;
+  margin-inline: -16px;
+  background: var(--color-bg-page);
+}
+
+.content-shell:has(.assistant-workspace-page) > .page-container > .page-header-area > .page-heading-unified {
+  height: 56px;
+  min-height: 56px;
+  grid-template-columns: minmax(280px, 1fr);
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: var(--color-bg-page) !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.045);
+}
+
+.content-shell:has(.assistant-workspace-page) > .page-container > .page-content-area {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: visible;
+}
+
+.app-shell .assistant-workspace-page {
+  position: relative;
+  width: 100%;
+  height: 100% !important;
+  min-height: 0 !important;
+  gap: 0;
+  overflow: visible;
+}
+
+.app-shell .assistant-title-actions {
+  position: relative;
+  top: -50px;
+  z-index: calc(var(--z-page-header) + 1);
+  height: 0;
+  min-height: 0;
+  flex: 0 0 0;
+  align-items: center;
+  margin: 0;
+  overflow: visible;
+}
+
+.app-shell .assistant-title-actions .assistant-dev-entry {
+  height: 34px;
+  padding-inline: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-card);
+}
+
+.app-shell .assistant-workspace-grid {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(232px, 240px) minmax(0, 1fr) minmax(300px, 320px);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.app-shell .assistant-left-rail {
+  display: grid;
+  grid-template-rows: minmax(250px, 1fr) minmax(286px, 0.82fr);
+  gap: 12px;
+  overflow: hidden;
+}
+
+.app-shell .assistant-right-rail {
+  display: grid;
+  grid-template-rows: minmax(170px, 0.9fr) minmax(190px, 1.05fr) minmax(178px, 0.95fr);
+  gap: 12px;
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+.app-shell .assistant-left-rail .section-card,
+.app-shell .assistant-chat-main .section-card,
+.app-shell .assistant-right-rail .section-card {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell .assistant-session-card,
+.app-shell .assistant-question-card,
+.app-shell .assistant-right-rail .assistant-evidence-card,
+.app-shell .assistant-right-rail .assistant-kpi-card,
+.app-shell .assistant-right-rail .assistant-knowledge-card {
+  min-height: 0;
+  flex: none;
+}
+
+.app-shell .assistant-left-rail .section-card .ant-card-body,
+.app-shell .assistant-right-rail .section-card .ant-card-body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell .assistant-session-body,
+.app-shell .assistant-question-body,
+.app-shell .assistant-evidence-body,
+.app-shell .assistant-kpi-body,
+.app-shell .assistant-knowledge-body {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.app-shell .assistant-session-body {
+  overflow: hidden;
+}
+
+.app-shell .assistant-session-list {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.app-shell .assistant-question-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.app-shell .assistant-question-body .question-chip-grid {
+  grid-template-rows: repeat(4, minmax(42px, 1fr));
+  gap: 8px;
+}
+
+.app-shell .assistant-question-body .question-chip-grid .ant-btn {
+  min-height: 42px;
+  padding: 5px 8px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.app-shell .assistant-chat-main,
+.app-shell .assistant-chat-main > .section-card,
+.app-shell .assistant-chat-card {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell .assistant-chat-card .ant-card-head {
+  min-height: 46px;
+  padding-inline: 12px;
+}
+
+.app-shell .assistant-chat-card .ant-card-head-wrapper {
+  min-height: 45px;
+}
+
+.app-shell .assistant-chat-card .ant-card-body {
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.app-shell .assistant-chat-card .ant-card-body > .section-card-body-content,
+.app-shell .assistant-chat-body {
+  height: 100%;
+  min-height: 0;
+}
+
+.app-shell .assistant-chat-body {
+  padding: 10px 12px 12px;
+  overflow: hidden;
+}
+
+.app-shell .assistant-message-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 4px 2px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.app-shell .assistant-business-empty {
+  height: 100%;
+  min-height: 0;
+  padding: 20px 24px;
+}
+
+.app-shell .assistant-action-row {
+  display: grid;
+  min-height: 38px;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  margin: 8px 0;
+  overflow: visible;
+}
+
+.app-shell .assistant-action-row .ant-btn {
+  min-width: 0;
+  height: 38px;
+  padding-inline: 7px;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .assistant-input-box {
+  min-height: 124px;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.app-shell .assistant-input-box .chat-input-tools {
+  row-gap: 6px;
+}
+
+.app-shell .assistant-evidence-body,
+.app-shell .assistant-kpi-body,
+.app-shell .assistant-knowledge-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.app-shell .assistant-evidence-body .ant-table {
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.app-shell .assistant-evidence-body .ant-table-thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-inline: 6px !important;
+  background: var(--color-bg-subtle);
+  white-space: nowrap;
+}
+
+.app-shell .assistant-evidence-body .ant-table-tbody > tr > td {
+  padding-inline: 6px !important;
+}
+
+.app-shell .assistant-kpi-body .assistant-business-kpi-grid,
+.app-shell .assistant-knowledge-body .assistant-knowledge-list {
+  min-height: auto;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.app-shell .assistant-business-kpi-grid .assistant-metric-card {
+  min-height: 84px;
+  padding: 9px;
+}
+
+.app-shell .assistant-knowledge-body {
+  padding-bottom: 76px;
+  scroll-padding-bottom: 76px;
+}
+
+.app-shell .assistant-workspace-page .assistant-side-actions {
+  padding-right: 80px;
+}
+
+@media (max-width: 1600px) and (min-width: 1101px) {
+  .app-shell .assistant-chat-card .ant-card-head-wrapper {
+    padding-block: 6px;
+  }
+
+  .app-shell .assistant-chat-card .ant-card-head-title,
+  .app-shell .assistant-chat-card .ant-card-extra {
+    width: 100%;
+    flex: 1 1 100%;
+    margin-inline-start: 0;
+  }
+
+  .app-shell .assistant-chat-tools {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 1440px) and (min-width: 1101px) {
+  .app-shell .assistant-action-row {
+    min-height: 84px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, 38px);
+  }
+}
+
+@media (max-height: 780px) and (min-width: 1101px) {
+  .app-shell .assistant-left-rail {
+    grid-template-rows: minmax(220px, 1fr) minmax(254px, 0.78fr);
+  }
+
+  .app-shell .assistant-right-rail {
+    grid-template-rows: minmax(154px, 0.86fr) minmax(172px, 1fr) minmax(160px, 0.92fr);
+  }
+
+  .app-shell .assistant-question-body .question-chip-grid {
+    grid-template-rows: repeat(4, 38px);
+  }
+
+  .app-shell .assistant-question-body .question-chip-grid .ant-btn {
+    min-height: 38px;
+  }
+
+  .app-shell .assistant-input-box {
+    min-height: 116px;
+    padding-block: 8px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-shell .main-shell > .content-shell:has(.assistant-workspace-page) {
+    padding: 0 12px calc(12px + var(--floating-ai-safe-zone)) !important;
+    overflow-y: auto !important;
+  }
+
+  .content-shell:has(.assistant-workspace-page) > .page-container,
+  .content-shell:has(.assistant-workspace-page) > .page-container > .page-content-area,
+  .app-shell .assistant-workspace-page {
+    height: auto !important;
+    min-height: calc(100dvh - var(--header-height)) !important;
+  }
+
+  .app-shell .assistant-workspace-grid {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .app-shell .assistant-left-rail,
+  .app-shell .assistant-right-rail {
+    max-height: none;
+    grid-template-rows: repeat(2, minmax(280px, auto));
+    overflow: visible;
+  }
+
+  .app-shell .assistant-right-rail {
+    grid-template-rows: repeat(3, minmax(260px, auto));
+  }
+}

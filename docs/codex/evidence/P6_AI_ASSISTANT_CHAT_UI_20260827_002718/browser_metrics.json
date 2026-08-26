@@ -1,0 +1,33 @@
+{
+  "target": {
+    "viewport": "1919x874",
+    "zoom": 1,
+    "document": { "clientWidth": 1919, "scrollWidth": 1919, "clientHeight": 874, "scrollHeight": 874 },
+    "pageHeader": { "height": 56, "y": 60, "position": "sticky", "background": "rgb(246, 248, 251)" },
+    "workspace": { "height": 746, "leftWidth": 240, "centerWidth": 1087, "rightWidth": 320 },
+    "composer": { "top": 725, "bottom": 849, "height": 124, "fullyVisible": true },
+    "quickQuestions": { "count": 5, "height": 38, "fullyVisible": true },
+    "rightRail": { "height": 746, "clientHeight": 746, "scrollHeight": 746, "overflowY": "hidden" },
+    "rightBodies": {
+      "evidence": { "clientHeight": 143, "scrollHeight": 292, "overflowY": "auto" },
+      "metrics": { "clientHeight": 180, "scrollHeight": 483, "overflowY": "auto" },
+      "knowledge": { "clientHeight": 156, "scrollHeight": 390, "overflowY": "auto" }
+    },
+    "functionCounts": { "visibleButtons": 31, "enabled": 29, "disabled": 2, "tabs": 5, "inputsAndSelects": 4, "fileInputs": 2, "commonQuestions": 8, "quickQuestions": 5, "composerActions": 4, "rightRailActions": 6 }
+  },
+  "responsive": {
+    "1440x900": { "documentScroll": 0, "horizontalOverflow": false, "composerBottom": 875, "composerVisible": true, "quickQuestionRows": 2 },
+    "1366x768": { "documentScroll": 0, "horizontalOverflow": false, "composerBottom": 743, "composerVisible": true, "quickQuestionRows": 2, "quickQuestionTextClipped": false }
+  },
+  "stickyGate": {
+    "viewport": "1000x768",
+    "contentScrollTop": 480,
+    "headerYBefore": 60,
+    "headerYAfter": 60,
+    "headerZIndex": 300,
+    "opaque": true,
+    "contentMovedBehindHeader": true,
+    "penetration": 0
+  },
+  "console": { "error": 0, "warning": 0 }
+}

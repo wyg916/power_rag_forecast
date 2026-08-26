@@ -863,13 +863,13 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
 
   const sessionItems = assistantData.conversations || [];
   const evidenceColumns = [
-    { title: '数据表 / 指标', dataIndex: 'source', key: 'source', ellipsis: true },
-    { title: '时间范围', dataIndex: 'timeRange', key: 'timeRange', width: 148 },
+    { title: '数据表 / 指标', dataIndex: 'source', key: 'source', width: 112, ellipsis: true },
+    { title: '时间范围', dataIndex: 'timeRange', key: 'timeRange', width: 96, ellipsis: true },
     {
       title: '状态',
       dataIndex: 'confidence',
       key: 'confidence',
-      width: 82,
+      width: 72,
       render: (value: string) => <Tag color={value === '已采用' || value.endsWith('%') ? 'success' : 'default'}>{value}</Tag>
     }
   ];
@@ -905,6 +905,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
           <SectionCard
             title="会话列表"
             className="assistant-session-card"
+            bodyClassName="assistant-session-body"
             extra={<Button type="primary" size="small" icon={<PlusOutlined />} onClick={newConversation}>新建对话</Button>}
           >
             <Input prefix={<SearchOutlined />} placeholder="搜索会话标题或内容" />
@@ -912,20 +913,23 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
               className="assistant-session-list"
               locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无历史会话" /> }}
               dataSource={sessionItems}
-              renderItem={(item: any, index) => (
-                <List.Item className={index === 0 ? 'active-session' : ''}>
-                  <button type="button" onClick={() => selectConversation(item.session_id)}>
-                    <strong>{item.title || item.session_id || 'AI 会话'}</strong>
-                    <span>{String(item.updated_at || item.created_at || '').slice(5, 16) || '当前'}</span>
-                    <Tag color={index === 0 ? 'success' : 'default'}>{index === 0 ? '进行中' : '已完成'}</Tag>
-                  </button>
-                </List.Item>
-              )}
+              renderItem={(item: any, index) => {
+                const sessionTitle = item.title || item.session_id || 'AI 会话';
+                return (
+                  <List.Item className={index === 0 ? 'active-session' : ''}>
+                    <button type="button" title={sessionTitle} onClick={() => selectConversation(item.session_id)}>
+                      <strong>{sessionTitle}</strong>
+                      <span>{String(item.updated_at || item.created_at || '').slice(5, 16) || '当前'}</span>
+                      <Tag color={index === 0 ? 'success' : 'default'}>{index === 0 ? '进行中' : '已完成'}</Tag>
+                    </button>
+                  </List.Item>
+                );
+              }}
             />
             <a className="section-footer-link" onClick={() => onSubNavigate?.('assistant-faq')}>查看全部历史记录 →</a>
           </SectionCard>
 
-          <SectionCard title="常用问题" className="assistant-question-card" extra={<a onClick={rotateQuestions}>换一批</a>}>
+          <SectionCard title="常用问题" className="assistant-question-card" bodyClassName="assistant-question-body" extra={<a onClick={rotateQuestions}>换一批</a>}>
             <div className="question-chip-grid">
               {visibleQuestions.map((item) => (
                 <Button key={`${item}-${questionOffset}`} onClick={() => submitQuestion(item)} disabled={loading}>{item}</Button>
@@ -1082,6 +1086,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
           <SectionCard
             title="数据依据"
             className="assistant-evidence-card"
+            bodyClassName="assistant-evidence-body"
             extra={<Button type="link" size="small" disabled={!evidenceRows.length} onClick={() => setDetailPanel('evidence')}>查看全部</Button>}
           >
             <div className="assistant-card-subtitle">本次回答引用</div>
@@ -1096,7 +1101,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
             <p className="assistant-evidence-note">置信度由模型质量、数据完整性与时效性综合评估；本栏仅展示本次回答可追溯的业务依据。</p>
           </SectionCard>
 
-          <SectionCard title="关键指标摘要" className="assistant-kpi-card">
+          <SectionCard title="关键指标摘要" className="assistant-kpi-card" bodyClassName="assistant-kpi-body">
             <div className="assistant-card-subtitle">本次回答包含结构化指标时在此汇总展示</div>
             <div className="assistant-metric-grid assistant-business-kpi-grid">
               {kpiCards.map((item) => (
@@ -1113,6 +1118,7 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
           <SectionCard
             title="相关知识与策略建议"
             className="assistant-knowledge-card"
+            bodyClassName="assistant-knowledge-body"
             extra={<Button type="link" size="small" disabled={!knowledgeItems.length} onClick={() => setDetailPanel('knowledge')}>查看全部</Button>}
           >
             <div className="knowledge-suggestion-list assistant-knowledge-list">

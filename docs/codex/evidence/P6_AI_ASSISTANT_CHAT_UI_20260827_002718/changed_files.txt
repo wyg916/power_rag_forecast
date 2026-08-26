@@ -1,0 +1,17 @@
+frontend/src/app/router.tsx
+- 共享路由标题由“AI 助手”调整为“AI 助手 / 智能问答”；路由键、URL 和跳转未改。
+
+frontend/src/pages/assistant/AssistantPage.tsx
+- 为会话/常用问题/数据依据/指标/知识卡片补充作用域 body class，供布局和滚动分区使用。
+- 调整数据依据三列显示宽度；字段、渲染值与后端契约未改。
+- 会话长标题增加原生 title；会话选择 Handler 未改。
+
+frontend/src/styles.css
+- 新增 AI 助手页面作用域三栏固定视口、内部滚动、紧凑 Toolbar、Composer 固底、响应式快捷问题和 FAB 安全区规则。
+- 复用共享 PageHeader，不创建第二套标题组件。
+
+docs/codex/TASK_STATUS.md
+- 新增本任务 PASS 记录、测试摘要、证据和变更边界。
+
+docs/codex/evidence/P6_AI_ASSISTANT_CHAT_UI_20260827_002718/
+- 新增前后截图、浏览器指标、测试、命令和回滚证据。

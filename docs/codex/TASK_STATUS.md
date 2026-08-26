@@ -1,5 +1,11 @@
 # TASK_STATUS.md
 
+## 2026-08-27 AI 助手 / 智能问答三栏工作台 UI 收口
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| `PROJECT1_AI_ASSISTANT_CHAT_WORKSPACE_UI_LAYOUT_REFINEMENT`：将 AI 助手收口为固定剩余视口高度的三栏聊天工作台，合并 56px 标题与开发者入口，明确左会话、中消息、右数据卡片的内部滚动责任，并保留全部既有问答入口与处理链 | `PASS`；1919×874、1440×900、1366×768 无页面级横向/纵向多余滚动，Composer、5 个快捷问题与右栏三卡均完整可用；1000×768 滚动 480px 后共享 PageHeader 固定 y=60、背景不透明、内容穿透 0；页面入口 31→31、Tab 5→5、常用问题 8→8、快捷问题 5→5；隔离本地 SSE 代理下 11 个问答入口实际点击通过；lint 12/12、unit 53/53、typecheck、build 通过 | `main`；基线 `175712047a0abca6820010677003b724a160bd90`；本行所在提交 | `docs/codex/evidence/P6_AI_ASSISTANT_CHAT_UI_20260827_002718/`；检查点 `backups/phase3/20260827_002718_AI_ASSISTANT_CHAT_UI_PRE/` | 无；未改 Backend、API、数据库、Migration、RBAC、业务逻辑、AI/Prompt/RAG/Agent、路由或事件处理器；真实 Provider 调用 0；未推送。 |
+
 ## 2026-08-26 数据中心双页紧凑工作区合入 v2.12.1 main
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

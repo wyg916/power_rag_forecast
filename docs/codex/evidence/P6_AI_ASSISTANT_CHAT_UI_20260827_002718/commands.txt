@@ -1,0 +1,20 @@
+git status --short --branch
+git diff --check
+git diff --stat
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run unit
+npm.cmd run build
+Invoke-WebRequest http://127.0.0.1:5173/
+Invoke-WebRequest http://127.0.0.1:5176/
+Invoke-WebRequest http://127.0.0.1:8000/health
+
+浏览器验收：
+- 1919x874 @ 100%
+- 1440x900 @ 100%
+- 1366x768 @ 100%
+- 1000x768 @ 100%，content-shell scrollTop=480 Sticky 门禁
+
+交互验收：
+- 正常本地环境：新建对话、搜索输入、换一批、5 模式 Tab、分析范围、回答模式、导出弹窗、附件文件选择器、截图文件选择器、引用数据、开发者信息、历史记录跳转、全局 AI 悬浮入口。
+- 隔离本地 SSE 环境：1 个常用问题、5 个快捷问题、Composer 发送、4 个右栏业务动作，合计 11 个问答入口；所有流式 POST 由本地 200 SSE 响应，外部 Provider 调用 0。

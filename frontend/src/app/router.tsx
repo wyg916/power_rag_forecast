@@ -148,7 +148,7 @@ export const routeTitles: Record<RouteKey, { title: string; subtitle: string }> 
   data: { title: '数据中心', subtitle: '管理数据接入、质量、数据库表与导入导出记录' },
   forecast: { title: '预测中心', subtitle: '查看未来 24 小时电价预测、历史对比和峰谷分析' },
   strategy: { title: '策略中心', subtitle: '展示高价风险、低价窗口、储能策略与复核清单' },
-  assistant: { title: 'AI 助手', subtitle: '面向电力交易分析、查数问答、策略解释与风险研判' },
+  assistant: { title: 'AI 助手 / 智能问答', subtitle: '面向电力交易分析、查数问答、策略解释与风险研判' },
   report: { title: '报告中心', subtitle: '查看、审核与管理日报、周报和专题报告' },
   model: { title: '模型中心', subtitle: '管理预测模型生命周期、误差趋势和回滚操作' },
   knowledge: { title: '知识库', subtitle: '管理政策文档、RAG 检索、索引状态和 QA 测试' },
