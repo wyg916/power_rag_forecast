@@ -1,0 +1,11 @@
+git status --short --branch
+git merge-base main 68429da07b43ed05c3c952d6a86cbe762a70663d
+git rev-list --left-right --count main...68429da07b43ed05c3c952d6a86cbe762a70663d
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run unit
+npm.cmd run build
+git diff --check
+
+浏览器验收地址：http://127.0.0.1:5174/#/dashboard/dashboard-overview
+验收尺寸：1919×928、1440×900、1366×768、1919×260（滚动 600px）

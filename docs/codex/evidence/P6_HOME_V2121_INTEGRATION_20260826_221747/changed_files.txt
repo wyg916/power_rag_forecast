@@ -1,0 +1,17 @@
+frontend/src/components/dashboard/HomeForecastChart.tsx
+frontend/src/styles.css
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/README.md
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/plan.md
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/changed_files.txt
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/commands.txt
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/test_summary.md
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/rollback.md
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/unresolved.md
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/browser_metrics.json
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/home_1919x928.png
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/home_1440x900.png
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/home_1366x768.png
+docs/codex/evidence/P6_HOME_V2121_INTEGRATION_20260826_221747/home_sticky_scroll_600.png
+
+明确排除：本任务期间并发出现的 DataCenterPage.tsx 与 data-center-workspace.css 改动不属于本任务，未暂存、未提交。

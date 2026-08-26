@@ -1,0 +1,235 @@
+{
+  "viewports": [
+    {
+      "aux": {
+        "bottom": 916,
+        "clientHeight": 310,
+        "height": 310,
+        "scrollHeight": 310,
+        "width": 1049.0625,
+        "x": 232,
+        "y": 606
+      },
+      "chart": {
+        "bottom": 594,
+        "clientHeight": 354,
+        "height": 356,
+        "scrollHeight": 354,
+        "width": 1049.0625,
+        "x": 232,
+        "y": 238
+      },
+      "header": {
+        "bottom": 116,
+        "clientHeight": 55,
+        "height": 56,
+        "scrollHeight": 55,
+        "width": 1703,
+        "x": 216,
+        "y": 60
+      },
+      "horizontalOverflow": 0,
+      "kpis": {
+        "bottom": 226,
+        "clientHeight": 100,
+        "height": 100,
+        "scrollHeight": 100,
+        "width": 1670.984375,
+        "x": 232,
+        "y": 126
+      },
+      "rail": {
+        "bottom": 916,
+        "clientHeight": 678,
+        "height": 678,
+        "scrollHeight": 678,
+        "width": 609.921875,
+        "x": 1293.0625,
+        "y": 238
+      },
+      "shell": {
+        "bottom": 928,
+        "clientHeight": 868,
+        "height": 868,
+        "scrollHeight": 868,
+        "width": 1703,
+        "x": 216,
+        "y": 60
+      },
+      "shellScrollMax": 0,
+      "shellScrollTop": 0,
+      "task": {
+        "bottom": 916,
+        "clientHeight": 248,
+        "height": 250,
+        "scrollHeight": 248,
+        "width": 609.921875,
+        "x": 1293.0625,
+        "y": 666
+      },
+      "viewport": {
+        "h": 928,
+        "w": 1919
+      }
+    },
+    {
+      "aux": {
+        "bottom": 888,
+        "clientHeight": 282,
+        "height": 282,
+        "scrollHeight": 282,
+        "width": 746.171875,
+        "x": 232,
+        "y": 606
+      },
+      "chart": {
+        "bottom": 594,
+        "clientHeight": 354,
+        "height": 356,
+        "scrollHeight": 354,
+        "width": 746.171875,
+        "x": 232,
+        "y": 238
+      },
+      "header": {
+        "bottom": 116,
+        "clientHeight": 55,
+        "height": 56,
+        "scrollHeight": 55,
+        "width": 1224,
+        "x": 216,
+        "y": 60
+      },
+      "horizontalOverflow": 0,
+      "kpis": {
+        "bottom": 226,
+        "clientHeight": 100,
+        "height": 100,
+        "scrollHeight": 100,
+        "width": 1191.984375,
+        "x": 232,
+        "y": 126
+      },
+      "rail": {
+        "bottom": 888,
+        "clientHeight": 650,
+        "height": 650,
+        "scrollHeight": 650,
+        "width": 433.8125,
+        "x": 990.171875,
+        "y": 238
+      },
+      "shell": {
+        "bottom": 900,
+        "clientHeight": 840,
+        "height": 840,
+        "scrollHeight": 840,
+        "width": 1224,
+        "x": 216,
+        "y": 60
+      },
+      "shellScrollMax": 0,
+      "shellScrollTop": 0,
+      "task": {
+        "bottom": 888,
+        "clientHeight": 220,
+        "height": 222,
+        "scrollHeight": 220,
+        "width": 433.8125,
+        "x": 990.171875,
+        "y": 666
+      },
+      "viewport": {
+        "h": 900,
+        "w": 1440
+      }
+    },
+    {
+      "aux": {
+        "bottom": 758,
+        "clientHeight": 234,
+        "height": 233.78125,
+        "scrollHeight": 234,
+        "width": 701.265625,
+        "x": 232,
+        "y": 524.21875
+      },
+      "chart": {
+        "bottom": 515.21875,
+        "clientHeight": 290,
+        "height": 292.21875,
+        "scrollHeight": 328,
+        "width": 701.265625,
+        "x": 232,
+        "y": 223
+      },
+      "header": {
+        "bottom": 112,
+        "clientHeight": 51,
+        "height": 52,
+        "scrollHeight": 51,
+        "width": 1150,
+        "x": 216,
+        "y": 60
+      },
+      "horizontalOverflow": 0,
+      "kpis": {
+        "bottom": 214,
+        "clientHeight": 94,
+        "height": 94,
+        "scrollHeight": 96,
+        "width": 1118,
+        "x": 232,
+        "y": 120
+      },
+      "rail": {
+        "bottom": 758,
+        "clientHeight": 535,
+        "height": 535,
+        "scrollHeight": 535,
+        "width": 407.734375,
+        "x": 942.265625,
+        "y": 223
+      },
+      "shell": {
+        "bottom": 768,
+        "clientHeight": 708,
+        "height": 708,
+        "scrollHeight": 708,
+        "width": 1150,
+        "x": 216,
+        "y": 60
+      },
+      "shellScrollMax": 0,
+      "shellScrollTop": 0,
+      "task": {
+        "bottom": 758,
+        "clientHeight": 168,
+        "height": 169.578125,
+        "scrollHeight": 168,
+        "width": 407.734375,
+        "x": 942.265625,
+        "y": 588.421875
+      },
+      "viewport": {
+        "h": 768,
+        "w": 1366
+      }
+    }
+  ],
+  "sticky": {
+    "background": "rgb(246, 248, 251)",
+    "header": {
+      "bottom": 112,
+      "height": 52,
+      "y": 60
+    },
+    "scrollMax": 640,
+    "scrollTop": 600,
+    "zIndex": "300"
+  },
+  "diagnostics": {
+    "errors": [],
+    "warnings": []
+  }
+}

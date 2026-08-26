@@ -37,6 +37,10 @@ export function HomeForecastChart({ forecast, risk, isStale = false }: { forecas
   ].filter(Boolean);
   const option = {
     ...baseGrid(),
+    tooltip: {
+      ...(baseGrid().tooltip as object),
+      confine: true
+    },
     legend: {
       top: 0,
       left: 8,
@@ -67,7 +71,8 @@ export function HomeForecastChart({ forecast, risk, isStale = false }: { forecas
         lineStyle: { opacity: 0 },
         areaStyle: { color: 'rgba(0, 184, 148, 0.12)' },
         stack: 'confidence',
-        symbol: 'none'
+        symbol: 'none',
+        tooltip: { valueFormatter: (value: unknown) => `${formatNumber(value, 3)} 元/kWh` }
       },
       {
         name: '预测电价',
@@ -76,6 +81,7 @@ export function HomeForecastChart({ forecast, risk, isStale = false }: { forecas
         symbolSize: 6,
         lineStyle: { width: 3, color: chartColors.green },
         itemStyle: { color: chartColors.green },
+        tooltip: { valueFormatter: (value: unknown) => `${formatNumber(value, 3)} 元/kWh` },
         data: series.map((item: any) => item.price),
         markArea: {
           label: { color: '#0F766E', fontWeight: 700 },
@@ -90,6 +96,7 @@ export function HomeForecastChart({ forecast, risk, isStale = false }: { forecas
         symbolSize: 5,
         lineStyle: { width: 2, color: chartColors.blue },
         itemStyle: { color: chartColors.blue },
+        tooltip: { valueFormatter: (value: unknown) => `${formatNumber(value, 2)} MWh` },
         data: series.map((item: any) => item.load)
       },
       {
@@ -99,6 +106,7 @@ export function HomeForecastChart({ forecast, risk, isStale = false }: { forecas
         smooth: true,
         symbol: 'none',
         lineStyle: { width: 2, type: 'dashed', color: chartColors.red },
+        tooltip: { valueFormatter: (value: unknown) => `${formatNumber(value, 1)}%` },
         data: series.map((item: any) => Number(item.risk_probability || 0) * 100)
       }
     ]
