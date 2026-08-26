@@ -1,0 +1,30 @@
+{
+  "task": "PROJECT1_KNOWLEDGE_BASE_PAGE_UI_LAYOUT_REFINEMENT",
+  "before": {
+    "button_jsx": 11,
+    "click_bindings": 14,
+    "upload_bindings": 1,
+    "api_calls": 7,
+    "document_table_columns": 6,
+    "specified_yellow_warning": 1
+  },
+  "after": {
+    "button_jsx": 11,
+    "click_bindings": 14,
+    "upload_bindings": 1,
+    "api_calls": 7,
+    "document_table_columns": 6,
+    "specified_yellow_warning": 0
+  },
+  "handler_source_sha256_identical": {
+    "loadData": true,
+    "rebuildIndex": true,
+    "refreshEmbeddings": true,
+    "runSearch": true,
+    "uploadDocument": true,
+    "batchValidate": true,
+    "exportResult": true,
+    "runReleaseAction": true
+  },
+  "conclusion": "All existing control, click, upload and API entry counts are unchanged. Only the explicitly requested yellow warning presentation was removed."
+}

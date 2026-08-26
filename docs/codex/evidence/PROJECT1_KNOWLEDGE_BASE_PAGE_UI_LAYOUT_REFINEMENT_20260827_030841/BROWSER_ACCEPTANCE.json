@@ -1,0 +1,51 @@
+{
+  "url": "http://127.0.0.1:5178/#/knowledge/knowledge-docs",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "data_observed": {
+    "documents": 83,
+    "listed_documents": 79,
+    "chunks": 8339,
+    "release_gate": "9/9",
+    "rag_status": "未发布",
+    "retrieval_status": "暂不可用"
+  },
+  "layout": {
+    "shell_scroll_owner": true,
+    "shell_client_height": 660,
+    "shell_scroll_height": 1505,
+    "page_overflow": "visible",
+    "page_bottom_safe_area_px": 80,
+    "header_height_px": 56,
+    "header_position": "sticky",
+    "header_top": "0px",
+    "header_z_index": "300",
+    "header_background": "rgb(255, 255, 255)",
+    "header_isolation": "isolate",
+    "sticky_mid_scroll_verified": true,
+    "bottom_sections_accessible": true,
+    "floating_assistant_overlap_at_page_end": false,
+    "floating_assistant_vertical_gap_at_page_end_px": 111.625
+  },
+  "table": {
+    "columns": ["文档名称", "文档分类", "更新时间", "Chunk", "状态", "操作"],
+    "visible_detail_buttons": 8,
+    "long_name_title_present": true,
+    "long_category_title_present": true,
+    "pagination_page_2_verified": true
+  },
+  "interactions": {
+    "document_detail_drawer_open_close": "PASS",
+    "floating_ai_open_close": "PASS",
+    "qa_input_edit_restore": "PASS",
+    "qa_button_enabled": true,
+    "pagination": "PASS"
+  },
+  "errors": {
+    "knowledge_page_error_alerts": 0,
+    "specified_yellow_warning_alerts": 0,
+    "vite_hmr_or_compile_errors_observed": 0
+  }
+}

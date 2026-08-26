@@ -16,7 +16,7 @@ import {
   SyncOutlined,
   WarningOutlined
 } from '@ant-design/icons';
-import { Alert, App, Button, Empty, Input, Select, Space, Table, Tag, Upload } from 'antd';
+import { Alert, App, Button, Empty, Input, Select, Space, Table, Tag, Tooltip, Upload } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
@@ -25,6 +25,7 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import { getKnowledgeBaseData, searchKnowledge, type KnowledgeData, type KnowledgeRelease } from '../../services/knowledgeApi';
 import type { PageProps } from '../../types/ui';
+import './knowledge-base-layout.css';
 
 type KnowledgeMetric = {
   key: string;
@@ -345,7 +346,8 @@ export function KnowledgeBasePage(_: PageProps) {
   return (
     <div className="knowledge-workbench-page">
       <PageHeader
-        title="知识库"
+        className="knowledge-page-header"
+        title="知识库 / 业务知识库"
         subtitle="管理政策文档、RAG 检索、索引状态和 QA 测试"
         filters={<div className="knowledge-source-control">
           <span>知识范围</span>
@@ -429,18 +431,38 @@ export function KnowledgeBasePage(_: PageProps) {
           <Table
             size="small"
             rowKey="key"
+            tableLayout="fixed"
             pagination={{ pageSize: 8, showSizeChanger: false, size: 'small' }}
             dataSource={documentRows}
-            scroll={{ y: 220 }}
+            scroll={{ x: 970 }}
             columns={[
-              { title: '文档名称', dataIndex: 'name', ellipsis: true },
-              { title: '文档分类', dataIndex: 'category', width: 96, render: (value) => <Tag>{value}</Tag> },
-              { title: '更新时间', dataIndex: 'updatedAt', width: 132 },
-              { title: 'Chunk', dataIndex: 'chunks', width: 82 },
-              { title: '状态', dataIndex: 'status', width: 92, render: documentStatusTag },
+              {
+                title: '文档名称',
+                dataIndex: 'name',
+                width: 330,
+                render: (value) => (
+                  <Tooltip title={value} placement="topLeft">
+                    <span className="knowledge-doc-name" title={value}>{value}</span>
+                  </Tooltip>
+                )
+              },
+              {
+                title: '文档分类',
+                dataIndex: 'category',
+                width: 160,
+                render: (value) => (
+                  <Tooltip title={value} placement="topLeft">
+                    <Tag className="knowledge-doc-category" title={value}>{value}</Tag>
+                  </Tooltip>
+                )
+              },
+              { title: '更新时间', dataIndex: 'updatedAt', width: 155, className: 'knowledge-doc-updated-at' },
+              { title: 'Chunk', dataIndex: 'chunks', width: 76, align: 'center' },
+              { title: '状态', dataIndex: 'status', width: 88, align: 'center', render: documentStatusTag },
               {
                 title: '操作',
                 width: 168,
+                className: 'knowledge-doc-actions',
                 render: (_, record: any) => (
                   <Space size={4}>
                     <Button type="link" size="small" onClick={() => { setDetailData(record.raw || record); setDetailOpen(true); }}>详情</Button>
@@ -478,9 +500,6 @@ export function KnowledgeBasePage(_: PageProps) {
               <p>检索服务：{retrievalAvailable ? '可用' : '暂不可用'}</p>
               <p>知识片段：{formatNumber(releaseChunkCount)}；已完成处理：{formatNumber(activeRelease ? releaseChunkCount : embeddedCount)}</p>
               <p>最近更新时间：{formatDate(releaseUpdatedAt)}</p>
-              {!retrievalAvailable && (
-                <Alert type="warning" showIcon message="检索服务暂不可用" description="当前不会返回未经发布的候选知识，请稍后重试或联系管理员。" />
-              )}
             </div>
             <div className="knowledge-rag-section knowledge-release-section">
               <div className="knowledge-rag-title">
