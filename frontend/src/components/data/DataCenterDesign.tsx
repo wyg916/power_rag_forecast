@@ -223,7 +223,7 @@ export function DataFlowPanel({ data, onCatalog }: { data: any; onCatalog: () =>
       <div className="data-process-flow">
         {steps.map((step, index) => (
           <div className="data-process-step" key={step.title}>
-            <div className="data-process-icon">{step.icon}</div>
+            <div className="data-process-icon" aria-hidden="true"><span>{index + 1}</span></div>
             <strong>{step.title}</strong>
             <span>{step.value}</span>
             <small>{step.note}</small>
@@ -268,7 +268,7 @@ export function DataHealthOverview({ data }: { data: any }) {
       <div className="data-health-main">
         <Progress
           type="circle"
-          size={132}
+          size={124}
           percent={successRate}
           strokeWidth={9}
           strokeColor={chartColors.green}
@@ -358,13 +358,13 @@ export function SyncRecordsTable({
   onDetail: (row: any) => void;
 }) {
   const columns: ColumnsType<any> = [
-    { title: '任务名', dataIndex: 'name', width: 190, ellipsis: true },
-    { title: '任务类型', dataIndex: 'type', width: 112, ellipsis: true },
-    { title: '开始时间', dataIndex: 'startedAt', width: 155, render: (value) => String(value || '--').slice(0, 19) },
-    { title: '耗时', dataIndex: 'duration', width: 82, align: 'center' },
-    { title: '状态', dataIndex: 'status', width: 82, align: 'center', render: (value) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> },
-    { title: '同步量', dataIndex: 'processedRows', width: 104, align: 'right', render: compact },
-    { title: '操作', width: 86, align: 'center', render: (_, row) => <Button type="link" size="small" onClick={() => onDetail(row)}>查看日志</Button> }
+    { title: '任务名', dataIndex: 'name', width: 170, ellipsis: true, render: (value) => <span title={String(value || '--')}>{value || '--'}</span> },
+    { title: '任务类型', dataIndex: 'type', width: 90, ellipsis: true, render: (value) => <span title={String(value || '--')}>{value || '--'}</span> },
+    { title: '开始时间', dataIndex: 'startedAt', width: 145, render: (value) => String(value || '--').slice(0, 19) },
+    { title: '耗时', dataIndex: 'duration', width: 70, align: 'center' },
+    { title: '状态', dataIndex: 'status', width: 70, align: 'center', render: (value) => <Tag color={statusColor(value)}>{statusText(value)}</Tag> },
+    { title: '同步量', dataIndex: 'processedRows', width: 70, align: 'right', render: compact },
+    { title: '操作', width: 65, align: 'center', render: (_, row) => <Button type="link" size="small" onClick={() => onDetail(row)}>查看日志</Button> }
   ];
   return (
     <TableCard
@@ -381,7 +381,7 @@ export function SyncRecordsTable({
         showTotal: (value) => `共 ${value} 条`,
         onChange: onPageChange
       }}
-      scroll={{ x: 812 }}
+      scroll={{ x: 680 }}
     />
   );
 }
@@ -400,9 +400,11 @@ export function OverviewSideRail({
         {alerts.length ? alerts.map((item: any) => (
           <div className="data-alert-row" key={item.alert_id}>
             <span className={item.severity === 'critical' || item.severity === 'high' ? 'danger' : 'warning'} />
-            <strong title={item.object_name || '数据异常'}>{item.object_name || '数据异常'}</strong>
-            <p title={item.message || item.alert_type}>{item.message || item.alert_type}</p>
-            <small>{String(item.detected_at || '--').slice(0, 16)}</small>
+            <div className="data-alert-copy">
+              <strong title={item.object_name || '数据异常'}>{item.object_name || '数据异常'}</strong>
+              <p title={item.message || item.alert_type}>{item.message || item.alert_type}</p>
+            </div>
+            <small title={businessTime(item.detected_at)}>{businessTime(item.detected_at)}</small>
             <Button
               type="link"
               size="small"

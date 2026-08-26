@@ -29,7 +29,7 @@ export function FilterBar({
       </div>
       {(actions || onReset) && (
         <Space className="filter-bar-actions" size={8} wrap>
-          {onReset && <Button icon={<ReloadOutlined />} onClick={onReset}>{resetText}</Button>}
+          {onReset && <Button aria-label={resetText} icon={<ReloadOutlined />} onClick={onReset}>{resetText}</Button>}
           {actions}
         </Space>
       )}

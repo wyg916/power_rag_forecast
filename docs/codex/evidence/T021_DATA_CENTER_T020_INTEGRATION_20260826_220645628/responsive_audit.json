@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "viewports": [
+    {"width": 1920, "height": 1080, "overview_page_overflow": 0, "quality_page_overflow": 0, "out_of_bounds_text": 0, "visible_text_below_12px": 0},
+    {"width": 1903, "height": 916, "overview_page_overflow": 0, "quality_page_overflow": 0, "out_of_bounds_text": 0, "visible_text_below_12px": 0},
+    {"width": 1600, "height": 820, "overview_page_overflow": 0, "quality_page_overflow": 0, "out_of_bounds_text": 0, "visible_text_below_12px": 0},
+    {"width": 1440, "height": 900, "overview_page_overflow": 0, "quality_page_overflow": 0, "out_of_bounds_text": 0, "visible_text_below_12px": 0},
+    {"width": 1366, "height": 768, "overview_page_overflow": 0, "quality_page_overflow": 0, "visible_text_below_12px": 0, "quality_internal_field_table_scroll": true}
+  ],
+  "note": "1366x768 quality field-table clipping is contained by its own scroll viewport and does not create page-level overflow"
+}

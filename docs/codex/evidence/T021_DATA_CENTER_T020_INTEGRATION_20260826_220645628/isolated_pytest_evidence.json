@@ -1,0 +1,3763 @@
+{
+  "label": "T021_DATA_CENTER_T020_INTEGRATION",
+  "started_at_utc": "2026-08-26T14:46:35.992586+00:00",
+  "finished_at_utc": "2026-08-26T14:56:46.769860+00:00",
+  "result": "PASS",
+  "command": [
+    "E:\\智能运营分析项目\\.venv\\Scripts\\python.exe",
+    "-m",
+    "pytest",
+    "-q",
+    "tests\\test_p6_p1_1a_data_center.py"
+  ],
+  "command_returncode": 0,
+  "target": {
+    "driver": "postgresql+psycopg",
+    "database": "postgres",
+    "user": "postgres",
+    "host": "localhost",
+    "port": 5432
+  },
+  "schema": "beta10d_day3_close_20260826_144618_26756",
+  "role": "beta10d_day3_close_20260826_144618_26756_role",
+  "runtime_verification": {
+    "target": {
+      "driver": "postgresql+psycopg",
+      "database": "postgres",
+      "user": "postgres",
+      "host": "localhost",
+      "port": 5432
+    },
+    "identity": {
+      "database_name": "postgres",
+      "current_user": "beta10d_day3_close_20260826_144618_26756_role",
+      "session_user": "postgres",
+      "current_schema": "beta10d_day3_close_20260826_144618_26756",
+      "current_schemas": [
+        "beta10d_day3_close_20260826_144618_26756",
+        "pg_catalog"
+      ],
+      "search_path": "beta10d_day3_close_20260826_144618_26756,pg_catalog",
+      "server_addr": "::1/128",
+      "server_port": 5432
+    },
+    "schema_owner": "beta10d_day3_close_20260826_144618_26756_role",
+    "alembic_head": "0022_chatbi_semantic_v1",
+    "role_flags": {
+      "rolsuper": false,
+      "rolinherit": false,
+      "rolcreaterole": false,
+      "rolcreatedb": false,
+      "rolcanlogin": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    },
+    "public_write_privileges": {
+      "schema_create": false,
+      "audit_write": false,
+      "audit_sequence_write": false
+    }
+  },
+  "public_before": {
+    "table_count": 87,
+    "view_count": 8,
+    "sequence_count": 47,
+    "function_count": 38,
+    "alembic_heads": [
+      "0022_chatbi_semantic_v1"
+    ],
+    "structure_sha256": "97e100e9b36d0fbecee9d6bb088a3c02a74a9a51ed9fa8d8c26b74f5d7215715",
+    "table_fingerprints": {
+      "ai_answer_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_messages": {
+        "row_count": 34,
+        "content_md5": "6fd11c482fb3227c113e5f96886df49b"
+      },
+      "ai_chat_sessions": {
+        "row_count": 14,
+        "content_md5": "a7449de246e90a2c396223a8203aef2c"
+      },
+      "ai_conversation_state": {
+        "row_count": 14,
+        "content_md5": "c80e089d7a73ca8d96c83a98ebe952b8"
+      },
+      "ai_memory_admissions": {
+        "row_count": 2,
+        "content_md5": "90fd77997866e81e692ba0b32d237af0"
+      },
+      "ai_memory_deletion_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_proofs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_legal_holds": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_outbox": {
+        "row_count": 2,
+        "content_md5": "cce6863fc8ccdc58fa0a1b0b189a9e40"
+      },
+      "ai_memory_records": {
+        "row_count": 2,
+        "content_md5": "9d22a9dcd906049046b5ae8d81cef8db"
+      },
+      "ai_memory_relations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_state_transitions": {
+        "row_count": 2,
+        "content_md5": "778d6659c754f1ccd1d588b7bf4e8230"
+      },
+      "ai_memory_usage": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_versions": {
+        "row_count": 2,
+        "content_md5": "33057de50e5b7a82ba1ca0f348e46344"
+      },
+      "ai_prompt_templates": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_qa_test_cases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_report_review_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_tool_call_logs": {
+        "row_count": 11,
+        "content_md5": "9efac94b697943444816e2d1a4e27683"
+      },
+      "ai_traces": {
+        "row_count": 30,
+        "content_md5": "1f7f51e4479bdf55710e727dd45f6b80"
+      },
+      "alembic_version": {
+        "row_count": 1,
+        "content_md5": "00b0a2723b00a47e5c0ea6b83f690a8c"
+      },
+      "analysis_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "anomaly_explanations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "audit_logs": {
+        "row_count": 255,
+        "content_md5": "185d35ca2f140026382c9d6c54c06a0b"
+      },
+      "chatbi_analysis_plans": {
+        "row_count": 6,
+        "content_md5": "672f4931a0e4d940aa089f3f5197e892"
+      },
+      "chatbi_dimension_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_join_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_metric_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "feature_importance": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_batches": {
+        "row_count": 10,
+        "content_md5": "8ffd7036c9b7e16036499b34d43e5d51"
+      },
+      "forecast_input_snapshots": {
+        "row_count": 240,
+        "content_md5": "6eaab8505953612130a3d9872ef041ff"
+      },
+      "forecast_results": {
+        "row_count": 264,
+        "content_md5": "15c72c764f2899c3ef5eaf37c323166d"
+      },
+      "forecast_runs": {
+        "row_count": 21,
+        "content_md5": "9b2b7f4db85025ce3f1f98b97028b423"
+      },
+      "kb_access_policies": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_assets": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_chunks": {
+        "row_count": 8384,
+        "content_md5": "74364ec49a2cb2c17a2487955d3ec0ff"
+      },
+      "kb_citations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_document_versions": {
+        "row_count": 45,
+        "content_md5": "8908298e0fd5d94635ba1f3d45600b2b"
+      },
+      "kb_documents": {
+        "row_count": 85,
+        "content_md5": "cab5714180603abf046c54639536126e"
+      },
+      "kb_qa_evaluations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_tests": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_rag_audit_events": {
+        "row_count": 31,
+        "content_md5": "aee2013e95be426d40024810316492bf"
+      },
+      "kb_release_items": {
+        "row_count": 83,
+        "content_md5": "87db9960cbb2ed24e09572f4fa9163a5"
+      },
+      "kb_releases": {
+        "row_count": 1,
+        "content_md5": "9c00a4d0948ac708f3a045d8e452db47"
+      },
+      "kb_retrieval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_search_results": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "market_power_price_rules": {
+        "row_count": 13,
+        "content_md5": "f1727986bfb4f91d42220a3f6b91e5ee"
+      },
+      "model_comparison_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_error_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_evaluation_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_governance_events": {
+        "row_count": 2,
+        "content_md5": "f0458bb8fee39b8a620f3a6e5dbb44ba"
+      },
+      "model_metrics": {
+        "row_count": 5,
+        "content_md5": "6570ec573b3826e8eddead5de758ba24"
+      },
+      "model_performance_daily": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_prediction_comparison_points": {
+        "row_count": 672,
+        "content_md5": "39688393776aa2cecbee300f2888ad13"
+      },
+      "model_registry": {
+        "row_count": 2,
+        "content_md5": "5c8c272047eb0b806c38daba33af92b9"
+      },
+      "model_retrain_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_strategy_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_versions": {
+        "row_count": 5,
+        "content_md5": "dd8e64c0dd53ec6ee59846572c64f391"
+      },
+      "monitoring_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "prediction_tracking": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_policy_files": {
+        "row_count": 12,
+        "content_md5": "862880d276a18af346d52a630cb4cf4b"
+      },
+      "pv_station_tariff_check": {
+        "row_count": 122,
+        "content_md5": "d2d8d726a937cc3ade4dd40a2e36bfee"
+      },
+      "pv_tariff_period_rules": {
+        "row_count": 300,
+        "content_md5": "4e7b6c77706a45b4a64deb5d99b8698e"
+      },
+      "pv_tariff_rules": {
+        "row_count": 1722,
+        "content_md5": "fb32d50c148f9a8ba1c580f964b520b5"
+      },
+      "raw_load": {
+        "row_count": 69994,
+        "content_md5": "4e6da5885d9dd741713beb599f6ce3de"
+      },
+      "raw_market": {
+        "row_count": 70024,
+        "content_md5": "e3c01356fc2ee84955a267ae578b2b12"
+      },
+      "raw_renewable": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_weather": {
+        "row_count": 35040,
+        "content_md5": "9910f8cd1a940d9f951c5080c931a9a0"
+      },
+      "report_approval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_reviews": {
+        "row_count": 1,
+        "content_md5": "26d656f8c94ee47b0235405b93ef8de1"
+      },
+      "report_runs": {
+        "row_count": 11,
+        "content_md5": "6cb3f2f269042239f12e17a289d7bac3"
+      },
+      "roles": {
+        "row_count": 6,
+        "content_md5": "968e6992120a7b72cc1f5ec2316f33ad"
+      },
+      "schema_migrations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "southern_grid_tax_rules": {
+        "row_count": 103,
+        "content_md5": "ce828ed08a612c49d0b37fed35bfafbd"
+      },
+      "storage_devices": {
+        "row_count": 2,
+        "content_md5": "701ebf93222ceb4270bb52eb21c382d2"
+      },
+      "storage_soc_snapshots": {
+        "row_count": 48,
+        "content_md5": "00fe93f02bfec67a20f6479c213dc4bb"
+      },
+      "strategy_advice": {
+        "row_count": 9,
+        "content_md5": "e62510e223a2fde3ce71107691f287d7"
+      },
+      "strategy_execution_items": {
+        "row_count": 6,
+        "content_md5": "2938cbc263b0b14a7912997a317ffdbe"
+      },
+      "strategy_reviews": {
+        "row_count": 18,
+        "content_md5": "db5918a42686148e6110f5692b6c23d8"
+      },
+      "system_api_configs": {
+        "row_count": 8,
+        "content_md5": "4f0fc8e73cc1500d7d4f2a83ec235496"
+      },
+      "system_api_test_logs": {
+        "row_count": 1,
+        "content_md5": "ce01a5ce2c43b42af6e4ab93ca0c3563"
+      },
+      "system_health_snapshots": {
+        "row_count": 801,
+        "content_md5": "18223bc00f650a48083c34454c298271"
+      },
+      "system_runtime_config": {
+        "row_count": 14,
+        "content_md5": "71beb80b3bcc507f3e4cad6adc6b1689"
+      },
+      "task_logs": {
+        "row_count": 289,
+        "content_md5": "c2845a3f6070a133b7ed33738acb7e3c"
+      },
+      "task_runs": {
+        "row_count": 47,
+        "content_md5": "adb3cfe3c76d0a0d809c4b5929421a43"
+      },
+      "user_roles": {
+        "row_count": 2,
+        "content_md5": "fa217eac53b38a749885aa87e47ce796"
+      },
+      "users": {
+        "row_count": 3,
+        "content_md5": "eaa88007b8feb70973f538eebf3cdf53"
+      }
+    },
+    "sequences": [
+      {
+        "sequencename": "ai_answer_feedback_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_chat_feedback_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 10,
+        "state_last_value": 10,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_chat_messages_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 308,
+        "state_last_value": 308,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_chat_sessions_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 155,
+        "state_last_value": 155,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_conversation_state_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 122,
+        "state_last_value": 122,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_prompt_templates_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_qa_test_cases_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_report_review_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_tool_call_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 171,
+        "state_last_value": 171,
+        "is_called": true
+      },
+      {
+        "sequencename": "analysis_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "anomaly_explanations_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "audit_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 262,
+        "state_last_value": 262,
+        "is_called": true
+      },
+      {
+        "sequencename": "feature_importance_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "forecast_results_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 478,
+        "state_last_value": 478,
+        "is_called": true
+      },
+      {
+        "sequencename": "kb_qa_tests_id_seq",
+        "data_type": "integer",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 2147483647,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "kb_search_results_id_seq",
+        "data_type": "integer",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 2147483647,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "market_power_price_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 169,
+        "state_last_value": 169,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_comparison_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_error_memory_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_evaluation_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_governance_events_id_seq",
+        "data_type": "integer",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 2147483647,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 28,
+        "state_last_value": 28,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_metrics_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 380,
+        "state_last_value": 380,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_performance_daily_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_prediction_comparison_points_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 672,
+        "state_last_value": 672,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_retrain_jobs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_strategy_memory_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_versions_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 100,
+        "state_last_value": 100,
+        "is_called": true
+      },
+      {
+        "sequencename": "monitoring_metrics_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "prediction_tracking_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "pv_policy_files_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 156,
+        "state_last_value": 156,
+        "is_called": true
+      },
+      {
+        "sequencename": "pv_station_tariff_check_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1586,
+        "state_last_value": 1586,
+        "is_called": true
+      },
+      {
+        "sequencename": "pv_tariff_period_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 3900,
+        "state_last_value": 3900,
+        "is_called": true
+      },
+      {
+        "sequencename": "pv_tariff_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 22386,
+        "state_last_value": 22386,
+        "is_called": true
+      },
+      {
+        "sequencename": "raw_load_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 69994,
+        "state_last_value": 69994,
+        "is_called": true
+      },
+      {
+        "sequencename": "raw_market_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 70025,
+        "state_last_value": 70025,
+        "is_called": true
+      },
+      {
+        "sequencename": "raw_renewable_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "raw_weather_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 35040,
+        "state_last_value": 35040,
+        "is_called": true
+      },
+      {
+        "sequencename": "report_approval_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "report_reviews_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1,
+        "state_last_value": 1,
+        "is_called": true
+      },
+      {
+        "sequencename": "southern_grid_tax_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1339,
+        "state_last_value": 1339,
+        "is_called": true
+      },
+      {
+        "sequencename": "strategy_advice_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 19,
+        "state_last_value": 19,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_api_configs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 16,
+        "state_last_value": 16,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_api_test_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1,
+        "state_last_value": 1,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_health_snapshots_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 801,
+        "state_last_value": 801,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_runtime_config_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 20,
+        "state_last_value": 20,
+        "is_called": true
+      },
+      {
+        "sequencename": "task_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 293,
+        "state_last_value": 293,
+        "is_called": true
+      },
+      {
+        "sequencename": "users_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 25,
+        "state_last_value": 25,
+        "is_called": true
+      }
+    ]
+  },
+  "public_after": {
+    "table_count": 87,
+    "view_count": 8,
+    "sequence_count": 47,
+    "function_count": 38,
+    "alembic_heads": [
+      "0022_chatbi_semantic_v1"
+    ],
+    "structure_sha256": "97e100e9b36d0fbecee9d6bb088a3c02a74a9a51ed9fa8d8c26b74f5d7215715",
+    "table_fingerprints": {
+      "ai_answer_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_messages": {
+        "row_count": 34,
+        "content_md5": "6fd11c482fb3227c113e5f96886df49b"
+      },
+      "ai_chat_sessions": {
+        "row_count": 14,
+        "content_md5": "a7449de246e90a2c396223a8203aef2c"
+      },
+      "ai_conversation_state": {
+        "row_count": 14,
+        "content_md5": "c80e089d7a73ca8d96c83a98ebe952b8"
+      },
+      "ai_memory_admissions": {
+        "row_count": 2,
+        "content_md5": "90fd77997866e81e692ba0b32d237af0"
+      },
+      "ai_memory_deletion_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_proofs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_legal_holds": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_outbox": {
+        "row_count": 2,
+        "content_md5": "cce6863fc8ccdc58fa0a1b0b189a9e40"
+      },
+      "ai_memory_records": {
+        "row_count": 2,
+        "content_md5": "9d22a9dcd906049046b5ae8d81cef8db"
+      },
+      "ai_memory_relations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_state_transitions": {
+        "row_count": 2,
+        "content_md5": "778d6659c754f1ccd1d588b7bf4e8230"
+      },
+      "ai_memory_usage": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_versions": {
+        "row_count": 2,
+        "content_md5": "33057de50e5b7a82ba1ca0f348e46344"
+      },
+      "ai_prompt_templates": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_qa_test_cases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_report_review_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_tool_call_logs": {
+        "row_count": 11,
+        "content_md5": "9efac94b697943444816e2d1a4e27683"
+      },
+      "ai_traces": {
+        "row_count": 30,
+        "content_md5": "1f7f51e4479bdf55710e727dd45f6b80"
+      },
+      "alembic_version": {
+        "row_count": 1,
+        "content_md5": "00b0a2723b00a47e5c0ea6b83f690a8c"
+      },
+      "analysis_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "anomaly_explanations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "audit_logs": {
+        "row_count": 255,
+        "content_md5": "185d35ca2f140026382c9d6c54c06a0b"
+      },
+      "chatbi_analysis_plans": {
+        "row_count": 6,
+        "content_md5": "672f4931a0e4d940aa089f3f5197e892"
+      },
+      "chatbi_dimension_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_join_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_metric_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "feature_importance": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_batches": {
+        "row_count": 10,
+        "content_md5": "8ffd7036c9b7e16036499b34d43e5d51"
+      },
+      "forecast_input_snapshots": {
+        "row_count": 240,
+        "content_md5": "6eaab8505953612130a3d9872ef041ff"
+      },
+      "forecast_results": {
+        "row_count": 264,
+        "content_md5": "15c72c764f2899c3ef5eaf37c323166d"
+      },
+      "forecast_runs": {
+        "row_count": 21,
+        "content_md5": "9b2b7f4db85025ce3f1f98b97028b423"
+      },
+      "kb_access_policies": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_assets": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_chunks": {
+        "row_count": 8384,
+        "content_md5": "74364ec49a2cb2c17a2487955d3ec0ff"
+      },
+      "kb_citations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_document_versions": {
+        "row_count": 45,
+        "content_md5": "8908298e0fd5d94635ba1f3d45600b2b"
+      },
+      "kb_documents": {
+        "row_count": 85,
+        "content_md5": "cab5714180603abf046c54639536126e"
+      },
+      "kb_qa_evaluations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_tests": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_rag_audit_events": {
+        "row_count": 31,
+        "content_md5": "aee2013e95be426d40024810316492bf"
+      },
+      "kb_release_items": {
+        "row_count": 83,
+        "content_md5": "87db9960cbb2ed24e09572f4fa9163a5"
+      },
+      "kb_releases": {
+        "row_count": 1,
+        "content_md5": "9c00a4d0948ac708f3a045d8e452db47"
+      },
+      "kb_retrieval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_search_results": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "market_power_price_rules": {
+        "row_count": 13,
+        "content_md5": "f1727986bfb4f91d42220a3f6b91e5ee"
+      },
+      "model_comparison_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_error_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_evaluation_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_governance_events": {
+        "row_count": 2,
+        "content_md5": "f0458bb8fee39b8a620f3a6e5dbb44ba"
+      },
+      "model_metrics": {
+        "row_count": 5,
+        "content_md5": "6570ec573b3826e8eddead5de758ba24"
+      },
+      "model_performance_daily": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_prediction_comparison_points": {
+        "row_count": 672,
+        "content_md5": "39688393776aa2cecbee300f2888ad13"
+      },
+      "model_registry": {
+        "row_count": 2,
+        "content_md5": "5c8c272047eb0b806c38daba33af92b9"
+      },
+      "model_retrain_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_strategy_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_versions": {
+        "row_count": 5,
+        "content_md5": "dd8e64c0dd53ec6ee59846572c64f391"
+      },
+      "monitoring_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "prediction_tracking": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_policy_files": {
+        "row_count": 12,
+        "content_md5": "862880d276a18af346d52a630cb4cf4b"
+      },
+      "pv_station_tariff_check": {
+        "row_count": 122,
+        "content_md5": "d2d8d726a937cc3ade4dd40a2e36bfee"
+      },
+      "pv_tariff_period_rules": {
+        "row_count": 300,
+        "content_md5": "4e7b6c77706a45b4a64deb5d99b8698e"
+      },
+      "pv_tariff_rules": {
+        "row_count": 1722,
+        "content_md5": "fb32d50c148f9a8ba1c580f964b520b5"
+      },
+      "raw_load": {
+        "row_count": 69994,
+        "content_md5": "4e6da5885d9dd741713beb599f6ce3de"
+      },
+      "raw_market": {
+        "row_count": 70024,
+        "content_md5": "e3c01356fc2ee84955a267ae578b2b12"
+      },
+      "raw_renewable": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_weather": {
+        "row_count": 35040,
+        "content_md5": "9910f8cd1a940d9f951c5080c931a9a0"
+      },
+      "report_approval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_reviews": {
+        "row_count": 1,
+        "content_md5": "26d656f8c94ee47b0235405b93ef8de1"
+      },
+      "report_runs": {
+        "row_count": 11,
+        "content_md5": "6cb3f2f269042239f12e17a289d7bac3"
+      },
+      "roles": {
+        "row_count": 6,
+        "content_md5": "968e6992120a7b72cc1f5ec2316f33ad"
+      },
+      "schema_migrations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "southern_grid_tax_rules": {
+        "row_count": 103,
+        "content_md5": "ce828ed08a612c49d0b37fed35bfafbd"
+      },
+      "storage_devices": {
+        "row_count": 2,
+        "content_md5": "701ebf93222ceb4270bb52eb21c382d2"
+      },
+      "storage_soc_snapshots": {
+        "row_count": 48,
+        "content_md5": "00fe93f02bfec67a20f6479c213dc4bb"
+      },
+      "strategy_advice": {
+        "row_count": 9,
+        "content_md5": "e62510e223a2fde3ce71107691f287d7"
+      },
+      "strategy_execution_items": {
+        "row_count": 6,
+        "content_md5": "2938cbc263b0b14a7912997a317ffdbe"
+      },
+      "strategy_reviews": {
+        "row_count": 18,
+        "content_md5": "db5918a42686148e6110f5692b6c23d8"
+      },
+      "system_api_configs": {
+        "row_count": 8,
+        "content_md5": "4f0fc8e73cc1500d7d4f2a83ec235496"
+      },
+      "system_api_test_logs": {
+        "row_count": 1,
+        "content_md5": "ce01a5ce2c43b42af6e4ab93ca0c3563"
+      },
+      "system_health_snapshots": {
+        "row_count": 801,
+        "content_md5": "18223bc00f650a48083c34454c298271"
+      },
+      "system_runtime_config": {
+        "row_count": 14,
+        "content_md5": "71beb80b3bcc507f3e4cad6adc6b1689"
+      },
+      "task_logs": {
+        "row_count": 289,
+        "content_md5": "c2845a3f6070a133b7ed33738acb7e3c"
+      },
+      "task_runs": {
+        "row_count": 47,
+        "content_md5": "adb3cfe3c76d0a0d809c4b5929421a43"
+      },
+      "user_roles": {
+        "row_count": 2,
+        "content_md5": "fa217eac53b38a749885aa87e47ce796"
+      },
+      "users": {
+        "row_count": 3,
+        "content_md5": "eaa88007b8feb70973f538eebf3cdf53"
+      }
+    },
+    "sequences": [
+      {
+        "sequencename": "ai_answer_feedback_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_chat_feedback_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 10,
+        "state_last_value": 10,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_chat_messages_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 308,
+        "state_last_value": 308,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_chat_sessions_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 155,
+        "state_last_value": 155,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_conversation_state_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 122,
+        "state_last_value": 122,
+        "is_called": true
+      },
+      {
+        "sequencename": "ai_prompt_templates_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_qa_test_cases_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_report_review_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "ai_tool_call_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 171,
+        "state_last_value": 171,
+        "is_called": true
+      },
+      {
+        "sequencename": "analysis_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "anomaly_explanations_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "audit_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 262,
+        "state_last_value": 262,
+        "is_called": true
+      },
+      {
+        "sequencename": "feature_importance_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "forecast_results_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 478,
+        "state_last_value": 478,
+        "is_called": true
+      },
+      {
+        "sequencename": "kb_qa_tests_id_seq",
+        "data_type": "integer",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 2147483647,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "kb_search_results_id_seq",
+        "data_type": "integer",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 2147483647,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "market_power_price_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 169,
+        "state_last_value": 169,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_comparison_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_error_memory_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_evaluation_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_governance_events_id_seq",
+        "data_type": "integer",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 2147483647,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 28,
+        "state_last_value": 28,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_metrics_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 380,
+        "state_last_value": 380,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_performance_daily_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_prediction_comparison_points_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 672,
+        "state_last_value": 672,
+        "is_called": true
+      },
+      {
+        "sequencename": "model_retrain_jobs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_strategy_memory_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "model_versions_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 100,
+        "state_last_value": 100,
+        "is_called": true
+      },
+      {
+        "sequencename": "monitoring_metrics_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "prediction_tracking_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "pv_policy_files_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 156,
+        "state_last_value": 156,
+        "is_called": true
+      },
+      {
+        "sequencename": "pv_station_tariff_check_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1586,
+        "state_last_value": 1586,
+        "is_called": true
+      },
+      {
+        "sequencename": "pv_tariff_period_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 3900,
+        "state_last_value": 3900,
+        "is_called": true
+      },
+      {
+        "sequencename": "pv_tariff_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 22386,
+        "state_last_value": 22386,
+        "is_called": true
+      },
+      {
+        "sequencename": "raw_load_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 69994,
+        "state_last_value": 69994,
+        "is_called": true
+      },
+      {
+        "sequencename": "raw_market_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 70025,
+        "state_last_value": 70025,
+        "is_called": true
+      },
+      {
+        "sequencename": "raw_renewable_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "raw_weather_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 35040,
+        "state_last_value": 35040,
+        "is_called": true
+      },
+      {
+        "sequencename": "report_approval_runs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": null,
+        "state_last_value": 1,
+        "is_called": false
+      },
+      {
+        "sequencename": "report_reviews_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1,
+        "state_last_value": 1,
+        "is_called": true
+      },
+      {
+        "sequencename": "southern_grid_tax_rules_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1339,
+        "state_last_value": 1339,
+        "is_called": true
+      },
+      {
+        "sequencename": "strategy_advice_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 19,
+        "state_last_value": 19,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_api_configs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 16,
+        "state_last_value": 16,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_api_test_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 1,
+        "state_last_value": 1,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_health_snapshots_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 801,
+        "state_last_value": 801,
+        "is_called": true
+      },
+      {
+        "sequencename": "system_runtime_config_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 20,
+        "state_last_value": 20,
+        "is_called": true
+      },
+      {
+        "sequencename": "task_logs_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 293,
+        "state_last_value": 293,
+        "is_called": true
+      },
+      {
+        "sequencename": "users_id_seq",
+        "data_type": "bigint",
+        "start_value": 1,
+        "min_value": 1,
+        "max_value": 9223372036854775807,
+        "increment_by": 1,
+        "cycle": false,
+        "cache_size": 1,
+        "last_value": 25,
+        "state_last_value": 25,
+        "is_called": true
+      }
+    ]
+  },
+  "public_match": true,
+  "controlled_fixtures": {
+    "fixture_id": "day3-isolated-business-v1",
+    "run_id": "run_day3_isolated_fixture_001",
+    "forecast_runs": 1,
+    "forecast_results": 24,
+    "raw_market": 24,
+    "raw_load": 24,
+    "raw_weather": 24,
+    "generated_at": "2020-01-01T00:00:00",
+    "contains_real_business_records": false
+  },
+  "isolated_migrated": {
+    "table_count": 87,
+    "view_count": 8,
+    "sequence_count": 47,
+    "table_fingerprints": {
+      "ai_answer_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_messages": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_sessions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_conversation_state": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_admissions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_proofs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_legal_holds": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_outbox": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_records": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_relations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_state_transitions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_usage": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_prompt_templates": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_qa_test_cases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_report_review_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_tool_call_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_traces": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "alembic_version": {
+        "row_count": 1,
+        "content_md5": "00b0a2723b00a47e5c0ea6b83f690a8c"
+      },
+      "analysis_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "anomaly_explanations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "audit_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_analysis_plans": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_dimension_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_join_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_metric_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "feature_importance": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_batches": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_results": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_access_policies": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_assets": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_chunks": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_citations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_document_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_documents": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_evaluations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_tests": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_rag_audit_events": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_release_items": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_releases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_retrieval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_search_results": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "market_power_price_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_comparison_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_error_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_evaluation_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_governance_events": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_performance_daily": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_prediction_comparison_points": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_registry": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_retrain_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_strategy_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "monitoring_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "prediction_tracking": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_policy_files": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_station_tariff_check": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_tariff_period_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_tariff_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_load": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_market": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_renewable": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_weather": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_approval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_reviews": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "roles": {
+        "row_count": 6,
+        "content_md5": "ffce6226b4b742c6e94837b86b64291d"
+      },
+      "schema_migrations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "southern_grid_tax_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "storage_devices": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "storage_soc_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_advice": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_execution_items": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_reviews": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_api_configs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_api_test_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_health_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_runtime_config": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "task_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "task_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "user_roles": {
+        "row_count": 1,
+        "content_md5": "434b16295f0c6c1cbe69df566186f2c1"
+      },
+      "users": {
+        "row_count": 1,
+        "content_md5": "9d631a1f2f7c7700fb9ae11002fc188f"
+      }
+    },
+    "sequences": [
+      {
+        "sequencename": "ai_answer_feedback_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_feedback_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_messages_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_sessions_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_conversation_state_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_prompt_templates_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_qa_test_cases_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_report_review_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_tool_call_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "analysis_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "anomaly_explanations_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "audit_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "feature_importance_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "forecast_results_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "kb_qa_tests_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "kb_search_results_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "market_power_price_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_comparison_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_error_memory_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_evaluation_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_governance_events_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_metrics_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_performance_daily_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_prediction_comparison_points_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_retrain_jobs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_strategy_memory_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_versions_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "monitoring_metrics_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "prediction_tracking_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_policy_files_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_station_tariff_check_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_tariff_period_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_tariff_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_load_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_market_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_renewable_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_weather_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "report_approval_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "report_reviews_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "southern_grid_tax_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "strategy_advice_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_api_configs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_api_test_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_health_snapshots_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_runtime_config_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "task_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "users_id_seq",
+        "last_value": 1
+      }
+    ]
+  },
+  "isolated_before": {
+    "table_count": 87,
+    "view_count": 8,
+    "sequence_count": 47,
+    "table_fingerprints": {
+      "ai_answer_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_messages": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_sessions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_conversation_state": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_admissions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_proofs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_legal_holds": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_outbox": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_records": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_relations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_state_transitions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_usage": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_prompt_templates": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_qa_test_cases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_report_review_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_tool_call_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_traces": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "alembic_version": {
+        "row_count": 1,
+        "content_md5": "00b0a2723b00a47e5c0ea6b83f690a8c"
+      },
+      "analysis_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "anomaly_explanations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "audit_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_analysis_plans": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_dimension_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_join_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_metric_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "feature_importance": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_batches": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_results": {
+        "row_count": 24,
+        "content_md5": "399fc7ea2932ab90a7e11bdf4e6bed75"
+      },
+      "forecast_runs": {
+        "row_count": 1,
+        "content_md5": "5d1a8874b33bd42c0628bfe78f28069b"
+      },
+      "kb_access_policies": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_assets": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_chunks": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_citations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_document_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_documents": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_evaluations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_tests": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_rag_audit_events": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_release_items": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_releases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_retrieval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_search_results": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "market_power_price_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_comparison_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_error_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_evaluation_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_governance_events": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_performance_daily": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_prediction_comparison_points": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_registry": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_retrain_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_strategy_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "monitoring_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "prediction_tracking": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_policy_files": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_station_tariff_check": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_tariff_period_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_tariff_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_load": {
+        "row_count": 24,
+        "content_md5": "5bd36a61b1214586bd8453dc87d1dccd"
+      },
+      "raw_market": {
+        "row_count": 24,
+        "content_md5": "423636859a75e16c1ae8e564e9895cf6"
+      },
+      "raw_renewable": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_weather": {
+        "row_count": 24,
+        "content_md5": "94de03e7e2b40e78e5c564b7ab7515b1"
+      },
+      "report_approval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_reviews": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "roles": {
+        "row_count": 6,
+        "content_md5": "ffce6226b4b742c6e94837b86b64291d"
+      },
+      "schema_migrations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "southern_grid_tax_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "storage_devices": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "storage_soc_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_advice": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_execution_items": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_reviews": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_api_configs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_api_test_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_health_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_runtime_config": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "task_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "task_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "user_roles": {
+        "row_count": 1,
+        "content_md5": "434b16295f0c6c1cbe69df566186f2c1"
+      },
+      "users": {
+        "row_count": 1,
+        "content_md5": "9d631a1f2f7c7700fb9ae11002fc188f"
+      }
+    },
+    "sequences": [
+      {
+        "sequencename": "ai_answer_feedback_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_feedback_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_messages_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_sessions_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_conversation_state_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_prompt_templates_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_qa_test_cases_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_report_review_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_tool_call_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "analysis_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "anomaly_explanations_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "audit_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "feature_importance_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "forecast_results_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "kb_qa_tests_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "kb_search_results_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "market_power_price_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_comparison_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_error_memory_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_evaluation_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_governance_events_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_metrics_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_performance_daily_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_prediction_comparison_points_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_retrain_jobs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_strategy_memory_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_versions_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "monitoring_metrics_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "prediction_tracking_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_policy_files_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_station_tariff_check_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_tariff_period_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_tariff_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_load_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "raw_market_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "raw_renewable_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_weather_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "report_approval_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "report_reviews_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "southern_grid_tax_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "strategy_advice_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_api_configs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_api_test_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_health_snapshots_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_runtime_config_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "task_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "users_id_seq",
+        "last_value": 1
+      }
+    ]
+  },
+  "isolated_after": {
+    "table_count": 87,
+    "view_count": 8,
+    "sequence_count": 47,
+    "table_fingerprints": {
+      "ai_answer_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_feedback": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_messages": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_chat_sessions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_conversation_state": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_admissions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_deletion_proofs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_legal_holds": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_outbox": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_records": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_relations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_state_transitions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_usage": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_memory_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_prompt_templates": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_qa_test_cases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_report_review_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_tool_call_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "ai_traces": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "alembic_version": {
+        "row_count": 1,
+        "content_md5": "00b0a2723b00a47e5c0ea6b83f690a8c"
+      },
+      "analysis_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "anomaly_explanations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "audit_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_analysis_plans": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_dimension_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_join_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "chatbi_metric_catalog": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "feature_importance": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_batches": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_input_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "forecast_results": {
+        "row_count": 24,
+        "content_md5": "399fc7ea2932ab90a7e11bdf4e6bed75"
+      },
+      "forecast_runs": {
+        "row_count": 1,
+        "content_md5": "5d1a8874b33bd42c0628bfe78f28069b"
+      },
+      "kb_access_policies": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_assets": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_chunks": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_citations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_document_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_documents": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_evaluations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_qa_tests": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_rag_audit_events": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_release_items": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_releases": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_retrieval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "kb_search_results": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "market_power_price_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_comparison_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_error_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_evaluation_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_governance_events": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_performance_daily": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_prediction_comparison_points": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_registry": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_retrain_jobs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_strategy_memory": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "model_versions": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "monitoring_metrics": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "prediction_tracking": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_policy_files": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_station_tariff_check": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_tariff_period_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "pv_tariff_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_load": {
+        "row_count": 24,
+        "content_md5": "5bd36a61b1214586bd8453dc87d1dccd"
+      },
+      "raw_market": {
+        "row_count": 24,
+        "content_md5": "423636859a75e16c1ae8e564e9895cf6"
+      },
+      "raw_renewable": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "raw_weather": {
+        "row_count": 24,
+        "content_md5": "94de03e7e2b40e78e5c564b7ab7515b1"
+      },
+      "report_approval_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_reviews": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "report_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "roles": {
+        "row_count": 6,
+        "content_md5": "ffce6226b4b742c6e94837b86b64291d"
+      },
+      "schema_migrations": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "southern_grid_tax_rules": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "storage_devices": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "storage_soc_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_advice": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_execution_items": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "strategy_reviews": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_api_configs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_api_test_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_health_snapshots": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "system_runtime_config": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "task_logs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "task_runs": {
+        "row_count": 0,
+        "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+      },
+      "user_roles": {
+        "row_count": 1,
+        "content_md5": "434b16295f0c6c1cbe69df566186f2c1"
+      },
+      "users": {
+        "row_count": 1,
+        "content_md5": "9d631a1f2f7c7700fb9ae11002fc188f"
+      }
+    },
+    "sequences": [
+      {
+        "sequencename": "ai_answer_feedback_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_feedback_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_messages_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_chat_sessions_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_conversation_state_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_prompt_templates_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_qa_test_cases_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_report_review_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "ai_tool_call_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "analysis_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "anomaly_explanations_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "audit_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "feature_importance_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "forecast_results_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "kb_qa_tests_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "kb_search_results_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "market_power_price_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_comparison_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_error_memory_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_evaluation_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_governance_events_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_metrics_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_performance_daily_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_prediction_comparison_points_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_retrain_jobs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_strategy_memory_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "model_versions_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "monitoring_metrics_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "prediction_tracking_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_policy_files_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_station_tariff_check_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_tariff_period_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "pv_tariff_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_load_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "raw_market_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "raw_renewable_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "raw_weather_id_seq",
+        "last_value": 24
+      },
+      {
+        "sequencename": "report_approval_runs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "report_reviews_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "southern_grid_tax_rules_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "strategy_advice_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_api_configs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_api_test_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_health_snapshots_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "system_runtime_config_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "task_logs_id_seq",
+        "last_value": null
+      },
+      {
+        "sequencename": "users_id_seq",
+        "last_value": 1
+      }
+    ]
+  },
+  "fixture_changes": {
+    "changed_tables": {
+      "forecast_results": {
+        "before": {
+          "row_count": 0,
+          "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        "after": {
+          "row_count": 24,
+          "content_md5": "399fc7ea2932ab90a7e11bdf4e6bed75"
+        }
+      },
+      "forecast_runs": {
+        "before": {
+          "row_count": 0,
+          "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        "after": {
+          "row_count": 1,
+          "content_md5": "5d1a8874b33bd42c0628bfe78f28069b"
+        }
+      },
+      "raw_load": {
+        "before": {
+          "row_count": 0,
+          "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        "after": {
+          "row_count": 24,
+          "content_md5": "5bd36a61b1214586bd8453dc87d1dccd"
+        }
+      },
+      "raw_market": {
+        "before": {
+          "row_count": 0,
+          "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        "after": {
+          "row_count": 24,
+          "content_md5": "423636859a75e16c1ae8e564e9895cf6"
+        }
+      },
+      "raw_weather": {
+        "before": {
+          "row_count": 0,
+          "content_md5": "d41d8cd98f00b204e9800998ecf8427e"
+        },
+        "after": {
+          "row_count": 24,
+          "content_md5": "94de03e7e2b40e78e5c564b7ab7515b1"
+        }
+      }
+    },
+    "changed_sequences": {
+      "forecast_results_id_seq": {
+        "before": {
+          "sequencename": "forecast_results_id_seq",
+          "last_value": null
+        },
+        "after": {
+          "sequencename": "forecast_results_id_seq",
+          "last_value": 24
+        }
+      },
+      "raw_load_id_seq": {
+        "before": {
+          "sequencename": "raw_load_id_seq",
+          "last_value": null
+        },
+        "after": {
+          "sequencename": "raw_load_id_seq",
+          "last_value": 24
+        }
+      },
+      "raw_market_id_seq": {
+        "before": {
+          "sequencename": "raw_market_id_seq",
+          "last_value": null
+        },
+        "after": {
+          "sequencename": "raw_market_id_seq",
+          "last_value": 24
+        }
+      },
+      "raw_weather_id_seq": {
+        "before": {
+          "sequencename": "raw_weather_id_seq",
+          "last_value": null
+        },
+        "after": {
+          "sequencename": "raw_weather_id_seq",
+          "last_value": 24
+        }
+      }
+    }
+  },
+  "isolated_changes": {
+    "changed_tables": {},
+    "changed_sequences": {}
+  },
+  "cleanup": {
+    "result": "PASS",
+    "residual": {
+      "schemas": [],
+      "roles": []
+    },
+    "error": null
+  },
+  "error": null
+}

@@ -1,0 +1,8 @@
+frontend/src/components/common/FilterBar.tsx
+frontend/src/components/data/DataCenterDesign.tsx
+frontend/src/pages/data/DataCenterPage.tsx
+frontend/src/pages/data/data-center-workspace.css
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/T021_DATA_CENTER_T020_INTEGRATION_20260826_220645628/*
+
+范围说明：只修改前端 UI、可访问标签、页面展示行数和任务证据；未修改后端、API 契约、数据库、路由、RBAC、业务处理器或业务状态机。

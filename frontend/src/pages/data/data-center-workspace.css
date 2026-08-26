@@ -1400,3 +1400,1456 @@
     display: none;
   }
 }
+
+/* T019: data overview compact single-screen workspace (1903 x 916 baseline). */
+.data-workspace-main > .content-shell:has(.data-overview-page) {
+  height: 100%;
+  padding: 0 14px 16px !important;
+  overflow: hidden !important;
+}
+
+.data-workspace-main .data-overview-page {
+  height: 100%;
+  min-height: 0;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  isolation: isolate;
+  display: grid;
+  min-height: 60px;
+  flex: 0 0 60px;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -14px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--dw-border);
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(31, 51, 78, .035);
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-copy,
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-utility {
+  grid-column: auto;
+  grid-row: 1;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-copy {
+  align-self: center;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header h1 {
+  font-size: 22px;
+  line-height: 30px;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-utility {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-filters {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 8px;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-main,
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-controls {
+  width: 100%;
+  min-width: 0;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-controls {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 128px 136px;
+  align-items: center;
+  gap: 8px;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .ant-input-affix-wrapper {
+  order: -1;
+}
+
+.data-workspace-main .data-overview-page .data-filter-field {
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 5px;
+  align-items: center;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .ant-input-affix-wrapper,
+.data-workspace-main .data-overview-page .data-design-filter .ant-select-selector,
+.data-workspace-main .data-overview-page .data-design-filter .ant-btn,
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-actions .ant-btn {
+  height: 36px !important;
+  border-radius: 7px !important;
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-actions {
+  display: flex;
+  width: 36px;
+  margin: 0;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-actions .ant-btn {
+  width: 36px;
+  height: 36px !important;
+  padding-inline: 0;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-actions .ant-btn > span + span {
+  display: none;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-actions {
+  flex-wrap: nowrap;
+  gap: 8px !important;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-actions .ant-btn {
+  min-width: 104px;
+  padding-inline: 14px;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-more {
+  min-width: 36px;
+  padding-inline: 9px;
+}
+
+.data-workspace-main .data-overview-page .section-card .ant-card-head {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.data-workspace-main .data-overview-page .section-card .ant-card-head-title {
+  padding: 7px 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.data-workspace-main .data-overview-page .section-card .ant-card-extra {
+  padding: 4px 0;
+}
+
+.data-workspace-main .data-overview-page .section-card .ant-card-extra .ant-btn {
+  height: 28px;
+  min-height: 28px;
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-overview-top {
+  min-height: 108px;
+  flex: 0 0 108px;
+  grid-template-columns: minmax(0, 2.2fr) minmax(430px, 1fr);
+  gap: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid {
+  height: 108px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-card {
+  min-height: 0 !important;
+  height: 108px;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 10px 9px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  font-size: 15px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-main {
+  min-width: 0;
+  min-height: 0;
+  justify-content: center;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-title-row {
+  min-width: 0;
+  margin: 0 0 2px;
+  gap: 5px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-title {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-status {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-value {
+  line-height: 1.05;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-value-text {
+  display: inline-block;
+  overflow: visible;
+  font-size: 24px;
+  line-height: 30px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-unit {
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-metric-grid .metric-note {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.data-workspace-main .data-overview-page .data-quick-actions-panel {
+  height: 108px;
+  min-height: 108px;
+}
+
+.data-workspace-main .data-overview-page .data-quick-actions-panel .ant-card-body {
+  height: calc(100% - 36px);
+  padding: 0 12px 6px;
+}
+
+.data-workspace-main .data-overview-page .data-quick-actions {
+  height: 64px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 29px);
+  gap: 6px;
+}
+
+.data-workspace-main .data-overview-page .data-quick-actions .ant-btn {
+  height: 29px;
+  padding-inline: 7px;
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-overview-workspace {
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 2.2fr) minmax(420px, 1fr);
+  gap: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-overview-left {
+  grid-template-rows: 166px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-overview-right {
+  grid-template-rows: 280px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-flow-panel {
+  height: 166px;
+}
+
+.data-workspace-main .data-overview-page .data-flow-panel .ant-card-body {
+  height: calc(100% - 36px);
+  padding: 0 18px 10px;
+}
+
+.data-workspace-main .data-overview-page .data-process-flow {
+  height: 100%;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+  align-items: center;
+  padding: 0;
+}
+
+.data-workspace-main .data-overview-page .data-process-step {
+  gap: 2px;
+}
+
+.data-workspace-main .data-overview-page .data-process-icon {
+  width: 44px;
+  height: 44px;
+  border-color: var(--dw-primary);
+  background: #f7fffd;
+  color: var(--dw-primary-dark);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.data-workspace-main .data-overview-page .data-process-step strong {
+  margin-top: 1px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.data-workspace-main .data-overview-page .data-process-step > span:not(.data-process-status),
+.data-workspace-main .data-overview-page .data-process-step small,
+.data-workspace-main .data-overview-page .data-process-status {
+  min-width: 0;
+  font-size: 12px !important;
+  line-height: 16px;
+}
+
+.data-workspace-main .data-overview-page .data-process-step > span:not(.data-process-status),
+.data-workspace-main .data-overview-page .data-process-step small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-workspace-main .data-overview-page .data-process-status {
+  width: auto;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.data-workspace-main .data-overview-page .data-process-step i {
+  top: 22px;
+  left: calc(50% + 30px);
+  width: calc(100% - 38px);
+  border-color: rgba(8, 168, 141, .72);
+  border-top-style: solid;
+}
+
+.data-workspace-main .data-overview-page .data-health-panel {
+  height: 280px;
+}
+
+.data-workspace-main .data-overview-page .data-health-panel .ant-card-body {
+  height: calc(100% - 36px);
+  padding: 0 14px 8px;
+}
+
+.data-workspace-main .data-overview-page .data-health-panel .ant-card-body > div {
+  display: grid;
+  height: 100%;
+  grid-template-rows: 144px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.data-workspace-main .data-overview-page .data-health-main {
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.data-workspace-main .data-overview-page .data-health-panel .ant-progress-circle .ant-progress-text {
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+.data-workspace-main .data-overview-page .data-health-panel .ant-progress-circle .ant-progress-inner {
+  overflow: visible;
+}
+
+.data-workspace-main .data-overview-page .data-health-rate {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1;
+}
+
+.data-workspace-main .data-overview-page .data-health-rate strong {
+  font-size: 24px;
+  line-height: 28px;
+}
+
+.data-workspace-main .data-overview-page .data-health-rate small {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.data-workspace-main .data-overview-page .data-health-legend {
+  gap: 6px;
+}
+
+.data-workspace-main .data-overview-page .data-health-legend > div {
+  grid-template-columns: 8px minmax(0, 1fr) 28px 64px;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .data-overview-page .data-health-legend i {
+  width: 7px;
+  height: 7px;
+}
+
+.data-workspace-main .data-overview-page .data-health-legend small {
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-health-trend {
+  grid-template-rows: 18px minmax(0, 1fr);
+  gap: 4px;
+}
+
+.data-workspace-main .data-overview-page .data-health-trend > strong {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .data-overview-page .data-health-trend-bars,
+.data-workspace-main .data-overview-page .data-health-trend-bars > div {
+  height: 58px;
+}
+
+.data-workspace-main .data-overview-page .data-health-trend-bars {
+  gap: 8px;
+}
+
+.data-workspace-main .data-overview-page .data-health-trend-bars i {
+  width: 18px;
+  max-height: 38px;
+}
+
+.data-workspace-main .data-overview-page .data-health-trend-bars span {
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table,
+.data-workspace-main .data-overview-page .data-alert-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-card-body,
+.data-workspace-main .data-overview-page .data-alert-panel .ant-card-body {
+  height: calc(100% - 36px);
+  min-height: 0;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-card-body {
+  display: flex;
+  padding: 0 10px 8px;
+  overflow: hidden;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-card-body > div {
+  display: flex;
+  width: 100%;
+  min-height: 0 !important;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-table-wrapper {
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-table {
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-table-container {
+  overflow: hidden !important;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-table-thead > tr > th {
+  height: 34px !important;
+  padding: 6px 8px !important;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-table-tbody > tr > td {
+  height: 38px !important;
+  padding: 6px 8px !important;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-table-pagination {
+  min-height: 32px;
+  align-items: center;
+  margin: 6px 0 0 !important;
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-sync-table .ant-btn-link {
+  height: 24px;
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-alert-panel .ant-card-body {
+  padding: 0 14px 72px;
+  overflow: hidden;
+}
+
+.data-workspace-main .data-overview-page .data-alert-panel .ant-card-body > div {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.data-workspace-main .data-overview-page .data-alert-row {
+  display: grid;
+  min-height: 48px;
+  height: auto;
+  flex: 0 0 48px;
+  grid-template-columns: 7px minmax(0, 1fr) 128px 40px;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.data-workspace-main .data-overview-page .data-alert-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.data-workspace-main .data-overview-page .data-alert-copy strong,
+.data-workspace-main .data-overview-page .data-alert-copy p,
+.data-workspace-main .data-overview-page .data-alert-row small {
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  font-size: 12px;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-workspace-main .data-overview-page .data-alert-copy strong {
+  color: var(--dw-title);
+}
+
+.data-workspace-main .data-overview-page .data-alert-copy p,
+.data-workspace-main .data-overview-page .data-alert-row small {
+  color: var(--dw-muted);
+}
+
+.data-workspace-main .data-overview-page .data-alert-row .ant-btn {
+  height: 24px;
+  padding: 0;
+  font-size: 12px;
+}
+
+@media (max-width: 1500px) and (min-width: 1181px) {
+  .data-workspace-main > .content-shell:has(.data-overview-page) {
+    padding: 0 10px 10px !important;
+  }
+
+  .data-workspace-main .data-overview-page > .data-page-header {
+    gap: 8px;
+    margin-inline: -10px;
+    padding-inline: 10px;
+  }
+
+  .data-workspace-main .data-overview-page .data-design-filter .filter-bar-controls {
+    grid-template-columns: minmax(190px, 1fr) 116px 124px;
+    gap: 6px;
+  }
+
+  .data-workspace-main .data-overview-page > .data-page-header .page-heading-actions .ant-btn {
+    min-width: 92px;
+    padding-inline: 9px;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-top {
+    grid-template-columns: minmax(0, 1fr) 376px;
+    gap: 8px;
+  }
+
+  .data-workspace-main .data-overview-page .data-metric-grid,
+  .data-workspace-main .data-overview-page .data-quick-actions {
+    gap: 6px;
+  }
+
+  .data-workspace-main .data-overview-page .data-metric-grid .metric-card {
+    gap: 4px;
+    padding-inline: 5px;
+  }
+
+  .data-workspace-main .data-overview-page .data-metric-grid .metric-icon {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    font-size: 13px;
+  }
+
+  .data-workspace-main .data-overview-page .data-metric-grid .metric-value-text {
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-workspace {
+    grid-template-columns: minmax(0, 1.72fr) minmax(360px, 1fr);
+    gap: 8px;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-left,
+  .data-workspace-main .data-overview-page .data-overview-right {
+    gap: 8px;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-left {
+    grid-template-rows: 158px minmax(0, 1fr);
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-right {
+    grid-template-rows: 272px minmax(0, 1fr);
+  }
+
+  .data-workspace-main .data-overview-page .data-flow-panel {
+    height: 158px;
+  }
+
+  .data-workspace-main .data-overview-page .data-health-panel {
+    height: 272px;
+  }
+
+  .data-workspace-main .data-overview-page .data-process-flow {
+    gap: 8px;
+  }
+
+  .data-workspace-main .data-overview-page .data-health-main {
+    grid-template-columns: 124px minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-height: 850px) and (min-width: 1181px) {
+  .data-workspace-main > .content-shell:has(.data-overview-page) {
+    padding-bottom: 8px !important;
+  }
+
+  .data-workspace-main .data-overview-page {
+    gap: 8px;
+  }
+
+  .data-workspace-main .data-overview-page > .data-page-header {
+    min-height: 56px;
+    flex-basis: 56px;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-top,
+  .data-workspace-main .data-overview-page .data-metric-grid,
+  .data-workspace-main .data-overview-page .data-metric-grid .metric-card,
+  .data-workspace-main .data-overview-page .data-quick-actions-panel {
+    height: 100px;
+    min-height: 0;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-top {
+    flex-basis: 100px;
+  }
+
+  .data-workspace-main .data-overview-page .data-metric-grid .metric-card {
+    padding-block: 7px;
+  }
+
+  .data-workspace-main .data-overview-page .data-metric-grid .metric-value-text {
+    line-height: 28px;
+  }
+
+  .data-workspace-main .data-overview-page .data-quick-actions {
+    height: 54px;
+    grid-template-rows: repeat(2, 25px);
+    gap: 4px 6px;
+  }
+
+  .data-workspace-main .data-overview-page .data-quick-actions .ant-btn {
+    height: 25px;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-left {
+    grid-template-rows: 144px minmax(0, 1fr);
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-right {
+    grid-template-rows: 240px minmax(0, 1fr);
+  }
+
+  .data-workspace-main .data-overview-page .data-flow-panel {
+    height: 144px;
+  }
+
+  .data-workspace-main .data-overview-page .data-health-panel {
+    height: 240px;
+  }
+
+  .data-workspace-main .data-overview-page .data-flow-panel .ant-card-body {
+    padding-bottom: 6px;
+  }
+
+  .data-workspace-main .data-overview-page .data-process-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .data-workspace-main .data-overview-page .data-process-step i {
+    top: 17px;
+  }
+
+  .data-workspace-main .data-overview-page .data-process-step {
+    gap: 0;
+  }
+
+  .data-workspace-main .data-overview-page .data-process-step strong {
+    margin-top: 0;
+  }
+
+  .data-workspace-main .data-overview-page .data-health-panel .ant-card-body > div {
+    grid-template-rows: 124px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .data-workspace-main .data-overview-page .data-health-trend-bars,
+  .data-workspace-main .data-overview-page .data-health-trend-bars > div {
+    height: 48px;
+  }
+
+  .data-workspace-main .data-overview-page .data-sync-table .ant-table-thead > tr > th {
+    height: 28px !important;
+    padding-block: 3px !important;
+  }
+
+  .data-workspace-main .data-overview-page .data-sync-table .ant-table-tbody > tr > td {
+    height: 30px !important;
+    padding-block: 3px !important;
+  }
+
+  .data-workspace-main .data-overview-page .data-sync-table .ant-table-pagination {
+    min-height: 28px;
+    margin-top: 3px !important;
+  }
+
+  .data-workspace-main .data-overview-page .data-alert-panel .ant-card-body {
+    padding-bottom: 56px;
+  }
+
+  .data-workspace-main .data-overview-page .data-alert-row {
+    min-height: 38px;
+    flex-basis: 38px;
+    padding-block: 2px;
+  }
+}
+
+/* T020: shared data-center toolbar + quality/catalog single-screen workspace. */
+.data-workspace-main > .content-shell:has(.quality-catalog-page) {
+  height: 100%;
+  padding: 12px 14px !important;
+  overflow: hidden !important;
+}
+
+.data-workspace-main .data-overview-page,
+.data-workspace-main .quality-catalog-page {
+  gap: 10px;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header,
+.data-workspace-main .quality-catalog-page > .data-page-header {
+  position: relative;
+  top: auto;
+  z-index: 5;
+  isolation: isolate;
+  display: grid;
+  min-height: 64px;
+  flex: 0 0 64px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--dw-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(38, 58, 83, .035);
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-copy,
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-utility,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-heading-copy,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-heading-utility {
+  grid-column: auto;
+  grid-row: 1;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-copy,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-heading-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  align-self: center;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header h1,
+.data-workspace-main .quality-catalog-page > .data-page-header h1 {
+  overflow: hidden;
+  font-size: 20px;
+  line-height: 28px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-subtitle,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-subtitle {
+  display: none;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-utility,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-heading-utility {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-filters,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-heading-filters {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-actions,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-heading-actions {
+  flex: 0 0 auto;
+  gap: 6px !important;
+}
+
+.data-workspace-main .data-overview-page > .data-page-header .page-heading-actions .ant-btn,
+.data-workspace-main .quality-catalog-page > .data-page-header .page-heading-actions .ant-btn {
+  height: 34px !important;
+  min-width: 98px;
+  padding-inline: 10px;
+  border-radius: 7px !important;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter,
+.data-workspace-main .quality-catalog-page .data-design-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-main,
+.data-workspace-main .quality-catalog-page .data-design-filter .filter-bar-main {
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-controls,
+.data-workspace-main .quality-catalog-page .data-design-filter .filter-bar-controls {
+  display: grid;
+  width: 100%;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-controls {
+  grid-template-columns: minmax(110px, .72fr) minmax(110px, .72fr) minmax(190px, 1.35fr);
+  gap: 6px;
+}
+
+.data-workspace-main .quality-catalog-page .data-design-filter .filter-bar-controls {
+  grid-template-columns: repeat(3, minmax(104px, .72fr)) minmax(180px, 1.3fr);
+  gap: 6px;
+}
+
+.data-workspace-main .data-overview-page .data-filter-field,
+.data-workspace-main .quality-catalog-page .data-filter-field {
+  gap: 4px;
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .ant-input-affix-wrapper,
+.data-workspace-main .data-overview-page .data-design-filter .ant-select-selector,
+.data-workspace-main .data-overview-page .data-design-filter .ant-btn,
+.data-workspace-main .quality-catalog-page .data-design-filter .ant-input-affix-wrapper,
+.data-workspace-main .quality-catalog-page .data-design-filter .ant-select-selector,
+.data-workspace-main .quality-catalog-page .data-design-filter .ant-btn {
+  height: 34px !important;
+  border-radius: 7px !important;
+  font-size: 12px;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-actions,
+.data-workspace-main .quality-catalog-page .data-design-filter .filter-bar-actions {
+  flex-wrap: nowrap;
+}
+
+.data-workspace-main .data-overview-page .data-design-filter .filter-bar-actions .ant-btn,
+.data-workspace-main .quality-catalog-page .data-design-filter .filter-bar-actions .ant-btn {
+  width: 34px;
+  padding: 0;
+  font-size: 0;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid,
+.data-workspace-main .quality-catalog-page > .data-metric-grid .metric-card {
+  height: 94px;
+  min-height: 0;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid {
+  flex: 0 0 94px;
+  gap: 10px;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid .metric-card {
+  gap: 8px;
+  padding: 9px 10px;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid .metric-icon {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  font-size: 14px;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid .metric-title {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid .metric-status {
+  padding-inline: 5px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid .metric-value-text {
+  font-size: 22px;
+  line-height: 25px;
+}
+
+.data-workspace-main .quality-catalog-page > .data-metric-grid .metric-note {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.data-workspace-main .quality-catalog-page .data-quality-main {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1.1fr) minmax(480px, .9fr);
+  gap: 10px;
+  overflow: hidden;
+}
+
+.data-workspace-main .quality-catalog-page .data-quality-left {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: 118px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.data-workspace-main .quality-catalog-page .data-quality-monitor {
+  width: 100%;
+  height: 118px;
+  min-height: 0;
+}
+
+.data-workspace-main .quality-catalog-page .data-quality-monitor .ant-card-head,
+.data-workspace-main .quality-catalog-page .data-catalog-panel .ant-card-head {
+  min-height: 38px;
+}
+
+.data-workspace-main .quality-catalog-page .data-quality-monitor .ant-card-head-title,
+.data-workspace-main .quality-catalog-page .data-catalog-panel .ant-card-head-title {
+  padding-block: 8px 6px;
+  font-size: 14px;
+}
+
+.data-workspace-main .quality-catalog-page .quality-range-pill {
+  height: 24px;
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .data-quality-monitor .ant-card-body {
+  height: calc(100% - 38px);
+  padding: 2px 12px 8px;
+}
+
+.data-workspace-main .quality-catalog-page .quality-progress-grid {
+  gap: 14px;
+}
+
+.data-workspace-main .quality-catalog-page .quality-progress-item > div:first-child,
+.data-workspace-main .quality-catalog-page .quality-progress-item strong,
+.data-workspace-main .quality-catalog-page .quality-progress-scale {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.data-workspace-main .quality-catalog-page .quality-progress-item .ant-progress {
+  margin: 3px 0 0;
+}
+
+.data-workspace-main .quality-catalog-page .quality-progress-item .ant-progress-inner,
+.data-workspace-main .quality-catalog-page .quality-progress-item .ant-progress-bg {
+  height: 5px !important;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-card {
+  min-height: 0;
+  padding: 8px 10px 6px;
+}
+
+.data-workspace-main .quality-catalog-page .data-card-heading {
+  min-height: 24px;
+  margin-bottom: 2px;
+}
+
+.data-workspace-main .quality-catalog-page .data-card-heading h2,
+.data-workspace-main .quality-catalog-page .data-card-heading span {
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.data-workspace-main .quality-catalog-page .data-card-heading h2 {
+  font-size: 14px;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-toolbar {
+  min-height: 29px;
+  margin-bottom: 2px;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-toolbar .ant-btn {
+  height: 27px;
+  padding-inline: 8px;
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-card .ant-table {
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-card .ant-table-thead > tr > th {
+  height: 29px !important;
+  padding: 4px 5px !important;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-card .ant-table-tbody > tr > td {
+  height: 29px !important;
+  padding: 4px 5px !important;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-card .ant-tag,
+.data-workspace-main .quality-catalog-page .data-exception-card .ant-btn-link,
+.data-workspace-main .quality-catalog-page .data-exception-card .ant-table-pagination {
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .data-exception-card .ant-table-pagination {
+  min-height: 28px;
+  align-items: center;
+  margin: 3px 0 0 !important;
+}
+
+.data-workspace-main .quality-catalog-page .data-catalog-panel {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.data-workspace-main .quality-catalog-page .data-catalog-panel .ant-card-extra .ant-btn {
+  height: 27px;
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .data-catalog-panel .ant-card-body {
+  height: calc(100% - 38px);
+  padding: 0 10px 8px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-card-grid {
+  flex: 0 0 152px;
+  grid-template-rows: repeat(2, 72px);
+  gap: 8px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-card-grid button {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 6px 7px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-card-grid button > .anticon {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-card-grid button strong,
+.data-workspace-main .quality-catalog-page .catalog-card-grid button small,
+.data-workspace-main .quality-catalog-page .catalog-card-grid button > .ant-tag {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-card-grid button > .ant-tag {
+  padding-inline: 3px;
+  line-height: 18px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-card-pagination {
+  height: 26px;
+  flex-basis: 26px;
+  align-items: center;
+  margin-top: 1px;
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-detail {
+  min-height: 0;
+  grid-template-columns: minmax(182px, .72fr) minmax(0, 1.28fr);
+  gap: 8px;
+  margin-top: 4px;
+  padding: 7px 7px 0;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-meta {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-meta h3 {
+  margin-bottom: 5px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-meta h3 small {
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-meta dl {
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 3px 6px;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-meta dd {
+  white-space: nowrap;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-meta-actions {
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-meta-actions .ant-btn {
+  height: 27px;
+  padding-inline: 7px;
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-detail > .ant-table-wrapper {
+  min-height: 0;
+  overflow: auto;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-detail .ant-table {
+  font-size: 12px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-detail .ant-table-thead > tr > th {
+  height: 27px !important;
+  padding: 3px 5px !important;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .quality-catalog-page .catalog-detail .ant-table-tbody > tr > td {
+  height: 27px !important;
+  padding: 3px 5px !important;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.data-workspace-main .quality-catalog-page .data-source-status {
+  height: 46px;
+  min-height: 46px;
+  flex: 0 0 46px;
+  grid-template-columns: 88px repeat(6, minmax(0, 1fr)) 102px;
+  gap: 6px;
+  padding: 4px 68px 4px 9px;
+}
+
+.data-workspace-main .quality-catalog-page .data-source-status > strong,
+.data-workspace-main .quality-catalog-page .data-source-status span,
+.data-workspace-main .quality-catalog-page .data-source-status small,
+.data-workspace-main .quality-catalog-page .data-source-status .ant-tag,
+.data-workspace-main .quality-catalog-page .data-source-status > .ant-btn {
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.data-workspace-main .quality-catalog-page .data-source-status span,
+.data-workspace-main .quality-catalog-page .data-source-status small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.data-workspace-main .quality-catalog-page .data-source-status > div {
+  height: 36px;
+  min-height: 0;
+  gap: 0 4px;
+  padding: 2px 5px;
+}
+
+.data-workspace-main .quality-catalog-page .data-source-status > .ant-btn {
+  height: 28px;
+}
+
+@media (max-width: 1500px) and (min-width: 1181px) {
+  .data-workspace-main > .content-shell:has(.data-overview-page),
+  .data-workspace-main > .content-shell:has(.quality-catalog-page) {
+    padding: 10px !important;
+  }
+
+  .data-workspace-main .data-overview-page > .data-page-header,
+  .data-workspace-main .quality-catalog-page > .data-page-header {
+    min-height: 60px;
+    flex-basis: 60px;
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    gap: 8px;
+    margin: 0;
+    padding-inline: 10px;
+  }
+
+  .data-workspace-main .data-overview-page > .data-page-header .page-heading-copy,
+  .data-workspace-main .data-overview-page > .data-page-header .page-heading-utility,
+  .data-workspace-main .quality-catalog-page > .data-page-header .page-heading-copy,
+  .data-workspace-main .quality-catalog-page > .data-page-header .page-heading-utility {
+    grid-column: auto;
+    grid-row: 1;
+  }
+
+  .data-workspace-main .data-overview-page > .data-page-header h1,
+  .data-workspace-main .quality-catalog-page > .data-page-header h1 {
+    font-size: 18px;
+  }
+
+  .data-workspace-main .data-overview-page .data-design-filter .filter-bar-controls {
+    grid-template-columns: minmax(92px, .7fr) minmax(92px, .7fr) minmax(145px, 1.2fr);
+  }
+
+  .data-workspace-main .quality-catalog-page .data-design-filter .filter-bar-controls {
+    grid-template-columns: repeat(3, minmax(82px, .65fr)) minmax(130px, 1.1fr);
+  }
+
+  .data-workspace-main .data-overview-page > .data-page-header .page-heading-actions .ant-btn,
+  .data-workspace-main .quality-catalog-page > .data-page-header .page-heading-actions .ant-btn {
+    min-width: 88px;
+    padding-inline: 7px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-quality-main {
+    grid-template-columns: minmax(0, 1.08fr) minmax(468px, .92fr);
+    gap: 8px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-quality-left {
+    gap: 8px;
+  }
+
+  .data-workspace-main .quality-catalog-page .catalog-card-grid button {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    gap: 4px;
+    padding-inline: 5px;
+  }
+
+  .data-workspace-main .quality-catalog-page .catalog-card-grid button > .anticon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .data-workspace-main .quality-catalog-page .catalog-card-grid button small:nth-of-type(2) {
+    display: none;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-source-status {
+    grid-template-columns: 76px repeat(6, minmax(0, 1fr)) 86px;
+    padding-right: 58px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-source-status small {
+    display: none;
+  }
+}
+
+@media (max-height: 850px) and (min-width: 1181px) {
+  .data-workspace-main > .content-shell:has(.quality-catalog-page) {
+    padding-block: 8px !important;
+  }
+
+  .data-workspace-main .quality-catalog-page {
+    gap: 8px;
+  }
+
+  .data-workspace-main .quality-catalog-page > .data-page-header {
+    min-height: 58px;
+    flex-basis: 58px;
+  }
+
+  .data-workspace-main .quality-catalog-page > .data-metric-grid,
+  .data-workspace-main .quality-catalog-page > .data-metric-grid .metric-card {
+    height: 86px;
+  }
+
+  .data-workspace-main .quality-catalog-page > .data-metric-grid {
+    flex-basis: 86px;
+  }
+
+  .data-workspace-main .quality-catalog-page > .data-metric-grid .metric-card {
+    padding-block: 6px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-quality-left {
+    grid-template-rows: 104px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-quality-monitor {
+    height: 104px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-quality-monitor .ant-card-body {
+    padding-bottom: 4px;
+  }
+
+  .data-workspace-main .quality-catalog-page .quality-progress-item > div:first-child,
+  .data-workspace-main .quality-catalog-page .quality-progress-item strong,
+  .data-workspace-main .quality-catalog-page .quality-progress-scale {
+    line-height: 15px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-exception-card .ant-table-thead > tr > th,
+  .data-workspace-main .quality-catalog-page .data-exception-card .ant-table-tbody > tr > td {
+    height: 25px !important;
+    padding-block: 2px !important;
+  }
+
+  .data-workspace-main .quality-catalog-page .catalog-card-grid {
+    flex-basis: 132px;
+    grid-template-rows: repeat(2, 62px);
+  }
+
+  .data-workspace-main .quality-catalog-page .catalog-card-grid button {
+    padding-block: 3px;
+  }
+
+  .data-workspace-main .quality-catalog-page .catalog-detail {
+    margin-top: 2px;
+    padding-top: 5px;
+  }
+
+  .data-workspace-main .quality-catalog-page .catalog-detail .ant-table-thead > tr > th,
+  .data-workspace-main .quality-catalog-page .catalog-detail .ant-table-tbody > tr > td {
+    height: 25px !important;
+    padding-block: 2px !important;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-source-status {
+    height: 42px;
+    min-height: 42px;
+    flex-basis: 42px;
+  }
+
+  .data-workspace-main .quality-catalog-page .data-source-status > div {
+    height: 32px;
+  }
+}
+
+/* T021: keep the validated data-center geometry inside the v2.12.1 shell. */
+@media (min-width: 1181px) {
+  .app-shell.data-workspace-shell .main-shell.data-workspace-main > .content-shell:has(.data-overview-page) {
+    height: 100%;
+    padding: 0 14px 16px !important;
+    overflow: hidden !important;
+    scrollbar-gutter: auto;
+  }
+
+  .app-shell.data-workspace-shell .main-shell.data-workspace-main > .content-shell:has(.quality-catalog-page) {
+    height: 100%;
+    padding: 12px 14px !important;
+    overflow: hidden !important;
+    scrollbar-gutter: auto;
+  }
+
+  .content-shell:has(.data-overview-page) > .page-container,
+  .content-shell:has(.data-overview-page) > .page-container > .page-content-area,
+  .content-shell:has(.quality-catalog-page) > .page-container,
+  .content-shell:has(.quality-catalog-page) > .page-container > .page-content-area {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .app-shell .page-container--headerless > .page-content-area > .data-overview-page,
+  .app-shell .page-container--headerless > .page-content-area > .quality-catalog-page {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .data-workspace-main .data-overview-page .data-overview-workspace {
+    overflow: hidden;
+  }
+}

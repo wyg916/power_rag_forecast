@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "role": "developer",
+  "quality": {
+    "catalog_search_load_cards": 4,
+    "catalog_reset_cards": 6,
+    "empty_filter_rows": 2,
+    "catalog_page_2_active": true,
+    "selected_dataset": "day_ahead_price",
+    "preview_modal": true,
+    "exception_detail_drawer": true,
+    "refresh_visible": true,
+    "export_visible": true,
+    "manual_sync_visible": false
+  },
+  "overview": {
+    "sync_search_refresh_data_matches": 4,
+    "sync_reset_rows": 9,
+    "log_drawer": true,
+    "catalog_navigation": true,
+    "refresh_visible": true,
+    "export_visible": true,
+    "manual_sync_visible": false
+  },
+  "rbac_note": "manual sync is intentionally hidden for developer by the existing permission policy",
+  "write_actions_invoked": false,
+  "console_messages": 0
+}

@@ -54,7 +54,7 @@ function downloadBlob(filename: string, blob: Blob) {
 
 export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { message } = App.useApp();
-  const syncPageSize = 7;
+  const syncPageSize = 8;
   const tablePageSize = 10;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -326,7 +326,7 @@ export function DataCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     <div className={`data-design-page ${qualityMode ? 'quality-catalog-page' : 'data-overview-page'}`}>
       <PageHeader
         className="data-page-header"
-        title={qualityMode ? '数据质量与数据目录' : '数据中心'}
+        title={qualityMode ? '数据质量 / 数据目录' : '数据中心 / 数据总览'}
         subtitle={qualityMode ? '缺失率、重复率、新鲜度、校验通过率与数据目录可追溯管理。' : '数据接入、质量监控、目录管理、同步记录的一体化入口。'}
         filters={(
           <DataContextBar
