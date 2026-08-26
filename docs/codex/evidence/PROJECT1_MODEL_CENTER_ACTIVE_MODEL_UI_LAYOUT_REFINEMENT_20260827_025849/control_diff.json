@@ -1,0 +1,35 @@
+{
+  "before": {
+    "visible_buttons": 12,
+    "enabled_buttons": 10,
+    "disabled_buttons": 2,
+    "search": 1,
+    "selects": 6,
+    "chart_controls": 2,
+    "table_columns": 8,
+    "table_action_entries": 3,
+    "pagination": 1,
+    "functional_actions": ["刷新", "启动训练", "治理记录", "导出报告", "查看详情×2", "回滚（表格）", "查看训练日志", "回滚（面板）"]
+  },
+  "after": {
+    "visible_buttons": 12,
+    "enabled_buttons": 10,
+    "disabled_buttons": 2,
+    "search": 1,
+    "selects": 6,
+    "chart_controls": 2,
+    "table_columns": 8,
+    "table_action_entries": 3,
+    "pagination": 1,
+    "functional_actions": ["刷新", "启动训练", "治理记录", "导出报告", "查看详情×2", "回滚（表格）", "查看训练日志", "回滚（面板）"]
+  },
+  "handler_bodies_identical": {
+    "loadData": true,
+    "handleTraining": true,
+    "handleActivate": true,
+    "handleRollback": true,
+    "handleExport": true,
+    "handleViewDetail": true,
+    "handleViewTrainingLogs": true
+  }
+}

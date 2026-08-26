@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "write_confirmations_executed": 0,
+  "checks": [
+    {"name": "刷新", "status": "PASS"},
+    {"name": "搜索与清空恢复", "status": "PASS"},
+    {"name": "区域筛选切换与恢复", "status": "PASS"},
+    {"name": "治理记录弹窗", "status": "PASS"},
+    {"name": "模型版本详情抽屉", "status": "PASS"},
+    {"name": "训练日志抽屉", "status": "PASS"},
+    {"name": "启动训练确认弹窗后取消", "status": "PASS"},
+    {"name": "模型回滚确认弹窗后取消", "status": "PASS"},
+    {"name": "图表控制器存在且可展开", "status": "PASS"},
+    {"name": "分页入口保留", "status": "PASS"},
+    {"name": "全局 AI 助手抽屉", "status": "PASS"},
+    {"name": "导出报告真实 GET 接口", "status": "PASS", "http_status": 200, "bytes": 193}
+  ]
+}

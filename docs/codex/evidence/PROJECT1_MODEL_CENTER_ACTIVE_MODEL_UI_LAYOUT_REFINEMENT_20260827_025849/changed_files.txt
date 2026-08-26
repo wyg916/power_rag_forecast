@@ -1,0 +1,11 @@
+frontend/src/pages/model/ModelCenterPage.tsx
+frontend/src/pages/model/model-center-workspace.css
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/PROJECT1_MODEL_CENTER_ACTIVE_MODEL_UI_LAYOUT_REFINEMENT_20260827_025849/*
+
+未修改：
+- frontend/src/services/modelApi.ts
+- frontend/src/api.ts
+- backend/**
+- database/migrations/**
+- RBAC/权限定义

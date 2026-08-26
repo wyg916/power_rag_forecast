@@ -1,0 +1,34 @@
+{
+  "viewport": {"width": 1919, "height": 882, "device_pixel_ratio": 1, "zoom": "100%"},
+  "before": {
+    "header": {"top": 70, "bottom": 176, "height": 106, "global_header_bottom": 60, "gap": 10},
+    "root": {"top": 70, "bottom": 1053.03125, "height": 983.03125},
+    "shell": {"client_height": 822, "scroll_height": 1085, "max_scroll": 263, "overflow_y": "auto"},
+    "table": {"client_width": 846, "scroll_width": 980, "horizontal_overflow": 134},
+    "first_screen_complete": false
+  },
+  "after": {
+    "header": {"top": 60, "bottom": 120, "height": 60, "global_header_bottom": 60, "gap": 0, "background": "rgb(255, 255, 255)", "z_index": 300},
+    "root": {"top": 60, "bottom": 868.9375, "height": 808.9375},
+    "shell": {"client_height": 822, "scroll_height": 822, "max_scroll": 0, "overflow_y": "hidden"},
+    "table": {"client_width": 901, "scroll_width": 901, "horizontal_overflow": 0},
+    "kpi_height": 94,
+    "chart_card_height": 218,
+    "governance_card_count": 4,
+    "governance_cards_fully_visible": 4,
+    "first_screen_complete": true,
+    "body_horizontal_overflow": 0
+  },
+  "scroll_attempts": [
+    {"target": 0, "actual": 0, "header_top": 60, "header_bottom": 120},
+    {"target": 100, "actual": 0, "header_top": 60, "header_bottom": 120},
+    {"target": 300, "actual": 0, "header_top": 60, "header_bottom": 120},
+    {"target": "bottom", "actual": 0, "header_top": 60, "header_bottom": 120}
+  ],
+  "responsive": [
+    {"viewport": "1920x1080", "body_horizontal_overflow": 0, "shell_scroll": 0, "header_height": 60},
+    {"viewport": "1600x820", "body_horizontal_overflow": 0, "shell_scroll_owner": true, "header_height": 92},
+    {"viewport": "1440x900", "body_horizontal_overflow": 0, "shell_scroll_owner": true, "header_height": 92},
+    {"viewport": "1366x768", "body_horizontal_overflow": 0, "shell_scroll_owner": true, "header_height": 134}
+  ]
+}

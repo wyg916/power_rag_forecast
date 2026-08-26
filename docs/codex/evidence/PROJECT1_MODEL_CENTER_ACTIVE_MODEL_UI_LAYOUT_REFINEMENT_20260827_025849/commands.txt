@@ -1,0 +1,7 @@
+cd E:\智能运营分析项目\frontend && npm run typecheck
+cd E:\智能运营分析项目\frontend && npm run build
+cd E:\智能运营分析项目\frontend && npm run unit
+cd E:\智能运营分析项目 && .\.venv\Scripts\python.exe -m pytest -q tests/test_model_center_frontend_contract.py tests/test_model_center_business_api.py
+cd E:\智能运营分析项目 && .\.venv\Scripts\python.exe -m pytest -q tests/test_model_center_frontend_contract.py tests/test_model_center_business_api.py tests/test_day3_api_security.py
+GET http://127.0.0.1:8000/api/models/center/overview (development admin header, read only)
+GET http://127.0.0.1:8000/api/models/center/export (development admin header, read only)

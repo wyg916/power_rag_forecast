@@ -14,7 +14,7 @@ import {
   SafetyCertificateOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
-import { App, Button, Descriptions, Empty, Input, Modal, Select, Space, Table, Tag } from 'antd';
+import { App, Button, Descriptions, Empty, Input, Modal, Select, Space, Table, Tag, Tooltip } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { DetailDrawer } from '../../components/actions/DetailDrawer';
 import { TaskLogViewer } from '../../components/actions/TaskLogViewer';
@@ -34,6 +34,7 @@ import {
 } from '../../services/modelApi';
 import type { ModelCenterOverview, ModelVersionDetail, ModelVersionRow } from '../../services/modelApi';
 import type { PageProps } from '../../types/ui';
+import './model-center-workspace.css';
 
 const emptyOverview: ModelCenterOverview = {
   available: false,
@@ -159,12 +160,15 @@ export function ModelCenterPage(_props: PageProps) {
   const renderNumber = (value: unknown) => fmt(value);
   const activeBusinessLabel = businessModelLabel(active, '当前模型');
   const candidateBusinessLabel = businessModelLabel(candidate, '候选模型');
+  const activeBusinessName = `${modelTypeLabel(active.model_type) || '预测'}当前模型`;
+  const candidateBusinessName = `${modelTypeLabel(candidate.model_type) || '预测'}候选模型`;
 
   const kpis = [
     {
       title: '当前 Active 模型',
-      value: activeBusinessLabel,
+      value: activeBusinessName,
       fullValue: activeBusinessLabel,
+      meta: shortDateTime(active.created_at || active.updated_at).slice(0, 10),
       note: `${active.model_type || '负荷预测模型'} / 浙江省`,
       tag: 'Active',
       tone: 'green',
@@ -172,17 +176,18 @@ export function ModelCenterPage(_props: PageProps) {
     },
     {
       title: 'Candidate 模型',
-      value: candidateBusinessLabel,
+      value: candidateBusinessName,
       fullValue: candidateBusinessLabel,
+      meta: shortDateTime(candidate.created_at || candidate.updated_at).slice(0, 10),
       note: `最近更新：${shortDateTime(candidate.created_at || candidate.updated_at)}`,
       tag: 'Candidate',
       tone: 'orange',
       icon: <ExperimentOutlined />
     },
-    { title: 'MAE (kW)', value: fmt(candidate.mae), note: `较 Active ↓ ${pct(data.evaluation_summary?.[0]?.improvement)}`, tone: 'green', icon: <LineChartOutlined /> },
-    { title: 'RMSE (kW)', value: fmt(candidate.rmse), note: `较 Active ↓ ${pct(data.evaluation_summary?.[1]?.improvement)}`, tone: 'green', icon: <BarChartOutlined /> },
-    { title: '高峰误差 (kW)', value: fmt(candidate.peak_error), note: `较 Active ↓ ${pct(data.evaluation_summary?.[3]?.improvement)}`, tone: 'purple', icon: <ThunderboltOutlined /> },
-    { title: '最近训练时间', value: shortDateTime(training.ended_at || candidate.created_at), note: `耗时 ${training.duration_seconds ? `${Math.round(Number(training.duration_seconds) / 60)} 分钟` : '--'}`, tone: 'blue', icon: <ClockCircleOutlined /> }
+    { title: 'MAE (kW)', value: fmt(candidate.mae), meta: '', note: `较 Active ↓ ${pct(data.evaluation_summary?.[0]?.improvement)}`, tone: 'green', icon: <LineChartOutlined /> },
+    { title: 'RMSE (kW)', value: fmt(candidate.rmse), meta: '', note: `较 Active ↓ ${pct(data.evaluation_summary?.[1]?.improvement)}`, tone: 'green', icon: <BarChartOutlined /> },
+    { title: '高峰误差 (kW)', value: fmt(candidate.peak_error), meta: '', note: `较 Active ↓ ${pct(data.evaluation_summary?.[3]?.improvement)}`, tone: 'purple', icon: <ThunderboltOutlined /> },
+    { title: '最近训练时间', value: shortDateTime(training.ended_at || candidate.created_at), meta: '', note: `耗时 ${training.duration_seconds ? `${Math.round(Number(training.duration_seconds) / 60)} 分钟` : '--'}`, tone: 'blue', icon: <ClockCircleOutlined /> }
   ];
 
   const effectOption = useMemo(() => ({
@@ -301,18 +306,18 @@ export function ModelCenterPage(_props: PageProps) {
   }
 
   const columns = [
-    { title: '模型', width: 190, render: (_: unknown, row: ModelVersionRow) => businessModelLabel(row) },
-    { title: '状态', width: 100, render: (_: unknown, row: ModelVersionRow) => <Tag color={statusColor(row.status, row.is_active)}>{row.is_active ? 'Active' : row.status || 'Archived'}</Tag> },
-    { title: '训练时间', dataIndex: 'created_at', width: 170, render: shortDateTime },
-    { title: 'MAE (kW)', dataIndex: 'mae', width: 100, render: renderNumber },
-    { title: 'RMSE (kW)', dataIndex: 'rmse', width: 110, render: renderNumber },
-    { title: 'MAPE (%)', dataIndex: 'mape', width: 100, render: renderNumber },
-    { title: '峰值误差 (kW)', dataIndex: 'peak_error', width: 130, render: renderNumber },
+    { title: '模型', width: 150, ellipsis: true, render: (_: unknown, row: ModelVersionRow) => businessModelLabel(row) },
+    { title: '状态', width: 82, render: (_: unknown, row: ModelVersionRow) => <Tag color={statusColor(row.status, row.is_active)}>{row.is_active ? 'Active' : row.status || 'Archived'}</Tag> },
+    { title: '训练时间', dataIndex: 'created_at', width: 132, render: shortDateTime },
+    { title: 'MAE (kW)', dataIndex: 'mae', width: 82, render: renderNumber },
+    { title: 'RMSE (kW)', dataIndex: 'rmse', width: 88, render: renderNumber },
+    { title: 'MAPE (%)', dataIndex: 'mape', width: 82, render: renderNumber },
+    { title: '峰值误差', dataIndex: 'peak_error', width: 92, render: renderNumber },
     {
       title: '操作',
-      width: 210,
+      width: 156,
       render: (_: unknown, row: ModelVersionRow) => (
-        <Space size={6}>
+        <Space className="model-table-actions" size={4}>
           <Button size="small" onClick={() => handleViewDetail(row.model_version)}>查看详情</Button>
           {canRunTraining && !row.is_active && row.status === 'Candidate' ? <Button size="small" onClick={() => handleActivate(row.model_version)}>设为 Active</Button> : null}
           {canRunTraining && !row.is_active ? <Button size="small" danger onClick={() => handleRollback(row.model_version)}>回滚</Button> : null}
@@ -334,27 +339,28 @@ export function ModelCenterPage(_props: PageProps) {
   return (
     <div className="model-workbench-page">
       <PageHeader
-        title="模型中心"
+        className="model-page-header"
+        title="模型中心 / Active 模型"
         subtitle="管理预测模型生命周期、误差趋势和回滚操作"
-        filters={<Space size={12} wrap>
-          <span className="filter-label">模型类型：</span>
+        filters={<Space className="model-header-filters" size={8}>
+          <span className="filter-label">模型类型</span>
           <Select
             value={filters.model_type}
-            style={{ width: 150 }}
+            style={{ width: 136 }}
             options={[{ value: '负荷预测模型', label: '负荷预测模型' }, { value: '电价预测模型', label: '电价预测模型' }]}
             onChange={(value) => setFilters((prev) => ({ ...prev, model_type: value }))}
           />
-          <span className="filter-label">区域：</span>
+          <span className="filter-label">区域</span>
           <Select
             value={filters.region}
-            style={{ width: 120 }}
+            style={{ width: 92 }}
             options={[{ value: '浙江省', label: '浙江省' }, { value: '江苏省', label: '江苏省' }]}
             onChange={(value) => setFilters((prev) => ({ ...prev, region: value }))}
           />
-          <span className="filter-label">时间范围：</span>
+          <span className="filter-label">时间范围</span>
           <Select
             value={filters.days}
-            style={{ width: 110 }}
+            style={{ width: 92 }}
             options={[{ value: 7, label: '近7天' }, { value: 30, label: '近30天' }]}
             onChange={(value) => setFilters((prev) => ({ ...prev, days: value }))}
           />
@@ -364,7 +370,7 @@ export function ModelCenterPage(_props: PageProps) {
             value={filters.search}
             onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
             onSearch={() => loadData()}
-            style={{ width: 280 }}
+            style={{ width: 226 }}
           />
         </Space>}
         actions={[
@@ -390,9 +396,12 @@ export function ModelCenterPage(_props: PageProps) {
             <div>
               <span>{item.title}</span>
               <div className="model-kpi-value-row">
-                <strong title={item.fullValue || item.value}>{item.value}</strong>
+                <Tooltip title={item.fullValue || item.value} mouseEnterDelay={0.3}>
+                  <strong>{item.value}</strong>
+                </Tooltip>
                 {item.tag && <Tag color={item.tone === 'orange' ? 'warning' : 'success'}>{item.tag}</Tag>}
               </div>
+              {item.meta ? <small className="model-kpi-meta">{item.meta}</small> : null}
               <p title={item.note}>{item.note}</p>
             </div>
             <i>{item.icon}</i>
@@ -406,26 +415,26 @@ export function ModelCenterPage(_props: PageProps) {
           extra={<Select size="small" value="15分钟" options={[{ value: '15分钟', label: '粒度：15分钟' }]} />}
           loading={loading}
         >
-          <AppChart option={effectOption} height={205} />
+          <AppChart option={effectOption} height={166} />
         </SectionCard>
         <SectionCard
           title="误差趋势（最近 30 天）"
           extra={<Select size="small" value="按天" options={[{ value: '按天', label: '按天' }]} />}
           loading={loading}
         >
-          <AppChart option={trendOption} height={205} />
+          <AppChart option={trendOption} height={166} />
         </SectionCard>
       </div>
 
       <div className="model-bottom-grid">
-        <SectionCard title={<span>模型对比表 <small>共 {data.versions.length} 条</small></span>} loading={loading} scrollable>
+        <SectionCard className="model-version-card" title={<span>模型对比表 <small>共 {data.versions.length} 条</small></span>} loading={loading} scrollable>
           <Table
             size="small"
             rowKey="model_version"
             dataSource={data.versions}
             columns={columns}
             pagination={{ pageSize: 5, showSizeChanger: false }}
-            scroll={{ x: 980 }}
+            scroll={{ x: 884 }}
           />
         </SectionCard>
 
@@ -474,14 +483,16 @@ export function ModelCenterPage(_props: PageProps) {
             />
           </SectionCard>
 
-          <SectionCard title="回滚操作" loading={loading} compact>
+          <SectionCard className="model-rollback-card" title="回滚操作" loading={loading} compact>
             <div className="model-rollback-control">
-              <Select
-                value={rollbackVersion}
-                onChange={setRollbackVersion}
-                options={data.rollback.options.map((item) => ({ value: item.model_version, label: item.label }))}
-                popupMatchSelectWidth={false}
-              />
+              <Tooltip title={data.rollback.options.find((item) => item.model_version === rollbackVersion)?.label || rollbackVersion}>
+                <Select
+                  value={rollbackVersion}
+                  onChange={setRollbackVersion}
+                  options={data.rollback.options.map((item) => ({ value: item.model_version, label: item.label }))}
+                  popupMatchSelectWidth={false}
+                />
+              </Tooltip>
               <Button danger icon={<RetweetOutlined />} onClick={() => handleRollback()}>回滚</Button>
             </div>
             <div className="model-warning"><SafetyCertificateOutlined /> 回滚将替换当前 Active 模型，请确认后操作。</div>
