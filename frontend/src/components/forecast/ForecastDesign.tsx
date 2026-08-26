@@ -655,8 +655,13 @@ export function ModelEvaluationCards({ data }: { data: any }) {
       <div className="model-metric-grid">
         {cards.map((card) => (
           <div className="model-metric-card" key={card.title}>
-            <h3><span>{card.icon}</span>{card.title}</h3>
-            {card.rows.map(([label, value]) => <p key={label}><span>{label}</span><strong>{value ?? '--'}</strong></p>)}
+            <h3 title={card.title}><span>{card.icon}</span>{card.title}</h3>
+            {card.rows.map(([label, value]) => (
+              <p key={label}>
+                <span title={String(label)}>{label}</span>
+                <strong title={String(value ?? '--')}>{value ?? '--'}</strong>
+              </p>
+            ))}
           </div>
         ))}
       </div>

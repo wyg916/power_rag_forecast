@@ -12847,3 +12847,344 @@ a {
     grid-template-rows: repeat(3, minmax(260px, auto));
   }
 }
+
+/* Project1 forecast-center integration: keep the latest global shell while
+   restoring the accepted three-page density, sticky header, and AI safe area. */
+.app-shell .main-shell > .content-shell:has(.forecast-design-page) {
+  padding: 8px 14px 0 !important;
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+}
+
+.app-shell .page-container--headerless > .page-content-area > .forecast-design-page {
+  width: 100%;
+  height: calc(100dvh - var(--header-height) - 8px) !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+  padding-inline-end: 64px;
+  overflow: visible !important;
+}
+
+.app-shell .forecast-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 300 !important;
+  isolation: isolate;
+  display: grid;
+  height: 80px;
+  min-height: 80px;
+  grid-template-columns: minmax(340px, 0.72fr) minmax(0, 1.28fr);
+  grid-template-rows: 36px 32px;
+  align-items: center;
+  gap: 0 12px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--color-bg-card);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09);
+}
+
+.app-shell .forecast-page-header .page-heading-copy,
+.app-shell .forecast-page-header .page-heading-utility {
+  display: contents;
+}
+
+.app-shell .forecast-page-header .page-heading-title-row {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+
+.app-shell .forecast-page-header .page-subtitle {
+  display: none;
+}
+
+.app-shell .forecast-page-header .page-heading-navigation {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.app-shell .forecast-page-header .page-heading-context {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: end;
+}
+
+.app-shell .forecast-page-header .page-heading-actions {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  justify-self: end;
+}
+
+.app-shell .forecast-context-bar {
+  height: 32px;
+  min-height: 32px;
+  padding: 2px 8px;
+}
+
+.app-shell .forecast-filter-field {
+  height: 28px;
+  padding: 2px 7px;
+}
+
+.app-shell .forecast-metric-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.app-shell .forecast-metric-grid.metric-count-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.app-shell .forecast-metric-card,
+.app-shell .forecast-view-model .forecast-metric-card {
+  height: 92px;
+  min-height: 92px;
+  gap: 4px;
+}
+
+.app-shell .forecast-primary-grid {
+  grid-template-columns: minmax(0, 2.1fr) minmax(350px, 0.95fr);
+}
+
+.app-shell .forecast-detail-grid,
+.app-shell .forecast-history-bottom,
+.app-shell .forecast-baseline-grid {
+  grid-template-columns: minmax(0, 1.75fr) minmax(580px, 0.9fr);
+}
+
+.app-shell .forecast-chart-card,
+.app-shell .comparison-chart-card,
+.app-shell .forecast-insight-panel {
+  height: 246px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell .compact-card,
+.app-shell .forecast-detail-grid > .forecast-table-card,
+.app-shell .forecast-history-bottom > .forecast-table-card {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell .forecast-view-24h .forecast-primary-grid {
+  flex: 0 0 254px;
+}
+
+.app-shell .forecast-view-24h .forecast-detail-grid {
+  flex: 0 0 334px;
+}
+
+.app-shell .forecast-view-history .forecast-primary-grid {
+  flex: 0 0 246px;
+}
+
+.app-shell .forecast-view-history .forecast-history-bottom {
+  flex: 0 0 295px;
+}
+
+.app-shell .forecast-view-24h .forecast-chart-card,
+.app-shell .forecast-view-24h .forecast-insight-panel,
+.app-shell .forecast-view-history .comparison-chart-card,
+.app-shell .forecast-view-history .forecast-insight-panel,
+.app-shell .forecast-view-24h .forecast-detail-grid > .forecast-table-card,
+.app-shell .forecast-view-24h .forecast-bottom-summary,
+.app-shell .forecast-view-24h .forecast-bottom-summary .compact-card,
+.app-shell .forecast-view-history .forecast-history-bottom > .forecast-table-card,
+.app-shell .forecast-view-history .history-side-cards,
+.app-shell .forecast-view-history .history-side-cards .compact-card {
+  height: 100%;
+}
+
+.app-shell .forecast-peak-model-grid {
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+}
+
+.app-shell .model-metric-card {
+  min-height: 130px;
+}
+
+.app-shell .model-metric-card h3,
+.app-shell .model-metric-card p > span,
+.app-shell .model-metric-card p > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .model-metric-card p > span {
+  flex: 1 1 auto;
+}
+
+.app-shell .model-metric-card p > strong {
+  flex: 0 1 58%;
+}
+
+.app-shell .forecast-view-model .forecast-peak-model-grid {
+  flex: 0 0 220px;
+  min-height: 0;
+}
+
+.app-shell .forecast-view-model .peak-gauge-card,
+.app-shell .forecast-view-model .peak-explain-card {
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-shell .forecast-view-model .model-eval-section {
+  height: auto;
+  min-height: 0;
+  flex: 0 0 185px;
+  padding-block: 8px;
+  overflow: visible;
+}
+
+.app-shell .forecast-view-model .forecast-baseline-grid {
+  height: auto;
+  min-height: 170px;
+  flex: 0 0 170px;
+  grid-template-columns: minmax(0, 2.1fr) minmax(430px, 0.9fr);
+  overflow: visible;
+}
+
+.app-shell .forecast-view-model .forecast-baseline-grid > .forecast-card {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.app-shell .forecast-view-24h .forecast-insight-panel .forecast-strategy-block h3 {
+  margin-bottom: 0;
+  line-height: 1.2;
+}
+
+.app-shell .forecast-view-24h .forecast-insight-panel .forecast-strategy-content > div,
+.app-shell .forecast-view-24h .forecast-insight-panel .forecast-strategy-block p {
+  line-height: 1.2;
+}
+
+.app-shell .forecast-view-24h .forecast-insight-panel .forecast-strategy-block .ant-tag {
+  line-height: 15px;
+}
+
+.app-shell .forecast-view-24h .forecast-insight-panel .tag-row {
+  margin-bottom: 0;
+}
+
+.app-shell .forecast-table-card .ant-table-thead > tr > th,
+.app-shell .forecast-table-card .ant-table-tbody > tr > td,
+.app-shell .forecast-baseline-table-card .ant-table-thead > tr > th,
+.app-shell .forecast-baseline-table-card .ant-table-tbody > tr > td {
+  padding-block: 3px !important;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.app-shell .forecast-view-model .forecast-baseline-table-card .ant-table-tbody > tr > td {
+  padding-block: 4px !important;
+}
+
+.app-shell .forecast-training-card .kv-list.large {
+  flex: 0 0 auto;
+  align-content: start;
+  row-gap: 3px;
+  line-height: 1.2;
+}
+
+.app-shell .forecast-training-card > .ant-space .ant-btn {
+  height: 28px;
+  padding-inline: 4px;
+}
+
+.app-shell .forecast-bottom-summary .ant-btn-block,
+.app-shell .history-side-cards .ant-btn-block {
+  width: 100%;
+}
+
+@media (max-width: 1500px) {
+  .app-shell .forecast-view-model .model-eval-section {
+    flex-basis: 185px;
+  }
+
+  .app-shell .forecast-view-model .forecast-baseline-grid {
+    flex-basis: 170px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .app-shell .forecast-view-24h .forecast-primary-grid {
+    flex-basis: 270px;
+  }
+
+  .app-shell .forecast-view-model .forecast-baseline-grid {
+    flex-basis: 170px;
+  }
+}
+
+@media (max-height: 819px) {
+  .app-shell .forecast-view-model .forecast-baseline-grid {
+    flex-basis: 220px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .app-shell .page-container--headerless > .page-content-area > .forecast-design-page {
+    height: auto !important;
+    min-height: calc(100dvh - var(--header-height) - 8px) !important;
+    padding-inline-end: 56px;
+  }
+
+  .app-shell .forecast-metric-grid,
+  .app-shell .forecast-metric-grid.metric-count-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell .forecast-primary-grid,
+  .app-shell .forecast-detail-grid,
+  .app-shell .forecast-history-bottom,
+  .app-shell .forecast-baseline-grid,
+  .app-shell .forecast-peak-model-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell .model-metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .app-shell .forecast-view-24h .forecast-primary-grid,
+  .app-shell .forecast-view-history .forecast-primary-grid,
+  .app-shell .forecast-view-model .forecast-peak-model-grid {
+    flex-basis: 500px;
+  }
+
+  .app-shell .forecast-view-24h .forecast-detail-grid,
+  .app-shell .forecast-view-history .forecast-history-bottom {
+    flex-basis: 590px;
+  }
+
+  .app-shell .forecast-view-model .model-eval-section {
+    flex-basis: 315px;
+  }
+
+  .app-shell .forecast-view-model .forecast-baseline-grid {
+    flex-basis: 350px;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell .page-container--headerless > .page-content-area > .forecast-design-page {
+    padding-inline-end: 48px;
+  }
+
+  .app-shell .forecast-bottom-summary,
+  .app-shell .history-side-cards,
+  .app-shell .model-metric-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,337 @@
+{
+  "source_commit": "0de1eb84a81e160f642f01058594209ffccee9a6",
+  "initial_target_base": "72b1500572f2ce8f2f7b61694a9f74af65d73596",
+  "final_target_parent": "de2c7151e8a0d0af767386e1e70d349dae306671",
+  "browser": "signed-in Chrome",
+  "viewport": {
+    "dpr": 1,
+    "height": 855,
+    "width": 1920
+  },
+  "pages": {
+    "forecast_24h": {
+      "header": {
+        "bottom": 148,
+        "height": 80,
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "sticky",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 68,
+        "zIndex": "300"
+      },
+      "metrics": {
+        "bottom": 248,
+        "height": 92,
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 156,
+        "zIndex": "auto"
+      },
+      "primary": {
+        "bottom": 510,
+        "height": 254,
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 256,
+        "zIndex": "auto"
+      },
+      "detail": {
+        "bottom": 852,
+        "height": 334,
+        "overflowX": "visible",
+        "overflowY": "visible",
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 518,
+        "zIndex": "auto"
+      },
+      "document": {
+        "clientHeight": 855,
+        "clientWidth": 1920,
+        "scrollHeight": 855,
+        "scrollWidth": 1920
+      },
+      "horizontal_overflow": false
+    },
+    "forecast_history": {
+      "header": {
+        "bottom": 148,
+        "height": 80,
+        "position": "sticky",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 68
+      },
+      "metrics": {
+        "bottom": 248,
+        "height": 92,
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 156
+      },
+      "primary": {
+        "bottom": 502,
+        "height": 246,
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 256
+      },
+      "bottom": {
+        "bottom": 805,
+        "height": 295,
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 510
+      },
+      "document": {
+        "clientHeight": 855,
+        "clientWidth": 1920,
+        "scrollHeight": 855,
+        "scrollWidth": 1920
+      },
+      "day_granularity_selected": true,
+      "range_7_selected": true
+    },
+    "forecast_peak_model": {
+      "header": {
+        "bottom": 148,
+        "height": 80,
+        "overflow": "visible",
+        "position": "sticky",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 68
+      },
+      "metrics": {
+        "bottom": 248,
+        "height": 92,
+        "overflow": "visible",
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 156
+      },
+      "peak": {
+        "bottom": 476,
+        "height": 220,
+        "overflow": "visible",
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 256
+      },
+      "evaluation": {
+        "bottom": 669,
+        "height": 185,
+        "overflow": "visible",
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 484
+      },
+      "baseline": {
+        "bottom": 847,
+        "height": 170,
+        "overflow": "visible",
+        "position": "static",
+        "right": 1827,
+        "width": 1597,
+        "x": 230,
+        "y": 677
+      },
+      "document": {
+        "clientHeight": 855,
+        "clientWidth": 1920,
+        "scrollHeight": 855,
+        "scrollWidth": 1920
+      },
+      "cards": [
+        {
+          "bottom": 666.1875,
+          "headingClipped": false,
+          "right": 461.28125,
+          "title": "Baseline 指标",
+          "titleAttr": "Baseline 指标"
+        },
+        {
+          "bottom": 666.1875,
+          "headingClipped": false,
+          "right": 686.5625,
+          "title": "高峰指标 peak",
+          "titleAttr": "高峰指标 peak"
+        },
+        {
+          "bottom": 666.1875,
+          "headingClipped": false,
+          "right": 911.84375,
+          "title": "尖峰识别 spike",
+          "titleAttr": "尖峰识别 spike"
+        },
+        {
+          "bottom": 666.1875,
+          "headingClipped": false,
+          "right": 1137.140625,
+          "title": "极端天气 weather",
+          "titleAttr": "极端天气 weather"
+        },
+        {
+          "bottom": 666.1875,
+          "headingClipped": false,
+          "right": 1362.421875,
+          "title": "Feature Schema",
+          "titleAttr": "Feature Schema"
+        },
+        {
+          "bottom": 666.1875,
+          "headingClipped": false,
+          "right": 1587.703125,
+          "title": "Leakage Gate",
+          "titleAttr": "Leakage Gate"
+        },
+        {
+          "bottom": 666.1875,
+          "headingClipped": false,
+          "right": 1813,
+          "title": "Backtest",
+          "titleAttr": "Backtest"
+        }
+      ],
+      "links": [
+        {
+          "href": "#/forecast/24h",
+          "text": "查看明细"
+        },
+        {
+          "href": "#/task/log",
+          "text": "查看训练日志"
+        },
+        {
+          "href": "#/report/list",
+          "text": "查看回测报告"
+        }
+      ]
+    }
+  },
+  "final_runtime": {
+    "aiGap": 21,
+    "baseline": {
+      "bottom": 847,
+      "height": 170,
+      "right": 1827,
+      "width": 1597,
+      "x": 230,
+      "y": 677
+    },
+    "document": {
+      "clientHeight": 855,
+      "clientWidth": 1920,
+      "scrollHeight": 855,
+      "scrollWidth": 1920
+    },
+    "fab": {
+      "bottom": 835,
+      "height": 52,
+      "right": 1900,
+      "width": 52,
+      "x": 1848,
+      "y": 783,
+      "zIndex": "850"
+    },
+    "globalHeader": {
+      "bottom": 60,
+      "height": 60,
+      "right": 1920,
+      "width": 1920,
+      "x": 0,
+      "y": 0,
+      "zIndex": "300"
+    },
+    "header": {
+      "background": "rgb(255, 255, 255)",
+      "bottom": 148,
+      "height": 80,
+      "isolation": "isolate",
+      "position": "sticky",
+      "right": 1827,
+      "width": 1597,
+      "x": 230,
+      "y": 68,
+      "zIndex": "300"
+    },
+    "headerBelowGlobal": true,
+    "noHorizontal": true,
+    "overlay": false,
+    "page": {
+      "bottom": 855,
+      "clientHeight": 787,
+      "height": 787,
+      "right": 1891,
+      "scrollHeight": 787,
+      "width": 1661,
+      "x": 230,
+      "y": 68
+    },
+    "shell": {
+      "bottom": 855,
+      "clientHeight": 795,
+      "height": 795,
+      "overflow": "hidden auto",
+      "right": 1920,
+      "scrollHeight": 795,
+      "scrollTop": 0,
+      "width": 1704,
+      "x": 216,
+      "y": 60
+    },
+    "viewport": {
+      "dpr": 1,
+      "height": 855,
+      "width": 1920
+    }
+  },
+  "interactions": {
+    "tabs": true,
+    "history_granularity_hour_day_week": true,
+    "history_range_7_30": true,
+    "forecast_pagination_page_2_first_row": "20:00-21:00 / 36.7346",
+    "hour_explanation_drawer": true,
+    "model_cards": 7,
+    "model_links_preserved": true,
+    "global_assistant_open_close": true,
+    "global_assistant_context": "预测中心 / 峰谷分析 / 模型评估",
+    "vite_overlay_after_concurrent_changes_settled": false
+  },
+  "screenshots": [
+    "screenshots/01_forecast_24h_main_1920x855.png",
+    "screenshots/02_forecast_history_main_1920x855.png",
+    "screenshots/03_forecast_peak_model_main_1920x855.png"
+  ],
+  "notes": [
+    "The target Chrome binding does not expose viewport-resize APIs; 1366/1440 behavior is covered by retained source media rules and static/unit contracts, while live target screenshots are 1920x855.",
+    "No database, model, API, or business-state mutation was performed."
+  ]
+}

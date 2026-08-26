@@ -1,0 +1,11 @@
+git status --short --branch
+git diff --cached --name-status
+git diff --name-status
+git rev-list --left-right --count '@{u}...HEAD'
+git show --stat 0de1eb84a81e160f642f01058594209ffccee9a6
+npm run typecheck
+npm run unit
+.venv/Scripts/python.exe -m pytest tests/test_p6_p1_2a_forecast_layout.py tests/test_p6_p1_2b_forecast_facts.py -q
+.venv/Scripts/python.exe -m pytest tests/test_p6_p1_2a_forecast_layout.py tests/test_p6_p1_2b_forecast_facts.py -q -k <three DB-dependent cases excluded>
+npm run build
+登录态 Chrome：24h、历史对比、峰谷/模型评估、小时解释、分页、粒度、区间、Global AI 抽屉、布局几何和截图验收
