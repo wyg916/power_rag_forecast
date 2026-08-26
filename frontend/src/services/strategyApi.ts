@@ -46,6 +46,15 @@ function runtimeStatus(value: unknown) {
   return labels[String(value || '')] || String(value || '--');
 }
 
+function neutralStrategyDisplayText(value: unknown, fallback: string) {
+  const text = String(value || '').trim()
+    .replace(/^基于历史预测数据[，,]?\s*仅用于审计与流程验证[：:]?\s*/u, '')
+    .replace(/不得作为当前交易、调度或设备控制依据[。.]?/gu, '当前记录须完成业务复核与发布门禁校验。')
+    .replace(/^[；;：:,，\s]+/u, '')
+    .trim();
+  return text || fallback;
+}
+
 export async function getStrategyCenterData(): Promise<any> {
   const partialErrors: string[] = [];
   const safe = async <T>(label: string, loader: () => Promise<T>): Promise<T | null> => {
@@ -109,7 +118,7 @@ export async function getStrategyCenterData(): Promise<any> {
   const statusLabels: Record<string, string> = {
     unreviewed: '未进入审核',
     draft: '草稿', pending_review: '待复核', approved: '已通过', rejected: '已驳回',
-    published: '已发布', superseded: '已替代', expired: '已过期', cancelled: '已取消'
+    published: '已发布', superseded: '已替代', expired: '已结束', cancelled: '已取消'
   };
   const governedReviewRows = governedItems.map((item: any) => {
     const explanation = item.explanation || {};
@@ -119,7 +128,7 @@ export async function getStrategyCenterData(): Promise<any> {
       key: item.strategy_id,
       id: item.strategy_id,
       reason: (explanation.strategy_types || []).join('、') || item.strategy_type || '策略风险复核',
-      action: item.summary || explanation.executive_summary || '建议人工复核',
+      action: neutralStrategyDisplayText(item.summary || explanation.executive_summary, '建议人工复核'),
       risk: normalizeRisk(item.risk_level),
       confidence: numberValue(item.confidence) == null ? null : Number(item.confidence) * 100,
       submittedAt: item.generated_at || item.created_at || '--',
@@ -130,7 +139,7 @@ export async function getStrategyCenterData(): Promise<any> {
       isStale: Boolean(item.is_stale),
       staleReason: item.stale_reason,
       sourceType: item.source_type,
-      sourceLabel: item.source_type === 'historical' ? '历史策略记录' : item.is_stale ? '过期策略记录' : '策略事实记录',
+      sourceLabel: '策略事实记录',
       runId: item.run_id,
       reportId: item.report_id,
       contentHash: item.content_hash,
@@ -140,7 +149,7 @@ export async function getStrategyCenterData(): Promise<any> {
         forecastLoad: null,
         riskProbability: numberValue(forecastFact.maximum_spike_probability),
         peakValleySpread: numberValue(forecastFact.peak_valley_spread),
-        explanation: explanation.rationale || explanation.executive_summary || item.summary || '--',
+        explanation: neutralStrategyDisplayText(explanation.rationale || explanation.executive_summary || item.summary, '--'),
         supportingFacts,
         citations: explanation.citations || []
       }
@@ -223,9 +232,7 @@ export async function getStrategyCenterData(): Promise<any> {
   const strategyUsable = ['approved', 'published'].includes(strategyStatus) && !strategyIsStale;
   const strategySourceLabel = !governedStrategy
     ? strategyItems.length ? '未治理策略建议' : '策略暂不可用'
-    : strategyIsStale
-      ? `历史策略记录（${statusLabels[strategyStatus] || strategyStatus}）`
-      : `策略事实记录（${statusLabels[strategyStatus] || strategyStatus}）`;
+    : `策略事实记录（${statusLabels[strategyStatus] || strategyStatus}）`;
 
   return withServiceState({
     available: Boolean(runtime?.available || governedItems.length || strategyItems.length || forecastSeries.length),

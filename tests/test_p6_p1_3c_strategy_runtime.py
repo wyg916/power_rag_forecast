@@ -184,11 +184,22 @@ def test_frontend_uses_runtime_api_without_static_soc_fallback() -> None:
     assert "Math.random" not in service_source
 
 
-def test_old_stale_information_box_is_removed_but_stale_reason_remains() -> None:
+def test_stale_metadata_remains_in_contract_but_is_not_rendered_as_a_frontend_label() -> None:
     states_source = _read("frontend/src/components/common/States.tsx")
+    service_source = _read("frontend/src/services/strategyApi.ts")
+    design_source = _read("frontend/src/components/strategy/StrategyDesign.tsx")
+
     assert "当前展示的是可追溯旧数据" not in states_source
-    assert "page-state-stale-inline" in states_source
-    assert "meta.staleReason" in states_source
+    assert "if (meta.state === 'stale')" in states_source
+    stale_branch = states_source.split("if (meta.state === 'stale')", 1)[1].split("return (", 1)[0]
+    assert "return null" in stale_branch
+    for label in ("page-state-stale-inline", "数据已过期", "已过期：", "freshnessReasonText"):
+        assert label not in states_source
+    assert "isStale: strategyIsStale" in service_source
+    assert "staleReason:" in service_source
+    assert "neutralStrategyDisplayText" in service_source
+    assert "基于历史预测数据" in service_source
+    assert 'disabled={row.isStale}' in design_source
+    assert "当前记录未通过发布门禁" in design_source
     assert "模拟入库" not in states_source
     assert "业务界面不展示来源分类" in states_source
-    assert "return null" in states_source

@@ -101,42 +101,9 @@ export function DataSourceTag({ source }: { source?: unknown }) {
   return null;
 }
 
-function freshnessReasonText(value?: string | null) {
-  const labels: Record<string, string> = {
-    forecast_window_expired: '预测适用窗口已结束',
-    historical_run: '当前查看的是历史批次',
-    generated_at_older_than_36h: '生成时间已超过 36 小时',
-    generated_at_missing: '缺少生成时间',
-    runtime_facts_older_than_6h: '运行事实已超过 6 小时',
-    refresh_in_progress: '正在刷新',
-    data_expired: '数据超过有效时限'
-  };
-  const text = String(value || '').trim();
-  if (!text) return '数据超过有效时限';
-  if (text.startsWith('refresh_failed:')) return '刷新失败，保留上一批可追溯结果';
-  return labels[text] || '数据超过有效时限';
-}
-
 function timeText(value?: string | null) {
   if (!value) return '--';
   return value.replace('T', ' ').replace('Z', '').slice(0, 19);
-}
-
-function PageStateMeta({ meta }: { meta: PageDataMeta }) {
-  const items = [
-    ['业务时间', timeText(meta.updatedAt || meta.generatedAt)]
-  ].filter(([, value]) => value && value !== '--');
-  if (!items.length) return null;
-  return (
-    <div className="page-state-meta" aria-label="业务时间与版本">
-      {items.map(([label, value]) => (
-        <span key={label}>
-          <small>{label}</small>
-          <b title={String(value)}>{value}</b>
-        </span>
-      ))}
-    </div>
-  );
 }
 
 export function PageDataState({
@@ -199,14 +166,8 @@ export function PageDataState({
     );
   }
   if (meta.state === 'stale') {
-    return (
-      <section className="page-state-stale-inline" aria-label="数据状态：已过期">
-        <Tag color="warning">数据已过期</Tag>
-        <span>原因：{freshnessReasonText(meta.staleReason)}</span>
-        <PageStateMeta meta={meta} />
-        {onRetry && meta.canRetry ? <Button size="small" onClick={onRetry}>重新刷新</Button> : null}
-      </section>
-    );
+    // 过期与来源元数据继续留在 API、状态机、日志和审计链路中，业务界面不展示技术状态标签。
+    return null;
   }
   return (
     <section className="page-state-success" aria-label="数据状态：有效">
@@ -243,9 +204,8 @@ export function SourceContextPanel({
       />
     );
   }
-  const warning = ['simulated', 'demo', 'seed', 'fallback'].includes(meta.source_type) || meta.is_stale || meta.source_type === 'historical';
   return (
-    <section className={`source-context-panel ${warning ? 'source-context-panel-warning' : ''}`} aria-label="业务时间与版本">
+    <section className="source-context-panel" aria-label="业务时间与版本">
       <div className="source-context-panel-head">
         <div>
           <small>时间与版本</small>
@@ -257,10 +217,6 @@ export function SourceContextPanel({
       </div>
       <div className="source-context-panel-grid">
         <span><small>业务时间</small><b>{timeText(meta.updated_at || meta.generated_at)}</b></span>
-        <span>
-          <small>批次状态</small>
-          <b>{meta.is_stale ? `已过期：${freshnessReasonText(meta.stale_reason)}` : '可用'}</b>
-        </span>
         <span><small>更新时间</small><b>{timeText(lastRefreshedAt)}</b></span>
       </div>
     </section>

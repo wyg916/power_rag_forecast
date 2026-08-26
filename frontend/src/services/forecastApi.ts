@@ -220,7 +220,7 @@ function buildDataHealth(dataStatus: any, forecast24h: any, dataQuality: any) {
     delayCount: 0,
     sourceCount: sources.length,
     updatedAt: dataQuality?.generated_at || dataQuality?.meta?.generated_at || sourceUpdatedTimes.at(-1) || '',
-    status: score == null ? '待接入' : dataQuality?.is_stale ? '已过期' : score >= 90 ? '正常' : '关注',
+    status: score == null ? '待接入' : score >= 90 && !dataQuality?.is_stale ? '正常' : '关注',
     staleReason: dataQuality?.stale_reason || dataQuality?.meta?.stale_reason || '',
     generatedAt: dataQuality?.generated_at || dataQuality?.meta?.generated_at || '',
     sources,
@@ -312,7 +312,7 @@ export async function getForecastCenterData(capabilities: { canReadData?: boolea
   const forecastBatchLabel = freshnessStatus === 'unavailable'
     ? '预测批次暂不可用'
     : sourceMeta.is_stale || freshnessStatus === 'historical' || freshnessStatus === 'stale'
-      ? '历史预测批次'
+      ? '预测批次'
       : '当前可用预测批次';
   const seriesValues = series.map((item: any) => Number(item.value)).filter(Number.isFinite);
   const seriesMean = seriesValues.length ? seriesValues.reduce((sum: number, value: number) => sum + value, 0) / seriesValues.length : null;

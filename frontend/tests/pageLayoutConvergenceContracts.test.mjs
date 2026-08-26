@@ -43,12 +43,19 @@ test('forecast, strategy and high-risk grids converge without hiding fixed-heigh
   assert.match(phase4, /\.strategy-overview-bottom\s*\{[\s\S]*?flex-basis:\s*auto/);
 });
 
-test('the designated historical expiry banner is not rendered while audit status remains visible', async () => {
-  const strategy = await read('../src/pages/strategy/StrategyCenterPage.tsx');
+test('stale metadata remains governed but no expiry annotation is rendered in the business UI', async () => {
+  const [strategy, states, service] = await Promise.all([
+    read('../src/pages/strategy/StrategyCenterPage.tsx'),
+    read('../src/components/common/States.tsx'),
+    read('../src/services/strategyApi.ts')
+  ]);
   assert.doesNotMatch(strategy, /当前记录已过期或未通过，不可作为当前策略/);
-  assert.match(strategy, /展示已归档的策略记录，仅供复盘与审计/);
-  assert.match(strategy, /viewMeta\.state !== 'stale' \? <PageDataState/);
-  assert.match(strategy, /data\?\.isStale \? '仅供复盘' : '可用'/);
+  assert.doesNotMatch(strategy, /仅供复盘|数据已过期|适用窗口已结束/);
+  assert.match(strategy, /汇总策略结论、风险窗口、执行状态与收益口径/);
+  assert.match(states, /if \(meta\.state === 'stale'\) \{[\s\S]*?return null/);
+  assert.doesNotMatch(states, /page-state-stale-inline|数据已过期|已过期：/);
+  assert.match(service, /isStale: strategyIsStale/);
+  assert.match(service, /staleReason:/);
   assert.match(strategy, /data\?\.strategyDate/);
   assert.match(strategy, /data\?\.strategyStatusLabel/);
 });

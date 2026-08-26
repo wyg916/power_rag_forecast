@@ -1,0 +1,26 @@
+frontend/src/components/common/States.tsx
+frontend/src/components/strategy/StrategyDesign.tsx
+frontend/src/pages/dashboard/DashboardPage.tsx
+frontend/src/pages/strategy/StrategyCenterPage.tsx
+frontend/src/pages/strategy/strategy-center-layout.css
+frontend/src/services/forecastApi.ts
+frontend/src/services/strategyApi.ts
+frontend/tests/pageLayoutConvergenceContracts.test.mjs
+tests/test_p6_p1_3a_strategy_layout.py
+tests/test_p6_p1_3c_strategy_runtime.py
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/plan.md
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/changed_files.txt
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/commands.txt
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/test_summary.md
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/rollback.md
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/unresolved.md
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/screenshots/after_overview_1919x875.png
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/screenshots/after_storage_1919x875.png
+docs/codex/evidence/PROJECT1_STRATEGY_GLOBAL_AI_MAIN_20260827_021838/screenshots/after_review_1919x875.png
+
+未纳入本任务提交的并发改动：
+- frontend/src/components/forecast/ForecastDesign.tsx
+- frontend/src/pages/model/ModelCenterPage.tsx
+- frontend/src/pages/model/model-center-workspace.css
+- frontend/src/styles.css

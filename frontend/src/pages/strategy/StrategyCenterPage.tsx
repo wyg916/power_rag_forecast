@@ -1,5 +1,5 @@
 import { DownloadOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
-import { App, Button, Form, Input, InputNumber, Modal, Select, Switch, Tag, Tooltip } from 'antd';
+import { App, Button, Form, Input, InputNumber, Modal, Select, Switch, Tooltip } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { PageHeader, type PageHeaderAction } from '../../components/common/PageHeader';
@@ -16,6 +16,7 @@ import { getStrategyCenterData } from '../../services/strategyApi';
 import { resolvePageDataMeta } from '../../services/viewState';
 import { useAuth } from '../../context/AuthContext';
 import type { PageProps } from '../../types/ui';
+import './strategy-center-layout.css';
 
 type ReviewFilters = {
   risk: string;
@@ -25,20 +26,6 @@ type ReviewFilters = {
 
 const DEFAULT_REVIEW_FILTERS: ReviewFilters = { risk: 'all', status: 'all', search: '' };
 const REVIEW_FILTER_POLICY = 'preserve-within-session';
-
-function displayTimestamp(value: unknown) {
-  const text = String(value || '').trim();
-  return text ? text.replace('T', ' ').slice(0, 19) : '--';
-}
-
-function staleReasonText(value?: string) {
-  const labels: Record<string, string> = {
-    forecast_window_expired: '预测适用窗口已结束',
-    runtime_facts_older_than_6h: '运行事实已超过 6 小时',
-    historical_run: '当前查看的是历史批次'
-  };
-  return labels[String(value || '')] || '数据超过有效时限';
-}
 
 const strategyTabs = [
   { key: 'strategy-high', label: '总览主页面' },
@@ -266,13 +253,11 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
     return actions;
   }, [canConfigure, data?.executionItems, data?.hourlyPlan, filteredReviewRows, loadData, loading, mode, selectedDevice]);
   const strategySubtitle = loading
-    ? '正在核对策略、审核、预测有效期和运行反馈。'
+    ? '正在核对策略、审核、业务窗口和运行反馈。'
     : !data?.available
       ? '当前策略事实不可用；页面不会生成默认策略、收益或执行状态。'
       : mode === 'overview'
-    ? data?.strategyUsable
-      ? '展示处于有效窗口且通过治理门禁的策略事实；执行前仍须人工复核。'
-      : '展示已归档的策略记录，仅供复盘与审计。'
+    ? '汇总策略结论、风险窗口、执行状态与收益口径，执行前仍须人工复核。'
     : mode === 'storage'
       ? '展示设备状态、计划反馈与收益口径，支持只读复核。'
       : '承接高风险策略的人工审核与人机协同闭环，确保关键交易决策安全、合规、可追溯。';
@@ -287,7 +272,6 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         metadata={(
           <div className="strategy-header-metadata">
             <span><small>{mode === 'review' ? '复核日期' : '策略日期'}</small><strong>{data?.strategyDate || '--'}</strong></span>
-            <span><small>业务状态</small><Tag color={data?.isStale ? 'warning' : 'success'}>{data?.isStale ? '仅供复盘' : '可用'}</Tag></span>
             <span><small>审核状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
           </div>
         )}
@@ -348,7 +332,7 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         )}
         actions={headerActions}
       />
-      {viewMeta.state !== 'stale' ? <PageDataState meta={viewMeta} onRetry={loadData} mockFallback={false} /> : null}
+      <PageDataState meta={viewMeta} onRetry={loadData} mockFallback={false} />
       {showContent ? <StrategyMetricStrip data={data} mode={mode} /> : null}
       {showContent && mode === 'overview' && (
         <>

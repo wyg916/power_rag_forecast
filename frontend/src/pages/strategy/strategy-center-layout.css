@@ -1,0 +1,729 @@
+/* Strategy center viewport layout refinement.
+ * Loaded after the shared design system so the three strategy tabs keep one
+ * height model without changing global page or forecast styles.
+ */
+.content-shell:has(.strategy-design-page) {
+  height: calc(100vh - var(--header-height));
+  min-height: 0;
+  padding: 10px 16px 0;
+  overflow: hidden;
+}
+
+.content-shell:has(.strategy-design-page) > .page-container {
+  height: 100%;
+  min-height: 0;
+}
+
+.strategy-design-page {
+  --strategy-gap: 8px;
+  display: flex;
+  min-width: 0;
+  height: calc(100vh - var(--header-height) - 10px);
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--strategy-gap);
+  padding-bottom: 8px;
+  overflow: hidden;
+}
+
+.strategy-design-page > .page-state-panel,
+.strategy-design-page > .page-state-success {
+  min-height: 0;
+  flex: 0 0 auto;
+}
+
+/* Shared single-line strategy toolbar at the reference viewport. */
+.strategy-design-page .strategy-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  isolation: isolate;
+  display: flex;
+  width: 100%;
+  height: 60px;
+  min-height: 60px;
+  flex: 0 0 60px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  overflow: visible;
+  border-color: #dfe7ef;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .045);
+}
+
+.strategy-design-page .strategy-page-header .page-heading-copy {
+  display: flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-self: stretch;
+  align-items: center;
+  gap: 12px;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-title-row {
+  flex: 0 0 auto;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-main {
+  flex: 0 0 auto;
+}
+
+.strategy-design-page .strategy-page-header h1 {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.strategy-design-page .strategy-page-header .page-subtitle {
+  display: none;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-navigation {
+  min-width: 0;
+  margin-top: 0;
+  align-self: stretch;
+}
+
+.strategy-design-page .strategy-page-tabs {
+  width: auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.strategy-design-page .strategy-page-tabs .page-tabs,
+.strategy-design-page .strategy-page-tabs .ant-tabs-nav,
+.strategy-design-page .strategy-page-tabs .ant-tabs-nav-wrap,
+.strategy-design-page .strategy-page-tabs .ant-tabs-nav-list {
+  height: 100%;
+}
+
+.strategy-design-page .strategy-page-tabs .ant-tabs-nav {
+  margin: 0;
+}
+
+.strategy-design-page .strategy-page-tabs .ant-tabs-tab {
+  margin: 0;
+  padding: 0 0 2px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.strategy-design-page .strategy-page-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin-inline-start: 20px;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-utility {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-context {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.strategy-design-page .strategy-header-metadata {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.strategy-design-page .strategy-header-metadata > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.strategy-design-page .strategy-header-metadata small {
+  color: var(--color-secondary);
+  font-size: 12px;
+}
+
+.strategy-design-page .strategy-header-metadata strong {
+  max-width: 92px;
+  color: var(--color-title);
+  font-size: 12px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.strategy-design-page .strategy-header-metadata .ant-tag {
+  margin: 0;
+  line-height: 22px;
+}
+
+.strategy-design-page .strategy-trace-trigger {
+  height: 32px;
+  padding-inline: 6px;
+  color: var(--color-secondary);
+  font-size: 13px;
+}
+
+.strategy-trace-popover {
+  display: grid;
+  width: min(520px, 70vw);
+  max-height: min(480px, 70vh);
+  gap: 0;
+  margin: 0;
+  overflow-y: auto;
+}
+
+.strategy-trace-popover > div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.strategy-trace-popover > div:last-child {
+  border-bottom: 0;
+}
+
+.strategy-trace-popover dt {
+  color: var(--color-secondary);
+  font-size: 12px;
+}
+
+.strategy-trace-popover dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-title);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-filters {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.strategy-design-page .strategy-header-filters {
+  display: flex;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.strategy-design-page .strategy-header-filters label {
+  gap: 4px;
+  font-size: 12px;
+}
+
+.strategy-design-page .strategy-header-filters .ant-select {
+  min-width: 88px;
+}
+
+.strategy-design-page .strategy-header-filters .ant-select-selector,
+.strategy-design-page .strategy-header-filters > .ant-input-affix-wrapper,
+.strategy-design-page .strategy-header-filters > .ant-input,
+.strategy-design-page .strategy-page-header .page-heading-actions .ant-btn {
+  height: 34px;
+  min-height: 34px;
+  font-size: 13px;
+}
+
+.strategy-design-page .strategy-header-filters > .ant-input-affix-wrapper,
+.strategy-design-page .strategy-header-filters > .ant-input {
+  width: clamp(136px, 9vw, 168px);
+}
+
+.strategy-design-page .strategy-page-header .page-heading-actions {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px !important;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-actions .ant-btn {
+  padding-inline: 9px;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-actions .ant-space-item {
+  display: inline-flex;
+}
+
+.strategy-design-page .strategy-page-header .page-heading-more {
+  display: none;
+}
+
+.strategy-review-page .strategy-page-header {
+  gap: 7px;
+  padding-inline: 10px;
+}
+
+.strategy-review-page .strategy-page-header .page-heading-copy {
+  gap: 8px;
+}
+
+.strategy-review-page .strategy-page-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin-inline-start: 14px;
+}
+
+.strategy-review-page .strategy-header-metadata {
+  gap: 5px;
+}
+
+.strategy-review-page .strategy-header-metadata small {
+  display: none;
+}
+
+.strategy-review-page .strategy-header-filters label > span {
+  display: none;
+}
+
+.strategy-review-page .strategy-header-filters .ant-select {
+  min-width: 86px;
+}
+
+.strategy-review-page .strategy-header-filters > .ant-input-affix-wrapper,
+.strategy-review-page .strategy-header-filters > .ant-input {
+  width: clamp(132px, 8vw, 154px);
+}
+
+.strategy-review-page .strategy-page-header .page-heading-actions .ant-btn {
+  padding-inline: 7px;
+}
+
+/* KPI band: compact but keeps 13px+ readable content. */
+.strategy-design-page .strategy-metric-strip {
+  height: 88px;
+  min-height: 88px;
+  flex: 0 0 88px;
+  gap: 8px;
+}
+
+.strategy-design-page .strategy-metric {
+  height: 88px;
+  min-height: 88px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 8px 10px;
+}
+
+.strategy-design-page .strategy-metric-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.strategy-design-page .strategy-metric h3 {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.strategy-design-page .strategy-metric strong {
+  margin-top: 2px;
+  font-size: 19px;
+  line-height: 1.12;
+}
+
+.strategy-design-page .strategy-metric p {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.strategy-design-page .strategy-card {
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 12px;
+}
+
+.strategy-design-page .strategy-card-head {
+  min-height: 26px;
+  margin-bottom: 5px;
+}
+
+.strategy-design-page .strategy-card-head h2 {
+  font-size: 14px;
+}
+
+/* Overview: fixed dashboard rows, no page-level scroll, safe space for FAB. */
+.strategy-design-page .strategy-overview-main {
+  min-height: 0;
+  flex: 1 1 0;
+  grid-template-columns: minmax(0, 1.64fr) minmax(340px, .96fr);
+  gap: 8px;
+}
+
+.strategy-design-page .strategy-timeline-card {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.strategy-design-page .strategy-timeline-card .app-chart {
+  height: auto !important;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+.strategy-design-page .strategy-advice-card {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.strategy-design-page .strategy-insight-block {
+  padding: 7px 9px;
+}
+
+.strategy-design-page .strategy-insight-block + .strategy-insight-block {
+  margin-top: 5px;
+}
+
+.strategy-design-page .strategy-insight-block h3 {
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+
+.strategy-design-page .strategy-insight-block p,
+.strategy-design-page .strategy-insight-block li,
+.strategy-design-page .strategy-insight-block div {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.strategy-design-page .strategy-overview-bottom {
+  min-height: 0;
+  flex: 0 0 180px;
+  grid-template-columns: 1.08fr 1fr 1.08fr 1.08fr;
+  gap: 8px;
+  padding-right: 72px;
+}
+
+.strategy-design-page .mini-panel > p {
+  margin: 5px 0;
+  padding: 5px 7px;
+  font-size: 12px;
+}
+
+.strategy-design-page .execution-panel > div:not(.strategy-card-head) {
+  margin: 6px 0;
+}
+
+.strategy-design-page .execution-panel .ant-progress-circle {
+  right: 12px;
+  bottom: 20px;
+}
+
+.strategy-design-page .revenue-panel > p {
+  margin: 9px 0;
+}
+
+.strategy-design-page .revenue-panel > small {
+  padding-top: 7px;
+}
+
+/* Storage: content-sized device card, fixed chart row, internal detail scroll. */
+.strategy-design-page .storage-workspace {
+  min-height: 0;
+  flex: 1 1 0;
+  grid-template-columns: minmax(240px, 24.5fr) minmax(520px, 50fr) minmax(300px, 25.5fr);
+  gap: 8px;
+}
+
+.strategy-design-page .storage-window-list {
+  height: auto;
+  max-height: 100%;
+  align-self: start;
+}
+
+.strategy-design-page .storage-window-scroll {
+  min-height: 0;
+  max-height: calc(100% - 108px);
+  flex: 0 1 auto;
+  overflow-y: auto;
+}
+
+.strategy-design-page .storage-window-scroll button {
+  min-height: 58px;
+  padding: 8px;
+}
+
+.strategy-design-page .storage-note {
+  margin-top: 7px;
+  padding: 8px;
+}
+
+.strategy-design-page .storage-center-column {
+  min-height: 0;
+  grid-template-rows: 300px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.strategy-design-page .storage-chart-card,
+.strategy-design-page .storage-plan-table {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.strategy-design-page .storage-chart-card .app-chart {
+  height: auto !important;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+.strategy-design-page .storage-plan-table .ant-table-wrapper {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.strategy-design-page .storage-plan-table .ant-table-thead > tr > th {
+  height: 36px;
+  padding: 5px 7px !important;
+}
+
+.strategy-design-page .storage-plan-table .ant-table-tbody > tr > td {
+  height: 40px;
+  padding: 4px 7px !important;
+}
+
+.strategy-design-page .storage-detail-panel {
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 80px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* Review: bounded table/detail scroll owners and 40-44px rows. */
+.strategy-design-page .review-workspace {
+  min-height: 0;
+  flex: 1 1 0;
+  grid-template-columns: minmax(0, 1.72fr) minmax(390px, .96fr);
+  gap: 8px;
+}
+
+.strategy-design-page .review-list-column {
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) 112px;
+  gap: 8px;
+}
+
+.strategy-design-page .review-table-card {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.strategy-design-page .review-tabs {
+  min-height: 36px;
+  flex: 0 0 36px;
+  gap: 14px;
+  margin: -4px 0 6px;
+  font-size: 12px;
+}
+
+.strategy-design-page .review-table-card .ant-table-wrapper {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.strategy-design-page .review-table-card .ant-table {
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.strategy-design-page .review-table-card .ant-table-thead > tr > th {
+  height: 36px;
+  padding: 5px 7px !important;
+  white-space: nowrap;
+}
+
+.strategy-design-page .review-table-card .ant-table-tbody > tr > td {
+  height: 42px;
+  max-height: 42px;
+  padding: 4px 7px !important;
+  overflow: hidden;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.strategy-design-page .review-table-card .ant-table-tbody > tr > td:last-child .ant-btn {
+  padding-inline: 3px;
+}
+
+.strategy-design-page .strategy-cell-ellipsis {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strategy-design-page .review-table-card .ant-pagination {
+  min-height: 36px;
+  margin: 6px 0 0;
+}
+
+.strategy-design-page .review-bottom-summary {
+  min-height: 0;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.strategy-design-page .review-kpis {
+  gap: 8px;
+}
+
+.strategy-design-page .review-kpis strong {
+  margin-top: 3px;
+  font-size: 18px;
+}
+
+.strategy-design-page .review-risk-bars {
+  gap: 8px;
+}
+
+.strategy-design-page .review-detail-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.strategy-design-page .review-detail-scroll {
+  min-height: 0;
+  padding-right: 4px;
+  padding-bottom: 76px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.strategy-design-page .review-actions {
+  min-height: 44px;
+  padding-top: 7px;
+  padding-right: 72px;
+}
+
+@media (max-width: 1700px) {
+  .strategy-design-page .strategy-page-header {
+    display: grid;
+    height: 96px;
+    min-height: 96px;
+    flex-basis: 96px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 42px 44px;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 10px 6px;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-copy,
+  .strategy-design-page .strategy-page-header .page-heading-utility {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-copy {
+    grid-row: 1;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-utility {
+    grid-row: 2;
+  }
+
+  .strategy-design-page .strategy-header-metadata {
+    justify-content: flex-start;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-secondary-action {
+    display: none;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-more {
+    display: inline-flex;
+  }
+
+  .strategy-design-page .strategy-overview-bottom {
+    flex-basis: 170px;
+  }
+
+  .strategy-design-page .storage-workspace {
+    grid-template-columns: minmax(220px, .75fr) minmax(460px, 1.48fr) minmax(270px, .84fr);
+  }
+
+  .strategy-design-page .storage-center-column {
+    grid-template-rows: 280px minmax(0, 1fr);
+  }
+
+  .strategy-design-page .review-workspace {
+    grid-template-columns: minmax(0, 1.55fr) minmax(340px, .9fr);
+  }
+}
+
+@media (max-width: 1180px) {
+  .content-shell:has(.strategy-design-page) {
+    height: auto;
+    min-height: calc(100vh - var(--header-height));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .strategy-design-page {
+    height: auto;
+    min-height: calc(100vh - var(--header-height) - 10px);
+    overflow: visible;
+  }
+
+  .strategy-design-page .strategy-page-header {
+    position: sticky;
+  }
+
+  .strategy-design-page .strategy-metric-strip {
+    height: auto;
+    flex-basis: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .strategy-design-page .strategy-overview-main,
+  .strategy-design-page .storage-workspace,
+  .strategy-design-page .review-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .strategy-design-page .strategy-overview-main {
+    min-height: 680px;
+  }
+
+  .strategy-design-page .strategy-overview-bottom {
+    min-height: 340px;
+    flex-basis: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .strategy-design-page .storage-center-column {
+    min-height: 560px;
+  }
+
+  .strategy-design-page .review-list-column {
+    min-height: 620px;
+  }
+
+  .strategy-design-page .review-detail-panel {
+    min-height: 620px;
+  }
+}

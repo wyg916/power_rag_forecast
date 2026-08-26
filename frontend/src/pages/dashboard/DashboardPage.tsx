@@ -113,9 +113,7 @@ export function DashboardPage(_: PageProps) {
       `}</style>
       <PageHeader
         title="首页 / 总览驾驶舱"
-        subtitle={data?.isStale
-          ? '历史预测窗口已结束，仅用于复盘与审计；不代表当前市场状态。'
-          : '汇总当前供需、预测、策略、模型、报告与任务状态，辅助经营决策。'}
+        subtitle="汇总供需、预测、策略、模型、报告与任务状态，辅助经营决策。"
         className="home-dashboard-header"
         actions={[
           {
@@ -152,17 +150,16 @@ export function DashboardPage(_: PageProps) {
 
       {!showContent ? <PageDataState meta={viewMeta} onRetry={loadData} /> : null}
 
-      {showContent ? <section className={`home-dashboard-content${data?.isStale ? ' home-dashboard-stale' : ''}`}>
+      {showContent ? <section className="home-dashboard-content">
         <HomeKpiStrip items={kpiItems} />
         <div className="home-dashboard-left">
-          <HomeForecastChart forecast={data?.forecast} risk={data?.risk} isStale={data?.isStale} />
+          <HomeForecastChart forecast={data?.forecast} risk={data?.risk} />
           <HomeAuxiliaryGrid forecast={data?.forecast} kpi={data?.kpi} canReadData={canReadData} canReadModel={canReadModel} />
         </div>
         <HomeSideRail
           risk={data?.risk}
           strategy={data?.strategy}
           tasks={data?.tasks}
-          isStale={data?.isStale}
           canUseAssistant={canUseAssistant}
           canReadTasks={canReadTasks}
           canDiagnoseTasks={canDiagnoseTasks}

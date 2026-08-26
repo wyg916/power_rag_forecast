@@ -71,13 +71,17 @@ def test_strategy_header_uses_neutral_business_metadata_without_technical_trace_
 
 
 def test_strategy_metric_cards_are_compact_without_clipping_complete_semantics():
-    styles = _read("frontend/src/styles.css")
-    metric_block = styles.split(".strategy-metric {", 1)[1].split(".strategy-metric-icon", 1)[0]
-    strong_block = styles.split(".strategy-metric strong {", 1)[1].split(".strategy-metric p", 1)[0]
-    description_block = styles.split(".strategy-metric p {", 1)[1].split(".strategy-card", 1)[0]
+    base_styles = _read("frontend/src/styles.css")
+    strategy_styles = _read("frontend/src/pages/strategy/strategy-center-layout.css")
+    metric_block = strategy_styles.split(".strategy-design-page .strategy-metric {", 1)[1].split(
+        ".strategy-design-page .strategy-metric-icon", 1
+    )[0]
+    strong_block = base_styles.split(".strategy-metric strong {", 1)[1].split(".strategy-metric p", 1)[0]
+    description_block = base_styles.split(".strategy-metric p {", 1)[1].split(".strategy-card", 1)[0]
 
-    assert "flex: 0 0 98px" in styles
-    assert "padding: 11px 12px" in metric_block
+    assert "height: 88px" in metric_block
+    assert "min-height: 88px" in metric_block
+    assert "padding: 8px 10px" in metric_block
     assert "overflow-wrap: anywhere" in strong_block
     assert "overflow-wrap: anywhere" in description_block
     assert "text-overflow: ellipsis" not in strong_block
@@ -91,6 +95,7 @@ def test_strategy_three_subroutes_and_narrow_more_contract_are_preserved():
     router = _read("frontend/src/app/router.tsx")
     header = _read("frontend/src/components/common/PageHeader.tsx")
     styles = _read("frontend/src/styles.css")
+    strategy_styles = _read("frontend/src/pages/strategy/strategy-center-layout.css")
 
     for key in ("strategy-high", "strategy-storage", "strategy-review"):
         assert key in page
@@ -98,6 +103,8 @@ def test_strategy_three_subroutes_and_narrow_more_contract_are_preserved():
     assert "page-heading-more" in header
     assert "@container (max-width: 1150px)" in styles
     assert ".page-heading-secondary-action" in styles
+    assert "@media (max-width: 1700px)" in strategy_styles
+    assert ".strategy-design-page .strategy-page-header .page-heading-secondary-action" in strategy_styles
     assert "FactStatusBar" not in page
 
 

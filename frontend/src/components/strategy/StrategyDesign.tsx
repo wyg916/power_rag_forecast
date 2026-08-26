@@ -60,9 +60,9 @@ export function StrategyMetricStrip({ data, mode }: { data: any; mode: 'overview
   const rejectedReviews = reviewRows.filter((row: any) => row.status === 'rejected').length;
   const metrics = mode === 'overview'
     ? [
-        ['策略结论', data?.strategyUsable ? '当前有效策略' : data?.available ? '历史策略记录' : '暂无策略', data?.strategyUsable ? '人工复核通过后可供参考' : '已过期或未通过，不可作为当前策略', 'green'],
+        ['策略结论', data?.available ? data?.strategyStatusLabel || '策略记录' : '暂无策略', '策略与人工复核状态汇总', 'green'],
         ['预测高价时段', summary.highRiskHours == null ? '--' : `${summary.highRiskHours} 段`, summary.highRiskCount == null ? '策略事实暂不可用' : `${summary.highRiskCount} 条绑定预测建议`, 'red'],
-        ['预测低价窗口', summary.lowWindowCount == null ? '--' : `${summary.lowWindowCount} 段`, data?.isStale ? '预测窗口已结束' : '预测窗口有效', 'green'],
+        ['预测低价窗口', summary.lowWindowCount == null ? '--' : `${summary.lowWindowCount} 段`, '候选窗口与策略批次绑定', 'green'],
         ['收益测算', summary.realizedRevenue == null ? '--' : `¥${Number(summary.realizedRevenue).toLocaleString()}`, '按当前策略批次的计划与反馈口径计算', 'blue'],
         ['人工复核数', summary.reviewCount ?? '--', summary.reviewCount == null ? '审核事实暂不可用' : `${waitingReviews} 条待处理`, 'orange']
       ]
@@ -151,8 +151,8 @@ function OverviewInsight({ data }: { data: any }) {
   const lowLabel = (summary.lowHours || []).slice(0, 5).join('、') || '--';
   return (
     <section className="strategy-card strategy-advice-card">
-      <div className="strategy-card-head"><h2>{data?.strategyUsable ? '策略建议说明' : '历史策略说明'}</h2><div><Tag color={data?.strategyUsable ? 'success' : 'error'}>{data?.strategyUsable ? '人工复核后参考' : '不可作为当前策略'}</Tag><Tag color="warning">需人工确认</Tag></div></div>
-      <InsightBlock tone={data?.strategyUsable ? 'green' : 'red'} title="结论">{data?.strategyUsable ? '已形成处于有效窗口的治理策略；实际执行前仍须结合合同、设备与当前市场复核。' : `当前记录状态为${data?.strategyStatusLabel || '不可用'}，且适用窗口已结束，仅用于审计和复盘。`}</InsightBlock>
+      <div className="strategy-card-head"><h2>策略建议说明</h2><div><Tag color={data?.strategyUsable ? 'success' : 'warning'}>{data?.strategyUsable ? '人工复核后参考' : '发布门禁未通过'}</Tag><Tag color="warning">需人工确认</Tag></div></div>
+      <InsightBlock tone={data?.strategyUsable ? 'green' : 'red'} title="结论">{data?.strategyUsable ? '已形成通过治理门禁的策略记录；实际执行前仍须结合合同、设备与当前市场复核。' : `当前记录状态为${data?.strategyStatusLabel || '不可用'}；使用前请完成业务复核和发布门禁校验。`}</InsightBlock>
       <InsightBlock tone="blue" title="业务建议">
         <ul><li>低价候选时段：{lowLabel}</li><li>高风险候选时段：{highLabel}</li><li>储能动作仅作为辅助决策建议。</li></ul>
       </InsightBlock>
@@ -338,9 +338,25 @@ export function ReviewWorkspace({
   const allRows = data?.reviewRows || [];
   const selected = rows.find((row: any) => row.key === selectedKey) || rows[0];
   const columns: ColumnsType<any> = [
-    { title: '编号', dataIndex: 'id', width: 126 },
-    { title: '复核原因', dataIndex: 'reason', ellipsis: true },
-    { title: '策略建议', dataIndex: 'action', ellipsis: true },
+    {
+      title: '编号',
+      dataIndex: 'id',
+      width: 142,
+      ellipsis: { showTitle: false },
+      render: (value) => <Tooltip title={value}><span className="strategy-cell-ellipsis">{value}</span></Tooltip>
+    },
+    {
+      title: '复核原因',
+      dataIndex: 'reason',
+      ellipsis: { showTitle: false },
+      render: (value) => <Tooltip title={value}><span className="strategy-cell-ellipsis">{value}</span></Tooltip>
+    },
+    {
+      title: '策略建议',
+      dataIndex: 'action',
+      ellipsis: { showTitle: false },
+      render: (value) => <Tooltip title={value}><span className="strategy-cell-ellipsis">{value}</span></Tooltip>
+    },
     { title: '风险等级', dataIndex: 'risk', width: 92, render: (value) => <Tag color={riskColor(value)}>{riskLabel(value)}</Tag> },
     { title: '置信度', dataIndex: 'confidence', width: 82, render: (value) => value == null ? '--' : `${fmt(value, 1)}%` },
     { title: '提交时间', dataIndex: 'submittedAt', width: 142, render: (value) => String(value).slice(5, 16) },
@@ -352,7 +368,7 @@ export function ReviewWorkspace({
       <div className="review-list-column">
         <section className="strategy-card review-table-card">
           <div className="review-tabs"><b>全部（{totalRows}）</b><span>当前筛选（{rows.length}）</span><span>待处理（{allRows.filter((row: any) => ['draft', 'pending_review'].includes(row.status)).length}）</span><span>已处理（{allRows.filter((row: any) => !['draft', 'pending_review'].includes(row.status)).length}）</span><span>紧急（{allRows.filter((row: any) => row.risk === 'high').length}）</span></div>
-          <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={{ pageSize: 10, showSizeChanger: false }} scroll={{ y: 365, x: 980 }} onRow={(row) => ({ onClick: () => onSelect(row) })} rowClassName={(row) => selected?.key === row.key ? 'selected-review-row' : ''} />
+          <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={{ pageSize: 10, showSizeChanger: false }} scroll={{ y: 278, x: 980 }} onRow={(row) => ({ onClick: () => onSelect(row) })} rowClassName={(row) => selected?.key === row.key ? 'selected-review-row' : ''} />
         </section>
         <ReviewBottomSummary rows={rows} />
       </div>
@@ -390,7 +406,6 @@ function ReviewDetail({ row, onAction, permissions, reviewHistory }: {
       {row ? (
         <>
           <div className="review-detail-scroll">
-            {row.isStale && <InsightBlock tone="red" title="历史数据门禁"><p>基于历史预测数据，仅用于审计与流程验证；禁止发布为当前策略。</p><p>原因：{row.staleReason || 'forecast_window_expired'}</p></InsightBlock>}
             <InsightBlock tone="green" title="策略摘要"><p>编号：{row.id}</p><p>候选动作：{row.action}</p><p>目标时段：{row.period}</p><p>状态：<Tag color={statusColor(row.status)}>{row.statusLabel || row.status}</Tag></p></InsightBlock>
             <InsightBlock tone="orange" title="复核原因"><Tag color={riskColor(row.risk)}>{riskLabel(row.risk)}</Tag><p>{row.reason}</p></InsightBlock>
             <InsightBlock tone="red" title="受控解释"><p>{row.evidence?.explanation}</p><p>风险概率：{row.evidence?.riskProbability == null ? '--' : `${fmt(row.evidence.riskProbability * 100, 1)}%`}</p></InsightBlock>
@@ -409,7 +424,7 @@ function ReviewDetail({ row, onAction, permissions, reviewHistory }: {
               <Button danger onClick={() => onAction(row, 'reject', comment)}>驳回</Button>
               <Button onClick={() => onAction(row, 'return', comment)}>退回补充</Button>
             </> : null}
-            {row.status === 'approved' && permissions.canPublish ? <Tooltip title={row.isStale ? '历史或过期策略禁止发布' : '发布仅形成受控记录，不触发执行'}><Button type="primary" disabled={row.isStale} onClick={() => onAction(row, 'publish', comment)}>发布策略记录</Button></Tooltip> : null}
+            {row.status === 'approved' && permissions.canPublish ? <Tooltip title={row.isStale ? '当前记录未通过发布门禁' : '发布仅形成受控记录，不触发执行'}><Button type="primary" disabled={row.isStale} onClick={() => onAction(row, 'publish', comment)}>发布策略记录</Button></Tooltip> : null}
             {!['draft', 'pending_review', 'approved'].includes(row.status) && <Tag color={statusColor(row.status)}>该状态无可用人工动作</Tag>}
           </div>
         </>
