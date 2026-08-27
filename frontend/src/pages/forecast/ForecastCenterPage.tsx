@@ -249,19 +249,19 @@ export function ForecastCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       {showContent ? <ForecastMetricCards metrics={metricItems} /> : null}
 
       {showContent && view === '24h' ? (
-        <>
-          <div className="forecast-primary-grid">
+        <div className="forecast-primary-grid forecast-24h-workspace">
+          <div className="forecast-24h-left-stack">
             <ForecastChartCard data={data} />
-            <StrategyInsightPanel data={data} />
-          </div>
-          <div className="forecast-detail-grid">
             <div className="forecast-card forecast-table-card">
               <div className="forecast-card-head"><h2>24小时预测明细</h2></div>
               <ForecastDetailTable rows={rows} compact onExplain={setSelectedHour} />
             </div>
+          </div>
+          <div className="forecast-24h-right-stack">
+            <StrategyInsightPanel data={data} />
             <ForecastSummaryCards data={data} />
           </div>
-        </>
+        </div>
       ) : null}
 
       {showContent && view === 'history' ? (
