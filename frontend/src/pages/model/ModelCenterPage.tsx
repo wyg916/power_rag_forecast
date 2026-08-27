@@ -77,9 +77,10 @@ function modelTypeLabel(value?: string) {
 
 function businessModelLabel(row: ModelVersionRow, fallback = '预测模型') {
   const type = modelTypeLabel(row.model_type) || '预测';
-  const state = row.is_active || row.status === 'Active'
+  const status = String(row.status || '').toLowerCase();
+  const state = row.is_active || status === 'active'
     ? '当前模型'
-    : row.status === 'Candidate'
+    : ['candidate', 'validating', 'validated'].includes(status)
       ? '候选模型'
       : '历史模型';
   const date = shortDateTime(row.created_at || row.updated_at);
@@ -87,9 +88,31 @@ function businessModelLabel(row: ModelVersionRow, fallback = '预测模型') {
 }
 
 function statusColor(status?: string, active?: boolean) {
-  if (active || status === 'Active') return 'success';
-  if (status === 'Candidate') return 'warning';
+  const value = String(status || '').toLowerCase();
+  if (active || value === 'active') return 'success';
+  if (['candidate', 'validating', 'validated'].includes(value)) return 'warning';
   return 'default';
+}
+
+function metricComparison(value: unknown) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '较 Active --';
+  if (num > 0) return `较 Active ↓ ${Math.abs(num).toFixed(2)}%`;
+  if (num < 0) return `较 Active ↑ ${Math.abs(num).toFixed(2)}%`;
+  return '较 Active 持平';
+}
+
+function statusLabel(row: ModelVersionRow) {
+  if (row.is_active) return 'Active';
+  const value = String(row.status || '').toLowerCase();
+  const labels: Record<string, string> = {
+    candidate: 'Candidate',
+    validating: '验证中',
+    validated: '已验证',
+    archived: '已归档',
+    rejected: '未通过'
+  };
+  return labels[value] || row.status || '--';
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -142,7 +165,7 @@ export function ModelCenterPage(_props: PageProps) {
     try {
       const payload = await getModelCenterData(nextFilters);
       setData(payload);
-      setRollbackVersion(payload.rollback?.options?.[0]?.model_version || payload.versions.find((item) => !item.is_active)?.model_version);
+      setRollbackVersion(payload.rollback?.options?.[0]?.model_version);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -184,14 +207,15 @@ export function ModelCenterPage(_props: PageProps) {
       tone: 'orange',
       icon: <ExperimentOutlined />
     },
-    { title: 'MAE (kW)', value: fmt(candidate.mae), meta: '', note: `较 Active ↓ ${pct(data.evaluation_summary?.[0]?.improvement)}`, tone: 'green', icon: <LineChartOutlined /> },
-    { title: 'RMSE (kW)', value: fmt(candidate.rmse), meta: '', note: `较 Active ↓ ${pct(data.evaluation_summary?.[1]?.improvement)}`, tone: 'green', icon: <BarChartOutlined /> },
-    { title: '高峰误差 (kW)', value: fmt(candidate.peak_error), meta: '', note: `较 Active ↓ ${pct(data.evaluation_summary?.[3]?.improvement)}`, tone: 'purple', icon: <ThunderboltOutlined /> },
+    { title: 'MAE (kW)', value: fmt(candidate.mae), meta: '', note: metricComparison(data.evaluation_summary?.[0]?.improvement), tone: 'green', icon: <LineChartOutlined /> },
+    { title: 'RMSE (kW)', value: fmt(candidate.rmse), meta: '', note: metricComparison(data.evaluation_summary?.[1]?.improvement), tone: 'green', icon: <BarChartOutlined /> },
+    { title: '高峰误差 (kW)', value: fmt(candidate.peak_error), meta: '', note: metricComparison(data.evaluation_summary?.[3]?.improvement), tone: 'purple', icon: <ThunderboltOutlined /> },
     { title: '最近训练时间', value: shortDateTime(training.ended_at || candidate.created_at), meta: '', note: `耗时 ${training.duration_seconds ? `${Math.round(Number(training.duration_seconds) / 60)} 分钟` : '--'}`, tone: 'blue', icon: <ClockCircleOutlined /> }
   ];
 
   const effectOption = useMemo(() => ({
     ...baseGrid(),
+    tooltip: { trigger: 'axis', axisPointer: { type: 'line' } },
     legend: { top: 0, data: ['实际值', '当前模型', '候选模型', '误差对比'] },
     grid: { left: 48, right: 48, top: 44, bottom: 38 },
     xAxis: { ...(baseGrid().xAxis as object), data: data.effect.map((item) => item.time) },
@@ -200,26 +224,27 @@ export function ModelCenterPage(_props: PageProps) {
       { type: 'value', name: '误差(MW)', splitLine: { show: false }, axisLabel: { color: '#6B7280' } }
     ],
     series: [
-      { name: '实际值', type: 'line', smooth: true, data: data.effect.map((item) => item.actual), lineStyle: { color: chartColors.blue } },
-      { name: '当前模型', type: 'line', smooth: true, data: data.effect.map((item) => item.active), lineStyle: { color: chartColors.green } },
-      { name: '候选模型', type: 'line', smooth: true, data: data.effect.map((item) => item.candidate), lineStyle: { color: chartColors.orange } },
+      { name: '实际值', type: 'line', smooth: true, showSymbol: false, data: data.effect.map((item) => item.actual), lineStyle: { width: 2, color: chartColors.blue } },
+      { name: '当前模型', type: 'line', smooth: true, showSymbol: false, data: data.effect.map((item) => item.active), lineStyle: { width: 2, color: chartColors.green } },
+      { name: '候选模型', type: 'line', smooth: true, showSymbol: false, data: data.effect.map((item) => item.candidate), lineStyle: { width: 1.8, color: chartColors.orange } },
       { name: '误差对比', type: 'bar', yAxisIndex: 1, data: data.effect.map((item) => item.diff), itemStyle: { color: 'rgba(15, 185, 138, 0.22)' } }
     ]
   }), [data.effect]);
 
   const trendOption = useMemo(() => ({
     ...baseGrid(),
+    tooltip: { trigger: 'axis', axisPointer: { type: 'line' } },
     legend: { top: 0, data: ['MAE (kW)', 'RMSE (kW)', 'MAPE (%)'] },
     grid: { left: 44, right: 48, top: 44, bottom: 38 },
     xAxis: { ...(baseGrid().xAxis as object), data: data.error_trend.map((item) => item.date) },
     yAxis: [
-      { type: 'value', name: 'kW', splitLine: { lineStyle: { color: '#EEF2F6' } }, axisLabel: { color: '#6B7280' } },
-      { type: 'value', name: '%', splitLine: { show: false }, axisLabel: { color: '#6B7280' } }
+      { type: 'value', name: 'kW', scale: true, splitLine: { lineStyle: { color: '#EEF2F6' } }, axisLabel: { color: '#6B7280' } },
+      { type: 'value', name: '%', scale: true, splitLine: { show: false }, axisLabel: { color: '#6B7280' } }
     ],
     series: [
-      { name: 'MAE (kW)', type: 'line', smooth: true, data: data.error_trend.map((item) => item.mae), lineStyle: { color: chartColors.green } },
-      { name: 'RMSE (kW)', type: 'line', smooth: true, data: data.error_trend.map((item) => item.rmse), lineStyle: { color: chartColors.blue } },
-      { name: 'MAPE (%)', type: 'line', smooth: true, yAxisIndex: 1, data: data.error_trend.map((item) => item.mape), lineStyle: { color: chartColors.orange } }
+      { name: 'MAE (kW)', type: 'line', smooth: true, showSymbol: false, areaStyle: { color: 'rgba(16, 185, 129, 0.08)' }, data: data.error_trend.map((item) => item.mae), lineStyle: { width: 2, color: chartColors.green } },
+      { name: 'RMSE (kW)', type: 'line', smooth: true, showSymbol: false, data: data.error_trend.map((item) => item.rmse), lineStyle: { width: 2, color: chartColors.blue } },
+      { name: 'MAPE (%)', type: 'line', smooth: true, showSymbol: false, yAxisIndex: 1, data: data.error_trend.map((item) => item.mape), lineStyle: { width: 1.8, color: chartColors.orange } }
     ]
   }), [data.error_trend]);
 
@@ -307,7 +332,7 @@ export function ModelCenterPage(_props: PageProps) {
 
   const columns = [
     { title: '模型', width: 150, ellipsis: true, render: (_: unknown, row: ModelVersionRow) => businessModelLabel(row) },
-    { title: '状态', width: 82, render: (_: unknown, row: ModelVersionRow) => <Tag color={statusColor(row.status, row.is_active)}>{row.is_active ? 'Active' : row.status || 'Archived'}</Tag> },
+    { title: '状态', width: 82, render: (_: unknown, row: ModelVersionRow) => <Tag color={statusColor(row.status, row.is_active)}>{statusLabel(row)}</Tag> },
     { title: '训练时间', dataIndex: 'created_at', width: 132, render: shortDateTime },
     { title: 'MAE (kW)', dataIndex: 'mae', width: 82, render: renderNumber },
     { title: 'RMSE (kW)', dataIndex: 'rmse', width: 88, render: renderNumber },
@@ -319,8 +344,8 @@ export function ModelCenterPage(_props: PageProps) {
       render: (_: unknown, row: ModelVersionRow) => (
         <Space className="model-table-actions" size={4}>
           <Button size="small" onClick={() => handleViewDetail(row.model_version)}>查看详情</Button>
-          {canRunTraining && !row.is_active && row.status === 'Candidate' ? <Button size="small" onClick={() => handleActivate(row.model_version)}>设为 Active</Button> : null}
-          {canRunTraining && !row.is_active ? <Button size="small" danger onClick={() => handleRollback(row.model_version)}>回滚</Button> : null}
+          {canRunTraining && row.activation_eligible ? <Button size="small" onClick={() => handleActivate(row.model_version)}>设为 Active</Button> : null}
+          {canRunTraining && row.rollback_eligible ? <Button size="small" danger onClick={() => handleRollback(row.model_version)}>回滚</Button> : null}
         </Space>
       )
     }
@@ -433,8 +458,8 @@ export function ModelCenterPage(_props: PageProps) {
             rowKey="model_version"
             dataSource={data.versions}
             columns={columns}
-            pagination={{ pageSize: 5, showSizeChanger: false }}
-            scroll={{ x: 884 }}
+            pagination={{ pageSize: 10, showSizeChanger: false }}
+            scroll={{ x: 884, y: 300 }}
           />
         </SectionCard>
 
@@ -478,7 +503,15 @@ export function ModelCenterPage(_props: PageProps) {
                 { title: '指标', dataIndex: 'metric', width: 88 },
                 { title: 'Active', dataIndex: 'active', render: renderNumber },
                 { title: 'Candidate', dataIndex: 'candidate', render: renderNumber },
-                { title: '提升幅度', dataIndex: 'improvement', render: (value: unknown) => <span className="metric-positive">↓ {pct(value)}</span> }
+                {
+                  title: '变化幅度',
+                  dataIndex: 'improvement',
+                  render: (value: unknown) => {
+                    const num = Number(value);
+                    const improved = Number.isFinite(num) && num >= 0;
+                    return <span className={improved ? 'metric-positive' : 'metric-negative'}>{improved ? '↓' : '↑'} {pct(Math.abs(num))}</span>;
+                  }
+                }
               ]}
             />
           </SectionCard>
@@ -490,10 +523,12 @@ export function ModelCenterPage(_props: PageProps) {
                   value={rollbackVersion}
                   onChange={setRollbackVersion}
                   options={data.rollback.options.map((item) => ({ value: item.model_version, label: item.label }))}
+                  placeholder="暂无可回滚版本"
+                  disabled={!data.rollback.options.length}
                   popupMatchSelectWidth={false}
                 />
               </Tooltip>
-              <Button danger icon={<RetweetOutlined />} onClick={() => handleRollback()}>回滚</Button>
+              <Button danger icon={<RetweetOutlined />} disabled={!rollbackVersion} onClick={() => handleRollback()}>回滚</Button>
             </div>
             <div className="model-warning"><SafetyCertificateOutlined /> 回滚将替换当前 Active 模型，请确认后操作。</div>
           </SectionCard>

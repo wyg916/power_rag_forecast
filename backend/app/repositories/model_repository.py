@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from backend.app.core.config import get_settings
 from backend.app.core.security import CurrentUser
@@ -511,22 +511,22 @@ def ensure_seed_model_center(*, explicit: bool = False) -> bool:
 
 
 def _merge_metrics(version: dict[str, Any], latest_metric: dict[str, Any] | None) -> dict[str, Any]:
-    metrics_json = loads_json(version.get("metrics_json"), default={})
-    row = dict(metrics_json) if isinstance(metrics_json, dict) else {}
-    row.update({key: value for key, value in version.items() if key != "metrics_json"})
-    if latest_metric:
-        row.update(
-            {
-                "test_mae": latest_metric.get("mae"),
-                "test_rmse": latest_metric.get("rmse"),
-                "test_r2": latest_metric.get("r2"),
-                "mape": latest_metric.get("mape"),
-                "peak_rmse": latest_metric.get("peak_error"),
-                "sample_count": latest_metric.get("sample_count"),
-                "metric_date": latest_metric.get("metric_date"),
-            }
-        )
+    row = dict(version)
+    metric = latest_metric or {}
+    row.update(
+        {
+            "mae": metric.get("mae") if metric.get("mae") is not None else row.get("test_mae"),
+            "rmse": metric.get("rmse") if metric.get("rmse") is not None else row.get("test_rmse"),
+            "mape": metric.get("mape"),
+            "peak_error": metric.get("peak_error") if metric.get("peak_error") is not None else row.get("peak_rmse"),
+            "sample_count": metric.get("sample_count"),
+            "metric_date": metric.get("metric_date"),
+        }
+    )
     row["is_active"] = bool(row.get("is_active"))
+    state = str(row.get("status") or "").lower()
+    row["activation_eligible"] = state == "validated" and not row["is_active"]
+    row["rollback_eligible"] = state == "archived" and bool(row.get("validated_at"))
     return jsonable(row)
 
 
@@ -538,8 +538,17 @@ def model_status_from_postgres(
         return None
     try:
         service = ModelFactService(engine)
-        versions = service.list_models(domain, target_name)
-        active = service.get_active_model(domain, target_name)
+        raw_versions = service.list_models(domain, target_name)
+        raw_active = service.get_active_model(domain, target_name)
+        latest_metrics = _latest_metrics_by_version()
+        versions = [
+            _merge_metrics(item, latest_metrics.get(str(item.get("model_version") or "")))
+            for item in raw_versions
+        ]
+        active = _merge_metrics(
+            raw_active,
+            latest_metrics.get(str(raw_active.get("model_version") or "")),
+        ) if raw_active else {}
         with engine.connect() as conn:
             error_rows = conn.execute(
                 text(
@@ -585,10 +594,18 @@ def _latest_metrics_by_version() -> dict[str, dict[str, Any]]:
         rows = conn.execute(
             text(
                 """
-                SELECT DISTINCT ON (model_version)
-                       model_version, metric_date, mae, rmse, mape, peak_error, sample_count, created_at
-                FROM model_metrics
-                ORDER BY model_version, metric_date DESC NULLS LAST, created_at DESC
+                SELECT model_version, metric_date, mae, rmse, mape,
+                       peak_error, sample_count, created_at
+                FROM (
+                    SELECT model_version, metric_date, mae, rmse, mape,
+                           peak_error, sample_count, created_at,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY model_version
+                               ORDER BY metric_date DESC, created_at DESC
+                           ) AS row_no
+                    FROM model_metrics
+                ) ranked_metrics
+                WHERE row_no = 1
                 """
             )
         ).mappings().all()
@@ -605,11 +622,11 @@ def _metric_history(model_versions: list[str], days: int = 30) -> list[dict[str,
                 """
                 SELECT model_version, metric_date, mae, rmse, mape, peak_error, sample_count
                 FROM model_metrics
-                WHERE model_version = ANY(:versions)
-                ORDER BY metric_date DESC NULLS LAST, created_at DESC
+                WHERE model_version IN :versions
+                ORDER BY metric_date DESC, created_at DESC
                 LIMIT :limit
                 """
-            ),
+            ).bindparams(bindparam("versions", expanding=True)),
             {"versions": model_versions, "limit": max(days * len(model_versions), 1)},
         ).mappings().all()
     return mapping_list(rows)
@@ -754,7 +771,7 @@ def model_center_overview(
     )
     active_metrics = latest.get(str(active_for_metrics.get("model_version")), active_for_metrics)
     candidate_metrics = latest.get(str(candidate.get("model_version")), candidate)
-    history: list[dict[str, Any]] = []
+    history = _metric_history([str(candidate.get("model_version") or "")], days=30) if candidate else []
     trend_by_date: dict[str, dict[str, Any]] = {}
     for row in history:
         if row.get("model_version") != candidate.get("model_version"):
@@ -828,7 +845,9 @@ def model_center_overview(
                         "label": f"{item.get('model_version')} ({item.get('created_at') or item.get('updated_at')})",
                     }
                     for item in versions
-                    if item.get("model_version") and item.get("model_version") != active.get("model_version")
+                    if item.get("model_version")
+                    and item.get("model_version") != active.get("model_version")
+                    and item.get("rollback_eligible")
                 ],
             },
             "events": _governance_events(),

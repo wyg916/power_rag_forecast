@@ -6,6 +6,13 @@
   scrollbar-gutter: auto;
 }
 
+.app-shell .content-shell:has(.model-workbench-page) > .page-container--headerless,
+.app-shell .content-shell:has(.model-workbench-page) > .page-container--headerless > .page-content-area {
+  height: 100%;
+  min-height: 0 !important;
+  overflow: hidden;
+}
+
 .app-shell .page-container--headerless > .page-content-area > .model-workbench-page {
   display: flex;
   width: 100%;
@@ -231,7 +238,7 @@
 }
 
 .app-shell .model-bottom-grid > .model-version-card .ant-table-cell {
-  padding: 4px 5px;
+  padding: 7px 5px;
   font-size: 11px;
   line-height: 1.22;
 }
@@ -310,6 +317,10 @@
   padding: 3px 4px !important;
   font-size: 11px;
   line-height: 1.16;
+}
+
+.app-shell .model-governance-stack .metric-negative {
+  color: #ef6c57;
 }
 
 .app-shell .model-governance-stack .model-rollback-card > .ant-card-body {

@@ -13,6 +13,9 @@ export interface ModelVersionRow {
   mape?: number;
   peak_error?: number;
   sample_count?: number;
+  validated_at?: string;
+  activation_eligible?: boolean;
+  rollback_eligible?: boolean;
 }
 
 export interface ModelCenterOverview {
