@@ -5,7 +5,7 @@
 .content-shell:has(.strategy-design-page) {
   height: calc(100vh - var(--header-height));
   min-height: 0;
-  padding: 10px 16px 0;
+  padding: 10px 10px 0;
   overflow: hidden;
 }
 
@@ -18,7 +18,7 @@
   --strategy-gap: 8px;
   display: flex;
   min-width: 0;
-  height: calc(100vh - var(--header-height) - 10px);
+  height: 100%;
   min-height: 0;
   flex-direction: column;
   gap: var(--strategy-gap);
@@ -32,20 +32,24 @@
   flex: 0 0 auto;
 }
 
-/* Shared single-line strategy toolbar at the reference viewport. */
+/* Strategy header: two visual bands at wide desktop sizes.
+ * Title and business context stay above; the three page entries and controls
+ * form a clearly separated navigation/operation band below. */
 .strategy-design-page .strategy-page-header {
   position: sticky;
   top: 0;
   z-index: 90;
   isolation: isolate;
-  display: flex;
+  display: grid;
   width: 100%;
-  height: 60px;
-  min-height: 60px;
-  flex: 0 0 60px;
-  align-items: center;
-  gap: 10px;
-  padding: 0 12px;
+  height: 104px;
+  min-height: 104px;
+  flex: 0 0 104px;
+  grid-template-columns: minmax(540px, 600px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+  padding: 8px 12px;
   overflow: visible;
   border-color: #dfe7ef;
   border-radius: 10px;
@@ -54,16 +58,17 @@
 }
 
 .strategy-design-page .strategy-page-header .page-heading-copy {
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex: 0 1 auto;
+  grid-template-rows: 40px 46px;
   align-self: stretch;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 2px;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-title-row {
-  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-main {
@@ -86,7 +91,7 @@
 }
 
 .strategy-design-page .strategy-page-tabs {
-  width: auto;
+  width: 100%;
   min-width: 0;
   height: 100%;
 }
@@ -102,29 +107,73 @@
   margin: 0;
 }
 
+.strategy-design-page .strategy-page-tabs .ant-tabs-nav::before,
+.strategy-design-page .strategy-page-tabs .ant-tabs-ink-bar {
+  display: none;
+}
+
+.strategy-design-page .strategy-page-tabs .ant-tabs-nav-list {
+  width: 100%;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid #dbe5ed;
+  border-radius: 10px;
+  background: #f4f7fa;
+}
+
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab {
+  display: flex;
+  min-width: 0;
+  min-height: 36px;
+  flex: 1 1 0;
+  justify-content: center;
   margin: 0;
-  padding: 0 0 2px;
+  padding: 0 14px;
+  border: 1px solid #dfe7ee;
+  border-radius: 7px;
+  background: #fff;
+  color: #43536a;
   font-size: 13px;
+  font-weight: 700;
   white-space: nowrap;
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab + .ant-tabs-tab {
-  margin-inline-start: 20px;
+  margin-inline-start: 0;
+}
+
+.strategy-design-page .strategy-page-tabs .ant-tabs-tab:hover {
+  border-color: rgba(0, 143, 114, .35);
+  background: rgba(0, 143, 114, .07);
+}
+
+.strategy-design-page .strategy-page-tabs .ant-tabs-tab.ant-tabs-tab-active,
+.strategy-design-page .strategy-page-tabs .ant-tabs-tab.ant-tabs-tab-active:hover {
+  border-color: #087a5b;
+  background: #087a5b;
+  box-shadow: 0 4px 12px rgba(8, 122, 91, .2);
+}
+
+.strategy-design-page .strategy-page-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #fff !important;
+  text-shadow: none;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-utility {
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 40px 46px;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+  gap: 2px 8px;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-context {
   min-width: 0;
-  flex: 0 1 auto;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: end;
 }
 
 .strategy-design-page .strategy-header-metadata {
@@ -140,7 +189,12 @@
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid #e0e8ef;
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
 .strategy-design-page .strategy-header-metadata small {
@@ -149,12 +203,16 @@
 }
 
 .strategy-design-page .strategy-header-metadata strong {
-  max-width: 92px;
+  max-width: 126px;
   color: var(--color-title);
   font-size: 12px;
   line-height: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.strategy-design-page .strategy-header-metadata .strategy-meta-status strong {
+  color: #087a5b;
 }
 
 .strategy-design-page .strategy-header-metadata .ant-tag {
@@ -205,7 +263,8 @@
 
 .strategy-design-page .strategy-page-header .page-heading-filters {
   min-width: 0;
-  flex: 1 1 auto;
+  grid-column: 1;
+  grid-row: 2;
 }
 
 .strategy-design-page .strategy-header-filters {
@@ -243,7 +302,8 @@
 .strategy-design-page .strategy-page-header .page-heading-actions {
   display: flex;
   min-width: 0;
-  flex: 0 0 auto;
+  grid-column: 2;
+  grid-row: 2;
   align-items: center;
   gap: 6px !important;
 }
@@ -261,28 +321,16 @@
 }
 
 .strategy-review-page .strategy-page-header {
-  gap: 7px;
-  padding-inline: 10px;
+  gap: 12px;
+  padding-inline: 12px;
 }
 
 .strategy-review-page .strategy-page-header .page-heading-copy {
-  gap: 8px;
-}
-
-.strategy-review-page .strategy-page-tabs .ant-tabs-tab + .ant-tabs-tab {
-  margin-inline-start: 14px;
+  gap: 2px;
 }
 
 .strategy-review-page .strategy-header-metadata {
   gap: 5px;
-}
-
-.strategy-review-page .strategy-header-metadata small {
-  display: none;
-}
-
-.strategy-review-page .strategy-header-filters label > span {
-  display: none;
 }
 
 .strategy-review-page .strategy-header-filters .ant-select {
@@ -403,10 +451,10 @@
 
 .strategy-design-page .strategy-overview-bottom {
   min-height: 0;
-  flex: 0 0 180px;
-  grid-template-columns: 1.08fr 1fr 1.08fr 1.08fr;
+  flex: 0 0 188px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  padding-right: 72px;
+  padding-right: 0;
 }
 
 .strategy-design-page .mini-panel > p {
@@ -415,13 +463,49 @@
   font-size: 12px;
 }
 
-.strategy-design-page .execution-panel > div:not(.strategy-card-head) {
-  margin: 6px 0;
+.strategy-design-page .execution-panel {
+  padding-right: 12px;
 }
 
-.strategy-design-page .execution-panel .ant-progress-circle {
-  right: 12px;
-  bottom: 20px;
+.strategy-design-page .execution-summary-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.strategy-design-page .execution-status-list p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0;
+  color: var(--color-secondary);
+  font-size: 12px;
+}
+
+.strategy-design-page .execution-status-list strong {
+  color: var(--color-title);
+  font-size: 14px;
+}
+
+.strategy-design-page .execution-progress-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+}
+
+.strategy-design-page .execution-progress-wrap .ant-progress-circle {
+  position: static;
+}
+
+.strategy-design-page .execution-progress-wrap .ant-progress-text strong {
+  color: #087a5b;
+  font-size: 17px;
+}
+
+.strategy-design-page .execution-progress-wrap > span {
+  color: var(--color-secondary);
+  font-size: 12px;
 }
 
 .strategy-design-page .revenue-panel > p {
@@ -430,6 +514,10 @@
 
 .strategy-design-page .revenue-panel > small {
   padding-top: 7px;
+}
+
+.strategy-design-page .revenue-panel {
+  padding-right: 82px;
 }
 
 /* Storage: content-sized device card, fixed chart row, internal detail scroll. */
@@ -441,15 +529,15 @@
 }
 
 .strategy-design-page .storage-window-list {
-  height: auto;
+  height: 100%;
   max-height: 100%;
-  align-self: start;
+  align-self: stretch;
 }
 
 .strategy-design-page .storage-window-scroll {
   min-height: 0;
-  max-height: calc(100% - 108px);
-  flex: 0 1 auto;
+  max-height: 190px;
+  flex: 0 1 190px;
   overflow-y: auto;
 }
 
@@ -463,9 +551,86 @@
   padding: 8px;
 }
 
+.strategy-design-page .storage-device-summary {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #e0e8ef;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #fbfdfd 0%, #f5faf8 100%);
+}
+
+.strategy-design-page .storage-subsection-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.strategy-design-page .storage-subsection-title span {
+  color: var(--color-title);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.strategy-design-page .storage-subsection-title small {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.strategy-design-page .storage-device-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.strategy-design-page .storage-device-summary-grid p {
+  min-width: 0;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid #e8eef3;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.strategy-design-page .storage-device-summary-grid span,
+.strategy-design-page .storage-device-summary-grid strong {
+  display: block;
+}
+
+.strategy-design-page .storage-device-summary-grid span,
+.strategy-design-page .storage-soc-overview span {
+  color: var(--color-secondary);
+  font-size: 11px;
+}
+
+.strategy-design-page .storage-device-summary-grid strong {
+  margin-top: 4px;
+  color: var(--color-title);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.strategy-design-page .storage-soc-overview > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.strategy-design-page .storage-soc-overview strong {
+  color: #087a5b;
+  font-size: 13px;
+}
+
 .strategy-design-page .storage-center-column {
   min-height: 0;
-  grid-template-rows: 300px minmax(0, 1fr);
+  grid-template-rows: minmax(260px, .92fr) minmax(250px, 1.08fr);
   gap: 8px;
 }
 
@@ -484,7 +649,7 @@
 
 .strategy-design-page .storage-plan-table .ant-table-wrapper {
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
 }
 
 .strategy-design-page .storage-plan-table .ant-table-thead > tr > th {
@@ -495,6 +660,40 @@
 .strategy-design-page .storage-plan-table .ant-table-tbody > tr > td {
   height: 40px;
   padding: 4px 7px !important;
+}
+
+.strategy-design-page .storage-execution-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.strategy-design-page .storage-execution-summary p {
+  min-width: 0;
+  margin: 0;
+  padding: 7px;
+  border-radius: 7px;
+  background: var(--color-bg-soft);
+}
+
+.strategy-design-page .storage-execution-summary span,
+.strategy-design-page .storage-execution-summary strong {
+  display: block;
+}
+
+.strategy-design-page .storage-execution-summary span {
+  color: var(--color-secondary);
+  font-size: 11px;
+}
+
+.strategy-design-page .storage-execution-summary strong {
+  margin-top: 3px;
+  color: var(--color-title);
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .strategy-design-page .storage-detail-panel {
@@ -517,7 +716,7 @@
 
 .strategy-design-page .review-list-column {
   min-height: 0;
-  grid-template-rows: minmax(0, 1fr) 112px;
+  grid-template-rows: minmax(0, 1fr) 118px;
   gap: 8px;
 }
 
@@ -536,8 +735,10 @@
 }
 
 .strategy-design-page .review-table-card .ant-table-wrapper {
+  display: flex;
   min-height: 0;
   flex: 1 1 auto;
+  flex-direction: column;
 }
 
 .strategy-design-page .review-table-card .ant-table {
@@ -622,11 +823,11 @@
 @media (max-width: 1700px) {
   .strategy-design-page .strategy-page-header {
     display: grid;
-    height: 96px;
-    min-height: 96px;
-    flex-basis: 96px;
+    height: 100px;
+    min-height: 100px;
+    flex-basis: 100px;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 42px 44px;
+    grid-template-rows: 42px 48px;
     align-items: center;
     gap: 2px;
     padding: 4px 10px 6px;
@@ -639,11 +840,28 @@
   }
 
   .strategy-design-page .strategy-page-header .page-heading-copy {
+    display: flex;
     grid-row: 1;
+    align-items: center;
+    gap: 12px;
   }
 
   .strategy-design-page .strategy-page-header .page-heading-utility {
+    display: flex;
     grid-row: 2;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-navigation {
+    width: min(600px, calc(100% - 132px));
+    height: 42px;
+    margin-left: 4px;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-context {
+    flex: 0 0 auto;
   }
 
   .strategy-design-page .strategy-header-metadata {
@@ -659,7 +877,7 @@
   }
 
   .strategy-design-page .strategy-overview-bottom {
-    flex-basis: 170px;
+    flex-basis: 180px;
   }
 
   .strategy-design-page .storage-workspace {
@@ -667,7 +885,7 @@
   }
 
   .strategy-design-page .storage-center-column {
-    grid-template-rows: 280px minmax(0, 1fr);
+    grid-template-rows: minmax(250px, .9fr) minmax(240px, 1.1fr);
   }
 
   .strategy-design-page .review-workspace {
@@ -691,6 +909,39 @@
 
   .strategy-design-page .strategy-page-header {
     position: sticky;
+    display: flex;
+    height: auto;
+    min-height: 152px;
+    flex-basis: auto;
+    flex-direction: column;
+    align-items: stretch;
+    padding-block: 8px;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-copy {
+    display: grid;
+    grid-template-rows: 34px 46px;
+    gap: 4px;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-navigation {
+    width: 100%;
+    height: 46px;
+    margin-left: 0;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-utility {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .strategy-design-page .strategy-page-header .page-heading-filters {
+    flex: 1 1 620px;
+  }
+
+  .strategy-design-page .strategy-header-filters {
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .strategy-design-page .strategy-metric-strip {
@@ -713,6 +964,10 @@
     min-height: 340px;
     flex-basis: auto;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .strategy-design-page .revenue-panel {
+    padding-right: 82px;
   }
 
   .strategy-design-page .storage-center-column {

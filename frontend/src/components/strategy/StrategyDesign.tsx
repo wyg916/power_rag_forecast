@@ -173,6 +173,9 @@ function InsightBlock({ tone, title, children }: { tone: string; title: string; 
 export function StrategyOverviewBottom({ data }: { data: any }) {
   const summary = data?.summary || {};
   const risks = data?.anomalies || [];
+  const executionPercent = summary.executionCount
+    ? Math.round((summary.completedExecutionCount / summary.executionCount) * 100)
+    : 0;
   const typeCounts = risks.reduce((result: Record<string, number>, item: any) => {
     const key = item.anomaly_type || riskLabel(item.risk_level);
     result[key] = (result[key] || 0) + 1;
@@ -190,15 +193,25 @@ export function StrategyOverviewBottom({ data }: { data: any }) {
         {riskRows.length ? riskRows.map(([name, count], index) => <p key={name}><i className={`dot dot-${index}`} /><span>{name}</span><strong>{String(count)}</strong></p>) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无风险记录" />}
       </section>
       <section className="strategy-card mini-panel execution-panel"><div className="strategy-card-head"><h2>执行状态摘要</h2></div>
-        <div><span>策略生成</span><strong>{summary.strategyCount ?? '--'}</strong></div>
-        <div><span>执行反馈</span><strong>{summary.executionCount ?? '--'}</strong></div>
-        <div><span>已完成</span><strong>{summary.completedExecutionCount ?? '--'}</strong></div>
-        <Progress
-          type="circle"
-          size={68}
-          percent={summary.executionCount ? Math.round((summary.completedExecutionCount / summary.executionCount) * 100) : 0}
-          strokeColor={chartColors.green}
-        />
+        <div className="execution-summary-body">
+          <div className="execution-status-list">
+            <p><span>策略生成</span><strong>{summary.strategyCount ?? '--'}</strong></p>
+            <p><span>执行反馈</span><strong>{summary.executionCount ?? '--'}</strong></p>
+            <p><span>已完成</span><strong>{summary.completedExecutionCount ?? '--'}</strong></p>
+          </div>
+          <div className="execution-progress-wrap" aria-label={`执行完成率 ${executionPercent}%`}>
+            <Progress
+              type="circle"
+              size={82}
+              strokeWidth={10}
+              percent={executionPercent}
+              strokeColor={chartColors.green}
+              trailColor="#e7eef3"
+              format={(percent) => <strong>{percent ?? 0}%</strong>}
+            />
+            <span>执行完成率</span>
+          </div>
+        </div>
       </section>
       <section className="strategy-card mini-panel revenue-panel"><div className="strategy-card-head"><h2>收益对比</h2></div>
         <p><span>峰谷价差空间</span><strong>{fmt(summary.spread)} 元/kWh</strong></p>
@@ -227,6 +240,7 @@ export function StorageWorkspace({
   const plan = device ? (data?.devicePlans?.[device.device_id] || []) : [];
   const executions = (data?.executionItems || []).filter((item: any) => item.device_id === device?.device_id);
   const selected = executions.find((item: any) => item.key === selectedKey) || executions[0];
+  const completedExecutions = executions.filter((item: any) => item.execution_status === 'completed').length;
   return (
     <div className="storage-workspace">
       <section className="strategy-card storage-window-list">
@@ -241,11 +255,31 @@ export function StorageWorkspace({
           ))}
         </div>
         {device && (
-          <div className="storage-note">
-            <strong>{device.device_name}</strong>
-            <p>容量 {fmt(device.rated_capacity_mwh, 1)} MWh · 功率 {fmt(device.rated_power_mw, 1)} MW</p>
-            <p>SOC 约束 {fmt(device.soc_lower_pct, 0)}% - {fmt(device.soc_upper_pct, 0)}%</p>
-          </div>
+          <>
+            <div className="storage-note">
+              <strong>{device.device_name}</strong>
+              <p>容量 {fmt(device.rated_capacity_mwh, 1)} MWh · 功率 {fmt(device.rated_power_mw, 1)} MW</p>
+              <p>SOC 约束 {fmt(device.soc_lower_pct, 0)}% - {fmt(device.soc_upper_pct, 0)}%</p>
+            </div>
+            <div className="storage-device-summary">
+              <div className="storage-subsection-title"><span>当前设备概览</span><small>随所选设备联动</small></div>
+              <div className="storage-device-summary-grid">
+                <p><span>SOC 状态点</span><strong>{plan.length || '--'}</strong></p>
+                <p><span>反馈项</span><strong>{executions.length || '--'}</strong></p>
+                <p><span>已完成</span><strong>{completedExecutions}</strong></p>
+                <p><span>可用电量</span><strong>{device.latest_soc?.available_energy_mwh == null ? '--' : `${fmt(device.latest_soc.available_energy_mwh, 1)} MWh`}</strong></p>
+              </div>
+              <div className="storage-soc-overview">
+                <div><span>当前 SOC</span><strong>{device.latest_soc?.soc_pct == null ? '--' : `${fmt(device.latest_soc.soc_pct, 1)}%`}</strong></div>
+                <Progress
+                  percent={device.latest_soc?.soc_pct == null ? 0 : Number(device.latest_soc.soc_pct)}
+                  showInfo={false}
+                  strokeColor={chartColors.green}
+                  trailColor="#e7eef3"
+                />
+              </div>
+            </div>
+          </>
         )}
       </section>
       <section className="storage-center-column">
@@ -280,6 +314,11 @@ function StorageChart({ plan }: { plan: any[] }) {
 }
 
 function StorageExecutionTable({ rows, onSelect }: { rows: any[]; onSelect: (row: any) => void }) {
+  const completedCount = rows.filter((row) => row.execution_status === 'completed').length;
+  const activeCount = rows.filter((row) => row.execution_status === 'in_progress').length;
+  const plannedEnergy = rows.reduce((total, row) => total + (num(row.plannedEnergy) || 0), 0);
+  const actualEnergyItems = rows.map((row) => num(row.actualEnergy)).filter((value): value is number => value != null);
+  const actualEnergy = actualEnergyItems.reduce((total, value) => total + value, 0);
   const columns: ColumnsType<any> = [
     { title: '窗口', dataIndex: 'time', width: 74 },
     { title: '动作', dataIndex: 'actionLabel', width: 72, render: (value) => <Tag color={value === '充电' ? 'success' : value === '放电' ? 'blue' : 'default'}>{value}</Tag> },
@@ -293,6 +332,12 @@ function StorageExecutionTable({ rows, onSelect }: { rows: any[]; onSelect: (row
     <section className="strategy-card storage-plan-table">
       <div className="strategy-card-head"><h2>执行反馈清单（{rows.length} 条）</h2></div>
       <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={false} scroll={{ y: 145, x: 760 }} />
+      <div className="storage-execution-summary" aria-label="当前设备执行反馈摘要">
+        <p><span>已完成</span><strong>{completedCount}</strong></p>
+        <p><span>执行中</span><strong>{activeCount}</strong></p>
+        <p><span>计划电量</span><strong>{rows.length ? `${fmt(plannedEnergy, 1)} MWh` : '--'}</strong></p>
+        <p><span>反馈电量</span><strong>{actualEnergyItems.length ? `${fmt(actualEnergy, 1)} MWh` : '--'}</strong></p>
+      </div>
     </section>
   );
 }
@@ -368,7 +413,7 @@ export function ReviewWorkspace({
       <div className="review-list-column">
         <section className="strategy-card review-table-card">
           <div className="review-tabs"><b>全部（{totalRows}）</b><span>当前筛选（{rows.length}）</span><span>待处理（{allRows.filter((row: any) => ['draft', 'pending_review'].includes(row.status)).length}）</span><span>已处理（{allRows.filter((row: any) => !['draft', 'pending_review'].includes(row.status)).length}）</span><span>紧急（{allRows.filter((row: any) => row.risk === 'high').length}）</span></div>
-          <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={{ pageSize: 10, showSizeChanger: false }} scroll={{ y: 278, x: 980 }} onRow={(row) => ({ onClick: () => onSelect(row) })} rowClassName={(row) => selected?.key === row.key ? 'selected-review-row' : ''} />
+          <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={{ pageSize: 10, showSizeChanger: false }} scroll={{ y: 'clamp(224px, calc(100dvh - 544px), 392px)', x: 980 }} onRow={(row) => ({ onClick: () => onSelect(row) })} rowClassName={(row) => selected?.key === row.key ? 'selected-review-row' : ''} />
         </section>
         <ReviewBottomSummary rows={rows} />
       </div>

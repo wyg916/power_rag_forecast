@@ -1,0 +1,7 @@
+npm run typecheck
+npm run lint
+npm run unit
+E:\智能运营分析项目\.venv\Scripts\python.exe -m pytest tests/test_p6_p1_3a_strategy_layout.py -q -k "not strategy_get_chain"
+npm run build
+git diff --check
+browser: 1919x928 / 1440x900 / 1366x768 strategy three-tab layout and interaction acceptance

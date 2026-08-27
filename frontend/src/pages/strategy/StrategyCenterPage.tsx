@@ -271,8 +271,8 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         className="strategy-page-header"
         metadata={(
           <div className="strategy-header-metadata">
-            <span><small>{mode === 'review' ? '复核日期' : '策略日期'}</small><strong>{data?.strategyDate || '--'}</strong></span>
-            <span><small>审核状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
+            <span className="strategy-meta-date"><small>{mode === 'review' ? '复核日期' : '策略日期'}</small><strong>{data?.strategyDate || '--'}</strong></span>
+            <span className="strategy-meta-status"><small>审核状态</small><strong>{data?.strategyStatusLabel || '--'}</strong></span>
           </div>
         )}
         filters={(

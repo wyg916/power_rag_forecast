@@ -108,6 +108,47 @@ def test_strategy_three_subroutes_and_narrow_more_contract_are_preserved():
     assert "FactStatusBar" not in page
 
 
+def test_strategy_tabs_are_a_prominent_equal_width_navigation_band_and_context_moves_right():
+    page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
+    strategy_styles = _read("frontend/src/pages/strategy/strategy-center-layout.css")
+
+    assert 'className="strategy-meta-date"' in page
+    assert 'className="strategy-meta-status"' in page
+    assert "grid-template-columns: minmax(540px, 600px) minmax(0, 1fr)" in strategy_styles
+    assert ".strategy-page-tabs .ant-tabs-nav-list" in strategy_styles
+    assert "flex: 1 1 0" in strategy_styles
+    assert ".strategy-page-tabs .ant-tabs-tab-active" in strategy_styles
+    assert "background: #087a5b" in strategy_styles
+
+
+def test_strategy_overview_cards_fill_the_row_and_execution_progress_is_explicit():
+    design = _read("frontend/src/components/strategy/StrategyDesign.tsx")
+    strategy_styles = _read("frontend/src/pages/strategy/strategy-center-layout.css")
+    bottom_block = strategy_styles.split(".strategy-design-page .strategy-overview-bottom {", 1)[1].split(
+        ".strategy-design-page .mini-panel", 1
+    )[0]
+
+    assert "grid-template-columns: repeat(4, minmax(0, 1fr))" in bottom_block
+    assert "padding-right: 0" in bottom_block
+    assert "execution-progress-wrap" in design
+    assert "执行完成率" in design
+    assert 'trailColor="#e7eef3"' in design
+
+
+def test_strategy_storage_and_review_fill_space_from_existing_api_rows_only():
+    design = _read("frontend/src/components/strategy/StrategyDesign.tsx")
+    service = _read("frontend/src/services/strategyApi.ts")
+
+    assert "storage-device-summary" in design
+    assert "storage-execution-summary" in design
+    assert "executions.filter" in design
+    assert "rows.reduce" in design
+    assert "calc(100dvh - 544px)" in design
+    assert "Math.random" not in design
+    assert "executionItems = (Array.isArray(runtime?.execution_items)" in service
+    assert "devices = Array.isArray(runtime?.devices)" in service
+
+
 def test_strategy_get_chain_has_no_strategy_or_audit_write_side_effects():
     before = _strategy_write_counts()
     paths = (
