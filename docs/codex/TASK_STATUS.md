@@ -237,3 +237,9 @@
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
 |---|---|---|---|---|
 | PROJECT1 知识库页面全功能打通 | `PARTIAL`；索引、Embedding、单文档重索引、任务 Worker、详情、导出、既有上传与权限链路已接通；PostgreSQL 正式向量 8378/8378、profile invalid 0；125+35 pytest 与 Vite 3689 PASS | `main` / 本行所在提交（父提交 `8ea13ed`） | `docs/codex/evidence/PROJECT1_KNOWLEDGE_FUNCTIONAL_RECOVERY_20260827_204900/` | 唯一阻塞：本机未配置获批的 postgres 发布身份；`RAG-R1` 仍 rolled_back/current=false、alias=NULL，检索真实返回 `published_release_fact_mismatch`，发布校验 503。未绕过最小权限或伪造“全部打通”。 |
+
+## 2026-08-28 RAG-R1 正式发布与 Search 最终验收
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1 RAG-R1 `validate → publish → Alias/数据库/Search` 最终闭环 | `PASS`；发布门禁 9/9，PostgreSQL `published/current=true`，Qdrant Alias=`rag_chunks_current → rag_chunks_RAG-R1`、8,339 points；恢复缺失的 50,844 词 BM25 运行资产后，Search/QA HTTP 200，BGE 重排与真实 citation 生效，正向批量 2/2；专项回归 105 passed | `main` / 本行所在提交（执行父提交 `65d95ee`） | `docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/` | 无发布或搜索功能阻塞；运行注意项：本地 CPU 后端重启后的首次双模型冷加载可能超过 420 秒，当前实例已预热，热态 Search 1.469 秒。宽泛跨领域问题按设计 fail-closed，不伪造答案。 |

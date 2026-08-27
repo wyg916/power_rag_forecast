@@ -1,0 +1,68 @@
+{
+  "status": "PASS",
+  "release_id": "RAG-R1",
+  "configuration": {
+    "storage": "git_outside_local_runtime",
+    "variable": "RAG_RELEASE_DATABASE_URL",
+    "target": "postgres@localhost:5432/postgres",
+    "secret_values_emitted": false
+  },
+  "validate": {
+    "http": 200,
+    "run_id": "rag_publish_be07c12d24d5",
+    "gate_passed": 9,
+    "gate_total": 9,
+    "documents": 45,
+    "chunks": 8339,
+    "isolated": 24,
+    "duplicates": 14
+  },
+  "publish": {
+    "http": 200,
+    "run_id": "rag_publish_c9688d22ab69",
+    "status": "published",
+    "is_current": true,
+    "rolled_back_at": null
+  },
+  "postgres": {
+    "status": "published",
+    "is_current": true,
+    "collection": "rag_chunks_RAG-R1"
+  },
+  "qdrant": {
+    "alias": "rag_chunks_current",
+    "collection": "rag_chunks_RAG-R1",
+    "point_count": 8339,
+    "strict_mode": true,
+    "snapshot_count": 2
+  },
+  "bm25": {
+    "chunk_count": 8339,
+    "empty_sparse_chunks": 41,
+    "vocabulary_size": 50844,
+    "profile_sha256": "591f331717eb29b56a74a35d67ba88101046bae09d6e024a0bd5793d70edf6b0",
+    "file_sha256": "4f266825b56adba835e5b76dedbeaf5bec8f2bc2ba0340ba05fa2cf8e88cec16"
+  },
+  "live_api": {
+    "release_http": 200,
+    "health_http": 200,
+    "health_status": "normal",
+    "search_http": 200,
+    "search_available": true,
+    "search_mode": "enterprise_qdrant_hybrid",
+    "reranker": "bge",
+    "warm_search_seconds": 1.469,
+    "qa_http": 200,
+    "qa_passed": true,
+    "batch_passed": 2,
+    "batch_total": 2,
+    "batch_pass_rate": 100.0,
+    "web_worker_link_http": 409,
+    "web_worker_link_reason": "release_worker_conflict"
+  },
+  "tests": {
+    "passed": 105,
+    "failed": 0,
+    "duration_seconds": 17.19
+  }
+}

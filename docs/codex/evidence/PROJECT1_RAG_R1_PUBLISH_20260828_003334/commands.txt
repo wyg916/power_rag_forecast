@@ -1,0 +1,22 @@
+# 所有命令均在 E:\智能运营分析项目 执行；凭据、令牌和完整 URL 已省略。
+git status --short --branch
+git rev-parse HEAD
+scripts/rag_release_worker_runtime.py start/status（使用 Git 外 runtime 与 Qdrant admin 配置）
+POST http://127.0.0.1:8787/v1/releases/validate
+POST http://127.0.0.1:8787/v1/releases/publish
+PostgreSQL 只读查询 kb_releases、kb_rag_audit_events 与已发布 kb_chunks
+Qdrant 只读查询 aliases、collection info、point count 与 payload profile
+POST /api/knowledge/search
+POST /api/knowledge/qa-test
+POST /api/knowledge/batch-validate
+GET /api/knowledge/releases
+GET /api/knowledge/health
+POST /api/knowledge/releases/RAG-R1/validate（预期 409 状态冲突）
+
+# 回归
+.venv/Scripts/python.exe -B -m pytest -p no:cacheprovider \
+  tests/test_rag_qdrant_transport.py tests/test_rag_qdrant_vector_store.py \
+  tests/test_rag_release_worker_runtime.py tests/test_rag_release_worker_app.py \
+  tests/test_rag_enterprise_release_service.py tests/test_rag_enterprise_release_adapter.py \
+  tests/test_rag_enterprise_release_handoff.py tests/test_day3b_rag_release_drill.py \
+  tests/test_knowledge_business_api.py tests/test_knowledge_frontend_layout_contract.py -q

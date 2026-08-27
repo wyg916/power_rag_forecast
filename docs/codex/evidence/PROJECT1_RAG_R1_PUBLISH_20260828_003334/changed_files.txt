@@ -1,0 +1,18 @@
+# Git 内
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/SUMMARY.md
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/plan.md
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/changed_files.txt
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/commands.txt
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/test_summary.md
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/rollback.md
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/unresolved.md
+docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/release_state.json
+
+# Git 外运行配置/资产
+E:\智能运营分析项目_本地配置\beta10d_day4_runtime.env
+E:\智能运营分析项目\.runtime\rag\releases\RAG-R1\bm25_profile.json
+
+# 数据状态
+PostgreSQL kb_releases / kb_rag_audit_events
+Qdrant alias rag_chunks_current
