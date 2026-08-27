@@ -32,24 +32,21 @@
   flex: 0 0 auto;
 }
 
-/* Strategy header: two visual bands at wide desktop sizes.
- * Title and business context stay above; the three page entries and controls
- * form a clearly separated navigation/operation band below. */
+/* One shared strategy header for all three tabs. Title, navigation, metadata,
+ * page filters and actions remain in one opaque sticky row. */
 .strategy-design-page .strategy-page-header {
   position: sticky;
   top: 0;
   z-index: 90;
   isolation: isolate;
-  display: grid;
+  display: flex;
   width: 100%;
-  height: 104px;
-  min-height: 104px;
-  flex: 0 0 104px;
-  grid-template-columns: minmax(540px, 600px) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  align-items: stretch;
-  gap: 14px;
-  padding: 8px 12px;
+  height: 60px;
+  min-height: 60px;
+  flex: 0 0 60px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
   overflow: visible;
   border-color: #dfe7ef;
   border-radius: 10px;
@@ -58,16 +55,17 @@
 }
 
 .strategy-design-page .strategy-page-header .page-heading-copy {
-  display: grid;
+  display: flex;
   min-width: 0;
-  grid-template-rows: 40px 46px;
+  flex: 0 1 auto;
   align-self: stretch;
-  align-items: stretch;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-title-row {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
 }
 
@@ -76,7 +74,7 @@
 }
 
 .strategy-design-page .strategy-page-header h1 {
-  font-size: 22px;
+  font-size: 23px;
   line-height: 1;
 }
 
@@ -85,9 +83,11 @@
 }
 
 .strategy-design-page .strategy-page-header .page-heading-navigation {
+  width: auto;
   min-width: 0;
+  height: 100%;
+  flex: 0 1 auto;
   margin-top: 0;
-  align-self: stretch;
 }
 
 .strategy-design-page .strategy-page-tabs {
@@ -107,36 +107,36 @@
   margin: 0;
 }
 
-.strategy-design-page .strategy-page-tabs .ant-tabs-nav::before,
+.strategy-design-page .strategy-page-tabs .ant-tabs-nav::before {
+  border-color: transparent;
+}
+
 .strategy-design-page .strategy-page-tabs .ant-tabs-ink-bar {
-  display: none;
+  height: 3px;
+  background: #00a47c;
 }
 
 .strategy-design-page .strategy-page-tabs .ant-tabs-nav-list {
-  width: 100%;
-  gap: 6px;
-  padding: 4px;
-  border: 1px solid #dbe5ed;
-  border-radius: 10px;
-  background: #f4f7fa;
+  gap: 2px;
+  padding: 0;
 }
 
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab {
   display: flex;
   min-width: 0;
-  min-height: 36px;
-  flex: 1 1 0;
+  min-height: 58px;
+  flex: 0 1 auto;
   justify-content: center;
   margin: 0;
-  padding: 0 14px;
-  border: 1px solid #dfe7ee;
-  border-radius: 7px;
-  background: #fff;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: #43536a;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 650;
   white-space: nowrap;
-  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+  transition: color .18s ease, background-color .18s ease;
 }
 
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab + .ant-tabs-tab {
@@ -144,36 +144,32 @@
 }
 
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab:hover {
-  border-color: rgba(0, 143, 114, .35);
-  background: rgba(0, 143, 114, .07);
+  background: rgba(0, 143, 114, .06);
+  color: #087a5b;
 }
 
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab.ant-tabs-tab-active,
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab.ant-tabs-tab-active:hover {
-  border-color: #087a5b;
-  background: #087a5b;
-  box-shadow: 0 4px 12px rgba(8, 122, 91, .2);
+  background: transparent;
 }
 
 .strategy-design-page .strategy-page-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: #fff !important;
+  color: #008f72 !important;
   text-shadow: none;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-utility {
-  display: grid;
+  display: flex;
   min-width: 0;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: 40px 46px;
+  flex: 1 1 auto;
   align-items: center;
-  gap: 2px 8px;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-context {
   min-width: 0;
-  grid-column: 1 / -1;
-  grid-row: 1;
-  justify-self: end;
+  flex: 0 1 auto;
 }
 
 .strategy-design-page .strategy-header-metadata {
@@ -188,13 +184,15 @@
 .strategy-design-page .strategy-header-metadata > span {
   display: inline-flex;
   min-width: 0;
+  min-height: 34px;
   align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 4px 9px;
-  border: 1px solid #e0e8ef;
-  border-radius: 8px;
-  background: #f8fafc;
+  gap: 4px;
+}
+
+.strategy-design-page .strategy-header-metadata > span + span::before {
+  margin-right: 4px;
+  color: #b2bdc8;
+  content: '·';
 }
 
 .strategy-design-page .strategy-header-metadata small {
@@ -204,10 +202,10 @@
 
 .strategy-design-page .strategy-header-metadata strong {
   max-width: 126px;
-  color: var(--color-title);
-  font-size: 12px;
-  line-height: 1;
   overflow: hidden;
+  color: var(--color-title);
+  font-size: 13px;
+  line-height: 1;
   text-overflow: ellipsis;
 }
 
@@ -263,8 +261,7 @@
 
 .strategy-design-page .strategy-page-header .page-heading-filters {
   min-width: 0;
-  grid-column: 1;
-  grid-row: 2;
+  flex: 0 1 auto;
 }
 
 .strategy-design-page .strategy-header-filters {
@@ -273,43 +270,67 @@
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 7px;
 }
 
 .strategy-design-page .strategy-header-filters label {
-  gap: 4px;
+  display: inline-flex;
+  min-width: 0;
+  height: 36px;
+  align-items: center;
+  gap: 2px;
+  padding-left: 9px;
+  border: 1px solid #d9e2ea;
+  border-radius: 8px;
+  background: #fff;
   font-size: 12px;
 }
 
+.strategy-design-page .strategy-header-filters label > span {
+  flex: 0 0 auto;
+  color: #53647a;
+}
+
 .strategy-design-page .strategy-header-filters .ant-select {
-  min-width: 88px;
+  min-width: 66px;
 }
 
 .strategy-design-page .strategy-header-filters .ant-select-selector,
 .strategy-design-page .strategy-header-filters > .ant-input-affix-wrapper,
 .strategy-design-page .strategy-header-filters > .ant-input,
 .strategy-design-page .strategy-page-header .page-heading-actions .ant-btn {
-  height: 34px;
-  min-height: 34px;
+  height: 36px;
+  min-height: 36px;
   font-size: 13px;
+}
+
+.strategy-design-page .strategy-header-filters label .ant-select-selector {
+  padding-inline: 4px 20px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.strategy-design-page .strategy-header-filters label .ant-select-disabled .ant-select-selector {
+  color: #53647a !important;
+  cursor: default;
 }
 
 .strategy-design-page .strategy-header-filters > .ant-input-affix-wrapper,
 .strategy-design-page .strategy-header-filters > .ant-input {
-  width: clamp(136px, 9vw, 168px);
+  width: clamp(132px, 8vw, 156px);
 }
 
 .strategy-design-page .strategy-page-header .page-heading-actions {
   display: flex;
   min-width: 0;
-  grid-column: 2;
-  grid-row: 2;
+  flex: 0 0 auto;
   align-items: center;
   gap: 6px !important;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-actions .ant-btn {
-  padding-inline: 9px;
+  padding-inline: 10px;
 }
 
 .strategy-design-page .strategy-page-header .page-heading-actions .ant-space-item {
@@ -321,12 +342,8 @@
 }
 
 .strategy-review-page .strategy-page-header {
-  gap: 12px;
-  padding-inline: 12px;
-}
-
-.strategy-review-page .strategy-page-header .page-heading-copy {
-  gap: 2px;
+  gap: 10px;
+  padding-inline: 10px;
 }
 
 .strategy-review-page .strategy-header-metadata {
@@ -334,16 +351,76 @@
 }
 
 .strategy-review-page .strategy-header-filters .ant-select {
-  min-width: 86px;
+  min-width: 62px;
 }
 
 .strategy-review-page .strategy-header-filters > .ant-input-affix-wrapper,
 .strategy-review-page .strategy-header-filters > .ant-input {
-  width: clamp(132px, 8vw, 154px);
+  width: clamp(126px, 7.6vw, 150px);
 }
 
 .strategy-review-page .strategy-page-header .page-heading-actions .ant-btn {
   padding-inline: 7px;
+}
+
+.strategy-review-page .page-heading-secondary-action .ant-btn:disabled {
+  border-color: #e5eaf0;
+  background: #f8fafc;
+  color: #9aa8b7;
+  box-shadow: none;
+}
+
+/* The review header has three filters and four explicit actions. At a 1919px
+ * desktop viewport the app rail leaves 1656px of content width, so compact
+ * only this dense header while keeping all tabs, labels and disabled actions
+ * visible in the shared single-row hierarchy. */
+@media (min-width: 1701px) and (max-width: 1920px) {
+  .strategy-review-page .strategy-page-header {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .strategy-review-page .strategy-page-header .page-heading-copy {
+    gap: 6px;
+  }
+
+  .strategy-review-page .strategy-page-tabs .ant-tabs-tab {
+    padding-inline: 6px;
+    font-size: 12px;
+  }
+
+  .strategy-review-page .strategy-page-header .page-heading-utility {
+    gap: 4px;
+  }
+
+  .strategy-review-page .strategy-header-metadata {
+    gap: 3px;
+  }
+
+  .strategy-review-page .strategy-header-filters {
+    gap: 4px;
+  }
+
+  .strategy-review-page .strategy-header-filters label {
+    padding-left: 5px;
+  }
+
+  .strategy-review-page .strategy-header-filters label .ant-select-selector {
+    padding-inline: 2px 16px !important;
+  }
+
+  .strategy-review-page .strategy-header-filters > .ant-input-affix-wrapper,
+  .strategy-review-page .strategy-header-filters > .ant-input {
+    width: 126px;
+  }
+
+  .strategy-review-page .strategy-page-header .page-heading-actions {
+    gap: 4px !important;
+  }
+
+  .strategy-review-page .strategy-page-header .page-heading-actions .ant-btn {
+    padding-inline: 4px;
+  }
 }
 
 /* KPI band: compact but keeps 13px+ readable content. */
@@ -451,7 +528,7 @@
 
 .strategy-design-page .strategy-overview-bottom {
   min-height: 0;
-  flex: 0 0 188px;
+  flex: 0 0 180px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   padding-right: 0;
@@ -463,8 +540,25 @@
   font-size: 12px;
 }
 
+.strategy-design-page .risk-source-panel,
 .strategy-design-page .execution-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
   padding-right: 12px;
+}
+
+.strategy-design-page .risk-source-panel > p:first-of-type {
+  margin-top: auto;
+}
+
+.strategy-design-page .risk-source-panel > p:last-of-type {
+  margin-bottom: auto;
+}
+
+.strategy-design-page .execution-panel .execution-summary-body {
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
 .strategy-design-page .execution-summary-body {
@@ -517,7 +611,7 @@
 }
 
 .strategy-design-page .revenue-panel {
-  padding-right: 82px;
+  padding-right: 84px;
 }
 
 /* Storage: content-sized device card, fixed chart row, internal detail scroll. */
@@ -529,15 +623,17 @@
 }
 
 .strategy-design-page .storage-window-list {
+  display: flex;
   height: 100%;
   max-height: 100%;
+  flex-direction: column;
   align-self: stretch;
 }
 
 .strategy-design-page .storage-window-scroll {
   min-height: 0;
-  max-height: 190px;
-  flex: 0 1 190px;
+  max-height: none;
+  flex: 0 0 auto;
   overflow-y: auto;
 }
 
@@ -554,11 +650,11 @@
 .strategy-design-page .storage-device-summary {
   display: flex;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-direction: column;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: auto;
   padding: 10px;
   border: 1px solid #e0e8ef;
   border-radius: 9px;
@@ -822,50 +918,56 @@
 
 @media (max-width: 1700px) {
   .strategy-design-page .strategy-page-header {
-    display: grid;
-    height: 100px;
-    min-height: 100px;
-    flex-basis: 100px;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 42px 48px;
-    align-items: center;
-    gap: 2px;
-    padding: 4px 10px 6px;
-  }
-
-  .strategy-design-page .strategy-page-header .page-heading-copy,
-  .strategy-design-page .strategy-page-header .page-heading-utility {
-    width: 100%;
-    min-width: 0;
+    height: 58px;
+    min-height: 58px;
+    flex-basis: 58px;
+    gap: 8px;
+    padding: 0 10px;
   }
 
   .strategy-design-page .strategy-page-header .page-heading-copy {
     display: flex;
-    grid-row: 1;
     align-items: center;
-    gap: 12px;
+    flex: 0 0 360px;
+    gap: 6px;
   }
 
-  .strategy-design-page .strategy-page-header .page-heading-utility {
-    display: flex;
-    grid-row: 2;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
+  .strategy-design-page .strategy-page-header h1 {
+    font-size: 21px;
   }
 
   .strategy-design-page .strategy-page-header .page-heading-navigation {
-    width: min(600px, calc(100% - 132px));
-    height: 42px;
-    margin-left: 4px;
+    width: auto;
+    height: 100%;
+    margin-left: 0;
   }
 
-  .strategy-design-page .strategy-page-header .page-heading-context {
-    flex: 0 0 auto;
+  .strategy-design-page .strategy-page-tabs .ant-tabs-tab {
+    min-height: 56px;
+    padding-inline: 6px;
+    font-size: 12px;
   }
 
   .strategy-design-page .strategy-header-metadata {
-    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+
+  .strategy-design-page .strategy-header-metadata small {
+    display: none;
+  }
+
+  .strategy-design-page .strategy-header-metadata strong {
+    max-width: 90px;
+    font-size: 12px;
+  }
+
+  .strategy-design-page .strategy-header-metadata > span + span::before {
+    margin-right: 2px;
+  }
+
+  .strategy-design-page .strategy-header-filters label {
+    font-size: 12px;
   }
 
   .strategy-design-page .strategy-page-header .page-heading-secondary-action {
@@ -876,8 +978,51 @@
     display: inline-flex;
   }
 
+  .strategy-design-page .strategy-header-filters {
+    gap: 5px;
+  }
+
+  .strategy-design-page .strategy-header-filters label {
+    padding-left: 7px;
+  }
+
+  .strategy-review-page .strategy-page-header .page-heading-copy {
+    flex: 0 0 360px;
+  }
+
+  .strategy-review-page .strategy-page-tabs .ant-tabs-tab {
+    padding-inline: 6px;
+  }
+
+  .strategy-review-page .strategy-header-metadata {
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+
+  .strategy-review-page .strategy-header-metadata small {
+    display: none;
+  }
+
+  .strategy-review-page .strategy-meta-date small::after,
+  .strategy-review-page .strategy-meta-status small::after {
+    content: none;
+  }
+
+  .strategy-review-page .strategy-header-metadata strong {
+    max-width: 90px;
+    font-size: 12px;
+  }
+
+  .strategy-review-page .strategy-header-metadata > span + span::before {
+    margin-right: 2px;
+  }
+
+  .strategy-review-page .strategy-filter-reset:disabled {
+    display: none;
+  }
+
   .strategy-design-page .strategy-overview-bottom {
-    flex-basis: 188px;
+    flex-basis: 180px;
   }
 
   .strategy-design-page .storage-workspace {
@@ -904,25 +1049,10 @@
   }
 
   .strategy-design-page .strategy-page-header {
-    height: 92px;
-    min-height: 92px;
-    flex-basis: 92px;
-    grid-template-rows: 38px 42px;
-    padding: 4px 10px;
-  }
-
-  .strategy-design-page .strategy-page-header .page-heading-navigation {
-    height: 38px;
-  }
-
-  .strategy-design-page .strategy-page-tabs .ant-tabs-nav-list {
-    gap: 4px;
-    padding: 3px;
-  }
-
-  .strategy-design-page .strategy-page-tabs .ant-tabs-tab {
-    min-height: 30px;
-    padding-inline: 10px;
+    height: 56px;
+    min-height: 56px;
+    flex-basis: 56px;
+    padding-inline: 8px;
   }
 
   .strategy-design-page .strategy-metric-strip,
@@ -954,7 +1084,7 @@
   }
 
   .strategy-design-page .strategy-overview-bottom {
-    flex-basis: 226px;
+    flex-basis: 224px;
   }
 
   .strategy-design-page .strategy-overview-bottom .strategy-card {
@@ -1007,7 +1137,7 @@
 
   .strategy-design-page .storage-window-scroll {
     max-height: 116px;
-    flex-basis: 116px;
+    flex: 0 1 116px;
   }
 
   .strategy-design-page .storage-window-scroll button {
@@ -1021,6 +1151,8 @@
   }
 
   .strategy-design-page .storage-device-summary {
+    min-height: 0;
+    flex: 1 1 auto;
     gap: 6px;
     margin-top: 5px;
     padding: 8px;

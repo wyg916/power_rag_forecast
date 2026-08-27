@@ -29,10 +29,12 @@ def test_strategy_context_is_migrated_into_shared_page_header():
     page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
     design = _read("frontend/src/components/strategy/StrategyDesign.tsx")
 
+    assert "function StrategyCenterPageHeader" in page
+    assert "<StrategyCenterPageHeader" in page
     assert 'className="strategy-page-header"' in page
-    assert "metadata={(" in page
-    assert "filters={(" in page
-    assert "actions={headerActions}" in page
+    assert "metadata={metadata}" in page
+    assert "filters={filters}" in page
+    assert "actions={actions}" in page
     assert "strategy-header-metadata" in page
     assert "strategy-header-filters" in page
     assert "StrategyContextBar" not in page + design
@@ -108,17 +110,20 @@ def test_strategy_three_subroutes_and_narrow_more_contract_are_preserved():
     assert "FactStatusBar" not in page
 
 
-def test_strategy_tabs_are_a_prominent_equal_width_navigation_band_and_context_moves_right():
+def test_strategy_tabs_share_one_underlined_header_row_with_clear_filter_semantics():
     page = _read("frontend/src/pages/strategy/StrategyCenterPage.tsx")
     strategy_styles = _read("frontend/src/pages/strategy/strategy-center-layout.css")
 
     assert 'className="strategy-meta-date"' in page
     assert 'className="strategy-meta-status"' in page
-    assert "grid-template-columns: minmax(540px, 600px) minmax(0, 1fr)" in strategy_styles
+    assert "height: 60px" in strategy_styles
+    assert "display: flex" in strategy_styles
     assert ".strategy-page-tabs .ant-tabs-nav-list" in strategy_styles
-    assert "flex: 1 1 0" in strategy_styles
     assert ".strategy-page-tabs .ant-tabs-tab-active" in strategy_styles
-    assert "background: #087a5b" in strategy_styles
+    assert "background: #00a47c" in strategy_styles
+    assert "<span>区域</span>" in page
+    assert "<span>风险</span>" in page
+    assert "<span>状态</span>" in page
 
 
 def test_strategy_overview_cards_fill_the_row_and_execution_progress_is_explicit():
@@ -154,7 +159,7 @@ def test_strategy_short_desktop_viewport_has_a_non_clipping_height_budget():
     strategy_styles = _read("frontend/src/pages/strategy/strategy-center-layout.css")
 
     assert "@media (min-width: 1181px) and (max-height: 820px)" in strategy_styles
-    assert "height: 92px" in strategy_styles
+    assert "height: 56px" in strategy_styles
     assert "grid-template-rows: minmax(0, .88fr) minmax(226px, 1.12fr)" in strategy_styles
     assert "clamp(154px, calc(100dvh - 560px), 392px)" in design
 

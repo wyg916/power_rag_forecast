@@ -1,0 +1,15 @@
+frontend/src/pages/strategy/StrategyCenterPage.tsx
+frontend/src/pages/strategy/strategy-center-layout.css
+tests/test_p6_p1_3a_strategy_layout.py
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/ACCEPTANCE.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/test_summary.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/function_baseline.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/changed_files.txt
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/rollback.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/database_impact.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/commands.txt
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/unresolved.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/01_strategy_overview_1919x870.png
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/02_strategy_storage_1919x870.png
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/03_strategy_review_1919x870.png

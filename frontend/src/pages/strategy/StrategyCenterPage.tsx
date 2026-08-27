@@ -1,6 +1,6 @@
 import { DownloadOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 import { App, Button, Form, Input, InputNumber, Modal, Select, Switch, Tooltip } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '../../api';
 import { PageHeader, type PageHeaderAction } from '../../components/common/PageHeader';
 import { PageTabs } from '../../components/common/PageTabs';
@@ -32,6 +32,36 @@ const strategyTabs = [
   { key: 'strategy-storage', label: '低价窗口与储能策略' },
   { key: 'strategy-review', label: '人工复核' }
 ];
+
+function StrategyCenterPageHeader({
+  activeTabKey,
+  tabs,
+  onTabChange,
+  metadata,
+  filters,
+  actions,
+  subtitle
+}: {
+  activeTabKey: string;
+  tabs: Array<{ key: string; label: string }>;
+  onTabChange: (key: string) => void;
+  metadata: ReactNode;
+  filters: ReactNode;
+  actions: PageHeaderAction[];
+  subtitle: string;
+}) {
+  return (
+    <PageHeader
+      title="策略中心"
+      subtitle={subtitle}
+      navigation={<div className="strategy-page-tabs"><PageTabs items={tabs} activeKey={activeTabKey} onChange={onTabChange} /></div>}
+      className="strategy-page-header"
+      metadata={metadata}
+      filters={filters}
+      actions={actions}
+    />
+  );
+}
 
 function exportCsv(filename: string, rows: Record<string, unknown>[], notifyEmpty: () => void) {
   if (!rows.length) {
@@ -264,11 +294,11 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
 
   return (
     <div className={`strategy-design-page strategy-${mode}-page`}>
-      <PageHeader
-        title="策略中心"
+      <StrategyCenterPageHeader
+        activeTabKey={activeTabKey}
+        tabs={strategyTabs.filter((item) => item.key !== 'strategy-review' || reviewPermissions.canReview)}
+        onTabChange={handleStrategyTabChange}
         subtitle={strategySubtitle}
-        navigation={<div className="strategy-page-tabs"><PageTabs items={strategyTabs.filter((item) => item.key !== 'strategy-review' || reviewPermissions.canReview)} activeKey={activeTabKey} onChange={handleStrategyTabChange} /></div>}
-        className="strategy-page-header"
         metadata={(
           <div className="strategy-header-metadata">
             <span className="strategy-meta-date"><small>{mode === 'review' ? '复核日期' : '策略日期'}</small><strong>{data?.strategyDate || '--'}</strong></span>
@@ -294,14 +324,14 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
             {mode === 'review' && (
               <>
                 <label>
-                  <span>风险等级</span>
+                  <span>风险</span>
                   <Select size="small" value={reviewFilters.risk} onChange={(risk) => setReviewFilters((current) => ({ ...current, risk }))} options={[{ value: 'all', label: '全部' }, { value: 'high', label: '高风险' }, { value: 'medium', label: '中风险' }, { value: 'low', label: '低风险' }]} />
                 </label>
                 <label>
-                  <span>审核状态</span>
+                  <span>状态</span>
                   <Select size="small" value={reviewFilters.status} onChange={(status) => setReviewFilters((current) => ({ ...current, status }))} options={[{ value: 'all', label: '全部' }, { value: 'draft', label: '草稿' }, { value: 'pending_review', label: '待复核' }, { value: 'approved', label: '已通过' }, { value: 'rejected', label: '已驳回' }, { value: 'published', label: '已发布' }]} />
                 </label>
-                <Input size="small" allowClear value={reviewFilters.search} onChange={(event) => setReviewFilters((current) => ({ ...current, search: event.target.value }))} placeholder="搜索编号 / 原因 / 责任人" />
+                <Input size="small" allowClear value={reviewFilters.search} onChange={(event) => setReviewFilters((current) => ({ ...current, search: event.target.value }))} placeholder="搜索编号 / 原因" />
                 <Button
                   className="strategy-filter-reset"
                   type="link"
