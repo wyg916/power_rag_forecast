@@ -313,19 +313,27 @@ export function StrategyInsightPanel({ data }: { data: any }) {
     <div className="forecast-card forecast-insight-panel">
       <div className="forecast-card-head"><h2>策略洞察</h2></div>
       <StrategyBlock type="success" title="今日核心结论">
-        高价集中在 {data?.highWindowLabel}，峰值 {hour(data?.summary?.maxHour)} 为 {fmt(data?.summary?.maxPrice, 2)} 元/kWh；低价候选窗口为 {data?.lowWindowLabel}。
+        <div className="forecast-insight-facts">
+          <span><small>高价窗口</small><strong>{data?.highWindowLabel || '--'}</strong></span>
+          <span><small>峰值电价</small><strong>{hour(data?.summary?.maxHour)} · {fmt(data?.summary?.maxPrice, 2)}</strong></span>
+          <span><small>低价窗口</small><strong>{data?.lowWindowLabel || '--'}</strong></span>
+        </div>
       </StrategyBlock>
       <StrategyBlock type="danger" title="高价风险时段">
-        <div className="tag-row">{highItems.map((item: any) => <Tag color="error" key={item.time}>{item.time}</Tag>)}</div>
-        <p title={highAdvice?.advice_text}>{conciseAdvice(highAdvice?.advice_text, '策略接口未返回该时段建议。')}</p>
+        <div className="forecast-insight-detail">
+          <div className="tag-row">{highItems.map((item: any) => <Tag color="error" key={item.time}>{item.time}</Tag>)}</div>
+          <p title={highAdvice?.advice_text}>{conciseAdvice(highAdvice?.advice_text, '策略接口未返回该时段建议。')}</p>
+        </div>
       </StrategyBlock>
       <StrategyBlock type="success" title="低价采购窗口">
-        <Tag color="success">{data?.lowWindowLabel || '--'}</Tag>
-        <p title={lowAdvice?.advice_text}>{conciseAdvice(lowAdvice?.advice_text, '策略接口未返回该时段建议。')}</p>
+        <div className="forecast-insight-detail">
+          <Tag color="success">{data?.lowWindowLabel || '--'}</Tag>
+          <p title={lowAdvice?.advice_text}>{conciseAdvice(lowAdvice?.advice_text, '策略接口未返回该时段建议。')}</p>
+        </div>
       </StrategyBlock>
       <StrategyBlock type="info" title="分析建议摘要">
         {(insights.length ? insights : [{ advice_text: '当前策略接口暂无建议，页面仅展示预测与风险窗口。' }]).slice(0, 1).map((item: any, index: number) => (
-          <p key={index} title={item.advice_text || item.description || item.message || item.title}><b>{index + 1}</b> {conciseAdvice(item.advice_text || item.description || item.message || item.title, '暂无可用建议')}</p>
+          <p className="forecast-insight-advice" key={index} title={item.advice_text || item.description || item.message || item.title}><b>{index + 1}</b><span>{conciseAdvice(item.advice_text || item.description || item.message || item.title, '暂无可用建议')}</span></p>
         ))}
       </StrategyBlock>
     </div>
@@ -511,19 +519,30 @@ export function ComparisonInsightPanel({ data }: { data: any }) {
     <div className="forecast-card forecast-insight-panel">
       <div className="forecast-card-head"><h2>关键变化洞察</h2></div>
       <StrategyBlock type="success" title="差值摘要">
-        {data?.comparison?.previousAvailable
-          ? `较上一成功结果的全天均值变化 ${data.comparison.avgChange == null ? '--' : `${data.comparison.avgChange.toFixed(2)}%`}。`
-          : '当前仅展示最新预测与历史小时均值。'}
+        <div className="forecast-comparison-summary">
+          <small>{data?.comparison?.previousAvailable ? '相对上一成功结果' : '当前对比范围'}</small>
+          <strong>
+            {data?.comparison?.previousAvailable
+              ? `全天均值 ${data.comparison.avgChange == null ? '--' : `${data.comparison.avgChange >= 0 ? '+' : ''}${data.comparison.avgChange.toFixed(2)}%`}`
+              : '最新预测与历史小时均值'}
+          </strong>
+        </div>
       </StrategyBlock>
       <StrategyBlock type="danger" title="关键变化点（相对参考）">
-        {notable.length ? notable.map((row: any) => <p key={row.time}>{row.time} {row.remark} {row.rate}</p>) : <p>历史参考数据不足，暂无显著变化点。</p>}
+        {notable.length ? (
+          <div className="forecast-change-list">
+            {notable.map((row: any) => <p key={row.time}><strong>{row.time}</strong><span>{row.remark}</span><em>{row.rate}</em></p>)}
+          </div>
+        ) : <p>历史参考数据不足，暂无显著变化点。</p>}
       </StrategyBlock>
       <StrategyBlock type="info" title="变化原因说明">
-        {(data?.modelExplain?.main_factors || []).slice(0, 3).map((item: any, index: number) => <p key={index}>• {typeof item === 'string' ? item : item.factor || item.name || JSON.stringify(item)}</p>)}
+        <div className="forecast-reason-list">
+          {(data?.modelExplain?.main_factors || []).slice(0, 3).map((item: any, index: number) => <p key={index}><b>{index + 1}</b><span>{typeof item === 'string' ? item : item.factor || item.name || JSON.stringify(item)}</span></p>)}
+        </div>
         {!data?.modelExplain?.main_factors?.length ? <p>模型解释接口未返回主要因素。</p> : null}
       </StrategyBlock>
       <StrategyBlock type="info" title="接口建议摘要">
-        {(data?.strategy?.must_watch || []).slice(0, 1).map((item: any) => item.advice_text).join('') || '策略接口未返回建议。'}
+        <p className="forecast-comparison-advice">{(data?.strategy?.must_watch || []).slice(0, 1).map((item: any) => item.advice_text).join('') || '策略接口未返回建议。'}</p>
       </StrategyBlock>
     </div>
   );
