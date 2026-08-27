@@ -443,15 +443,24 @@ def _knowledge_import_handler(payload: dict[str, Any], context: TaskExecutionCon
 
 
 def _embedding_refresh_handler(payload: dict[str, Any], context: TaskExecutionContext | None = None) -> dict[str, Any]:
+    doc_id = str(payload.get("doc_id") or "").strip()
     if context:
         context.log("health", "检查 RAG 健康状态", progress=28)
     before_health = rag_health()
     if context:
         context.log("embedding", "补齐缺失向量", progress=48)
-    backfill = backfill_missing_embeddings()
+    backfill = (
+        backfill_missing_embeddings(doc_id=doc_id)
+        if doc_id
+        else backfill_missing_embeddings()
+    )
     if context:
         context.log("embedding", "刷新过期向量", progress=68)
-    refresh = refresh_stale_embeddings()
+    refresh = (
+        refresh_stale_embeddings(doc_id=doc_id)
+        if doc_id
+        else refresh_stale_embeddings()
+    )
     after_health = rag_health()
     warnings: list[str] = []
     if before_health.get("fallback_enabled"):
@@ -464,6 +473,7 @@ def _embedding_refresh_handler(payload: dict[str, Any], context: TaskExecutionCo
         "rag_health_before": before_health,
         "rag_health_after": after_health,
         "warnings": warnings,
+        "doc_id": doc_id,
         "result_ref": "kb_chunks.embedding_json",
     }
     return result

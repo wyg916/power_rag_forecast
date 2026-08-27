@@ -154,6 +154,7 @@ export function KnowledgeBasePage(_: PageProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
   const [releaseActionLoading, setReleaseActionLoading] = useState('');
+  const [reindexingDocId, setReindexingDocId] = useState('');
 
   async function loadData() {
     setLoading(true);
@@ -194,6 +195,19 @@ export function KnowledgeBasePage(_: PageProps) {
       message.error(err instanceof Error ? err.message : '刷新 Embedding 失败');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function reindexDocument(docId: string) {
+    setReindexingDocId(docId);
+    try {
+      const res = await api.knowledgeDocumentReindex(docId);
+      message.success(`文档重新索引任务已提交：${res.task_id || docId}`);
+      await loadData();
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '文档重新索引失败');
+    } finally {
+      setReindexingDocId('');
     }
   }
 
@@ -469,7 +483,8 @@ export function KnowledgeBasePage(_: PageProps) {
                     {canWriteKnowledge ? <Button
                       type="link"
                       size="small"
-                      onClick={rebuildIndex}
+                      loading={reindexingDocId === String(record.key)}
+                      onClick={() => reindexDocument(String(record.key))}
                     >重新索引</Button> : null}
                   </Space>
                 )

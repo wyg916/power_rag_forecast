@@ -403,6 +403,7 @@ export const api = {
   knowledgeExport: () => requestBlob('/api/knowledge/export'),
   knowledgeIndexLocal: () => request<any>('/api/knowledge/index-local', { method: 'POST', body: '{}' }),
   knowledgeEmbeddingRefresh: () => request<any>('/api/knowledge/embedding-refresh', { method: 'POST', body: '{}' }),
+  knowledgeDocumentReindex: (docId: string) => request<any>(`/api/knowledge/documents/${encodeURIComponent(docId)}/reindex`, { method: 'POST', body: '{}' }),
   knowledgeReleases: () => request<any>('/api/knowledge/releases'),
   knowledgeReleaseAction: (releaseId: string, action: 'validate' | 'publish' | 'rollback') =>
     request<any>(`/api/knowledge/releases/${encodeURIComponent(releaseId)}/${action}`, { method: 'POST', body: '{}' }),

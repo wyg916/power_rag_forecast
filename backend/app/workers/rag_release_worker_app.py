@@ -34,6 +34,11 @@ class WorkerRequest(BaseModel):
 app = FastAPI(title="RAG-R1 Release Worker", docs_url=None, redoc_url=None)
 
 
+@app.get("/health")
+def health() -> dict[str, Any]:
+    return {"ok": True, "service": "rag_release_worker"}
+
+
 def _authorize(authorization: str = Header(default="")) -> None:
     expected = os.environ.get("RAG_RELEASE_WORKER_TOKEN", "").strip()
     supplied = authorization.removeprefix("Bearer ").strip()

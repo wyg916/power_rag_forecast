@@ -31,15 +31,20 @@ def test_project_batch_defaults_to_unified_rc_and_has_health_gates() -> None:
     assert 'if /I "%~1"=="menu" goto menu' in source
     assert "goto rcstart" in source
     assert "--preflight-only" in source
-    assert source.count('phase4_precheck_runtime.py" --runtime-config') == 5
+    assert source.count('phase4_precheck_runtime.py" --runtime-config') == 7
     assert 'redis start' in source
     assert 'celery start' in source
     assert '--worker-role forecast celery start' in source
     assert '--worker-role forecast celery status' in source
+    assert '--worker-role knowledge celery start' in source
+    assert '--worker-role knowledge celery status' in source
+    assert source.count('rag_release_worker_runtime.py"') == 2
+    assert 'rag_release_worker_runtime.py" start' in source
+    assert 'rag_release_worker_runtime.py" status' in source
     assert 'combined health' in source
     assert "mklink /J" in source
     assert "automatic network install is disabled" in source
-    assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 8
+    assert source.count('runtime-config "%RAG_PREPRODUCTION_CONFIG%"') == 10
     assert source.count('day5_memory_worker_runtime.py" --runtime-config') == 2
     assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" start' in source
     assert 'day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" status' in source
@@ -68,6 +73,8 @@ def test_rag_preproduction_profile_is_secret_free_and_frozen() -> None:
     )
 
     assert "RAG_PROFILE=enterprise" in profile
+    assert "RAG_RUNTIME_TARGET_MODE=production_alias" in profile
+    assert "RAG_QDRANT_ALIAS=rag_chunks_current" in profile
     assert "RAG_RERANK_BATCH_SIZE=8" in profile
     assert "RAG_RERANK_MAX_LENGTH=32" in profile
     assert "RAG_RERANK_CANDIDATE_LIMIT=3" in profile
@@ -176,6 +183,45 @@ def test_rag_reader_config_is_discovered_once_and_fail_closed() -> None:
     assert 'shared_root.parent.glob(f"{shared_root.name}_*")' in source
     assert "discovery must resolve exactly one file" in source
     assert '--rag-reader-config "%RAG_READER_CONFIG%"' not in project_batch
+
+
+def test_release_worker_client_config_is_loopback_and_secret_scoped(
+    monkeypatch, tmp_path
+) -> None:
+    config = tmp_path / "client.env"
+    config.write_text(
+        "RAG_RELEASE_WORKER_URL=http://127.0.0.1:8787\n"
+        "RAG_RELEASE_WORKER_TOKEN=" + "t" * 48 + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("RAG_RELEASE_WORKER_URL", raising=False)
+    monkeypatch.delenv("RAG_RELEASE_WORKER_TOKEN", raising=False)
+
+    launcher.load_release_worker_client_env(config)
+
+    assert launcher.os.environ["RAG_RELEASE_WORKER_URL"] == "http://127.0.0.1:8787"
+    assert len(launcher.os.environ["RAG_RELEASE_WORKER_TOKEN"]) == 48
+
+
+def test_release_worker_client_config_is_optional_when_publisher_is_not_provisioned(
+    monkeypatch, tmp_path
+) -> None:
+    monkeypatch.delenv("RAG_RELEASE_WORKER_URL", raising=False)
+    monkeypatch.delenv("RAG_RELEASE_WORKER_TOKEN", raising=False)
+
+    assert launcher.load_release_worker_client_env(tmp_path / "missing.env") is False
+    assert "RAG_RELEASE_WORKER_URL" not in launcher.os.environ
+
+
+def test_release_worker_controller_requires_separate_local_publisher_identity() -> None:
+    source = (ROOT / "scripts" / "rag_release_worker_runtime.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'os.environ.get("RAG_RELEASE_DATABASE_URL"' in source
+    assert 'os.environ.get("DATABASE_URL"' not in source
+    assert '("beta10d_app_login",' not in source
+    assert 'choices=("start", "status", "stop")' in source
 
 
 def test_runtime_config_layers_keep_least_privilege_identity_first(

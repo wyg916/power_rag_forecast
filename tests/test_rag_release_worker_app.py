@@ -50,6 +50,13 @@ def test_worker_requires_its_separate_bearer_token(monkeypatch) -> None:
     assert response.json()["release"]["release_id"] == "RAG-R1"
 
 
+def test_worker_health_does_not_expose_secrets() -> None:
+    response = TestClient(module.app).get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"ok": True, "service": "rag_release_worker"}
+
+
 def test_worker_rejects_tenant_override(monkeypatch) -> None:
     monkeypatch.setenv("RAG_RELEASE_WORKER_TOKEN", TOKEN)
     monkeypatch.setattr(module, "get_runtime", lambda: FakeRuntime())

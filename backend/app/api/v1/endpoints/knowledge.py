@@ -479,3 +479,30 @@ def refresh_knowledge_embeddings(
         metadata=result,
     )
     return result
+
+
+@router.post("/api/knowledge/documents/{doc_id}/reindex")
+def reindex_knowledge_document(
+    doc_id: str,
+    request: Request,
+    user: Annotated[CurrentUser, Depends(require_permission("knowledge:write"))],
+) -> dict:
+    document = get_knowledge_document(doc_id, **_tenant_scope(user))
+    if not document.get("available") or not document.get("document"):
+        raise HTTPException(status_code=404, detail="knowledge_document_not_found")
+    try:
+        result = enqueue_task(
+            "embedding_refresh", {"doc_id": doc_id, "scope": f"document:{doc_id}"}
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    write_audit_log(
+        action="knowledge.document_reindex",
+        user=user,
+        resource_type="knowledge_document",
+        resource_id=doc_id,
+        status="success" if result.get("task_id") else "failed",
+        ip_address=request.client.host if request.client else "",
+        metadata=result,
+    )
+    return result

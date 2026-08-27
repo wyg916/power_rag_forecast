@@ -49,6 +49,37 @@ def test_forecast_worker_uses_dedicated_queue_and_runtime_paths(monkeypatch):
     assert all(path.is_relative_to(ROOT) for path in paths.values())
 
 
+def test_knowledge_worker_consumes_only_knowledge_queues(monkeypatch):
+    monkeypatch.setenv("PHASE4_WORKER_ROLE", "knowledge")
+    monkeypatch.setenv("KNOWLEDGE_CELERY_QUEUES", "rag,embedding,report")
+
+    command = runtime._celery_worker_command()
+    paths = runtime.runtime_paths()
+
+    assert "--queues=rag,embedding,report" in command
+    assert "--hostname=knowledge-worker@%h" in command
+    assert paths["pid_file"].name == "celery_knowledge_worker.json"
+    assert paths["worker_log"].name == "celery_knowledge_worker.log"
+    assert all(path.is_relative_to(ROOT) for path in paths.values())
+
+
+def test_knowledge_reader_profile_maps_only_read_only_credentials(monkeypatch, tmp_path):
+    profile = tmp_path / "reader.env"
+    profile.write_text(
+        "QDRANT_API_KEY=reader-only\n"
+        "QDRANT_READ_ONLY_API_KEY=reader-only\n"
+        "QDRANT_CA_CERT=E:/runtime/ca.pem\n"
+        "QDRANT_URL=https://127.0.0.1:6333\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("RAG_READER_CONFIG", str(profile))
+
+    runtime._load_knowledge_reader_env()
+
+    assert runtime.os.environ["RAG_QDRANT_API_KEY"] == "reader-only"
+    assert runtime.os.environ["RAG_QDRANT_URL"] == "https://127.0.0.1:6333"
+
+
 def test_runtime_paths_stay_inside_project(monkeypatch):
     monkeypatch.setenv("PHASE4_WORKER_ROLE", "health")
     monkeypatch.delenv("PHASE4_RUNTIME_DIR", raising=False)

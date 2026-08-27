@@ -151,10 +151,16 @@ echo [WAIT] Qdrant is still recovering, retry %QDRANT_PROBE_ATTEMPT%/%QDRANT_STA
 goto qdrant_probe_retry
 :qdrant_ready
 
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_release_worker_runtime.py" start --qdrant-env "%QDRANT_RUNTIME_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%"
+if errorlevel 1 echo [WARN] RAG release worker is unavailable; publishing remains fail-closed until a local publisher identity is configured.
+
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" celery start
 if errorlevel 1 goto rc_failed
 
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --worker-role forecast celery start
+if errorlevel 1 goto rc_failed
+
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --worker-role knowledge celery start
 if errorlevel 1 goto rc_failed
 
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\day5_memory_worker_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" start
@@ -172,6 +178,12 @@ if errorlevel 1 goto rc_failed
 
 "%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --worker-role forecast celery status
 if errorlevel 1 goto rc_failed
+
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\phase4_precheck_runtime.py" --runtime-config "%RAG_PREPRODUCTION_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%" --worker-role knowledge celery status
+if errorlevel 1 goto rc_failed
+
+"%PYTHON_EXE%" -X utf8 "%~dp0scripts\rag_release_worker_runtime.py" status --qdrant-env "%QDRANT_RUNTIME_CONFIG%" --runtime-config "%LOCAL_DATABASE_CONFIG%" --runtime-config "%LOCAL_RUNTIME_CONFIG%"
+if errorlevel 1 echo [WARN] RAG release worker is not ready; read-only platform services remain available.
 
 echo.
 echo [DONE] Unified RC base services are healthy.

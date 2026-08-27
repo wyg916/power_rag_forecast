@@ -31,6 +31,7 @@ def test_knowledge_documents_endpoint_contract(monkeypatch):
 
 
 def test_knowledge_qa_test_uses_rag_and_returns_answer(monkeypatch):
+    monkeypatch.setattr(knowledge_endpoint, "enterprise_mode", lambda: False)
     monkeypatch.setattr(knowledge_endpoint, "ensure_seed_knowledge", lambda: {"available": True})
     monkeypatch.setattr(
         knowledge_endpoint,
@@ -92,6 +93,33 @@ def test_knowledge_upload_requires_write_permission(monkeypatch):
     assert analyst_denied.status_code == 403
     assert allowed.status_code == 200
     assert allowed.json()["doc_id"] == "kb_uploaded"
+
+
+def test_document_reindex_is_scoped_to_selected_document(monkeypatch):
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(
+        knowledge_endpoint,
+        "get_knowledge_document",
+        lambda doc_id, **kwargs: {"available": True, "document": {"doc_id": doc_id}},
+    )
+    monkeypatch.setattr(
+        knowledge_endpoint,
+        "enqueue_task",
+        lambda kind, payload: captured.update({"kind": kind, "payload": payload})
+        or {"task_id": "task_doc_reindex"},
+    )
+    monkeypatch.setattr(knowledge_endpoint, "write_audit_log", lambda **kwargs: True)
+
+    response = client.post(
+        "/api/knowledge/documents/kb_doc_1/reindex",
+        headers={"X-User": "reviewer1", "X-Role": "reviewer"},
+    )
+
+    assert response.status_code == 200
+    assert captured == {
+        "kind": "embedding_refresh",
+        "payload": {"doc_id": "kb_doc_1", "scope": "document:kb_doc_1"},
+    }
 
 
 def test_knowledge_document_reads_receive_authenticated_tenant_scope(monkeypatch):

@@ -763,19 +763,22 @@ def get_chunks_by_ids(
     return [by_id[item] for item in ordered_ids if item in by_id]
 
 
-def backfill_missing_embeddings(limit: int = 5000) -> dict[str, Any]:
+def backfill_missing_embeddings(
+    limit: int = 20000, *, doc_id: str = "", batch_size: int = 64
+) -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "updated": 0, "message": "PostgreSQL 不可用"}
     try:
-        with engine.begin() as conn:
+        with engine.connect() as conn:
             rows = conn.execute(
                 text(
                     """
                     SELECT c.chunk_id, c.content, c.metadata_json, d.title
                     FROM kb_chunks c
                     JOIN kb_documents d ON d.doc_id = c.doc_id
-                    WHERE d.metadata_json->>'data_origin' = 'official'
+                    WHERE d.metadata_json->>'data_origin' IN ('official', 'uploaded')
+                      AND (:doc_id = '' OR c.doc_id = :doc_id)
                       AND (
                            c.embedding_json IS NULL
                            OR (
@@ -786,42 +789,62 @@ def backfill_missing_embeddings(limit: int = 5000) -> dict[str, Any]:
                     LIMIT :limit
                     """
                 ),
-                {"limit": max(1, min(int(limit or 5000), 20000))},
+                {
+                    "limit": max(1, min(int(limit or 20000), 20000)),
+                    "doc_id": str(doc_id or ""),
+                },
             ).mappings().all()
-            updated = 0
-            for row in mapping_list(rows):
-                embedding_result = embed_text_with_metadata(f"{row.get('title') or ''}\n{row.get('content') or ''}")
+        values = mapping_list(rows)
+        updated = 0
+        size = max(1, min(int(batch_size or 64), 256))
+        for start in range(0, len(values), size):
+            batch = values[start : start + size]
+            texts = [f"{row.get('title') or ''}\n{row.get('content') or ''}" for row in batch]
+            results = embed_batch_with_metadata(texts)
+            updates: list[dict[str, Any]] = []
+            for row, embedding_result in zip(batch, results):
                 embedding = embedding_result.get("embedding") or []
                 if not embedding:
                     continue
                 existing_metadata = loads_json(row.get("metadata_json"), default={})
-                metadata_with_embedding = _chunk_metadata(
-                    existing_metadata if isinstance(existing_metadata, dict) else {},
-                    embedding_result.get("metadata") or {},
-                )
-                conn.execute(
-                    text(
-                        """
-                        UPDATE kb_chunks
-                        SET embedding_json = CAST(:embedding_json AS jsonb),
-                            metadata_json = CAST(:metadata_json AS jsonb),
-                            updated_at = CURRENT_TIMESTAMP
-                        WHERE chunk_id = :chunk_id
-                        """
-                    ),
+                updates.append(
                     {
                         "chunk_id": row.get("chunk_id"),
                         "embedding_json": dumps_json(embedding),
-                        "metadata_json": dumps_json(metadata_with_embedding),
-                    },
+                        "metadata_json": dumps_json(
+                            _chunk_metadata(
+                                existing_metadata if isinstance(existing_metadata, dict) else {},
+                                embedding_result.get("metadata") or {},
+                            )
+                        ),
+                    }
                 )
-                updated += 1
-        return {"available": True, "updated": updated}
+            if updates:
+                with engine.begin() as conn:
+                    conn.execute(
+                        text(
+                            """
+                            UPDATE kb_chunks
+                            SET embedding_json = CAST(:embedding_json AS jsonb),
+                                metadata_json = CAST(:metadata_json AS jsonb),
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE chunk_id = :chunk_id
+                            """
+                        ),
+                        updates,
+                    )
+                updated += len(updates)
+        return {
+            "available": True,
+            "checked": len(values),
+            "updated": updated,
+            "doc_id": str(doc_id or ""),
+        }
     except Exception as exc:
         return {"available": False, "updated": 0, "message": str(exc)[:300]}
 
 
-def refresh_stale_embeddings(limit: int = 20000) -> dict[str, Any]:
+def refresh_stale_embeddings(limit: int = 20000, *, doc_id: str = "") -> dict[str, Any]:
     engine = postgres_engine()
     if engine is None:
         return {"available": False, "updated": 0, "message": "PostgreSQL 涓嶅彲鐢?"}
@@ -837,12 +860,16 @@ def refresh_stale_embeddings(limit: int = 20000) -> dict[str, Any]:
                     SELECT c.chunk_id, c.content, c.embedding_json, c.metadata_json, d.title
                     FROM kb_chunks c
                     JOIN kb_documents d ON d.doc_id = c.doc_id
-                    WHERE d.metadata_json->>'data_origin' = 'official'
+                    WHERE d.metadata_json->>'data_origin' IN ('official', 'uploaded')
+                      AND (:doc_id = '' OR c.doc_id = :doc_id)
                     ORDER BY d.updated_at DESC NULLS LAST, c.created_at DESC
                     LIMIT :limit
                     """
                 ),
-                {"limit": max(1, min(int(limit or 20000), 50000))},
+                {
+                    "limit": max(1, min(int(limit or 20000), 50000)),
+                    "doc_id": str(doc_id or ""),
+                },
             ).mappings().all()
     except Exception as exc:
         return {"available": False, "updated": 0, "message": str(exc)[:300]}
@@ -1011,7 +1038,7 @@ def list_knowledge_documents(
         "offset": offset,
         "tenant_id": str(tenant_id or "default"),
     }
-    where_sql = "WHERE d.metadata_json->>'data_origin' = 'official' AND d.tenant_id = :tenant_id"
+    where_sql = "WHERE d.metadata_json->>'data_origin' IN ('official', 'uploaded') AND d.tenant_id = :tenant_id"
     if search.strip():
         params["search"] = f"%{search.strip()}%"
         where_sql += " AND (d.title ILIKE :search OR d.source_path ILIKE :search OR d.source_type ILIKE :search)"
@@ -1239,7 +1266,7 @@ def knowledge_stats(*, tenant_id: str = "default") -> dict[str, Any]:
                 conn.execute(
                     text(
                         "SELECT COUNT(*) FROM kb_documents "
-                        "WHERE metadata_json->>'data_origin' = 'official' AND tenant_id = :tenant_id"
+                        "WHERE metadata_json->>'data_origin' IN ('official', 'uploaded') AND tenant_id = :tenant_id"
                     ),
                     {"tenant_id": str(tenant_id or "default")},
                 ).scalar()
@@ -1251,7 +1278,7 @@ def knowledge_stats(*, tenant_id: str = "default") -> dict[str, Any]:
                         """
                         SELECT COUNT(*) FROM kb_chunks c
                         JOIN kb_documents d ON d.doc_id = c.doc_id
-                        WHERE d.metadata_json->>'data_origin' = 'official'
+                        WHERE d.metadata_json->>'data_origin' IN ('official', 'uploaded')
                           AND d.tenant_id = :tenant_id
                           AND c.tenant_id = d.tenant_id
                         """
@@ -1270,7 +1297,7 @@ def knowledge_stats(*, tenant_id: str = "default") -> dict[str, Any]:
                         WHERE embedding_json IS NOT NULL
                           AND jsonb_typeof(embedding_json) = 'array'
                           AND jsonb_array_length(embedding_json) > 0
-                          AND d.metadata_json->>'data_origin' = 'official'
+                          AND d.metadata_json->>'data_origin' IN ('official', 'uploaded')
                           AND d.tenant_id = :tenant_id
                           AND c.tenant_id = d.tenant_id
                         """
@@ -1297,7 +1324,7 @@ def knowledge_stats(*, tenant_id: str = "default") -> dict[str, Any]:
                                    ) AS embedded_count
                             FROM kb_documents d
                             LEFT JOIN kb_chunks c ON c.doc_id = d.doc_id AND c.tenant_id = d.tenant_id
-                            WHERE d.metadata_json->>'data_origin' = 'official'
+                            WHERE d.metadata_json->>'data_origin' IN ('official', 'uploaded')
                               AND d.tenant_id = :tenant_id
                             GROUP BY d.doc_id
                         ) s
@@ -1311,7 +1338,7 @@ def knowledge_stats(*, tenant_id: str = "default") -> dict[str, Any]:
             last_updated = conn.execute(
                 text(
                     "SELECT MAX(updated_at) FROM kb_documents "
-                    "WHERE metadata_json->>'data_origin' = 'official' AND tenant_id = :tenant_id"
+                    "WHERE metadata_json->>'data_origin' IN ('official', 'uploaded') AND tenant_id = :tenant_id"
                 ),
                 {"tenant_id": str(tenant_id or "default")},
             ).scalar()

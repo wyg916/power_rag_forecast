@@ -23,7 +23,8 @@ if str(PROJECT_ROOT) not in sys.path:
 DEFAULT_REDIS_URL = "redis://127.0.0.1:6379/0"
 DEFAULT_QUEUE = "phase4_health"
 DEFAULT_FORECAST_QUEUE = "forecast_final_rc"
-WORKER_ROLES = {"health", "forecast"}
+DEFAULT_KNOWLEDGE_QUEUES = "rag,embedding,report"
+WORKER_ROLES = {"health", "forecast", "knowledge"}
 DOCKER_TIMEOUT_SECONDS = 20
 WORKER_START_TIMEOUT_SECONDS = 180
 HEALTH_TASK_TIMEOUT_SECONDS = 30
@@ -44,11 +45,17 @@ def celery_worker_role() -> str:
 
 
 def _worker_name_prefix() -> str:
-    return "forecast-worker" if celery_worker_role() == "forecast" else "phase4-health"
+    role = celery_worker_role()
+    if role == "forecast":
+        return "forecast-worker"
+    if role == "knowledge":
+        return "knowledge-worker"
+    return "phase4-health"
 
 
 def runtime_paths() -> dict[str, Path]:
-    if celery_worker_role() == "forecast":
+    role = celery_worker_role()
+    if role == "forecast":
         runtime_dir = _resolve_project_path(
             "FORECAST_WORKER_RUNTIME_DIR", ".codex_tmp/forecast_worker_runtime"
         )
@@ -57,6 +64,15 @@ def runtime_paths() -> dict[str, Path]:
         )
         pid_name = "celery_forecast_worker.json"
         log_name = "celery_forecast_worker.log"
+    elif role == "knowledge":
+        runtime_dir = _resolve_project_path(
+            "KNOWLEDGE_WORKER_RUNTIME_DIR", ".codex_tmp/knowledge_worker_runtime"
+        )
+        log_dir = _resolve_project_path(
+            "KNOWLEDGE_WORKER_LOG_DIR", "output/runtime_logs/knowledge_worker"
+        )
+        pid_name = "celery_knowledge_worker.json"
+        log_name = "celery_knowledge_worker.log"
     else:
         runtime_dir = _resolve_project_path("PHASE4_RUNTIME_DIR", ".codex_tmp/phase4_runtime")
         log_dir = _resolve_project_path("PHASE4_RUNTIME_LOG_DIR", "output/runtime_logs/phase4")
@@ -71,9 +87,14 @@ def runtime_paths() -> dict[str, Path]:
 
 
 def runtime_temp_dir() -> Path:
-    if celery_worker_role() == "forecast":
+    role = celery_worker_role()
+    if role == "forecast":
         path = _resolve_project_path(
             "FORECAST_WORKER_TEMP_DIR", ".codex_tmp/forecast_worker_runtime_tmp"
+        )
+    elif role == "knowledge":
+        path = _resolve_project_path(
+            "KNOWLEDGE_WORKER_TEMP_DIR", ".codex_tmp/knowledge_worker_runtime_tmp"
         )
     else:
         path = _resolve_project_path("PHASE4_TEMP_DIR", ".codex_tmp/phase4_runtime_tmp")
@@ -103,6 +124,59 @@ def configure_runtime(runtime_configs: Sequence[Path] | None) -> None:
     _RUNTIME_CONFIGS = tuple(path.resolve() for path in runtime_configs or ())
     for runtime_config in _RUNTIME_CONFIGS:
         _load_env_file(runtime_config, required=True)
+    if celery_worker_role() == "knowledge":
+        _load_knowledge_reader_env()
+
+
+def _load_knowledge_reader_env() -> None:
+    configured = os.environ.get("RAG_READER_CONFIG", "").strip()
+    if configured:
+        path = Path(configured).resolve()
+    else:
+        try:
+            common_dir = subprocess.check_output(
+                ["git", "-C", str(PROJECT_ROOT), "rev-parse", "--git-common-dir"],
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            ).strip()
+            shared_root = (PROJECT_ROOT / common_dir).resolve().parent
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError("Git common worktree could not be resolved") from exc
+        matches = sorted(
+            candidate
+            for sibling in shared_root.parent.glob(f"{shared_root.name}_*")
+            if (
+                candidate := sibling
+                / "rag-r1"
+                / "performance"
+                / "r3-qdrant-readonly.env"
+            ).is_file()
+        )
+        if len(matches) != 1:
+            raise RuntimeError(
+                "Approved read-only RAG runtime config discovery must resolve exactly one file"
+            )
+        path = matches[0]
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    if any(key in values for key in ("QDRANT_ADMIN_API_KEY", "QDRANT_ADMIN_KEY")):
+        raise RuntimeError("RAG reader config contains an admin credential")
+    if values.get("QDRANT_API_KEY") != values.get("QDRANT_READ_ONLY_API_KEY"):
+        raise RuntimeError("RAG reader key identity mismatch")
+    mappings = {
+        "RAG_QDRANT_API_KEY": values.get("QDRANT_API_KEY", ""),
+        "RAG_QDRANT_TLS_CA_PATH": values.get("QDRANT_CA_CERT", ""),
+        "RAG_QDRANT_URL": values.get("QDRANT_URL", ""),
+    }
+    if not all(mappings.values()):
+        raise RuntimeError("RAG reader config is incomplete")
+    os.environ.update(mappings)
 
 
 def _load_project_env() -> None:
@@ -126,10 +200,16 @@ def redis_url() -> str:
 
 
 def celery_queue() -> str:
-    if celery_worker_role() == "forecast":
+    role = celery_worker_role()
+    if role == "forecast":
         return (
             os.environ.get("FORECAST_CELERY_QUEUE", DEFAULT_FORECAST_QUEUE).strip()
             or DEFAULT_FORECAST_QUEUE
+        )
+    if role == "knowledge":
+        return (
+            os.environ.get("KNOWLEDGE_CELERY_QUEUES", DEFAULT_KNOWLEDGE_QUEUES).strip()
+            or DEFAULT_KNOWLEDGE_QUEUES
         )
     return os.environ.get("PHASE4_CELERY_QUEUE", DEFAULT_QUEUE).strip() or DEFAULT_QUEUE
 
@@ -564,7 +644,7 @@ def celery_start() -> dict[str, Any]:
         pool="solo",
         concurrency=1,
         log_path=str(paths["worker_log"]),
-        consumes_business_queues=celery_worker_role() == "forecast",
+        consumes_business_queues=celery_worker_role() in {"forecast", "knowledge"},
     )
 
 

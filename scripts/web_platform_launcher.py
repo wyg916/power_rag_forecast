@@ -49,6 +49,9 @@ BACKEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_BACKEND_STARTUP_TIMEOUT", "720
 FRONTEND_STARTUP_TIMEOUT = int(os.environ.get("WEB_FRONTEND_STARTUP_TIMEOUT", "180"))
 BACKEND_URL = f"http://127.0.0.1:{BACKEND_PORT}/api/health"
 FRONTEND_URL = f"http://127.0.0.1:{FRONTEND_PORT}"
+RELEASE_WORKER_CLIENT_ENV = (
+    ROOT / ".codex_tmp" / "rag_release_worker_runtime" / "client.env"
+)
 
 RAG_RUNTIME_EXPORT_KEYS = frozenset(
     {
@@ -142,6 +145,26 @@ def load_rag_reader_env(env_path: Path | None) -> None:
     }
     for key, value in mappings.items():
         os.environ.setdefault(key, value)
+
+
+def load_release_worker_client_env(env_path: Path = RELEASE_WORKER_CLIENT_ENV) -> bool:
+    if not env_path.is_file():
+        return False
+    values = _read_env_values(env_path)
+    if set(values) != {"RAG_RELEASE_WORKER_URL", "RAG_RELEASE_WORKER_TOKEN"}:
+        raise RuntimeError("RAG release worker client config key set is invalid")
+    endpoint = urlparse(values["RAG_RELEASE_WORKER_URL"])
+    token = values["RAG_RELEASE_WORKER_TOKEN"]
+    if (
+        endpoint.scheme != "http"
+        or endpoint.hostname != "127.0.0.1"
+        or endpoint.port != 8787
+        or len(token) < 32
+    ):
+        raise RuntimeError("RAG release worker client config is invalid")
+    os.environ["RAG_RELEASE_WORKER_URL"] = values["RAG_RELEASE_WORKER_URL"]
+    os.environ["RAG_RELEASE_WORKER_TOKEN"] = token
+    return True
 
 
 def resolve_rag_reader_config(explicit: Path | None) -> Path:
@@ -568,6 +591,8 @@ def main() -> int:
             )
         else:
             load_rag_reader_env(resolve_rag_reader_config(args.rag_reader_config))
+        if not args.preflight_only:
+            load_release_worker_client_env()
     except (OSError, RuntimeError) as exc:
         log(f"[ERROR] Runtime configuration failed: {exc}")
         return 2
