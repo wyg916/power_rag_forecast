@@ -1,0 +1,7 @@
+git diff --check
+npm.cmd exec tsc -- --noEmit
+node --test frontend/tests/viewState.test.mjs frontend/tests/uiShellContracts.test.mjs frontend/tests/pageLayoutConvergenceContracts.test.mjs
+npm.cmd run build
+E:/智能运营分析项目/.venv/Scripts/python.exe -m unittest tests.test_formal_forecast -v
+Chrome 登录态 DOM、几何、交互与截图检查：1920×919、1440×900、1366×768
+git merge --ff-only codex/forecast-24h-alignment-20260827

@@ -1,0 +1,35 @@
+{
+  "1920x919": {
+    "document": {"clientWidth": 1920, "scrollWidth": 1920, "clientHeight": 919, "scrollHeight": 919},
+    "chartRight": 1303,
+    "detailRight": 1303,
+    "strategyLeft": 1311,
+    "summaryLeft": 1311,
+    "dividerAlignmentErrorPx": 0,
+    "strategyExtensionPx": 38.3125,
+    "summaryCompressionPx": 38.3125,
+    "aiFabOverlapTargets": []
+  },
+  "1440x900": {
+    "document": {"clientWidth": 1440, "scrollWidth": 1440, "clientHeight": 900, "scrollHeight": 900},
+    "chartRight": 822.984375,
+    "detailRight": 822.984375,
+    "strategyLeft": 830.984375,
+    "summaryLeft": 830.984375,
+    "dividerAlignmentErrorPx": 0,
+    "strategyExtensionPx": 37.3125,
+    "summaryCompressionPx": 37.3125
+  },
+  "1366x768": {
+    "document": {"clientWidth": 1366, "scrollWidth": 1366, "clientHeight": 768, "scrollHeight": 768},
+    "chartRight": 749,
+    "detailRight": 749,
+    "strategyLeft": 757,
+    "summaryLeft": 757,
+    "dividerAlignmentErrorPx": 0,
+    "strategyExtensionPx": 29.65,
+    "summaryCompressionPx": 29.65,
+    "summaryColumnsPx": [188, 188, 188],
+    "detailTableOverflow": "local vertical scroll; page overflow remains zero"
+  }
+}

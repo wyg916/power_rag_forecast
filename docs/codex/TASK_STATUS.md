@@ -243,3 +243,9 @@
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
 |---|---|---|---|---|
 | PROJECT1 RAG-R1 `validate → publish → Alias/数据库/Search` 最终闭环 | `PASS`；发布门禁 9/9，PostgreSQL `published/current=true`，Qdrant Alias=`rag_chunks_current → rag_chunks_RAG-R1`、8,339 points；恢复缺失的 50,844 词 BM25 运行资产后，Search/QA HTTP 200，BGE 重排与真实 citation 生效，正向批量 2/2；专项回归 105 passed | `main` / 本行所在提交（执行父提交 `65d95ee`） | `docs/codex/evidence/PROJECT1_RAG_R1_PUBLISH_20260828_003334/` | 无发布或搜索功能阻塞；运行注意项：本地 CPU 后端重启后的首次双模型冷加载可能超过 420 秒，当前实例已预热，热态 Search 1.469 秒。宽泛跨领域问题按设计 fail-closed，不伪造答案。 |
+
+## 2026-08-28 预测中心 24 小时布局对齐
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1 24 小时预测左右列边线与高度微调 | PASS | `codex/forecast-24h-alignment-20260827` / 本行所在提交（代码提交 `13dba8a`） | `docs/codex/evidence/PROJECT1_FORECAST_24H_ALIGNMENT_20260828_010052/` | 无；仅将 24 小时视图重排为共享双列工作区：图表/明细右边线、策略洞察/摘要左边线误差均 0px，策略洞察向下扩展约 30–38px，三摘要卡等宽并对应压缩；1920×919、1440×900、1366×768 均无页面级溢出，小时解释和另外两个页签回归通过。TypeScript、Vite 3689、Node 核心 19/19、正式预测 1/1 PASS；1 项既有 10px 图表标签门槛在未修改主项目同样失败。后端/API/RBAC/路由/数据库/模型状态写入均为 0；检查点：`backups/phase3/20260827_230448_PROJECT1_FORECAST_24H_ALIGNMENT_PRE`。 |

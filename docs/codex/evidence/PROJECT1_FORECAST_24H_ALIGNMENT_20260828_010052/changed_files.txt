@@ -1,0 +1,4 @@
+frontend/src/pages/forecast/ForecastCenterPage.tsx
+frontend/src/styles.css
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/PROJECT1_FORECAST_24H_ALIGNMENT_20260828_010052/*
