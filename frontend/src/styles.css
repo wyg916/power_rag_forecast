@@ -13246,13 +13246,21 @@ a {
   box-sizing: border-box;
 }
 
+.app-shell .forecast-training-card {
+  padding-inline-end: 76px;
+}
+
 .app-shell .forecast-training-card > .ant-space {
-  padding-inline-end: 64px;
+  padding-inline-end: 0;
 }
 
 @media (min-width: 1181px) and (min-height: 860px) {
   .app-shell .forecast-design-page .forecast-card {
     padding: 13px 15px;
+  }
+
+  .app-shell .forecast-design-page .forecast-training-card {
+    padding-inline-end: 79px;
   }
 
   .app-shell .forecast-design-page .forecast-card-head {
