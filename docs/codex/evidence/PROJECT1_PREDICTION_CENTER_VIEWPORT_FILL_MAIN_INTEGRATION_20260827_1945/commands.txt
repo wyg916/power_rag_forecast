@@ -1,0 +1,10 @@
+git diff --check -- frontend/src/components/forecast/ForecastDesign.tsx frontend/src/styles.css
+frontend/node_modules/.bin/tsc.cmd --noEmit
+npm.cmd run build
+node.exe --test frontend/tests/viewState.test.mjs
+node.exe --test frontend/tests/uiShellContracts.test.mjs
+E:/智能运营分析项目/.venv/Scripts/python.exe -m unittest tests.test_formal_forecast -v
+Python 直接调用 12 个数据库无关预测中心契约测试函数
+scripts/web_platform_launcher.py --skip-sync --no-browser（本地只读验收服务）
+Chrome 登录态 DOM、几何、交互与截图检查：1920×919、1440×900
+git merge --ff-only codex/integrate-forecast-viewport-fill-20260827

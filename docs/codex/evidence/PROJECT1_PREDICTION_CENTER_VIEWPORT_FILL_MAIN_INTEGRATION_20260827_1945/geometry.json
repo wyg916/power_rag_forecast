@@ -1,0 +1,45 @@
+{
+  "viewport_1920x919": {
+    "document": {"scrollWidth": 1920, "clientWidth": 1920, "scrollHeight": 919, "clientHeight": 919},
+    "forecast_24h": {
+      "page": {"x": 230, "y": 68, "width": 1661, "height": 851, "right": 1891, "bottom": 919},
+      "primary": {"height": 262, "bottom": 522},
+      "detail": {"height": 390, "bottom": 919},
+      "table": {"clientHeight": 388, "scrollHeight": 388},
+      "fab_overlaps_health_button": false,
+      "overflow_x": false,
+      "overflow_y": false
+    },
+    "forecast_history": {
+      "page": {"x": 230, "y": 68, "width": 1661, "height": 851, "right": 1891, "bottom": 919},
+      "primary": {"height": 298, "bottom": 558},
+      "bottom": {"height": 353, "bottom": 919},
+      "table": {"clientHeight": 351, "scrollHeight": 351},
+      "fab_overlaps_health_button": false,
+      "overflow_x": false,
+      "overflow_y": false
+    },
+    "forecast_model": {
+      "page": {"x": 230, "y": 68, "width": 1661, "height": 851, "right": 1891, "bottom": 919},
+      "peak": {"height": 245, "bottom": 504},
+      "evaluation": {"height": 208, "bottom": 720},
+      "baseline": {"height": 191, "bottom": 919},
+      "training_padding_right": 79,
+      "fab_overlapping_value_or_action_items": [],
+      "overflow_x": false,
+      "overflow_y": false
+    }
+  },
+  "viewport_1440x900": {
+    "forecast_24h": {
+      "document": {"scrollWidth": 1440, "clientWidth": 1440, "scrollHeight": 900, "clientHeight": 900},
+      "page": {"x": 230, "y": 68, "width": 1181, "height": 832, "right": 1411, "bottom": 900},
+      "primary": {"height": 257, "bottom": 514},
+      "detail": {"height": 378, "bottom": 900},
+      "table": {"clientHeight": 376, "scrollHeight": 376},
+      "fab_overlaps_health_button": false,
+      "overflow_x": false,
+      "overflow_y": false
+    }
+  }
+}

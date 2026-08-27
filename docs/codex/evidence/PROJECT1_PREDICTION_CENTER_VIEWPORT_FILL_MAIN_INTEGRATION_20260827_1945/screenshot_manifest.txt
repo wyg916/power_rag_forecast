@@ -1,0 +1,4 @@
+screenshots/01_forecast_24h_1920x919.png | 24 小时预测最终合入页面 | 1920x919
+screenshots/02_forecast_history_1920x919.png | 历史对比最终合入页面 | 1920x919
+screenshots/03_forecast_model_1920x919.png | 峰谷分析与模型评估最终合入页面 | 1920x919
+screenshots/04_forecast_24h_1440x900.png | 24 小时预测兼容视口 | 1440x900
