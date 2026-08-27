@@ -320,18 +320,18 @@ function StorageExecutionTable({ rows, onSelect }: { rows: any[]; onSelect: (row
   const actualEnergyItems = rows.map((row) => num(row.actualEnergy)).filter((value): value is number => value != null);
   const actualEnergy = actualEnergyItems.reduce((total, value) => total + value, 0);
   const columns: ColumnsType<any> = [
-    { title: '窗口', dataIndex: 'time', width: 74 },
-    { title: '动作', dataIndex: 'actionLabel', width: 72, render: (value) => <Tag color={value === '充电' ? 'success' : value === '放电' ? 'blue' : 'default'}>{value}</Tag> },
-    { title: '计划功率', dataIndex: 'plannedPower', align: 'right', render: (value) => `${fmt(value, 1)} MW` },
-    { title: '反馈功率', dataIndex: 'actualPower', align: 'right', render: (value) => value == null ? '--' : `${fmt(value, 1)} MW` },
-    { title: '状态', dataIndex: 'statusLabel', render: (value, row) => <Tag color={row.execution_status === 'completed' ? 'success' : row.execution_status === 'failed' ? 'error' : 'processing'}>{value}</Tag> },
-    { title: '收益/测算', dataIndex: 'realizedRevenue', align: 'right', render: (value) => value == null ? '--' : `¥${Number(value).toLocaleString()}` },
-    { title: '反馈', render: (_, row) => <Button type="link" size="small" onClick={() => onSelect(row)}>查看详情</Button> }
+    { title: '窗口', dataIndex: 'time', width: 56 },
+    { title: '动作', dataIndex: 'actionLabel', width: 54, render: (value) => <Tag color={value === '充电' ? 'success' : value === '放电' ? 'blue' : 'default'}>{value}</Tag> },
+    { title: '计划功率', dataIndex: 'plannedPower', width: 66, align: 'right', render: (value) => `${fmt(value, 1)} MW` },
+    { title: '反馈功率', dataIndex: 'actualPower', width: 66, align: 'right', render: (value) => value == null ? '--' : `${fmt(value, 1)} MW` },
+    { title: '状态', dataIndex: 'statusLabel', width: 60, render: (value, row) => <Tag color={row.execution_status === 'completed' ? 'success' : row.execution_status === 'failed' ? 'error' : 'processing'}>{value}</Tag> },
+    { title: '收益/测算', dataIndex: 'realizedRevenue', width: 74, align: 'right', render: (value) => value == null ? '--' : `¥${Number(value).toLocaleString()}` },
+    { title: '反馈', width: 68, render: (_, row) => <Button type="link" size="small" onClick={() => onSelect(row)}>查看详情</Button> }
   ];
   return (
     <section className="strategy-card storage-plan-table">
       <div className="strategy-card-head"><h2>执行反馈清单（{rows.length} 条）</h2></div>
-      <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={false} scroll={{ y: 145, x: 760 }} />
+      <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={false} tableLayout="fixed" scroll={{ y: 145 }} />
       <div className="storage-execution-summary" aria-label="当前设备执行反馈摘要">
         <p><span>已完成</span><strong>{completedCount}</strong></p>
         <p><span>执行中</span><strong>{activeCount}</strong></p>
@@ -386,34 +386,36 @@ export function ReviewWorkspace({
     {
       title: '编号',
       dataIndex: 'id',
-      width: 142,
+      width: 92,
       ellipsis: { showTitle: false },
       render: (value) => <Tooltip title={value}><span className="strategy-cell-ellipsis">{value}</span></Tooltip>
     },
     {
       title: '复核原因',
       dataIndex: 'reason',
+      width: 82,
       ellipsis: { showTitle: false },
       render: (value) => <Tooltip title={value}><span className="strategy-cell-ellipsis">{value}</span></Tooltip>
     },
     {
       title: '策略建议',
       dataIndex: 'action',
+      width: 96,
       ellipsis: { showTitle: false },
       render: (value) => <Tooltip title={value}><span className="strategy-cell-ellipsis">{value}</span></Tooltip>
     },
-    { title: '风险等级', dataIndex: 'risk', width: 92, render: (value) => <Tag color={riskColor(value)}>{riskLabel(value)}</Tag> },
-    { title: '置信度', dataIndex: 'confidence', width: 82, render: (value) => value == null ? '--' : `${fmt(value, 1)}%` },
-    { title: '提交时间', dataIndex: 'submittedAt', width: 142, render: (value) => String(value).slice(5, 16) },
-    { title: '审核状态', dataIndex: 'status', width: 92, render: (value, row) => <Tag color={statusColor(value)}>{row.statusLabel || value}</Tag> },
-    { title: '操作', width: 144, render: (_, row) => <Space size={2}><Button type="link" size="small" onClick={() => onSelect(row)}>查看</Button><Button type="link" size="small" onClick={() => onSelect(row)}>人工审核</Button></Space> }
+    { title: '风险等级', dataIndex: 'risk', width: 64, render: (value) => <Tag color={riskColor(value)}>{riskLabel(value)}</Tag> },
+    { title: '置信度', dataIndex: 'confidence', width: 56, render: (value) => value == null ? '--' : `${fmt(value, 1)}%` },
+    { title: '提交时间', dataIndex: 'submittedAt', width: 74, render: (value) => String(value).slice(5, 16) },
+    { title: '审核状态', dataIndex: 'status', width: 64, render: (value, row) => <Tag color={statusColor(value)}>{row.statusLabel || value}</Tag> },
+    { title: '操作', width: 72, render: (_, row) => <Space size={2}><Button type="link" size="small" onClick={() => onSelect(row)}>查看</Button><Button type="link" size="small" onClick={() => onSelect(row)}>复核</Button></Space> }
   ];
   return (
     <div className="review-workspace">
       <div className="review-list-column">
         <section className="strategy-card review-table-card">
           <div className="review-tabs"><b>全部（{totalRows}）</b><span>当前筛选（{rows.length}）</span><span>待处理（{allRows.filter((row: any) => ['draft', 'pending_review'].includes(row.status)).length}）</span><span>已处理（{allRows.filter((row: any) => !['draft', 'pending_review'].includes(row.status)).length}）</span><span>紧急（{allRows.filter((row: any) => row.risk === 'high').length}）</span></div>
-          <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={{ pageSize: 10, showSizeChanger: false }} scroll={{ y: 'clamp(224px, calc(100dvh - 544px), 392px)', x: 980 }} onRow={(row) => ({ onClick: () => onSelect(row) })} rowClassName={(row) => selected?.key === row.key ? 'selected-review-row' : ''} />
+          <Table size="small" rowKey="key" columns={columns} dataSource={rows} pagination={{ pageSize: 10, showSizeChanger: false }} tableLayout="fixed" scroll={{ y: 'clamp(154px, calc(100dvh - 560px), 392px)' }} onRow={(row) => ({ onClick: () => onSelect(row) })} rowClassName={(row) => selected?.key === row.key ? 'selected-review-row' : ''} />
         </section>
         <ReviewBottomSummary rows={rows} />
       </div>

@@ -143,10 +143,20 @@ def test_strategy_storage_and_review_fill_space_from_existing_api_rows_only():
     assert "storage-execution-summary" in design
     assert "executions.filter" in design
     assert "rows.reduce" in design
-    assert "calc(100dvh - 544px)" in design
+    assert "calc(100dvh - 560px)" in design
     assert "Math.random" not in design
     assert "executionItems = (Array.isArray(runtime?.execution_items)" in service
     assert "devices = Array.isArray(runtime?.devices)" in service
+
+
+def test_strategy_short_desktop_viewport_has_a_non_clipping_height_budget():
+    design = _read("frontend/src/components/strategy/StrategyDesign.tsx")
+    strategy_styles = _read("frontend/src/pages/strategy/strategy-center-layout.css")
+
+    assert "@media (min-width: 1181px) and (max-height: 820px)" in strategy_styles
+    assert "height: 92px" in strategy_styles
+    assert "grid-template-rows: minmax(0, .88fr) minmax(226px, 1.12fr)" in strategy_styles
+    assert "clamp(154px, calc(100dvh - 560px), 392px)" in design
 
 
 def test_strategy_get_chain_has_no_strategy_or_audit_write_side_effects():

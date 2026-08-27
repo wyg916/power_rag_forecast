@@ -80,7 +80,8 @@ test('page actions reserve the floating assistant safe area without removing con
   assert.match(phase4, /\.data-workspace-main \.data-alert-panel \.data-alert-row\s*\{[\s\S]*?padding-right:\s*64px/);
   assert.match(phase4, /\.knowledge-answer-card \.ant-card-head\s*\{[\s\S]*?padding-right:\s*64px/);
   assert.match(phase4, /\.forecast-bottom-summary \.ant-btn-block,[\s\S]*?width:\s*calc\(100% - 64px\)/);
-  assert.match(strategy, /title:\s*'操作',\s*width:\s*144/);
+  assert.match(strategy, /title:\s*'操作',\s*width:\s*72/);
+  assert.match(strategy, />查看<\/[\s\S]*?>复核<\//);
   assert.match(knowledge, /title:\s*'操作',[\s\S]*?width:\s*168/);
 });
 
