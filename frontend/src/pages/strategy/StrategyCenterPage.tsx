@@ -198,6 +198,14 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       message.warning('驳回或退回必须填写复核意见');
       return;
     }
+    if (!row?.contentHash) {
+      message.warning('该记录来自旧接口，缺少不可变内容哈希，不能执行治理状态流转');
+      return;
+    }
+    if (action === 'publish' && row.isStale) {
+      message.warning(`当前策略未通过发布门禁：${row.staleReason || '策略已过期或绑定事实不是当前批次'}。请先生成并复核当前有效策略。`);
+      return;
+    }
     try {
       const requestId = globalThis.crypto?.randomUUID?.() || `p5d-${Date.now()}`;
       await api.strategyAction(row.id, action, { request_id: requestId, review_comment: comment.trim() });
@@ -205,7 +213,15 @@ export function StrategyCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
       await loadData();
       await loadReviewHistory(row.id);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '策略状态流转失败');
+      const detail = error instanceof Error ? error.message : '策略状态流转失败';
+      const labels: Record<string, string> = {
+        stale_strategy_cannot_publish: '当前策略已过期或属于历史事实，不能发布；请生成当前有效策略后重新复核。',
+        expired_strategy_cannot_publish: '当前策略已超过适用时间，不能发布；请生成当前有效策略后重新复核。',
+        invalid_transition: '当前状态不允许执行该操作，请刷新后按“提交复核 → 通过 → 发布”的顺序操作。',
+        reviewer_must_differ_from_creator: '策略创建人与复核人必须分离，请由其他具备复核权限的账号处理。'
+      };
+      const matched = Object.entries(labels).find(([code]) => detail.includes(code));
+      message.error(matched?.[1] || detail);
     }
   }
 

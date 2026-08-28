@@ -468,7 +468,7 @@ function buildKnowledgeItems(message?: AssistantMessage) {
   return [];
 }
 
-export function AssistantPage({ onSubNavigate }: PageProps) {
+export function AssistantPage(_props: PageProps) {
   const { message } = App.useApp();
   const { hasPermission, user, permissionSnapshotHash } = useAuth();
   const [assistantData, setAssistantData] = useState<any>({
@@ -484,6 +484,9 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   const [questionOffset, setQuestionOffset] = useState(0);
   const [developerMode, setDeveloperMode] = useState(false);
   const [developerOpen, setDeveloperOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [sessionSearch, setSessionSearch] = useState('');
   const [answerStyle, setAnswerStyle] = useState<AssistantAnswerStyle>(DEFAULT_ASSISTANT_ANSWER_STYLE);
   const [sessionAnswerStyles, setSessionAnswerStyles] = useState<Record<string, AssistantAnswerStyle>>({});
   const [selectedDataSource, setSelectedDataSource] = useState('all');
@@ -696,10 +699,37 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
     message.success('已创建新会话');
   }
 
-  function selectConversation(nextSessionId: string) {
-    setSessionId(nextSessionId);
-    setModelProvider(sessionProviders[nextSessionId] || 'standard');
-    setAnswerStyle(sessionAnswerStyles[nextSessionId] || DEFAULT_ASSISTANT_ANSWER_STYLE);
+  async function selectConversation(nextSessionId: string) {
+    if (!nextSessionId || historyLoading) return;
+    setHistoryLoading(true);
+    try {
+      const payload = await api.chatSession(nextSessionId);
+      const restored: AssistantMessage[] = (payload.messages || []).map((item: any, index: number) => ({
+        id: `${nextSessionId}_${index}`,
+        role: item.role === 'assistant' ? 'assistant' : 'user',
+        content: String(item.content || ''),
+        createdAt: String(item.created_at || '').replace('T', ' ').slice(0, 16) || '--',
+        status: item.role === 'assistant' ? 'done' : undefined,
+        trace: item.role === 'assistant' ? emptyTrace : undefined,
+        answerState: item.role === 'assistant' ? {
+          source: 'postgresql.ai_chat_messages',
+          debugPayload: { citations: Array.isArray(item.evidence_json) ? item.evidence_json : [] }
+        } : undefined
+      }));
+      setSessionId(nextSessionId);
+      setMessages(restored);
+      setActiveAssistantId([...restored].reverse().find((item) => item.role === 'assistant')?.id);
+      setAttachments([]);
+      setSelectedReferences([]);
+      setModelProvider(sessionProviders[nextSessionId] || 'standard');
+      setAnswerStyle(sessionAnswerStyles[nextSessionId] || DEFAULT_ASSISTANT_ANSWER_STYLE);
+      setHistoryOpen(false);
+      if (!restored.length) message.info('该会话暂无可展示消息');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '历史会话加载失败');
+    } finally {
+      setHistoryLoading(false);
+    }
   }
 
   function changeAnswerStyle(value: AssistantAnswerStyle) {
@@ -862,6 +892,10 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
   }
 
   const sessionItems = assistantData.conversations || [];
+  const filteredSessionItems = sessionItems.filter((item: any) => {
+    const needle = sessionSearch.trim().toLowerCase();
+    return !needle || [item.title, item.session_id].some((value) => String(value || '').toLowerCase().includes(needle));
+  });
   const evidenceColumns = [
     { title: '数据表 / 指标', dataIndex: 'source', key: 'source', width: 112, ellipsis: true },
     { title: '时间范围', dataIndex: 'timeRange', key: 'timeRange', width: 96, ellipsis: true },
@@ -908,25 +942,27 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
             bodyClassName="assistant-session-body"
             extra={<Button type="primary" size="small" icon={<PlusOutlined />} onClick={newConversation}>新建对话</Button>}
           >
-            <Input prefix={<SearchOutlined />} placeholder="搜索会话标题或内容" />
+            <Input prefix={<SearchOutlined />} placeholder="搜索会话标题或内容" value={sessionSearch} onChange={(event) => setSessionSearch(event.target.value)} />
             <List
               className="assistant-session-list"
+              loading={historyLoading}
               locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无历史会话" /> }}
-              dataSource={sessionItems}
+              dataSource={filteredSessionItems}
               renderItem={(item: any, index) => {
                 const sessionTitle = item.title || item.session_id || 'AI 会话';
+                const active = item.session_id === sessionId;
                 return (
-                  <List.Item className={index === 0 ? 'active-session' : ''}>
+                  <List.Item className={active ? 'active-session' : ''}>
                     <button type="button" title={sessionTitle} onClick={() => selectConversation(item.session_id)}>
                       <strong>{sessionTitle}</strong>
                       <span>{String(item.updated_at || item.created_at || '').slice(5, 16) || '当前'}</span>
-                      <Tag color={index === 0 ? 'success' : 'default'}>{index === 0 ? '进行中' : '已完成'}</Tag>
+                      <Tag color={active ? 'success' : 'default'}>{active ? '进行中' : '已完成'}</Tag>
                     </button>
                   </List.Item>
                 );
               }}
             />
-            <a className="section-footer-link" onClick={() => onSubNavigate?.('assistant-faq')}>查看全部历史记录 →</a>
+            <a className="section-footer-link" onClick={() => setHistoryOpen(true)}>查看全部历史记录 →</a>
           </SectionCard>
 
           <SectionCard title="常用问题" className="assistant-question-card" bodyClassName="assistant-question-body" extra={<a onClick={rotateQuestions}>换一批</a>}>
@@ -1210,6 +1246,19 @@ export function AssistantPage({ onSubNavigate }: PageProps) {
             description="当前 Word 导出已可用；PDF 如转换引擎尚未部署，会给出明确提示。"
           />
         </Space>
+      </Modal>
+
+      <Modal title="全部历史会话" open={historyOpen} onCancel={() => setHistoryOpen(false)} footer={null} destroyOnHidden>
+        <List
+          loading={historyLoading}
+          dataSource={filteredSessionItems}
+          locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无历史会话" /> }}
+          renderItem={(item: any) => (
+            <List.Item actions={[<Button key="open" type="link" onClick={() => selectConversation(item.session_id)}>打开</Button>]}>
+              <List.Item.Meta title={item.title || item.session_id || 'AI 会话'} description={String(item.updated_at || item.created_at || '').replace('T', ' ').slice(0, 19) || '--'} />
+            </List.Item>
+          )}
+        />
       </Modal>
 
       <Modal

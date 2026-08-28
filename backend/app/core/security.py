@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Request, status
 
 from backend.app.auth.jwt import JWTError, decode_access_token
 from backend.app.core.config import get_settings
+from backend.app.repositories.settings_repository import list_role_permissions
 from backend.app.repositories.user_repository import get_user_by_username, normalize_role
 
 
@@ -107,12 +108,30 @@ class CurrentUser:
         return self.has_permission("assistant:debug") or self.has_permission("trace:read")
 
 
-def _permissions_for_role(role: str) -> list[str]:
+def permissions_for_role(role: str) -> list[str]:
     raw_role = str(role or "").strip().lower()
     if raw_role not in ROLE_PERMISSIONS:
         return []
     normalized = normalize_role(raw_role)
+    try:
+        configured = next(
+            (
+                item
+                for item in list_role_permissions()
+                if str(item.get("role_id") or "").strip().lower() == normalized
+            ),
+            None,
+        )
+    except Exception:
+        configured = None
+    if configured is not None:
+        values = sorted({str(value) for value in (configured.get("permissions") or []) if str(value)})
+        if normalized != "admin" or "*" in values:
+            return values
     return sorted(ROLE_PERMISSIONS.get(normalized, set()))
+
+
+_permissions_for_role = permissions_for_role
 
 
 def _unauthorized(detail: str) -> HTTPException:
@@ -146,7 +165,7 @@ def _current_user_from_jwt(request: Request, token: str) -> CurrentUser:
         user_id=str(record.get("user_id") or payload.get("user_id") or username),
         username=username,
         role=role,
-        permissions=_permissions_for_role(role),
+        permissions=permissions_for_role(role),
         auth_mode="jwt",
         tenant_id=str(record.get("tenant_id") or "default"),
         workspace_id=str(record.get("workspace_id") or "default"),
@@ -177,7 +196,7 @@ def get_current_user(request: Request) -> CurrentUser:
         user_id=username,
         username=username,
         role=role,
-        permissions=_permissions_for_role(role),
+        permissions=permissions_for_role(role),
         auth_mode=auth_mode,
         tenant_id="default",
         workspace_id="default",

@@ -9,6 +9,11 @@ from ....config import APP_VERSION, PLATFORM_NAME
 from ....core.security import CurrentUser, ROLE_PERMISSIONS, get_current_user, require_permission
 from ....data_access import latest_business_summary
 from ....auth.password import hash_password
+from ....auth.security_policy import (
+    SecurityPolicyError,
+    admin_password_reset_enabled,
+    validate_password_policy,
+)
 from ....repositories.audit_repository import list_audit_logs, write_audit_log
 from ....repositories.user_repository import (
     create_user,
@@ -235,11 +240,15 @@ def settings_user_create(
     if get_user_by_username(username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="用户名已存在")
     role = normalize_role(payload.role)
+    try:
+        password = validate_password_policy(payload.password)
+    except SecurityPolicyError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     created = create_user(
         username=username,
         email=_validate_email(payload.email),
         display_name=payload.display_name.strip() or username,
-        password_hash=hash_password(payload.password),
+        password_hash=hash_password(password),
         role=role,
         is_active=payload.is_active,
         is_superuser=role == "admin",
@@ -365,10 +374,16 @@ def settings_user_reset_password(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("user:write"))],
 ) -> dict:
+    if not admin_password_reset_enabled():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="管理员重置密码已被安全策略禁用")
     current = _target_or_404(user_id, user)
+    try:
+        password = validate_password_policy(payload.new_password)
+    except SecurityPolicyError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     ok = update_password_hash(
         user_id,
-        hash_password(payload.new_password),
+        hash_password(password),
         tenant_id=user.tenant_id,
         workspace_id=user.workspace_id,
     )
@@ -460,7 +475,10 @@ def settings_security_policy_update(
     request: Request,
     user: Annotated[CurrentUser, Depends(require_permission("settings:write"))],
 ) -> dict:
-    return settings_center.update_security_policy_payload(payload, user=user, ip_address=_ip(request))
+    try:
+        return settings_center.update_security_policy_payload(payload, user=user, ip_address=_ip(request))
+    except SecurityPolicyError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.get("/api/settings/audit-logs")

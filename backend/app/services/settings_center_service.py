@@ -9,13 +9,26 @@ from urllib.parse import urlsplit
 from sqlalchemy import text
 
 from backend.app.ai_assistant.core.llm_client import get_local_llm_status
+from backend.app.ai_assistant.llm_providers import (
+    DeepSeekProvider,
+    KimiProvider,
+    MiMoProvider,
+    ProviderRequestError,
+)
+from backend.app.auth.security_policy import (
+    SECURITY_POLICY_DEFAULTS,
+    normalize_security_policy,
+    security_policy_capabilities,
+    security_policy_values,
+)
 from backend.app.core.config import get_settings
-from backend.app.core.redaction import mask_db_url, mask_secret_fields
+from backend.app.core.redaction import mask_db_url, mask_secret_fields, redact_text
 from backend.app.core.security import CurrentUser, ROLE_PERMISSIONS
 from backend.app.data_access import database_runtime_status, jsonable
 from backend.app.repositories.audit_repository import list_audit_logs, write_audit_log
 from backend.app.repositories.base import postgres_engine
 from backend.app.repositories.settings_repository import (
+    get_api_config,
     health_check_records,
     insert_api_test_log,
     list_api_configs,
@@ -54,11 +67,76 @@ RUNTIME_DEFAULTS = [
     ("auto_backup_enabled", True, "boolean", "runtime", "Automatic data backup"),
     ("password_min_length", 12, "integer", "security_policy", "Minimum password length"),
     ("login_failed_lock_count", 5, "integer", "security_policy", "Failed login lock threshold"),
+    ("login_lock_minutes", 15, "integer", "security_policy", "Failed login lock duration"),
     ("session_timeout_minutes", 30, "integer", "security_policy", "Session timeout"),
     ("force_periodic_password_change", True, "boolean", "security_policy", "Force periodic password change"),
     ("two_factor_enabled", False, "boolean", "security_policy", "Two factor authentication"),
     ("admin_reset_password_enabled", True, "boolean", "security_policy", "Admin password reset"),
 ]
+
+PROVIDER_FACTORIES = {
+    "llm_kimi": KimiProvider,
+    "llm_mimo": MiMoProvider,
+    "llm_deepseek": DeepSeekProvider,
+}
+
+
+def _runtime_defaults_payload(category: str | None = None) -> dict[str, Any]:
+    stored_rows = list_runtime_config(category)
+    stored = {str(row.get("config_key") or ""): row for row in stored_rows}
+    rows: list[dict[str, Any]] = []
+    for key, value, value_type, row_category, description in RUNTIME_DEFAULTS:
+        if category and row_category != category:
+            continue
+        rows.append(
+            stored.pop(key, None)
+            or {
+                "config_key": key,
+                "config_value": value,
+                "value_type": value_type,
+                "category": row_category,
+                "description": description,
+                "is_sensitive": False,
+                "is_enabled": True,
+                "updated_by": "default",
+                "updated_at": None,
+                "persisted": False,
+            }
+        )
+    rows.extend(stored.values())
+    values = {str(row["config_key"]): row.get("config_value") for row in rows}
+    categories: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        categories.setdefault(str(row.get("category") or "runtime"), {})[
+            str(row.get("config_key") or "")
+        ] = row.get("config_value")
+    return {"items": rows, "values": values, "categories": categories}
+
+
+def _all_interface_configs() -> list[dict[str, Any]]:
+    stored_items = list_api_configs(page_size=500)["items"]
+    stored = {str(item.get("interface_key") or ""): item for item in stored_items}
+    result: list[dict[str, Any]] = []
+    for default in default_api_configs():
+        key = str(default.get("interface_key") or "")
+        current = stored.pop(key, None)
+        if current is None:
+            result.append({**default, "persisted": False})
+            continue
+        merged = {**default, **current, "persisted": True}
+        if key in PROVIDER_FACTORIES:
+            merged.update(
+                {
+                    "interface_name": default["interface_name"],
+                    "interface_type": default["interface_type"],
+                    "service_url": default["service_url"],
+                    "secret_ref": default["secret_ref"],
+                    "extra_json": default["extra_json"],
+                }
+            )
+        result.append(merged)
+    result.extend({**item, "persisted": True} for item in stored.values())
+    return result
 
 
 def seed_settings_defaults(updated_by: str = "system") -> None:
@@ -84,6 +162,24 @@ def default_api_configs() -> list[dict[str, Any]]:
     db_port = db_parts.port if db_parts else None
     db_name = db_parts.path.lstrip("/") if db_parts else ""
     db_user = db_parts.username if db_parts else ""
+    providers = [KimiProvider(), MiMoProvider(), DeepSeekProvider()]
+    provider_configs = [
+        {
+            "interface_key": f"llm_{provider.name}",
+            "interface_name": provider.display_name,
+            "interface_type": "llm_provider",
+            "service_url": provider.base_url,
+            "secret_ref": f"{provider.name.upper()}_API_KEY",
+            "status": "warning" if provider.available else "not_configured",
+            "extra_json": {
+                "provider": provider.name,
+                "model": provider.default_model,
+                "configured": provider.available,
+                "managed_by": "environment",
+            },
+        }
+        for provider in providers
+    ]
     return [
         {
             "interface_key": "postgresql",
@@ -144,13 +240,14 @@ def default_api_configs() -> list[dict[str, Any]]:
         },
         {
             "interface_key": "llm",
-            "interface_name": "LLM / Ollama / DeepSeek",
+            "interface_name": "本地 LLM / Ollama",
             "interface_type": "llm",
             "service_url": settings.llm_base_url,
             "secret_ref": "LLM_API_KEY",
             "status": "warning",
             "extra_json": {"provider": settings.llm_provider, "model": settings.llm_model},
         },
+        *provider_configs,
         {
             "interface_key": "audit",
             "interface_name": "Audit API",
@@ -169,6 +266,7 @@ def default_role_permissions() -> list[dict[str, Any]]:
         "developer": "开发调试员",
         "viewer": "只读用户",
         "operator": "运行操作员",
+        "reviewer": "复核员",
     }
     descriptions = {
         "admin": "拥有系统设置、用户权限、审计和全部业务能力。",
@@ -176,9 +274,10 @@ def default_role_permissions() -> list[dict[str, Any]]:
         "developer": "可查看调试 Trace、模型和系统运行信息。",
         "viewer": "只读查看核心业务页面。",
         "operator": "可执行任务、报告和基础业务操作。",
+        "reviewer": "可复核策略、报告和知识内容。",
     }
     roles = []
-    for role in ["admin", "analyst", "developer", "viewer", "operator"]:
+    for role in ["admin", "analyst", "reviewer", "developer", "viewer", "operator"]:
         permissions = sorted(ROLE_PERMISSIONS.get(role, ROLE_PERMISSIONS.get("viewer", set())))
         roles.append({"role_id": role, "role_name": names[role], "description": descriptions[role], "permissions": permissions})
     return roles
@@ -406,12 +505,10 @@ def _metric_text(row: dict[str, Any]) -> str:
 
 
 def get_runtime_config_payload() -> dict[str, Any]:
-    seed_settings_defaults()
-    return runtime_config_map()
+    return _runtime_defaults_payload()
 
 
 def update_runtime_config_payload(payload: dict[str, Any], *, user: CurrentUser, ip_address: str = "") -> dict[str, Any]:
-    seed_settings_defaults(updated_by=user.username)
     values = payload.get("values") if isinstance(payload.get("values"), dict) else payload
     existing = {row["config_key"]: row for row in list_runtime_config()}
     updated = []
@@ -503,11 +600,29 @@ def users_overview(*, user: CurrentUser | None = None) -> dict[str, Any]:
 
 
 def role_permissions_payload() -> dict[str, Any]:
-    seed_settings_defaults()
-    rows = list_role_permissions()
-    if not rows:
-        rows = default_role_permissions()
+    stored = {str(item.get("role_id") or ""): item for item in list_role_permissions()}
+    rows = []
+    for default in default_role_permissions():
+        role_id = str(default["role_id"])
+        rows.append(stored.pop(role_id, None) or {**default, "persisted": False})
+    rows.extend(stored.values())
     permissions = ["view", "execute", "configure", "admin", "audit"]
+    all_permissions = set().union(*ROLE_PERMISSIONS.values())
+    permission_groups = {
+        "view": sorted(permission for permission in all_permissions if permission.endswith(":read")),
+        "execute": sorted(
+            permission
+            for permission in all_permissions
+            if permission.endswith((":run", ":generate", ":export", ":download", ":submit", ":query", ":sync"))
+            or permission == "assistant:use"
+        ),
+        "configure": sorted(
+            permission
+            for permission in all_permissions
+            if permission.endswith((":write", ":manage", ":publish", ":review", ":diagnostics"))
+        ),
+        "audit": ["audit:read"],
+    }
     matrix = []
     for row in rows:
         values = set(row.get("permissions") or [])
@@ -524,20 +639,36 @@ def role_permissions_payload() -> dict[str, Any]:
                 "audit": is_admin or "audit:read" in values,
             }
         )
-    return {"roles": rows, "permissions": permissions, "matrix": matrix}
+    return {
+        "roles": rows,
+        "permissions": permissions,
+        "permission_groups": permission_groups,
+        "matrix": matrix,
+    }
 
 
 def update_role_permissions_payload(payload: dict[str, Any], *, user: CurrentUser, ip_address: str = "") -> dict[str, Any]:
     roles = payload.get("roles") or []
+    if not isinstance(roles, list) or not roles:
+        raise ValueError("roles must contain at least one role")
+    allowed_permissions = set().union(*ROLE_PERMISSIONS.values()) | {"*"}
     updated = []
     for item in roles:
         role_id = str(item.get("role_id") or item.get("name") or "")
-        if role_id == "admin" and "*" not in set(item.get("permissions") or []):
+        if not role_id:
+            raise ValueError("role_id is required")
+        permission_values = {str(value) for value in (item.get("permissions") or []) if str(value)}
+        unknown = sorted(permission_values - allowed_permissions)
+        if unknown:
+            raise ValueError(f"unsupported permissions: {','.join(unknown)}")
+        if role_id == "admin" and "*" not in permission_values:
             raise ValueError("admin role must keep wildcard permission")
+        if role_id != "admin" and "*" in permission_values:
+            raise ValueError("wildcard permission is reserved for admin role")
         updated.append(
             upsert_role_permissions(
                 role_id,
-                list(item.get("permissions") or []),
+                sorted(permission_values),
                 role_name=str(item.get("role_name") or item.get("label") or role_id),
                 description=str(item.get("description") or ""),
             )
@@ -554,13 +685,16 @@ def update_role_permissions_payload(payload: dict[str, Any], *, user: CurrentUse
 
 
 def security_policy_payload() -> dict[str, Any]:
-    seed_settings_defaults()
-    rows = list_runtime_config("security_policy")
-    return {"items": rows, "values": {row["config_key"]: row["config_value"] for row in rows}, "source": "system_runtime_config"}
+    payload = _runtime_defaults_payload("security_policy")
+    payload["values"] = security_policy_values()
+    payload["source"] = "system_runtime_config"
+    payload["capabilities"] = security_policy_capabilities()
+    return payload
 
 
 def update_security_policy_payload(payload: dict[str, Any], *, user: CurrentUser, ip_address: str = "") -> dict[str, Any]:
     values = payload.get("values") if isinstance(payload.get("values"), dict) else payload
+    values = normalize_security_policy(values or {}, partial=True)
     existing = {row["config_key"]: row for row in list_runtime_config("security_policy")}
     for key, value in (values or {}).items():
         current = existing.get(str(key))
@@ -601,9 +735,7 @@ def settings_audit_logs(
 
 
 def interface_overview() -> dict[str, Any]:
-    seed_settings_defaults()
-    payload = list_api_configs(page_size=500)
-    items = payload["items"]
+    items = _all_interface_configs()
     total = len(items)
     normal = sum(1 for item in items if item.get("status") == "normal")
     abnormal = sum(1 for item in items if item.get("status") in {"error", "unavailable"})
@@ -624,14 +756,36 @@ def interface_overview() -> dict[str, Any]:
 
 
 def interface_configs(keyword: str = "", interface_type: str = "", status: str = "", page: int = 1, page_size: int = 100) -> dict[str, Any]:
-    seed_settings_defaults()
-    payload = list_api_configs(keyword=keyword, interface_type=interface_type, status=status, page=page, page_size=page_size)
-    payload["items"] = [_public_interface_config(item) for item in payload.get("items", [])]
-    return payload
+    items = _all_interface_configs()
+    needle = str(keyword or "").strip().lower()
+    if needle:
+        items = [
+            item for item in items
+            if needle in " ".join(
+                str(item.get(key) or "")
+                for key in ("interface_name", "interface_type", "service_url", "interface_key")
+            ).lower()
+        ]
+    if interface_type:
+        items = [item for item in items if str(item.get("interface_type") or "") == interface_type]
+    if status:
+        items = [item for item in items if str(item.get("status") or "") == status]
+    page = max(1, int(page or 1))
+    page_size = max(1, min(int(page_size or 100), 500))
+    start = (page - 1) * page_size
+    return {
+        "items": [_public_interface_config(item) for item in items[start : start + page_size]],
+        "total": len(items),
+        "page": page,
+        "page_size": page_size,
+    }
 
 
 def _public_interface_config(item: dict[str, Any]) -> dict[str, Any]:
+    extra = item.get("extra_json") if isinstance(item.get("extra_json"), dict) else {}
     fields = [
+        {"label": "服务商", "value": extra.get("provider") or "--"},
+        {"label": "模型", "value": extra.get("model") or "--"},
         {"label": "服务地址", "value": item.get("service_url") or "--"},
         {"label": "主机地址", "value": item.get("host") or "--"},
         {"label": "端口", "value": item.get("port") or "--"},
@@ -654,6 +808,11 @@ def update_interface_config(interface_id: str, payload: dict[str, Any], *, user:
             current = item
             break
     if not current:
+        current = next(
+            (item for item in default_api_configs() if str(item.get("interface_key")) == str(interface_id)),
+            None,
+        )
+    if not current:
         raise ValueError("interface config not found")
     merged = {**current, **payload}
     if not payload.get("password_encrypted"):
@@ -675,12 +834,18 @@ def update_interface_config(interface_id: str, payload: dict[str, Any], *, user:
 
 def test_interface(interface_id: str, *, user: CurrentUser, ip_address: str = "") -> dict[str, Any]:
     config = None
-    for item in list_api_configs(page_size=500)["items"]:
+    for item in _all_interface_configs():
         if str(item.get("id")) == str(interface_id) or str(item.get("interface_key")) == str(interface_id):
             config = item
             break
     if not config:
         raise ValueError("interface config not found")
+    # Defaults are intentionally read-only on GET.  The explicit test action is
+    # the first mutation point, so persist the default row here before writing
+    # its result; otherwise UPDATE affects zero rows and the UI keeps showing a
+    # stale warning even though the remote probe succeeded.
+    if not get_api_config(str(config.get("interface_key"))):
+        config = upsert_api_config(config, updated_by=user.username)
     result = _run_interface_probe(config)
     insert_api_test_log(
         interface_key=str(config.get("interface_key")),
@@ -711,8 +876,7 @@ def test_interface(interface_id: str, *, user: CurrentUser, ip_address: str = ""
 
 
 def test_all_interfaces(*, user: CurrentUser, ip_address: str = "") -> dict[str, Any]:
-    seed_settings_defaults(updated_by=user.username)
-    items = list_api_configs(page_size=500)["items"]
+    items = _all_interface_configs()
     results = []
     for item in items:
         results.append(test_interface(str(item.get("interface_key")), user=user, ip_address=ip_address))
@@ -761,12 +925,56 @@ def _run_interface_probe(config: dict[str, Any]) -> dict[str, Any]:
             status = get_local_llm_status()
             ok = bool(status.get("available") or status.get("ok"))
             return _probe_result(start, ok, status.get("message") or status.get("model") or "LLM checked", status="warning" if not ok else "normal", extra=status)
+        if key in PROVIDER_FACTORIES:
+            provider = PROVIDER_FACTORIES[key]()
+            if not provider.available:
+                return _probe_result(
+                    start,
+                    False,
+                    f"{provider.display_name} API key is not configured",
+                    status="not_configured",
+                    extra={"provider": provider.name, "model": provider.default_model, "configured": False},
+                )
+            try:
+                completion = provider.complete(
+                    [{"role": "user", "content": "请只回复两个字：正常"}],
+                    temperature=0,
+                )
+            except ProviderRequestError as exc:
+                summary = f"{provider.display_name} probe failed: {exc.reason}"
+                return _probe_result(
+                    start,
+                    False,
+                    summary,
+                    status="error",
+                    extra={
+                        "provider": provider.name,
+                        "model": provider.default_model,
+                        "configured": True,
+                        "error_code": exc.reason,
+                        "http_status": exc.status_code,
+                        "retryable": exc.retryable,
+                    },
+                )
+            return _probe_result(
+                start,
+                bool(completion.content),
+                f"{provider.display_name} chat/completions succeeded",
+                status="normal",
+                extra={
+                    "provider": provider.name,
+                    "model": completion.model or provider.default_model,
+                    "configured": True,
+                    "content_present": bool(completion.content),
+                    "finish_reason": completion.finish_reason,
+                },
+            )
         if key == "audit":
             list_audit_logs(limit=1)
             return _probe_result(start, True, "Audit query succeeded")
         return _probe_result(start, False, f"Unsupported interface probe: {key}", status="not_configured")
     except Exception as exc:
-        return _probe_result(start, False, str(exc)[:500], status="error")
+        return _probe_result(start, False, redact_text(str(exc))[:500], status="error")
 
 
 def _probe_result(start: float, ok: bool, summary: str, *, status: str = "error", extra: dict[str, Any] | None = None) -> dict[str, Any]:

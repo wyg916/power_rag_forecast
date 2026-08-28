@@ -35,6 +35,7 @@ _RUNTIME_MEMORY: dict[str, dict[str, Any]] = {}
 _HEALTH_MEMORY: list[dict[str, Any]] = []
 _API_CONFIG_MEMORY: dict[str, dict[str, Any]] = {}
 _API_TEST_MEMORY: list[dict[str, Any]] = []
+_ROLE_PERMISSION_MEMORY: dict[str, dict[str, Any]] = {}
 
 
 def clear_memory_settings() -> None:
@@ -42,6 +43,7 @@ def clear_memory_settings() -> None:
     _HEALTH_MEMORY.clear()
     _API_CONFIG_MEMORY.clear()
     _API_TEST_MEMORY.clear()
+    _ROLE_PERMISSION_MEMORY.clear()
 
 
 def _now() -> str:
@@ -614,7 +616,7 @@ def list_api_test_logs(
 def list_role_permissions() -> list[dict[str, Any]]:
     engine = security_postgres_engine()
     if engine is None:
-        return []
+        return [dict(item) for item in sorted(_ROLE_PERMISSION_MEMORY.values(), key=lambda item: str(item.get("role_id") or ""))]
     with engine.connect() as conn:
         rows = conn.execute(
             text(
@@ -639,7 +641,18 @@ def upsert_role_permissions(role_id: str, permissions: list[str], *, role_name: 
         raise ValueError("role_id is required")
     engine = security_postgres_engine()
     if engine is None:
-        return {"role_id": role, "role_name": role_name or role, "permissions": permissions, "description": description}
+        now = _now()
+        existing = _ROLE_PERMISSION_MEMORY.get(role) or {}
+        value = {
+            "role_id": role,
+            "role_name": role_name or role,
+            "permissions": sorted(set(permissions)),
+            "description": description,
+            "created_at": existing.get("created_at") or now,
+            "updated_at": now,
+        }
+        _ROLE_PERMISSION_MEMORY[role] = value
+        return dict(value)
     with engine.begin() as conn:
         row = conn.execute(
             text(

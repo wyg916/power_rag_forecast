@@ -114,6 +114,7 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
   const [configValues, setConfigValues] = useState<Record<string, any>>({});
   const [users, setUsers] = useState<UserItem[]>([]);
   const [roles, setRoles] = useState<RoleInfo[]>([]);
+  const [rolePermissionGroups, setRolePermissionGroups] = useState<Record<string, string[]>>({});
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [usersTotal, setUsersTotal] = useState(0);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -157,6 +158,7 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
       setUsers(userPayload.items || []);
       setUsersTotal(userPayload.total || 0);
       setRoles(rolePayload.matrix || rolePayload.roles || []);
+      setRolePermissionGroups(rolePayload.permission_groups || {});
     } catch (error) {
       message.error(error instanceof Error ? error.message : '用户与角色数据加载失败');
     } finally {
@@ -279,6 +281,48 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
     await Promise.all([loadUsers(), loadData()]);
   }
 
+  async function updateRolePermission(role: RoleInfo, groupKey: string, enabled: boolean) {
+    const backendGroup = groupKey === 'config' ? 'configure' : groupKey;
+    if (backendGroup === 'admin') {
+      message.info('管理员标识由角色本身决定，不能通过权限矩阵切换');
+      return;
+    }
+    const group = rolePermissionGroups[backendGroup] || [];
+    if (!group.length) {
+      message.warning('当前权限分组没有可配置项');
+      return;
+    }
+    const permissions = new Set<string>(role.permissions || []);
+    group.forEach((permission) => enabled ? permissions.add(permission) : permissions.delete(permission));
+    try {
+      const payload = await api.updateSettingsRolePermissions({
+        roles: [{
+          role_id: role.role_id || role.name,
+          role_name: role.role_name || role.label || role.role_id || role.name,
+          description: role.description || '',
+          permissions: Array.from(permissions).sort()
+        }]
+      });
+      setRoles(payload.matrix || payload.roles || []);
+      setRolePermissionGroups(payload.permission_groups || rolePermissionGroups);
+      message.success('角色权限已更新并写入鉴权配置');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '角色权限更新失败');
+    }
+  }
+
+  async function updateSecurityPolicy(values: Record<string, any>) {
+    try {
+      const payload = await api.updateSettingsSecurityPolicy({ values });
+      setData((current: any) => ({ ...current, securityPolicy: payload }));
+      message.success('安全策略已更新');
+      return payload;
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '安全策略更新失败');
+      throw error;
+    }
+  }
+
   const roleOptions = roles.map((role) => {
     const name = role.name || role.role_id;
     return { value: name, label: role.label || role.role_name || roleLabels[name] || name };
@@ -388,6 +432,8 @@ export function SettingsPage({ activeSubKey, onSubNavigate }: PageProps) {
             }}
             onReset={setResetting}
             onToggle={toggleUser}
+            onRolePermissionChange={updateRolePermission}
+            onSecurityPolicyChange={updateSecurityPolicy}
           />
         ) : (
           <SectionCard title="无权限">
@@ -648,7 +694,9 @@ function UserPermissionTab({
   canWrite,
   onEdit,
   onReset,
-  onToggle
+  onToggle,
+  onRolePermissionChange,
+  onSecurityPolicyChange
 }: {
   loading: boolean;
   metrics: any[];
@@ -663,9 +711,15 @@ function UserPermissionTab({
   onEdit: (row: UserItem) => void;
   onReset: (row: UserItem) => void;
   onToggle: (row: UserItem) => void;
+  onRolePermissionChange: (role: RoleInfo, groupKey: string, enabled: boolean) => Promise<void>;
+  onSecurityPolicyChange: (values: Record<string, any>) => Promise<any>;
 }) {
   const permissionRows = roles.map((role) => ({
     key: role.name || role.role_id,
+    role_id: role.role_id || role.name,
+    role_name: role.role_name || role.label || role.role_id || role.name,
+    description: role.description || '',
+    permissions: role.permissions || [],
     role: role.name || role.role_id,
     view: role.view ?? hasAny(role.permissions, ['dashboard:read', 'data:read', '*']),
     execute: role.execute ?? hasAny(role.permissions, ['task:run', 'forecast:run', '*']),
@@ -673,7 +727,22 @@ function UserPermissionTab({
     admin: role.admin ?? hasAny(role.permissions, ['*']),
     audit: role.audit ?? hasAny(role.permissions, ['audit:read', '*'])
   }));
-  const policyValues = securityPolicy?.values || {};
+  const [policyValues, setPolicyValues] = useState<Record<string, any>>(securityPolicy?.values || {});
+  const [policySaving, setPolicySaving] = useState(false);
+  useEffect(() => setPolicyValues(securityPolicy?.values || {}), [securityPolicy]);
+
+  async function persistPolicy(nextValues: Record<string, any>) {
+    if (!canWrite || policySaving) return;
+    setPolicySaving(true);
+    try {
+      const payload = await onSecurityPolicyChange(nextValues);
+      setPolicyValues(payload?.values || nextValues);
+    } catch {
+      setPolicyValues(securityPolicy?.values || {});
+    } finally {
+      setPolicySaving(false);
+    }
+  }
   return (
     <>
       <MetricGrid items={metrics} loading={loading} minColumnWidth={240} />
@@ -729,20 +798,32 @@ function UserPermissionTab({
                 title: ['查看', '执行', '配置', '管理员', '审计'][index],
                 dataIndex: key,
                 align: 'center' as const,
-                render: (value: boolean) => value ? <CheckCircleOutlined className="settings-check" /> : <span className="settings-dash">--</span>
+                render: (value: boolean, role: RoleInfo) => {
+                  const editable = canWrite && key !== 'admin' && (role.role_id || role.name) !== 'admin';
+                  const content = value ? <CheckCircleOutlined className="settings-check" /> : <span className="settings-dash">--</span>;
+                  if (!editable) return content;
+                  const toggle = () => onRolePermissionChange(role, key, !value);
+                  return (
+                    <Tooltip title={`点击${value ? '取消' : '授予'}该权限分组`}>
+                      <span role="button" tabIndex={0} aria-label={`${role.role_name || role.role_id}-${key}`} onClick={toggle} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') toggle(); }}>
+                        {content}
+                      </span>
+                    </Tooltip>
+                  );
+                }
               }))
             ]}
           />
           <SectionCard title="密码与安全策略" className="settings-security-card">
             <div className="settings-security-grid">
-              <ParamInput label="密码最小长度" value={policyValues.password_min_length ?? '--'} suffix="位" disabled />
-              <ParamInput label="登录失败锁定次数" value={policyValues.login_failed_lock_count ?? '--'} suffix="次" disabled />
-              <ParamInput label="会话超时时间" value={policyValues.session_timeout_minutes ?? '--'} suffix="分钟" disabled />
-              <SwitchParam label="双因素认证（2FA）" checked={Boolean(policyValues.two_factor_enabled)} disabled />
-              <SwitchParam label="强制定期修改密码" checked={Boolean(policyValues.force_periodic_password_change)} disabled />
-              <SwitchParam label="管理员重置密码" checked={Boolean(policyValues.admin_reset_password_enabled)} disabled />
+              <ParamInput label="密码最小长度" value={policyValues.password_min_length ?? '--'} suffix="位" disabled={!canWrite || policySaving} onChange={(value) => setPolicyValues((current) => ({ ...current, password_min_length: value }))} onBlur={() => persistPolicy(policyValues)} />
+              <ParamInput label="登录失败锁定次数" value={policyValues.login_failed_lock_count ?? '--'} suffix="次" disabled={!canWrite || policySaving} onChange={(value) => setPolicyValues((current) => ({ ...current, login_failed_lock_count: value }))} onBlur={() => persistPolicy(policyValues)} />
+              <ParamInput label="会话超时时间" value={policyValues.session_timeout_minutes ?? '--'} suffix="分钟" disabled={!canWrite || policySaving} onChange={(value) => setPolicyValues((current) => ({ ...current, session_timeout_minutes: value }))} onBlur={() => persistPolicy(policyValues)} />
+              <SwitchParam label="双因素认证（2FA）" checked={Boolean(policyValues.two_factor_enabled)} disabled={!canWrite || policySaving} onChange={(value) => { const next = { ...policyValues, two_factor_enabled: value }; setPolicyValues(next); void persistPolicy(next); }} />
+              <SwitchParam label="强制定期修改密码" checked={Boolean(policyValues.force_periodic_password_change)} disabled={!canWrite || policySaving} onChange={(value) => { const next = { ...policyValues, force_periodic_password_change: value }; setPolicyValues(next); void persistPolicy(next); }} />
+              <SwitchParam label="管理员重置密码" checked={Boolean(policyValues.admin_reset_password_enabled)} disabled={!canWrite || policySaving} onChange={(value) => { const next = { ...policyValues, admin_reset_password_enabled: value }; setPolicyValues(next); void persistPolicy(next); }} />
             </div>
-            <Alert type="info" showIcon message="安全策略由平台配置服务统一管理；用户密码重置已接入持久化接口。" />
+            <Alert type="info" showIcon message="密码长度、登录锁定、会话超时和管理员重置策略会实时生效；2FA 在用户登记链路完成前不能启用。" />
           </SectionCard>
         </div>
       </div>
@@ -931,12 +1012,12 @@ function InterfaceConfigModal({ editing, setEditing, form, submit }: { editing: 
   );
 }
 
-function ParamInput({ label, value, suffix, onChange, disabled }: { label: string; value: any; suffix?: string; onChange?: (value: any) => void; disabled?: boolean }) {
+function ParamInput({ label, value, suffix, onChange, onBlur, disabled }: { label: string; value: any; suffix?: string; onChange?: (value: any) => void; onBlur?: () => void; disabled?: boolean }) {
   return (
     <div className="settings-param-item">
       <span>{label}</span>
       <div className="settings-number-wrap">
-        <InputNumber value={value} disabled={disabled} onChange={onChange} />
+        <InputNumber value={value} disabled={disabled} onChange={onChange} onBlur={onBlur} />
         {suffix && <em>{suffix}</em>}
       </div>
     </div>
