@@ -1,0 +1,15 @@
+最终 UI 实现与契约：
+frontend/src/components/strategy/StrategyDesign.tsx
+frontend/src/pages/strategy/StrategyCenterPage.tsx
+frontend/src/pages/strategy/strategy-center-layout.css
+frontend/tests/pageLayoutConvergenceContracts.test.mjs
+tests/test_p6_p1_3a_strategy_layout.py
+
+随三次审批提交合入的历史评审证据：
+docs/codex/evidence/PROJECT1_STRATEGY_UI_REVIEW_V2_20260827_174428/
+docs/codex/evidence/PROJECT1_STRATEGY_UI_REVIEW_V3_20260827_222053/
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_20260828_022435/
+
+本次主项目合入收口：
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_MAIN_INTEGRATION_20260828_133554/
