@@ -258,3 +258,9 @@
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
 |---|---|---|---|---|
 | PROJECT1 策略中心三页最终 UI 合入最新主项目 | `PASS`；用户已审核同意；三个策略页面在 100% 缩放下完成统一 PageHeader、布局填充、独立内部滚动和 Global AI 安全区收口，前端不显示“数据已过期/已过期” | `main` / 本行所在提交（UI 合入 `0848db8`、`cb83ec9`、`9d097b6`；来源 `9db2f5c`、`2976302`、`dc92250`） | `docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_MAIN_INTEGRATION_20260828_133554/` | 策略范围无阻塞；Lint 12/12、策略 pytest 9 passed/1 DB 环境用例 deselected、Vite 3689、Node 策略契约 3/3、Chrome 三页×三视口 9/9 PASS，设备切换/刷新/筛选/Global AI 正常且控制台 0 warning/error。全量 unit 56/57 的唯一 10px 标签门槛在基线 `2e9d409` 同样失败且对应文件未改；后端/API/RBAC/路由/数据库/模型/业务写入均为 0。检查点：`backups/phase3/20260828_133554_PROJECT1_STRATEGY_FINAL_UI_INTEGRATION_PRE`；本次未推送远端。 |
+
+## 2026-08-28 一键启动自动打开页面修复
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1 `run_project.bat` 双击仅出现黑框、不打开页面 | `PASS`；根因为统一控制器对交互启动也固定传入 `--no-browser`；现已改为默认双击在 Web 健康后打开系统浏览器，仅 `-Silent` 保持无浏览器 | `main` / 本行所在提交（父提交 `f8c8f45`） | `docs/codex/evidence/PROJECT1_RUN_PROJECT_STARTUP_FIX_20260828_151052/` | 无启动阻塞；Doctor 全 PASS，启动控制 4/4，RC/脚本专项合计 18 passed/1 deselected；真实连续两次一键启动、Backend/Frontend/Celery、前后端 HTTP 200、Chrome 页面窗口均 PASS。修复前既有 `run_celery_health.bat` LF/CRLF 门槛失败未越界修改；数据库/迁移/Seed/模型/RAG/业务写入均为 0。检查点：`backups/phase3/20260828_151052_RUN_PROJECT_STARTUP_FIX_PRE`。 |

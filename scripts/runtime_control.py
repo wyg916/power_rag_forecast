@@ -58,6 +58,25 @@ def _runtime_files() -> list[Path]:
     ]
 
 
+def _web_launcher_command(
+    configs: list[Path], *, suppress_browser: bool
+) -> list[str]:
+    common = [
+        item for path in configs for item in ("--runtime-config", str(path))
+    ]
+    command = [
+        sys.executable,
+        "-X",
+        "utf8",
+        str(ROOT / "scripts" / "web_platform_launcher.py"),
+        *common,
+        "--skip-sync",
+    ]
+    if suppress_browser:
+        command.append("--no-browser")
+    return command
+
+
 def _port_info(port: int) -> dict[str, Any]:
     if os.name != "nt":
         return {"port": port, "pid": None, "health": "unsupported_platform"}
@@ -210,10 +229,10 @@ def start(*, debug: bool, silent: bool, as_json: bool = False) -> int:
     common = [item for path in configs for item in ("--runtime-config", str(path))]
     control_log = log_dir / "controller.log"
     with control_log.open("a", encoding="utf-8") as output:
-        web = _run([
-            sys.executable, "-X", "utf8", str(ROOT / "scripts" / "web_platform_launcher.py"),
-            *common, "--skip-sync", "--no-browser",
-        ], check=False, env=env, stdout=output)
+        web = _run(
+            _web_launcher_command(configs, suppress_browser=silent),
+            check=False, env=env, stdout=output,
+        )
         celery = _run([
             sys.executable, "-X", "utf8", str(ROOT / "scripts" / "phase4_precheck_runtime.py"),
             *common, "celery", "start",

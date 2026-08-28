@@ -3,6 +3,23 @@ from __future__ import annotations
 from scripts import runtime_control
 
 
+def test_interactive_start_requests_browser_and_silent_start_suppresses_it(
+    tmp_path,
+) -> None:
+    configs = [tmp_path / "profile.env", tmp_path / "runtime.env"]
+
+    interactive = runtime_control._web_launcher_command(
+        configs, suppress_browser=False
+    )
+    silent = runtime_control._web_launcher_command(
+        configs, suppress_browser=True
+    )
+
+    assert "--skip-sync" in interactive
+    assert "--no-browser" not in interactive
+    assert silent[-1] == "--no-browser"
+
+
 def test_same_recorded_process_requires_pid_and_creation_identity() -> None:
     recorded = {"pid": 101, "created": "created-1", "managed": True}
 

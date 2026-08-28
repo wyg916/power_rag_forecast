@@ -599,7 +599,7 @@ def main() -> int:
     ensure_database_url()
     py = python_executable()
     branch, sha = git_identity()
-    log("[INFO] Power Trading AI unified RC launcher v2.11.2")
+    log("[INFO] Power Trading AI unified runtime launcher")
     log(f"[INFO] RC branch: {branch}")
     log(f"[INFO] RC SHA: {sha}")
     log(f"[INFO] Python: {py}")

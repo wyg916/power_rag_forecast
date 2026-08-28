@@ -1,8 +1,10 @@
 # 智能运营分析项目
 
-> 最终本地预发布 RC 唯一入口：`E:\智能运营分析项目_worktrees\release_beta10d_agent_rc_20260807`，分支 `release/beta10d-agent-rc-20260807`。请在该目录执行 `run_project.bat`；不要从含用户未提交改动的普通仓库 `E:\智能运营分析项目` 启动。本版本是本地预发布 RC，不是正式生产上线。
+> 当前最新本地工作版本唯一入口：`E:\智能运营分析项目`，分支 `main`。请在该目录双击 `run_project.bat`；启动器会在 Web 健康后打开系统默认浏览器。历史目录 `E:\智能运营分析项目_worktrees\release_beta10d_agent_rc_20260807` 仅保留旧 RC，不包含当前主线的最新修改。
 
-当前产品版本：`v2.11.2`。这是基于 FastAPI、React/Vite、PostgreSQL、Redis/Celery 和 Alembic 的智能电力运营分析与决策支持平台。
+当前正式版本标签：`v2.12.1`；`main` 还包含标签后的已审批本地改进，实际启动提交以启动器输出的 Git SHA 为准。这是基于 FastAPI、React/Vite、PostgreSQL、Redis/Celery 和 Alembic 的智能电力运营分析与决策支持平台。
+
+后台自动化可使用 `run_project.ps1 start -Silent`（不会打开浏览器）；维护与诊断分别使用 `run_project.bat menu`、`run_project.bat doctor`。
 
 ## 可复现运行基线
 

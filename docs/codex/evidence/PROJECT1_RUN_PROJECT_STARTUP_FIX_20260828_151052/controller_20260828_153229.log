@@ -1,0 +1,37 @@
+[INFO] Power Trading AI unified runtime launcher
+[INFO] RC branch: main
+[INFO] RC SHA: f8c8f456b07a4c923ed175247786ef827642bb72
+[INFO] Python: E:\智能运营分析项目\.venv\Scripts\python.exe
+[OK] Database identities: beta10d_app_login + beta10d_security_login @localhost:5432/postgres (credentials hidden).
+[OK] Alembic head: 0023_model_center_facts
+[INFO] START_OLLAMA is not 1; skip Ollama startup/warmup to keep low-memory startup stable.
+[INFO] Backend is already healthy on port 8000.
+[INFO] Frontend is already healthy on port 5173.
+[DONE] Web platform ready: http://127.0.0.1:5173
+{
+  "ok": true,
+  "action": "celery_start",
+  "checked_at": "2026-08-28T07:32:42.785010+00:00",
+  "idempotent": true,
+  "status": {
+    "ok": true,
+    "action": "celery_status",
+    "checked_at": "2026-08-28T07:32:42.785010+00:00",
+    "pid": 30892,
+    "pid_active": true,
+    "workers": [
+      "phase4-health@wyg_win11"
+    ],
+    "worker_role": "health",
+    "queue": "phase4_health",
+    "redis": {
+      "ok": true,
+      "action": "redis_ping",
+      "checked_at": "2026-08-28T07:32:42.783909+00:00",
+      "redis_url": "redis://localhost:6379/0",
+      "latency_ms": 820.54,
+      "status": "connected"
+    },
+    "log_path": "E:\\智能运营分析项目\\logs\\runtime\\20260828_153229\\celery\\celery_health_worker.log"
+  }
+}

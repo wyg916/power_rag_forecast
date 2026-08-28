@@ -1,0 +1,8 @@
+run_project.bat doctor
+run_project.bat status
+run_project.bat
+python -X utf8 -m pytest -q tests/test_runtime_control.py
+python -X utf8 -m pytest -q tests/test_runtime_control.py tests/test_rc_launcher_contract.py tests/test_startup_scripts.py -k "not test_bat_files_use_crlf_and_error_pause_guard"
+python -X utf8 -m py_compile scripts/runtime_control.py scripts/web_platform_launcher.py
+Invoke-WebRequest http://127.0.0.1:5173/
+Invoke-WebRequest http://127.0.0.1:8000/api/health
