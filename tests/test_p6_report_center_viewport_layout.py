@@ -116,6 +116,43 @@ def test_report_right_rail_bottom_edges_close_with_the_center_preview():
     assert "height: 100%;" in review_card
 
 
+def test_daily_and_review_pages_fill_the_viewport_without_clipping_publish_records():
+    page = _read("frontend/src/pages/report/ReportCenterPage.tsx")
+    styles = _read("frontend/src/pages/report/report-center-layout.css")
+
+    assert "report-workbench--${activeSubKey}" in page
+    for page_class in (
+        ".report-workbench--report-daily",
+        ".report-workbench--report-review",
+        ".report-workbench--report-publish",
+    ):
+        assert f".content-shell:has({page_class})" in styles
+
+    viewport_rule = styles.split(
+        ".content-shell:has(.report-workbench--report-publish) {", 1
+    )[1].split("}", 1)[0]
+    assert "padding-right: 0 !important;" in viewport_rule
+    assert "padding-bottom: 0 !important;" in viewport_rule
+    assert "overflow: hidden !important;" in viewport_rule
+    assert "scrollbar-gutter: auto;" in viewport_rule
+
+    timeline_body = styles.split(
+        ".report-workbench .report-main-grid .report-timeline-card .ant-card-body {", 1
+    )[1].split("}", 1)[0]
+    timeline = styles.split(
+        ".report-workbench .report-main-grid .report-timeline-card .ant-timeline {", 1
+    )[1].split("}", 1)[0]
+    timeline_copy = styles.split(
+        ".report-workbench .report-main-grid .report-timeline-card .ant-timeline-item-content span {", 1
+    )[1].split("}", 1)[0]
+    assert "height: calc(100% - 37px);" in timeline_body
+    assert "flex: 1 1 auto;" in timeline_body
+    assert "height: 100%;" in timeline
+    assert "flex-direction: column;" in timeline
+    assert "white-space: normal;" in timeline_copy
+    assert "text-overflow: clip;" in timeline_copy
+
+
 def test_report_business_handlers_and_permission_guards_are_unchanged():
     page = _read("frontend/src/pages/report/ReportCenterPage.tsx")
 

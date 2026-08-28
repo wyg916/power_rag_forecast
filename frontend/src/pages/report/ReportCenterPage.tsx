@@ -302,7 +302,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   }
 
   return (
-    <div className="report-workbench page-stack">
+    <div className={`report-workbench page-stack report-workbench--${activeSubKey}`}>
       <header className="report-page-toolbar">
         <h1>{pageTitle}</h1>
         <ReportFilterBar

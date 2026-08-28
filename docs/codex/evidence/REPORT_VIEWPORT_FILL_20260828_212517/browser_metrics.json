@@ -1,0 +1,36 @@
+{
+  "viewport": {
+    "width": 1920,
+    "height": 926,
+    "devicePixelRatio": 1
+  },
+  "before": {
+    "contentShellPadding": "9px 16px 92px",
+    "contentShellOverflowY": "auto",
+    "workspaceRight": 1889,
+    "workspaceBottom": 834,
+    "rightBlankPx": 31,
+    "bottomBlankPx": 92
+  },
+  "after": {
+    "contentShellPadding": "9px 0px 0px 16px",
+    "contentShellOverflowY": "hidden",
+    "dailyWorkspaceRight": 1920,
+    "dailyWorkspaceBottom": 926,
+    "reviewWorkspaceRight": 1920,
+    "reviewWorkspaceBottom": 926,
+    "rightBlankPx": 0,
+    "bottomBlankPx": 0,
+    "dailyTimelineItemCount": 4,
+    "dailyTimelineLastItemBottom": 919,
+    "dailyTimelineBodyBottom": 925,
+    "metricNotesVisibleDaily": 4,
+    "metricNotesVisibleReview": 4,
+    "consoleWarningsOrErrors": 0
+  },
+  "isolation": {
+    "route": "report-weekly",
+    "contentShellPadding": "9px 16px 92px",
+    "contentShellOverflowY": "auto"
+  }
+}

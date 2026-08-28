@@ -1,0 +1,10 @@
+frontend/src/pages/report/ReportCenterPage.tsx
+frontend/src/pages/report/report-center-layout.css
+tests/test_p6_report_center_viewport_layout.py
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/REPORT_VIEWPORT_FILL_20260828_212517/README.md
+docs/codex/evidence/REPORT_VIEWPORT_FILL_20260828_212517/browser_metrics.json
+docs/codex/evidence/REPORT_VIEWPORT_FILL_20260828_212517/changed_files.txt
+docs/codex/evidence/REPORT_VIEWPORT_FILL_20260828_212517/test_summary.md
+docs/codex/evidence/REPORT_VIEWPORT_FILL_20260828_212517/screenshots/report-daily-full-1920x926.jpg
+docs/codex/evidence/REPORT_VIEWPORT_FILL_20260828_212517/screenshots/report-review-full-1920x926.jpg
