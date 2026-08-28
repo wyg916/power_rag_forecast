@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import SQLAlchemyError
 
+from backend.app.auth.jwt import decode_access_token
 from backend.app.auth.password import hash_password
 from backend.app.core.config import reset_settings_cache
 from backend.app.db.session import reset_db_cache
@@ -21,6 +22,7 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def _settings_center_env(monkeypatch):
     monkeypatch.setenv("AUTH_REQUIRED", "0")
+    monkeypatch.setenv("JWT_SECRET_KEY", "settings_center_test_jwt_secret")
     monkeypatch.setenv("DATABASE_URL", "")
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     reset_settings_cache()
@@ -71,6 +73,22 @@ def test_settings_status_and_runtime_config_endpoints():
     assert records.status_code == 200
     assert isinstance(records.json()["items"], list)
     assert records.json()["items"][0]["status"] == "unavailable"
+
+
+def test_settings_get_endpoints_merge_defaults_without_writing_storage():
+    assert settings_repository._RUNTIME_MEMORY == {}
+    assert settings_repository._API_CONFIG_MEMORY == {}
+
+    assert client.get("/api/settings/runtime-config").status_code == 200
+    assert client.get("/api/settings/security-policy").status_code == 200
+    assert client.get("/api/settings/roles/permissions").status_code == 200
+    interfaces = client.get("/api/settings/interfaces/configs")
+
+    assert interfaces.status_code == 200
+    keys = {item["interface_key"] for item in interfaces.json()["items"]}
+    assert {"llm_kimi", "llm_mimo", "llm_deepseek"} <= keys
+    assert settings_repository._RUNTIME_MEMORY == {}
+    assert settings_repository._API_CONFIG_MEMORY == {}
 
 
 def test_health_snapshot_store_uses_application_runtime_identity(monkeypatch):
@@ -154,9 +172,19 @@ def test_settings_user_role_security_and_audit_endpoints():
     assert any(row["role_id"] == "admin" for row in roles.json()["roles"])
     assert any(row["role_id"] == "admin" and row["admin"] for row in roles.json()["matrix"])
 
+    role_update = client.put(
+        "/api/settings/roles/permissions",
+        json={"roles": [{"role_id": "viewer", "role_name": "查看者", "permissions": ["dashboard:read", "audit:read"]}]},
+    )
+    assert role_update.status_code == 200
+    viewer = next(row for row in role_update.json()["roles"] if row["role_id"] == "viewer")
+    assert viewer["permissions"] == ["audit:read", "dashboard:read"]
+
     security = client.put("/api/settings/security-policy", json={"values": {"password_min_length": 14}})
     assert security.status_code == 200
     assert security.json()["values"]["password_min_length"] == 14
+    assert client.put("/api/settings/security-policy", json={"values": {"password_min_length": 7}}).status_code == 400
+    assert client.put("/api/settings/security-policy", json={"values": {"two_factor_enabled": True}}).status_code == 400
 
     overview = client.get("/api/settings/users/overview")
     assert overview.status_code == 200
@@ -185,3 +213,67 @@ def test_settings_interface_configs_test_and_logs():
     all_tests = client.post("/api/settings/interfaces/test-all")
     assert all_tests.status_code == 200
     assert "items" in all_tests.json()
+
+
+def test_remote_provider_interface_probe_uses_real_adapter_contract_without_exposing_content(monkeypatch):
+    class FakeProvider:
+        name = "kimi"
+        display_name = "Kimi K2.6"
+        default_model = "kimi-k2.6"
+        available = True
+
+        def complete(self, _messages, **_options):
+            return type("Result", (), {"content": "sensitive answer", "model": self.default_model, "finish_reason": "stop"})()
+
+    monkeypatch.setitem(settings_center_service.PROVIDER_FACTORIES, "llm_kimi", FakeProvider)
+    response = client.post("/api/settings/interfaces/llm_kimi/test")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ok"] is True
+    assert payload["extra"]["provider"] == "kimi"
+    assert "sensitive answer" not in str(payload)
+
+    refreshed = client.get("/api/settings/interfaces?page_size=100")
+    kimi = next(item for item in refreshed.json()["items"] if item["interface_key"] == "llm_kimi")
+    assert kimi["status"] == "normal"
+    assert kimi["success_rate"] == 100
+    assert kimi["persisted"] is True
+
+
+def test_login_lock_threshold_and_session_timeout_policy_are_enforced():
+    create_user(
+        username="locked1", password_hash=hash_password("Password123!"),
+        display_name="locked1", role="viewer", is_active=True,
+    )
+    settings_repository.upsert_runtime_config(
+        "login_failed_lock_count", 3, value_type="integer", category="security_policy"
+    )
+    settings_repository.upsert_runtime_config(
+        "session_timeout_minutes", 7, value_type="integer", category="security_policy"
+    )
+
+    assert client.post("/api/auth/login", json={"username": "locked1", "password": "wrong"}).status_code == 401
+    assert client.post("/api/auth/login", json={"username": "locked1", "password": "wrong"}).status_code == 401
+    assert client.post("/api/auth/login", json={"username": "locked1", "password": "wrong"}).status_code == 423
+    assert client.post("/api/auth/login", json={"username": "locked1", "password": "Password123!"}).status_code == 423
+
+    login = client.post("/api/auth/login", json={"username": "admin", "password": "AdminPass123!"})
+    assert login.status_code == 200
+    token = decode_access_token(login.json()["access_token"])
+    assert token["exp"] - token["iat"] == 7 * 60
+
+
+def test_login_uses_persisted_role_configuration():
+    settings_repository.upsert_role_permissions(
+        "viewer", ["dashboard:read", "assistant:use"], role_name="查看者"
+    )
+    create_user(
+        username="configured1", password_hash=hash_password("Password123!"),
+        display_name="configured1", role="viewer", is_active=True,
+    )
+
+    response = client.post("/api/auth/login", json={"username": "configured1", "password": "Password123!"})
+
+    assert response.status_code == 200
+    assert response.json()["user"]["permissions"] == ["assistant:use", "dashboard:read"]

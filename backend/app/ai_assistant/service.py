@@ -1592,11 +1592,13 @@ def answer_chat_accurate(
         "mimo",
         "ollama",
     }
+    premium_requested = requested_tier == "premium" and premium_confirmed
     if (
         fast_payload is not None
         and memory_admission is None
         and not recall_requested
         and not explicit_provider
+        and not premium_requested
         and not has_attachment_evidence
     ):
         return fast_payload
@@ -1733,10 +1735,11 @@ def answer_chat_accurate(
         llm_task_type = "business_answer"
     skip_daily_llm = (
         not explicit_provider
+        and not premium_requested
         and _should_skip_llm_for_daily_chat(decision.intent, llm_task_type, clean_question)
     )
     force_explicit_llm = bool(
-        explicit_provider
+        (explicit_provider or premium_requested)
         and memory_admission is None
         and not recall_requested
         and not rag_required_unavailable
@@ -1793,7 +1796,7 @@ def answer_chat_accurate(
                 temperature=expert_plan.temperature,
                 max_tokens=min(expert_plan.max_tokens, attachment_output_token_limit)
                 if force_attachment_llm
-                else expert_plan.max_tokens,
+                else None,
             )
             timings_ms["llm_generate_ms"] = _timing_ms(stage_started)
             model_used = True
@@ -1812,7 +1815,7 @@ def answer_chat_accurate(
             model_error = f"模型调用失败，已使用工具事实模板兜底：{sanitize_error(exc)}"
             trace.step("llm_router", success=False, error_code=exc.code, requested_provider=model_provider)
         except Exception as exc:
-            if explicit_provider or force_attachment_llm:
+            if explicit_provider or requested_tier == "premium" or force_attachment_llm:
                 raise ModelProviderUnavailableError(
                     (model_provider or "auto").strip().lower(),
                     sanitize_error(exc),

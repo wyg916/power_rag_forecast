@@ -254,14 +254,16 @@ class OpenAICompatibleProvider:
     def complete(self, messages: list[dict[str, Any]], **options: Any) -> CompletionResult:
         started = time.perf_counter()
         model = str(options.pop("model", "") or self.default_model)
+        max_tokens = options.pop("max_tokens", None)
         payload = {
             "model": model,
             "messages": messages,
             "temperature": float(options.pop("temperature", 0.35)),
-            "max_tokens": int(options.pop("max_tokens", 1400)),
             "stream": False,
             **options,
         }
+        if max_tokens is not None and int(max_tokens) > 0:
+            payload["max_tokens"] = int(max_tokens)
         try:
             response = self._request("POST", "chat/completions", json=payload)
             body = response.json()
@@ -350,14 +352,16 @@ class OpenAICompatibleProvider:
         return result.content
 
     def chat_stream(self, messages: list[dict[str, Any]], **options: Any) -> Iterator[str]:
+        max_tokens = options.pop("max_tokens", None)
         payload = {
             "model": str(options.pop("model", "") or self.default_model),
             "messages": messages,
             "temperature": float(options.pop("temperature", 0.35)),
-            "max_tokens": int(options.pop("max_tokens", 1400)),
             "stream": True,
             **options,
         }
+        if max_tokens is not None and int(max_tokens) > 0:
+            payload["max_tokens"] = int(max_tokens)
         response = self._request("POST", "chat/completions", json=payload, stream=True)
         try:
             for raw in response.iter_lines(decode_unicode=True):

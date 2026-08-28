@@ -9,6 +9,7 @@ from backend.app.ai_assistant.llm_providers.openai_compatible import (
     OpenAICompatibleProvider,
     ProviderRequestError,
 )
+from backend.app.ai_assistant import service
 from backend.app.ai_assistant.llm_router import LLMRouter
 from backend.app.ai_assistant.llm_providers import DeepSeekProvider, KimiProvider, MiMoProvider
 from backend.app.ai_assistant.expert_answer_planner import plan_expert_answer
@@ -92,12 +93,43 @@ def test_openai_adapter_normalizes_multipart_content_and_records_safe_diagnostic
         "image_count": 1,
         "image_mimes": ["image/png"],
         "image_url_kinds": ["data"],
-        "max_tokens": 1400,
+        "max_tokens": 0,
         "response_format": None,
     }
     assert result.diagnostics["response"]["content_part_types"] == ["text", "output_text"]
     assert result.diagnostics["response"]["request_id"] == "req_remote_1"
     assert "第一段" not in json.dumps(result.diagnostics, ensure_ascii=False)
+
+
+def test_premium_answer_forces_model_call_without_application_token_limit(monkeypatch):
+    captured: dict[str, object] = {}
+
+    class CapturingRouter:
+        def generate_answer(self, _messages, **kwargs):
+            captured.update(kwargs)
+            return "高阶模式正常", {
+                "provider": "kimi", "model": "kimi-k2.6", "logical_alias": "PREMIUM",
+                "input_tokens": 8, "output_tokens": 6, "latency_ms": 1,
+                "estimated_cost": 0, "currency": "CNY", "fallback": False,
+            }
+
+    monkeypatch.setattr(service, "LLMRouter", CapturingRouter)
+    monkeypatch.setenv("AI_ASSISTANT_LLM_ENABLED", "1")
+    monkeypatch.setattr(service, "rag_enabled", lambda: False)
+    monkeypatch.setattr(service, "get_conversation_state", lambda _identity: None)
+    monkeypatch.setattr(service, "_execute_tools", lambda *_args, **_kwargs: [])
+
+    result = service.answer_chat_accurate(
+        "你好",
+        requested_tier="premium",
+        premium_confirmed=True,
+        logical_alias="PREMIUM",
+    )
+
+    assert captured["requested_tier"] == "premium"
+    assert captured["premium_confirmed"] is True
+    assert captured["max_tokens"] is None
+    assert result["model_provider_used"] == "kimi"
 
 
 def _deepseek_plan_payload() -> dict:
@@ -287,14 +319,14 @@ def test_cost_controlled_deepseek_smoke_uses_data_planner_endpoint_model(monkeyp
     record = provider_smoke._deepseek_analysis_plan([])
 
     assert captured["options"] == {
-        "model": "deepseek-chat",
+        "model": "deepseek-v4-flash",
         "temperature": 0,
         "max_tokens": 400,
         "response_format": {"type": "json_object"},
     }
     assert record["status"] == "PASS"
     assert record["logical_alias"] == "DATA_PLANNER"
-    assert record["selected_model"] == "deepseek-chat"
+    assert record["selected_model"] == "deepseek-v4-flash"
     assert record["schema_validation"] == "PASS"
     assert record["semantic_validation"] == "PASS"
 

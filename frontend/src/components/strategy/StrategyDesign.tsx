@@ -471,7 +471,7 @@ function ReviewDetail({ row, onAction, permissions, reviewHistory }: {
               <Button danger onClick={() => onAction(row, 'reject', comment)}>驳回</Button>
               <Button onClick={() => onAction(row, 'return', comment)}>退回补充</Button>
             </> : null}
-            {row.status === 'approved' && permissions.canPublish ? <Tooltip title={row.isStale ? '当前记录未通过发布门禁' : '发布仅形成受控记录，不触发执行'}><Button type="primary" disabled={row.isStale} onClick={() => onAction(row, 'publish', comment)}>发布策略记录</Button></Tooltip> : null}
+            {row.status === 'approved' && permissions.canPublish ? <Tooltip title={row.isStale ? (row.staleReason || '当前记录未通过发布门禁，点击查看原因') : '发布仅形成受控记录，不触发执行'}><Button type="primary" onClick={() => onAction(row, 'publish', comment)}>发布策略记录</Button></Tooltip> : null}
             {!['draft', 'pending_review', 'approved'].includes(row.status) && <Tag color={statusColor(row.status)}>该状态无可用人工动作</Tag>}
           </div>
         </>

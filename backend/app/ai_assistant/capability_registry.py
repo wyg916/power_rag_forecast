@@ -29,12 +29,10 @@ class PremiumConsentRequired(ValueError):
     pass
 
 
-def _model(stable_name: str, provider_name: str, stable_default: str) -> str:
-    return (
-        os.environ.get(stable_name, "").strip()
-        or os.environ.get(provider_name, "").strip()
-        or stable_default
-    )
+def _model(stable_name: str, _legacy_provider_name: str, stable_default: str) -> str:
+    """Resolve the governed product model without legacy environment drift."""
+
+    return os.environ.get(stable_name, "").strip() or stable_default
 
 
 def capability_registry() -> dict[LogicalModelAlias, ModelCapability]:

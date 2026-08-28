@@ -135,7 +135,7 @@ class LLMRouter:
         requested_tier: str = "standard",
         premium_confirmed: bool = False,
         temperature: float = 0.35,
-        max_tokens: int = 1200,
+        max_tokens: int | None = None,
         response_format: dict[str, Any] | None = None,
     ) -> tuple[str, dict[str, Any]]:
         try:
@@ -190,7 +190,10 @@ class LLMRouter:
                     raise ProviderRequestError(provider_name, "missing_api_key", retryable=False)
                 started = time.perf_counter()
                 if provider_name == "ollama":
-                    content = provider.chat(messages, temperature=temperature, max_tokens=max_tokens)
+                    local_options: dict[str, Any] = {"temperature": temperature}
+                    if max_tokens is not None and max_tokens > 0:
+                        local_options["max_tokens"] = max_tokens
+                    content = provider.chat(messages, **local_options)
                     status = provider.health()
                     model = capability.model or getattr(provider, "last_model", None) or status.get("model")
                     completion_meta: dict[str, Any] = {}
@@ -201,8 +204,9 @@ class LLMRouter:
                     provider_options: dict[str, Any] = {
                         "model": model,
                         "temperature": temperature,
-                        "max_tokens": max_tokens,
                     }
+                    if max_tokens is not None and max_tokens > 0:
+                        provider_options["max_tokens"] = max_tokens
                     if response_format is not None:
                         provider_options["response_format"] = response_format
                     result = provider.complete(messages, **provider_options)

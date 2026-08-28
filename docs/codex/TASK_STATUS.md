@@ -259,6 +259,12 @@
 |---|---|---|---|---|
 | PROJECT1 策略中心三页最终 UI 合入最新主项目 | `PASS`；用户已审核同意；三个策略页面在 100% 缩放下完成统一 PageHeader、布局填充、独立内部滚动和 Global AI 安全区收口，前端不显示“数据已过期/已过期” | `main` / 本行所在提交（UI 合入 `0848db8`、`cb83ec9`、`9d097b6`；来源 `9db2f5c`、`2976302`、`dc92250`） | `docs/codex/evidence/PROJECT1_STRATEGY_FINAL_UI_MAIN_INTEGRATION_20260828_133554/` | 策略范围无阻塞；Lint 12/12、策略 pytest 9 passed/1 DB 环境用例 deselected、Vite 3689、Node 策略契约 3/3、Chrome 三页×三视口 9/9 PASS，设备切换/刷新/筛选/Global AI 正常且控制台 0 warning/error。全量 unit 56/57 的唯一 10px 标签门槛在基线 `2e9d409` 同样失败且对应文件未改；后端/API/RBAC/路由/数据库/模型/业务写入均为 0。检查点：`backups/phase3/20260828_133554_PROJECT1_STRATEGY_FINAL_UI_INTEGRATION_PRE`；本次未推送远端。 |
 
+## 2026-08-28 设置中心、三模型、AI 历史与策略复核功能收口
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1 WP0/1/2/4/5/6 功能复核与落地 | `PASS`；三模型独立配置和真实探测、普通文本无应用层 token 上限、高阶模式、会话历史、角色权限、安全策略执行链、人工复核发布均完成 | `codex/settings-ai-strategy-functional-20260828` / 本行所在提交 | `docs/codex/evidence/PROJECT1_SETTINGS_AI_STRATEGY_FUNCTIONAL_20260828/ACCEPTANCE_REPORT.md` | 后端 127 passed；TypeScript/Vite 3689 modules PASS；浏览器三模型均“正常”，Premium 命中 Kimi，历史记录可打开，合法策略 `approved → published`。全量 Node 56/57 的唯一 10px 视觉门槛在未修改主项目同样失败，遵照用户要求未改 UI。2FA 因缺少登记/挑战链安全拒绝启用，不伪造已生效；正式数据库、模型、预测、RAG 与真实策略写入均为 0。检查点：`backups/phase3/20260828_181948_SETTINGS_AI_STRATEGY_FUNCTIONAL_PRE`。 |
+
 ## 2026-08-28 一键启动自动打开页面修复
 
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |

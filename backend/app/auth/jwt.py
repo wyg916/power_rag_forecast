@@ -42,12 +42,14 @@ def create_access_token(
     role: str,
     permissions: list[str] | None = None,
     extra: dict[str, Any] | None = None,
+    expire_minutes: int | None = None,
 ) -> str:
     settings = get_settings()
     if settings.jwt_algorithm.upper() != "HS256":
         raise JWTError("Only HS256 JWT signing is supported")
     now = int(time.time())
-    expire = now + max(60, int(settings.jwt_access_token_expire_minutes) * 60)
+    configured_minutes = settings.jwt_access_token_expire_minutes if expire_minutes is None else expire_minutes
+    expire = now + max(60, int(configured_minutes) * 60)
     header = {"alg": "HS256", "typ": "JWT"}
     payload: dict[str, Any] = {
         "sub": subject,
