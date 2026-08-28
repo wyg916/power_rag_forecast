@@ -1,0 +1,26 @@
+{
+  "browser": "in_app_browser",
+  "viewport": {"width": 1280, "height": 720, "devicePixelRatio": 1},
+  "documentOverflow": {"dailyX": 0, "dailyY": 0, "reviewX": 0, "reviewY": 0},
+  "daily": {
+    "metricCount": 4,
+    "notesVisible": 4,
+    "maxValueNoteVerticalCenterDeltaPx": 0,
+    "maxValueNoteGroupHorizontalCenterDeltaPx": 0.008,
+    "consoleWarnings": 0,
+    "consoleErrors": 0
+  },
+  "review": {
+    "metricCount": 4,
+    "notesVisible": 4,
+    "maxValueNoteVerticalCenterDeltaPx": 0,
+    "maxValueNoteGroupHorizontalCenterDeltaPx": 0.008,
+    "consoleWarnings": 0,
+    "consoleErrors": 0
+  },
+  "readOnlyInteraction": {
+    "selectedListReportId": "p5c_operation_decision_run_20260822T212700850020Z_d24dd912af",
+    "previewReportId": "p5c_operation_decision_run_20260822T212700850020Z_d24dd912af",
+    "matched": true
+  }
+}

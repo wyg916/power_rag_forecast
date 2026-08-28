@@ -270,3 +270,9 @@
 | 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
 |---|---|---|---|---|
 | PROJECT1 `run_project.bat` 双击仅出现黑框、不打开页面 | `PASS`；根因为统一控制器对交互启动也固定传入 `--no-browser`；现已改为默认双击在 Web 健康后打开系统浏览器，仅 `-Silent` 保持无浏览器 | `main` / 本行所在提交（父提交 `f8c8f45`） | `docs/codex/evidence/PROJECT1_RUN_PROJECT_STARTUP_FIX_20260828_151052/` | 无启动阻塞；Doctor 全 PASS，启动控制 4/4，RC/脚本专项合计 18 passed/1 deselected；真实连续两次一键启动、Backend/Frontend/Celery、前后端 HTTP 200、Chrome 页面窗口均 PASS。修复前既有 `run_celery_health.bat` LF/CRLF 门槛失败未越界修改；数据库/迁移/Seed/模型/RAG/业务写入均为 0。检查点：`backups/phase3/20260828_151052_RUN_PROJECT_STARTUP_FIX_PRE`。 |
+
+## 2026-08-28 报告中心指标卡布局合入
+
+| 任务 | 状态 | 分支/提交 | 证据 | 阻塞项 |
+|---|---|---|---|---|
+| PROJECT1 报告中心两页指标卡及视口布局合入最新主项目 | `PASS（报告范围）`；用户已审核同意；日报与审核发布页统一四卡指标行，数值下方说明移至数值右侧并整体居中，右栏底边与主预览收口 | `main` / 本行所在提交（来源 `12b05be`、`c76747e`、`1d92e8b`、`6e91ea8`） | `docs/codex/evidence/REPORT_KPI_LATEST_MAIN_INTEGRATION_20260828_201747/` | 报告范围无阻塞；保留最新 main 的权限/对象渲染/API 修复。TypeScript、Vite 3690、报告 pytest 13 passed/2 个隔离 DB 用例 skipped、报告前端契约 4/4、浏览器两页指标 8/8 完整且控制台 0。全量 unit 56/57 的唯一 10px 全局门禁及扩大 pytest 的 3 个策略/首页/权限快照失败均在未修改 main 同项复现，未越界处理。写操作仅做契约核验，未触发正式报告状态或数据库写入；检查点：`backups/phase3/20260828_201747_REPORT_KPI_LATEST_MAIN_PRE`；本次未推送远端。 |

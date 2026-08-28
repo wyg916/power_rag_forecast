@@ -30,6 +30,7 @@ import { getReportCenterData, getReportFacts } from '../../services/reportApi';
 import { formatReportValueLines, pickReportScalar } from '../../services/reportValue';
 import { resolvePageDataMeta } from '../../services/viewState';
 import type { PageProps } from '../../types/ui';
+import './report-center-layout.css';
 
 const statusColor: Record<string, string> = {
   待审核: 'warning',
@@ -115,6 +116,11 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   const { message } = App.useApp();
   const { canPerformAction, user } = useAuth();
   const isReviewPage = activeSubKey === 'report-review' || activeSubKey === 'report-publish';
+  const pageTitle = isReviewPage
+    ? '报告中心 / 报告审核与发布'
+    : activeSubKey === 'report-weekly'
+      ? '报告中心 / 周报'
+      : '报告中心 / 日报';
   const [data, setData] = useState<any>({ reports: [], summary: {} });
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -298,7 +304,7 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
   return (
     <div className="report-workbench page-stack">
       <header className="report-page-toolbar">
-        <h1>{isReviewPage ? '报告审核与发布' : '报告中心'}</h1>
+        <h1>{pageTitle}</h1>
         <ReportFilterBar
           review={isReviewPage}
           keyword={keyword}
@@ -336,10 +342,9 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
           <Button size="small" onClick={() => loadData(keyword)}>重试</Button>
         </div>
       ) : null}
+      {showContent ? <ReportStatusKpiRow items={metrics} loading={loading} /> : null}
       {showContent && isReviewPage ? (
         <ReviewPublishView
-          metrics={metrics}
-          loading={loading}
           reports={visibleReports}
           total={data.total || reports.length}
           page={reportPage}
@@ -363,8 +368,6 @@ export function ReportCenterPage({ activeSubKey, onSubNavigate }: PageProps) {
         />
       ) : showContent ? (
         <ReportPreviewView
-          metrics={metrics}
-          loading={loading}
           reports={visibleReports}
           total={data.total || reports.length}
           page={reportPage}
@@ -474,13 +477,18 @@ function ReportListCard({ title, reports, selectedId, setSelectedId, total, page
         {reports.length ? (
           reports.map((item: any) => (
             <button key={item.report_id} className={`report-list-item ${selectedId === item.report_id ? 'active' : ''}`} onClick={() => setSelectedId(item.report_id)}>
-              <span>
-                <FileTextOutlined />
-                <strong title={item.title}>{item.title}</strong>
-                <small title={item.report_id}>{item.report_id}</small>
+              <span className="report-list-item-main">
+                <span className="report-list-item-icon"><FileTextOutlined /></span>
+                <span className="report-list-item-copy">
+                  <Tooltip title={item.title}><strong>{item.title}</strong></Tooltip>
+                  <small>{shortTime(item.generated_at || item.updated_at || item.created_at)}</small>
+                  <Tooltip title={item.report_id}><code>{item.report_id}</code></Tooltip>
+                </span>
               </span>
-              <Tag>{item.typeText}</Tag>
-              <Tag color={statusColor[item.statusText] || 'default'}>{item.statusText}</Tag>
+              <span className="report-list-item-tags">
+                <Tag>{item.typeText}</Tag>
+                <Tag color={statusColor[item.statusText] || 'default'}>{item.statusText}</Tag>
+              </span>
             </button>
           ))
         ) : (
@@ -495,18 +503,19 @@ function ReportListCard({ title, reports, selectedId, setSelectedId, total, page
   );
 }
 
-function ReportMetricPair({ items, start, loading }: { items: any[]; start: number; loading: boolean }) {
-  return <div className="report-metric-pair"><MetricGrid items={items.slice(start, start + 2)} icons={metricIcons.slice(start, start + 2)} loading={loading} minColumnWidth={120} /></div>;
+function ReportStatusKpiRow({ items, loading }: { items: any[]; loading: boolean }) {
+  return (
+    <section className="report-status-kpi-row" aria-label="报告状态概览">
+      <MetricGrid items={items} icons={metricIcons} loading={loading} minColumnWidth={180} />
+    </section>
+  );
 }
 
-function ReportPreviewView({ metrics, loading, reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink, onReview, permissions }: any) {
+function ReportPreviewView({ reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, risks, onDownload, onRegenerate, onCopyLink, onReview, permissions }: any) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   return (
     <div className="report-main-grid report-workspace-grid">
-      <div className="report-workspace-left">
-        <ReportMetricPair items={metrics} start={0} loading={loading} />
-        <ReportListCard title={`报告列表（共 ${total} 份）`} reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
-      </div>
+      <ReportListCard title={`报告列表（共 ${total} 份）`} reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
       <SectionCard title="报告预览" className="report-preview-card" bodyClassName="report-preview-body">
         <ReportBaseInfo report={activeReport} />
         <div className="report-mini-metrics">{previewMetrics.map((item: any) => <MiniMetric key={item.label} {...item} />)}</div>
@@ -549,23 +558,19 @@ function ReportPreviewView({ metrics, loading, reports, total, page, onPageChang
         </div>
       </SectionCard>
       <div className="report-workspace-right report-side-stack">
-        <ReportMetricPair items={metrics} start={2} loading={loading} />
         <QuickActions onDownload={onDownload} onRegenerate={onRegenerate} onCopyLink={onCopyLink} onReview={onReview} permissions={permissions} />
-        <PublishTimeline report={activeReport} />
+        <div className="report-side-scroll"><PublishTimeline report={activeReport} /></div>
       </div>
     </div>
   );
 }
 
-function ReviewPublishView({ metrics, loading, reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviews, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions, onFullscreenError }: any) {
+function ReviewPublishView({ reports, total, page, onPageChange, onReload, activeReport, selectedId, setSelectedId, curve, previewMetrics, reviews, reviewComment, setReviewComment, onApprove, onReject, onPublish, onRegenerate, onDownload, permissions, onFullscreenError }: any) {
   const previewRef = useRef<HTMLElement | null>(null);
   return (
     <div className="report-review-grid report-workspace-grid">
-      <div className="report-workspace-left">
-        <ReportMetricPair items={metrics} start={0} loading={loading} />
-        <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
-      </div>
-      <section ref={previewRef}>
+      <ReportListCard title="报告版本 / 待审核列表" reports={reports} selectedId={selectedId} setSelectedId={setSelectedId} total={total} page={page} onPageChange={onPageChange} onReload={onReload} />
+      <section ref={previewRef} className="report-review-preview-shell">
       <SectionCard title="审核预览区" extra={<Space><Button icon={<FullscreenOutlined />} onClick={() => previewRef.current?.requestFullscreen?.().catch(onFullscreenError)}>全屏预览</Button>{permissions.canDownload ? <Button icon={<DownloadOutlined />} onClick={onDownload}>下载预览</Button> : null}</Space>} className="report-review-preview" bodyClassName="report-review-body">
         <div className="report-review-title">
           <h3>{activeReport?.title || '--'}</h3>
@@ -594,7 +599,6 @@ function ReviewPublishView({ metrics, loading, reports, total, page, onPageChang
       </SectionCard>
       </section>
       <div className="report-review-side report-workspace-right">
-        <ReportMetricPair items={metrics} start={2} loading={loading} />
         <SectionCard title="审核操作区" className="report-review-action-card">
           <div className="report-review-tabs"><b>待审核</b><span>待发布</span></div>
           <label className="report-comment-label">审核意见 <i>*</i></label>
@@ -606,12 +610,14 @@ function ReviewPublishView({ metrics, loading, reports, total, page, onPageChang
             {permissions.canReview ? <Button onClick={onPublish}>发布报告</Button> : null}
           </div>
         </SectionCard>
-        <SectionCard title="发布归档流程" className="report-process-card"><ProcessSteps report={activeReport} reviews={reviews} /></SectionCard>
-        <div className="report-review-info-grid">
-          <SmallInfoCard title="状态概览" rows={[`当前状态：${activeReport?.statusText || '--'}`, `报告类型：${activeReport?.typeText || '--'}`]} />
-          <SmallInfoCard title="审核记录" rows={(reviews || []).length ? reviews.map((item: any) => `${item.reviewer || '未知审核人'}：${item.status || item.action || '--'}`) : ['暂无持久化审核记录']} />
-          <SmallInfoCard title="版本信息" rows={[`报告契约：${activeReport?.reportSchemaVersion || '--'}`, `报告类型：${activeReport?.typeText || '--'}`]} />
-          <SmallInfoCard title="操作日志" rows={(reviews || []).length ? reviews.slice(0, 3).map((item: any) => `${item.reviewer || '系统'} · ${item.status || item.action || '--'}`) : [`系统 · 当前状态 ${activeReport?.statusText || '--'}`]} />
+        <div className="report-side-scroll">
+          <SectionCard title="发布归档流程" className="report-process-card"><ProcessSteps report={activeReport} reviews={reviews} /></SectionCard>
+          <div className="report-review-info-grid">
+            <SmallInfoCard title="状态概览" rows={[`当前状态：${activeReport?.statusText || '--'}`, `报告类型：${activeReport?.typeText || '--'}`]} />
+            <SmallInfoCard title="审核记录" rows={(reviews || []).length ? reviews.map((item: any) => `${item.reviewer || '未知审核人'}：${item.status || item.action || '--'}`) : ['暂无持久化审核记录']} />
+            <SmallInfoCard title="版本信息" rows={[`报告契约：${activeReport?.reportSchemaVersion || '--'}`, `报告类型：${activeReport?.typeText || '--'}`]} />
+            <SmallInfoCard title="操作日志" rows={(reviews || []).length ? reviews.slice(0, 3).map((item: any) => `${item.reviewer || '系统'} · ${item.status || item.action || '--'}`) : [`系统 · 当前状态 ${activeReport?.statusText || '--'}`]} />
+          </div>
         </div>
       </div>
     </div>

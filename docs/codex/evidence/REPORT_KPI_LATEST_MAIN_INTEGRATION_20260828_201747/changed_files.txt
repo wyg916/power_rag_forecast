@@ -1,0 +1,6 @@
+frontend/src/pages/report/ReportCenterPage.tsx
+frontend/src/pages/report/report-center-layout.css
+frontend/tests/reportCenterPresentation.test.mjs
+tests/test_p6_report_center_viewport_layout.py
+docs/codex/TASK_STATUS.md
+docs/codex/evidence/REPORT_KPI_LATEST_MAIN_INTEGRATION_20260828_201747/

@@ -29,9 +29,11 @@ test('报告路由使用独立内容工作台并完整保留左侧目录', () =>
   assert.equal(layoutSource.includes("route === 'report' ? 'app-shell--report' : ''"), true);
   assert.equal(layoutSource.includes('<Sidebar collapsed={collapsed} route={route}'), true);
   assert.equal(layoutSource.includes("route !== 'report' && <Sidebar"), false);
-  for (const marker of ['report-page-toolbar', 'report-workspace-grid', 'report-workspace-left', 'report-workspace-right', '<ReportMetricPair']) {
+  for (const marker of ['report-page-toolbar', 'report-workspace-grid', '<ReportListCard', 'report-workspace-right', '<ReportStatusKpiRow']) {
     assert.equal(source.includes(marker), true, `应保留报告工作台结构：${marker}`);
   }
+  assert.equal(source.includes('report-workspace-left'), false);
+  assert.equal(source.includes('<ReportMetricPair'), false);
 });
 
 test('报告中心继续保留阻塞状态和真实功能入口', () => {
